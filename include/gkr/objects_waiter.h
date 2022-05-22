@@ -1,0 +1,261 @@
+#pragma once
+
+#include "common.h"
+#include "waitable_object.h"
+
+namespace gkr
+{
+
+using wait_result_t = unsigned;
+
+constexpr wait_result_t wait_result_error   = wait_result_t(0x8000'0000);
+constexpr wait_result_t wait_result_timeout = wait_result_t(0);
+
+constexpr std::chrono::milliseconds timeout_infinite = std::chrono::milliseconds::max ();
+constexpr std::chrono::milliseconds timeout_ignore   = std::chrono::milliseconds::zero();
+
+class objects_waiter : public impl::base_objects_waiter
+{
+    objects_waiter           (const objects_waiter&) noexcept = delete;
+    objects_waiter& operator=(const objects_waiter&) noexcept = delete;
+
+    objects_waiter           (objects_waiter&& other) noexcept = delete;
+    objects_waiter& operator=(objects_waiter&& other) noexcept = delete;
+
+public:
+    objects_waiter() noexcept = default;
+   ~objects_waiter() noexcept = default;
+
+private:
+    struct node_t
+    {
+        waitable_object** objects;
+        size_t            count;
+        node_t*           next;
+    } *first = nullptr;
+
+    bool find_object(waitable_object* object) noexcept
+    {
+        for(node_t* node = first; node != nullptr; node = node->next)
+        {
+            for(size_t index = 0; index < node->count; ++index)
+            {
+                if(object == node->objects[index])
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    bool register_self(size_t count, waitable_object** objects) noexcept
+    {
+        bool result = true;
+
+        for(size_t index = 0; index < count; ++index)
+        {
+            if(!find_object(objects[index]))
+            {
+                result = objects[index]->register_waiter(*this) && result;
+            }
+        }
+        return result;
+    }
+    void unregiser_self(size_t count, waitable_object** objects) noexcept
+    {
+        for(size_t index = 0; index < count; ++index)
+        {
+            if(!find_object(objects[index]))
+            {
+                objects[index]->unregister_waiter(*this);
+            }
+        }
+    }
+
+private:
+    class exception_guard
+    {
+        objects_waiter* parent;
+        node_t          node;
+    public:
+        exception_guard(objects_waiter& waiter, size_t count, waitable_object** objects) noexcept
+            : parent(nullptr)
+            , node  {objects, count, waiter.first}
+        {
+            if(!waiter.register_self(count, objects)) return;
+
+            waiter.first = &node;
+
+            parent = &waiter;
+        }
+        ~exception_guard() noexcept
+        {
+            if(initialization_failed()) return;
+
+            objects_waiter& waiter = *parent;
+
+            node_t** prev;
+            for(prev = &waiter.first; *prev != &node; prev = &(*prev)->next);
+            *prev = node.next;
+
+            waiter.unregiser_self(node.count, node.objects);
+        }
+        bool initialization_failed() const noexcept
+        {
+            return (parent == nullptr);
+        }
+    };
+    friend class exception_guard;
+
+private:
+    bool collect_result(wait_result_t& result, size_t count, waitable_object** objects) noexcept
+    {
+        result = 0;
+        for(size_t index = 0; index < count; ++index)
+        {
+            if(objects[index]->try_consume())
+            {
+                result |= (1 << index);
+            }
+        }
+        return (result != 0);
+    }
+
+public:
+    template<typename... WaitableObjects>
+    wait_result_t check(WaitableObjects&... waitable_objects)
+    {
+        constexpr size_t count = sizeof...(waitable_objects);
+
+        waitable_object* objects[count] = { &waitable_objects... };
+
+        return check(count, objects);
+    }
+    wait_result_t check(size_t count, waitable_object** objects)
+    {
+        Check_ValidArg(count > 0, wait_result_error);
+        Check_ValidArg(objects != nullptr, wait_result_error);
+
+        Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
+
+        wait_result_t result;
+
+        collect_result(result, count, objects);
+
+        return result;
+    }
+
+    template<typename... WaitableObjects>
+    wait_result_t wait(WaitableObjects&... waitable_objects)
+    {
+        constexpr size_t count = sizeof...(waitable_objects);
+
+        waitable_object* objects[count] = { &waitable_objects... };
+
+        return wait(count, objects);
+    }
+    template<typename Rep, typename Period>
+    wait_result_t wait(size_t count, waitable_object** objects)
+    {
+        using duration = std::chrono::duration<Rep, Period>;
+
+        Check_ValidArg(count > 0, wait_result_error);
+        Check_ValidArg(objects != nullptr, wait_result_error);
+
+        Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
+
+        wait_result_t result;
+
+        if(collect_result(result, count, objects))
+        {
+            return result;
+        }
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        exception_guard guard(*this, count, objects);
+
+        if(guard.initialization_failed())
+        {
+            return wait_result_error;
+        }
+        do
+        {
+            m_cvar.wait(lock);
+        }
+        while(!collect_result(result, count, objects));
+
+        return result;
+    }
+
+    template<typename Rep, typename Period, typename... WaitableObjects>
+    wait_result_t wait(std::chrono::duration<Rep, Period> timeout, WaitableObjects&... waitable_objects)
+    {
+        constexpr size_t count = sizeof...(waitable_objects);
+
+        waitable_object* objects[count] = { &waitable_objects... };
+
+        return wait(timeout, count, objects);
+    }
+    template<typename Rep, typename Period>
+    wait_result_t wait(std::chrono::duration<Rep, Period> timeout, size_t count, waitable_object** objects)
+    {
+        Check_ValidArg(count > 0, wait_result_error);
+        Check_ValidArg(objects != nullptr, wait_result_error);
+
+        Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
+
+        using duration_t = std::chrono::duration<Rep, Period>;
+
+        wait_result_t result;
+
+        if(collect_result(result, count, objects))
+        {
+            return result;
+        }
+        if(timeout == duration_t::zero())
+        {
+            return wait_result_timeout;
+        }
+
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        exception_guard guard(*this, count, objects);
+
+        if(guard.initialization_failed())
+        {
+            return wait_result_error;
+        }
+        if(timeout == duration_t::max())
+        {
+            for( ; ; )
+            {
+                m_cvar.wait(lock);
+
+                if(collect_result(result, count, objects)) break;
+            }
+        }
+        else
+        {
+            for(auto start_time = std::chrono::steady_clock::now(); ; )
+            {
+                if(m_cvar.wait_for(lock, timeout) == std::cv_status::timeout) break;
+
+                if(collect_result(result, count, objects)) break;
+
+                const auto now = std::chrono::steady_clock::now();
+
+                const duration_t elapsed_time = std::chrono::duration_cast<duration_t>(now - start_time);
+
+                if(elapsed_time >= timeout) break;
+
+                timeout -= elapsed_time;
+
+                start_time = now;
+            }
+        }
+
+        return result;
+    }
+};
+
+}

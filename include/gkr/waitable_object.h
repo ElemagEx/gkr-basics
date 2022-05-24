@@ -1,6 +1,6 @@
 #pragma once
 
-#include <utility>
+#include <list>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -58,12 +58,24 @@ class waitable_object
     waitable_object           (const waitable_object&) noexcept = delete;
     waitable_object& operator=(const waitable_object&) noexcept = delete;
 
-    waitable_object           (waitable_object&&) noexcept = delete;
-    waitable_object& operator=(waitable_object&&) noexcept = delete;
+protected:
+    waitable_object           (waitable_object&&) noexcept = default;
+    waitable_object& operator=(waitable_object&&) noexcept = default;
+
+    waitable_object() noexcept = default;
+   ~waitable_object() noexcept = default;
+
+private:
+    friend class objects_waiter;
+
+    [[nodiscard]]
+    virtual bool try_consume() = 0;
+
+    virtual bool register_waiter(impl::base_objects_waiter& objects_waiter) = 0;
+
+    virtual bool unregister_waiter(impl::base_objects_waiter& objects_waiter) = 0;
 
 protected:
-    using capacity_t = unsigned short;
-
     struct waiter_t
     {
         waiter_t           (const waiter_t&) noexcept = delete;
@@ -83,111 +95,136 @@ protected:
             return *this;
         }
 
-        std::atomic<impl::base_objects_waiter*> ptr = nullptr;
-    };
-
-protected:
-   ~waitable_object() noexcept = default;
-
-    waitable_object(bool manual_reset, capacity_t capacity, waiter_t* waiters) noexcept
-        : m_manual_reset(manual_reset)
-        , m_capacity(capacity)
-        , m_waiters (waiters )
-    {
-        Assert_Check(m_waiters != nullptr);
-    }
-    waitable_object(waitable_object&& other, capacity_t capacity, waiter_t* waiters) noexcept
-        : m_manual_reset(std::exchange(other.m_manual_reset, false))
-        , m_capacity(capacity)
-        , m_waiters (waiters )
-    {
-        m_signaled.store(other.m_signaled.exchange(false));
-
-        Assert_Check(m_waiters != nullptr);
-    }
-    void assignment(waitable_object&& other, capacity_t capacity, waiter_t* waiters) noexcept
-    {
-        m_manual_reset = std::exchange(other.m_manual_reset, false);
-
-        m_capacity = capacity;
-        m_waiters  = waiters ;
-
-        m_signaled.store(other.m_signaled.exchange(false));
-
-        Assert_Check(m_waiters != nullptr);
-    }
-
-protected:
-    void fire()
-    {
-        bool expected = false;
-
-        if(m_signaled.compare_exchange_strong(expected, true))
-        {
-            for(size_t index = 0; index < m_capacity; ++index)
-            {
-                impl::base_objects_waiter* waiter = m_waiters[index].ptr.load();
-
-                if(waiter != nullptr)
-                {
-                    waiter->notify(m_manual_reset);
-                }
-            }
-        }
-    }
-    void reset()
-    {
-        m_signaled.store(false);
-    }
-    bool try_consume() noexcept
-    {
-        if(m_manual_reset)
-        {
-            return m_signaled.load();
-        }
-        else
-        {
-            bool expected = true;
-
-            return m_signaled.compare_exchange_strong(expected, false);
-        }
-    }
-
-private:
-    friend class objects_waiter;
-
-    bool register_waiter(impl::base_objects_waiter& waiter) noexcept
-    {
-        for(size_t index = 0; index < m_capacity; ++index)
+        bool try_set(impl::base_objects_waiter& objects_waiter)
         {
             impl::base_objects_waiter* expected = nullptr;
 
-            if(m_waiters[index].ptr.compare_exchange_strong(expected, &waiter))
-            {
-                return true;
-            }
+            return ptr.compare_exchange_strong(expected, &objects_waiter);
         }
-        Check_Failure(false);
-    }
-    bool unregister_waiter(impl::base_objects_waiter& waiter) noexcept
-    {
-        for(size_t index = 0; index < m_capacity; ++index)
+        bool try_reset(impl::base_objects_waiter& objects_waiter)
         {
-            impl::base_objects_waiter* expected = &waiter;
+            impl::base_objects_waiter* expected = &objects_waiter;
 
-            if(m_waiters[index].ptr.compare_exchange_strong(expected, nullptr))
-            {
-                return true;
-            }
+            return ptr.compare_exchange_strong(expected, nullptr);
         }
-        Check_Failure(false);
+
+        std::atomic<impl::base_objects_waiter*> ptr = nullptr;
+    };
+
+    void notify_waiter(waiter_t& waiter, bool broadcast)
+    {
+        impl::base_objects_waiter* objects_waiter = waiter.ptr.load();
+
+        if(objects_waiter != nullptr)
+        {
+            objects_waiter->notify(broadcast);
+        }
     }
+};
+
+namespace impl
+{
+
+template<unsigned MaxWaiters>
+class waiter_registrator : public waitable_object
+{
+    waiter_registrator           (const waiter_registrator&) noexcept = delete;
+    waiter_registrator& operator=(const waiter_registrator&) noexcept = delete;
+
+protected:
+    waiter_registrator           (waiter_registrator&&) noexcept = default;
+    waiter_registrator& operator=(waiter_registrator&&) noexcept = default;
+
+    waiter_registrator() noexcept = default;
+   ~waiter_registrator() noexcept = default;
 
 private:
-    std::atomic<bool> m_signaled;
-    bool              m_manual_reset;
-    capacity_t        m_capacity;
-    waiter_t*         m_waiters;
+    waiter_t m_waiters[MaxWaiters] = {};
+
+    bool register_waiter(impl::base_objects_waiter& objects_waiter) override
+    {
+        for(waiter_t& waiter : m_waiters)
+        {
+            if(waiter.try_set(objects_waiter))
+            {
+                return true;
+            }
+        }
+        Check_Failure(false);
+    }
+    bool unregister_waiter(impl::base_objects_waiter& objects_waiter) override
+    {
+        for(waiter_t& waiter : m_waiters)
+        {
+            if(waiter.try_reset(objects_waiter))
+            {
+                return true;
+            }
+        }
+        Check_Failure(false);
+    }
+
+protected:
+    void notify_all_waiters(bool broadcast)
+    {
+        for(waiter_t& waiter : m_waiters)
+        {
+            waitable_object::notify_waiter(waiter, broadcast);
+        }
+    }
 };
+
+template<>
+class waiter_registrator<0> : public waitable_object
+{
+    waiter_registrator           (const waiter_registrator&) noexcept = delete;
+    waiter_registrator& operator=(const waiter_registrator&) noexcept = delete;
+
+protected:
+    waiter_registrator           (waiter_registrator&&) noexcept = default;
+    waiter_registrator& operator=(waiter_registrator&&) noexcept = default;
+
+    waiter_registrator() noexcept = default;
+   ~waiter_registrator() noexcept = default;
+
+private:
+    std::list<waiter_t> m_waiters;
+
+    bool register_waiter(impl::base_objects_waiter& objects_waiter) override
+    {
+        for(waiter_t& waiter : m_waiters)
+        {
+            if(waiter.try_set(objects_waiter))
+            {
+                return true;
+            }
+        }
+        m_waiters.emplace_back();
+        Check_Verify(m_waiters.back().try_set(objects_waiter), false);
+        return true;
+    }
+    bool unregister_waiter(impl::base_objects_waiter& objects_waiter) override
+    {
+        for(waiter_t& waiter : m_waiters)
+        {
+            if(waiter.try_reset(objects_waiter))
+            {
+                return true;
+            }
+        }
+        Check_Failure(false);
+    }
+
+protected:
+    void notify_all_waiters(bool broadcast)
+    {
+        for(waiter_t& waiter : m_waiters)
+        {
+            waitable_object::notify_waiter(waiter, broadcast);
+        }
+    }
+};
+
+}
 
 }

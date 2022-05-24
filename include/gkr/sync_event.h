@@ -1,46 +1,73 @@
 #pragma once
 
 #include "waitable_object.h"
-#include "common.h"
 
 namespace gkr
 {
 
-template<size_t MaxWaiters = 1>
-class sync_event : public waitable_object
+template<unsigned MaxWaiters = 1>
+class sync_event final : public impl::waiter_registrator<MaxWaiters>
 {
-    static_assert(MaxWaiters > 0, "MaxWaiters Must be larger than 0");
-
     sync_event           (const sync_event&) noexcept = delete;
     sync_event& operator=(const sync_event&) noexcept = delete;
 
 public:
-    sync_event(bool manual_reset = false) noexcept
-        : waitable_object(manual_reset, capacity_t(MaxWaiters), m_waiters_storage)
-    {
-    }
-    ~sync_event() noexcept
-    {
-    }
+    sync_event() noexcept = default;
+   ~sync_event() noexcept = default;
 
-    sync_event(sync_event&& other) noexcept
-        : sync_event(other, capacity_t(MaxWaiters), m_waiters_storage)
+    sync_event(bool manual_reset) noexcept : m_manual_reset(manual_reset)
     {
+    }
+    sync_event(sync_event&& other) noexcept : m_manual_reset(other.m_manual_reset)
+    {
+        m_signaled.store(other.m_signaled.exchange(false));
     }
     sync_event& operator=(sync_event&& other) noexcept
     {
-        waitable_object::assignment(other, capacity_t(MaxWaiters), m_waiters_storage);
-        m_waiters_storage = std::move(other.m_waiters_storage);
+        m_manual_reset = other.m_manual_reset;
+
+        m_signaled.store(other.m_signaled.exchange(false));
+
         return *this;
     }
 
+private:
+    using base_t = impl::waiter_registrator<MaxWaiters>;
+
 public:
-    using waitable_object::fire;
-    using waitable_object::reset;
-    using waitable_object::try_consume;
+    void fire()
+    {
+        bool expected = false;
+
+        if(m_signaled.compare_exchange_strong(expected, true))
+        {
+            base_t::notify_all_waiters();
+        }
+    }
+    void reset()
+    {
+        m_signaled.store(false);
+    }
+
+public:
+    [[nodiscard]]
+    bool try_consume() override
+    {
+        if(m_manual_reset)
+        {
+            return m_signaled.load();
+        }
+        else
+        {
+            bool expected = true;
+
+            return m_signaled.compare_exchange_strong(expected, false);
+        }
+    }
 
 private:
-    waiter_t m_waiters_storage[MaxWaiters] = {};
+    std::atomic<bool> m_signaled;
+    bool              m_manual_reset = false;
 };
 
 }

@@ -90,7 +90,6 @@
       <ConformanceMode>true</ConformanceMode>
       <DisableSpecificWarnings>4100;4514;4820;4848;5039;5045</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -107,7 +106,6 @@
       <ConformanceMode>true</ConformanceMode>
       <DisableSpecificWarnings>4100;4514;4820;4848;5039;5045</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,7 +122,6 @@
       <ConformanceMode>true</ConformanceMode>
       <DisableSpecificWarnings>4100;4514;4820;4848;5039;5045</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,7 +138,6 @@
       <ConformanceMode>true</ConformanceMode>
       <DisableSpecificWarnings>4100;4514;4820;4848;5039;5045</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,9 +153,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\gkr\common.h" />
+    <ClInclude Include="..\include\gkr\cpp_feature\lib_raw_memory_algorithms.h" />
     <ClInclude Include="..\include\gkr\sync_event.h" />
     <ClInclude Include="..\include\gkr\lockfree_queue.h" />
     <ClInclude Include="..\include\gkr\objects_waiter.h" />
+    <ClInclude Include="..\include\gkr\sync_mutex.h" />
+    <ClInclude Include="..\include\gkr\sync_semaphore.h" />
     <ClInclude Include="..\include\gkr\waitable_object.h" />
     <ClInclude Include="main.h" />
   </ItemGroup>

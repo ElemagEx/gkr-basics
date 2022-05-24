@@ -342,11 +342,11 @@ private:
 namespace impl
 {
 
-template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, typename ByteAllocator>
 class base_lockfree_queue;
 
-template<typename BaseAllocator>
-class base_lockfree_queue<false, BaseAllocator>
+template<typename ByteAllocator>
+class base_lockfree_queue<false, ByteAllocator>
 {
     base_lockfree_queue           (const base_lockfree_queue&) noexcept = delete;
     base_lockfree_queue& operator=(const base_lockfree_queue&) noexcept = delete;
@@ -373,7 +373,7 @@ protected:
     base_lockfree_queue() noexcept = default;
    ~base_lockfree_queue() noexcept = default;
 
-    base_lockfree_queue(const BaseAllocator&) noexcept(noexcept(BaseAllocator))
+    base_lockfree_queue(const ByteAllocator&) noexcept(noexcept(ByteAllocator))
     {
     }
     base_lockfree_queue(base_lockfree_queue&& other) noexcept
@@ -518,10 +518,10 @@ protected:
         return true;
     }
 };
-template<typename BaseAllocator>
-class base_lockfree_queue<true, BaseAllocator>
+template<typename ByteAllocator>
+class base_lockfree_queue<true, ByteAllocator>
 {
-    using alloc_val_t = typename BaseAllocator::value_type;
+    using alloc_val_t = typename ByteAllocator::value_type;
 
     static_assert(sizeof(alloc_val_t) == 1, "The value_type of base allocator must have size 1 byte");
 
@@ -537,7 +537,7 @@ public:
     policy::producer_consumer_threading threading;
 
 private:
-    BaseAllocator m_allocator;
+    ByteAllocator m_allocator;
 
     std::atomic<size_type> m_count     = 0;
     std::atomic<size_type> m_occupied  = 0;
@@ -561,8 +561,8 @@ protected:
     base_lockfree_queue() noexcept = delete;
    ~base_lockfree_queue() noexcept = default;
 
-    base_lockfree_queue(const BaseAllocator& base_allocator) noexcept(noexcept(BaseAllocator))
-        : m_allocator(base_allocator)
+    base_lockfree_queue(const ByteAllocator& byte_allocator) noexcept(noexcept(ByteAllocator))
+        : m_allocator(byte_allocator)
     {
     }
 
@@ -769,15 +769,15 @@ protected:
 
 }
 
-template<typename T, bool MultipleConsumersMultipleProducersSupport=false, typename TypeAllocator = std::allocator<T>, typename BaseAllocator = std::allocator<char>>
-class lockfree_queue : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
+template<typename T, bool MultipleConsumersMultipleProducersSupport=false, typename TypeAllocator = std::allocator<T>, typename ByteAllocator = std::allocator<char>>
+class lockfree_queue : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, TypeAllocator, BaseAllocator>;
-    using base_t = impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>;
+    using self_t = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, TypeAllocator, ByteAllocator>;
+    using base_t = impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>;
 
 public:
     using base_t::npos;
@@ -794,19 +794,19 @@ public:
 
     lockfree_queue(
         const TypeAllocator& type_allocator = TypeAllocator(),
-        const BaseAllocator& base_allocator = BaseAllocator()
+        const ByteAllocator& byte_allocator = ByteAllocator()
         )
-        noexcept(noexcept(TypeAllocator) && noexcept(BaseAllocator))
-        : base_t     (base_allocator)
+        noexcept(noexcept(TypeAllocator) && noexcept(ByteAllocator))
+        : base_t     (byte_allocator)
         , m_allocator(type_allocator)
     {
     }
     lockfree_queue(
         size_type capacity,
         const TypeAllocator& type_allocator = TypeAllocator(),
-        const BaseAllocator& base_allocator = BaseAllocator()
+        const ByteAllocator& byte_allocator = ByteAllocator()
         )
-        : base_t     (base_allocator)
+        : base_t     (byte_allocator)
         , m_allocator(type_allocator)
     {
         reset(capacity);
@@ -1074,10 +1074,10 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, typename TypeAllocator, typename BaseAllocator>
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAllocator, BaseAllocator> : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, typename TypeAllocator, typename ByteAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAllocator, ByteAllocator> : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>
 {
-    using alloc_val_t = typename BaseAllocator::value_type;
+    using alloc_val_t = typename ByteAllocator::value_type;
 
     static_assert(sizeof(alloc_val_t) == 1, "The value_type of base allocator must have size 1");
 
@@ -1085,8 +1085,8 @@ class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAlloca
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t = lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAllocator, BaseAllocator>;
-    using base_t = impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>;
+    using self_t = lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAllocator, ByteAllocator>;
+    using base_t = impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>;
 
 public:
     using base_t::npos;
@@ -1094,7 +1094,7 @@ public:
     using size_type = typename base_t::size_type;
 
 private:
-    BaseAllocator m_allocator;
+    ByteAllocator m_allocator;
     size_t        m_alignment;
     char*         m_elements  = nullptr;
     size_type     m_size      = 0;
@@ -1110,12 +1110,12 @@ public:
     using size_type = typename base_t::size_type;
 
     lockfree_queue(
-        const BaseAllocator& base_allocator = BaseAllocator(),
+        const ByteAllocator& byte_allocator = ByteAllocator(),
         size_t alignment = alignof(std::max_align_t)
         )
-        noexcept(noexcept(TypeAllocator) && noexcept(BaseAllocator))
-        : base_t     (base_allocator)
-        , m_allocator(base_allocator)
+        noexcept(noexcept(TypeAllocator) && noexcept(ByteAllocator))
+        : base_t     (byte_allocator)
+        , m_allocator(byte_allocator)
         , m_alignment(     alignment)
     {
         Assert_Check(is_power_of_2(alignment));
@@ -1124,20 +1124,29 @@ public:
     lockfree_queue(
         size_type capacity,
         size_type size,
-        const BaseAllocator& base_allocator = BaseAllocator(),
-        size_t alignment = alignof(std::max_align_t)
+        const ByteAllocator& byte_allocator = ByteAllocator()
         )
-        : base_t     (base_allocator)
-        , m_allocator(base_allocator)
-        , m_alignment(     alignment)
+        : base_t     (byte_allocator)
+        , m_allocator(byte_allocator)
+    {
+        reset(capacity, size, 0);
+    }
+    lockfree_queue(
+        size_type capacity,
+        size_type size,
+        size_t alignment,
+        const ByteAllocator& byte_allocator = ByteAllocator()
+        )
+        : base_t     (byte_allocator)
+        , m_allocator(byte_allocator)
     {
         Assert_Check(is_power_of_2(alignment));
         Assert_Check(m_alignment <= alignof(std::max_align_t)); //TODO: NOT IMPLEMENTED: alignment > alignof(std::max_align_t)
-        reset(capacity, size);
+        reset(capacity, size, alignment);
     }
     ~lockfree_queue()
     {
-        reset(0, 0);
+        reset(0, 0, 0);
     }
 
 private:
@@ -1242,14 +1251,20 @@ private:
     }
 
 public:
-    void reset(size_type capacity = npos, size_t size = npos)
+    void reset(size_type capacity = npos, size_t size = npos, size_t alignment = npos)
     {
         if(size != npos)
         {
             m_size = size;
         }
+        if(alignment != npos)
+        {
+            m_alignment = (alignment == 0)
+                ? alignof(std::max_align_t)
+                : alignment;
+        }
 
-        Assert_Check(m_size >= m_alignment); //TODO: NOT IMPLEMENTED: alignment > size
+    //  Assert_Check(m_size >= m_alignment); //TODO: NOT IMPLEMENTED: alignment > size
 
         base_t::hard_reset(
             capacity,

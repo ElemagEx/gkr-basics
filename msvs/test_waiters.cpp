@@ -2,30 +2,55 @@
 
 #include <gkr/objects_waiter.h>
 #include <gkr/sync_event.h>
+#include <gkr/sync_mutex.h>
+#include <gkr/sync_semaphore.h>
 
 gkr::sync_event<> e1;
 gkr::sync_event<> e2;
 
-gkr::objects_waiter waiter;
+gkr::sync_mutex<> m1;
+
+gkr::objects_waiter g_waiter;
+
+//gkr::sync_semaphore<> s1(50);
 
 using namespace std::literals::chrono_literals;
 
 void foo()
 {
-	waiter.wait(10ms, e1, e2);
+//  g_waiter.wait(10ms, e1, e2);
+
+    std::lock_guard<gkr::sync_mutex<>> lock(m1);
+
+    std::this_thread::sleep_for(5s);
 }
 
 int test_waiters()
 {
-	std::thread t1(foo);
-//	std::thread t2(foo);
+    int n = 0;
 
-	std::this_thread::sleep_for(100ms);
 
-	//e1.set();
-	//e2.set();
+//  gkr::sync_event<> e3 = std::move(e1);
 
-	t1.join();
+    std::thread t1(foo);
+//  std::thread t2(foo);
 
-	return 0;
+    std::this_thread::sleep_for(1s);
+
+    g_waiter.wait(gkr::timeout_infinite, m1);
+
+    {
+        std::lock_guard<gkr::sync_mutex<>> lock(m1, std::adopt_lock_t{} );
+
+        ++n;
+    }
+
+//  std::this_thread::sleep_for(100ms);
+
+//  e1.set();
+//  e2.set();
+
+    t1.join();
+
+    return n;
 }

@@ -5,6 +5,7 @@ inline void HALT() { *(int*)0 = 0; }
 inline bool STOP() { HALT(); }
 
 #define Assert_Check(check) if(!(check)) HALT()
+#define Assert_Fail()                    HALT()
 
 #define Check_ValidState(check, ...) if(!(check) && STOP()) return __VA_ARGS__
 #define Check_Failure(          ...)                STOP(); return __VA_ARGS__

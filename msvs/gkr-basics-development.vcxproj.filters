@@ -16,6 +16,9 @@
     <Filter Include="tests">
       <UniqueIdentifier>{aee24dda-78e0-464b-bc07-f25396c99ac6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gkr\cpp_feature">
+      <UniqueIdentifier>{d9501422-a622-4696-b1c2-a9fb2c1956bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\gkr\waitable_object.h">
@@ -34,5 +37,14 @@
       <Filter>gkr</Filter>
     </ClInclude>
     <ClInclude Include="main.h" />
+    <ClInclude Include="..\include\gkr\cpp_feature\lib_raw_memory_algorithms.h">
+      <Filter>gkr\cpp_feature</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\sync_mutex.h">
+      <Filter>gkr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\sync_semaphore.h">
+      <Filter>gkr</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

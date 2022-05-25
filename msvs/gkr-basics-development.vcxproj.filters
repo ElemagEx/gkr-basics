@@ -8,43 +8,74 @@
     <ClCompile Include="test_waiters.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="Test1.cpp" />
+    <ClCompile Include="..\src\thread_worker_base.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\sys\thread_name.cpp">
+      <Filter>src\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="test_thread_worker.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="gkr">
-      <UniqueIdentifier>{e50fce7c-0ddf-43e1-ab6d-66932af6edf0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="tests">
       <UniqueIdentifier>{aee24dda-78e0-464b-bc07-f25396c99ac6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="gkr\cpp_feature">
+    <Filter Include="src">
+      <UniqueIdentifier>{d394b6fc-b848-44bc-b504-9df01431facf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sys">
+      <UniqueIdentifier>{92a0f690-5201-40c5-a84f-d69e8d315b92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{b0507503-464c-471b-987f-d8d3ce4556e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\gkr">
+      <UniqueIdentifier>{e50fce7c-0ddf-43e1-ab6d-66932af6edf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\gkr\cpp_feature">
       <UniqueIdentifier>{d9501422-a622-4696-b1c2-a9fb2c1956bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\gkr\sys">
+      <UniqueIdentifier>{59775b5a-b176-4c03-81b7-4f2ff1fc9b07}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\gkr\waitable_object.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gkr\common.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gkr\sync_event.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gkr\lockfree_queue.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gkr\objects_waiter.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
     </ClInclude>
     <ClInclude Include="main.h" />
     <ClInclude Include="..\include\gkr\cpp_feature\lib_raw_memory_algorithms.h">
-      <Filter>gkr\cpp_feature</Filter>
+      <Filter>include\gkr\cpp_feature</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gkr\sync_mutex.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gkr\sync_semaphore.h">
-      <Filter>gkr</Filter>
+      <Filter>include\gkr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\thread_worker_base.h">
+      <Filter>include\gkr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\lockfree_forward_list.h">
+      <Filter>include\gkr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\sys\stack_alloc.h">
+      <Filter>include\gkr\sys</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

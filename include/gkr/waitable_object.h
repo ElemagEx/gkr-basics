@@ -6,6 +6,7 @@
 #include <condition_variable>
 
 #include "common.h"
+#include "lockfree_forward_list.h"
 
 namespace gkr
 {
@@ -188,7 +189,7 @@ protected:
    ~waiter_registrator() noexcept = default;
 
 private:
-    std::list<waiter_t> m_waiters;
+    lockfree_forward_list<waiter_t> m_waiters;
 
     bool register_waiter(impl::base_objects_waiter& objects_waiter) override
     {
@@ -199,8 +200,7 @@ private:
                 return true;
             }
         }
-        m_waiters.emplace_back();
-        Check_Verify(m_waiters.back().try_set(objects_waiter), false);
+        Check_Verify(m_waiters.emplace_front().try_set(objects_waiter), false);
         return true;
     }
     bool unregister_waiter(impl::base_objects_waiter& objects_waiter) override

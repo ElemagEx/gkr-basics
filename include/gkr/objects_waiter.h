@@ -8,8 +8,15 @@ namespace gkr
 
 using wait_result_t = unsigned;
 
+constexpr size_t maximum_wait_objects = sizeof(wait_result_t) * 8 - 1;
+
 constexpr wait_result_t wait_result_error   = wait_result_t(0x8000'0000);
 constexpr wait_result_t wait_result_timeout = wait_result_t(0);
+
+inline constexpr bool wait_object_is_signalled(wait_result_t wait_result, size_t index)
+{
+    return (wait_result & (wait_result_t(1) << index)) != 0;
+}
 
 constexpr std::chrono::milliseconds timeout_infinite = std::chrono::milliseconds::max ();
 constexpr std::chrono::milliseconds timeout_ignore   = std::chrono::milliseconds::zero();
@@ -134,6 +141,7 @@ public:
     wait_result_t check(size_t count, waitable_object** objects)
     {
         Check_ValidArg(count > 0, wait_result_error);
+        Check_ValidArg(count < maximum_wait_objects, wait_result_error);
         Check_ValidArg(objects != nullptr, wait_result_error);
 
         Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
@@ -160,6 +168,7 @@ public:
         using duration = std::chrono::duration<Rep, Period>;
 
         Check_ValidArg(count > 0, wait_result_error);
+        Check_ValidArg(count < maximum_wait_objects, wait_result_error);
         Check_ValidArg(objects != nullptr, wait_result_error);
 
         Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
@@ -200,6 +209,7 @@ public:
     wait_result_t wait(std::chrono::duration<Rep, Period> timeout, size_t count, waitable_object** objects)
     {
         Check_ValidArg(count > 0, wait_result_error);
+        Check_ValidArg(count < maximum_wait_objects, wait_result_error);
         Check_ValidArg(objects != nullptr, wait_result_error);
 
         Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);

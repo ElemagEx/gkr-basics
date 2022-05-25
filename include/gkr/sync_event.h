@@ -41,7 +41,7 @@ public:
 
         if(m_signaled.compare_exchange_strong(expected, true))
         {
-            base_t::notify_all_waiters();
+            base_t::notify_all_waiters(m_manual_reset);
         }
     }
     void reset()

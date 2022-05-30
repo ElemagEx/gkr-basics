@@ -23,12 +23,12 @@ public:
     {
         Assert_NotImplemented();
         return nullptr;
-    };
+    }
     T* end()
     {
         Assert_NotImplemented();
         return nullptr;
-    };
+    }
     template<typename... Args>
     T& emplace_front(Args&&... args)
     {

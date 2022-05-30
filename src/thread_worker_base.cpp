@@ -12,6 +12,7 @@ thread_worker_base::thread_worker_base()
 
 thread_worker_base::~thread_worker_base()
 {
+    Assert_Check(!joinable());
 }
 
 bool thread_worker_base::run()
@@ -58,11 +59,11 @@ void thread_worker_base::update_wait()
 
 bool thread_worker_base::enqueue_action(action_id_t action, void* param, action_param_deleter_t deleter)
 {
-    std::lock_guard<decltype(m_sync_queue.mutex)> lock(m_sync_queue.mutex);
+    std::lock_guard<decltype(m_sync_queue_mutex)> lock(m_sync_queue_mutex);
 
     Check_ValidState(running(), false);
 
-    m_sync_queue.queue.push({action, param, deleter});
+    m_sync_queue_items.push({action, param, deleter});
 
     m_wake_event.fire();
 
@@ -122,7 +123,6 @@ void thread_worker_base::thread_proc()
     sys::set_current_thread_name(name);
 
     m_running = start();
-
     m_done_event.fire();
 
     do
@@ -196,10 +196,10 @@ void thread_worker_base::dequeue_actions()
     for(item_t item; ; )
     {
         {
-            std::lock_guard<std::mutex> lock(m_sync_queue.mutex);
-            if(m_sync_queue.queue.empty()) return;
-            item = m_sync_queue.queue.front();
-            m_sync_queue.queue.pop();
+            std::lock_guard<decltype(m_sync_queue_mutex)> lock(m_sync_queue_mutex);
+            if(m_sync_queue_items.empty()) return;
+            item = m_sync_queue_items.front();
+            m_sync_queue_items.pop();
         }
 
         do_action(item.action, item.param, nullptr, false);

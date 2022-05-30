@@ -77,5 +77,9 @@
     <ClInclude Include="..\include\gkr\sys\stack_alloc.h">
       <Filter>include\gkr\sys</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\gkr\sys\thread_name.h">
+      <Filter>include\gkr\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="nowarns.h" />
   </ItemGroup>
 </Project>

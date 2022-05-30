@@ -4,6 +4,18 @@
 
 class MyThreadWorker : public gkr::thread_worker_base
 {
+    MyThreadWorker           (const MyThreadWorker&) noexcept = delete;
+    MyThreadWorker& operator=(const MyThreadWorker&) noexcept = delete;
+
+public:
+    MyThreadWorker() = default;
+
+    virtual ~MyThreadWorker()
+    {
+        join(true);
+    }
+
+protected:
     const char* get_name() override
     {
         return "test-thread-0";
@@ -43,21 +55,27 @@ class MyThreadWorker : public gkr::thread_worker_base
     {
     }
 
-public:
+private:
     int sum(int x, int y)
     {
-        if(in_worker_thread())
-        {
-            return (x + y);
-        }
-        else
-        {
-            return execute_action_ex<int>(1, &MyThreadWorker::sum, x, y);
-        }
+        return (x + y);
+    }
+
+public:
+    int sum_in_thread(int x, int y)
+    {
+        return execute_action_ex<int>(1, &MyThreadWorker::sum, x, y);
     }
 };
 
 int test_thread_worker()
 {
+    MyThreadWorker myThread;
+
+    if(myThread.run())
+    {
+        myThread.sum_in_thread(2, 3);
+    }
+
     return 0;
 }

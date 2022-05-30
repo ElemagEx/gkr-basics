@@ -142,16 +142,12 @@ private:
         void*                  param;
         action_param_deleter_t deleter;
     };
-    struct sync_queue_t
-    {
-        std::queue<item_t> queue;
-        std::mutex         mutex;
-    };
-    sync_queue_t m_sync_queue;
+    std::queue<item_t> m_sync_queue_items;
+    std::mutex         m_sync_queue_mutex;
 
 public:
     template<typename R, typename C, typename... Args>
-    R execute_action_ex(int action, /*C* obj, */R (C::*method)(Args...), Args... args)
+    R execute_action_ex(action_id_t action, /*C* obj, */R (C::*method)(Args...), Args... args)
     {
         if(in_worker_thread())
         {
@@ -172,7 +168,7 @@ public:
     }
 #if 0
     template<typename C, typename... Args>
-    void execute_action_ex(int action, /*C* obj, */auto (C::*method)(Args...), Args&&... args)
+    void execute_action_ex(action_id_t action, /*C* obj, */auto (C::*method)(Args...), Args&&... args)
     {
         if(in_worker_thread())
         {

@@ -117,17 +117,17 @@ public:
     }
     Element& value() noexcept
     {
-        Assert_Check(m_element != nullptr);
+        Assert_NotNullPtr(m_element);
         return *m_element;
     }
     Element& operator*() noexcept
     {
-        Assert_Check(m_element != nullptr);
+        Assert_NotNullPtr(m_element);
         return *m_element;
     }
     Element* operator->() noexcept
     {
-        Assert_Check(m_element != nullptr);
+        Assert_NotNullPtr(m_element);
         return m_element;
     }
 
@@ -243,17 +243,17 @@ public:
     }
     Element& value() noexcept
     {
-        Assert_Check(m_element != nullptr);
+        Assert_NotNullPtr(m_element);
         return *m_element;
     }
     Element& operator*() noexcept
     {
-        Assert_Check(m_element != nullptr);
+        Assert_NotNullPtr(m_element);
         return *m_element;
     }
     Element* operator->() noexcept
     {
-        Assert_Check(m_element != nullptr);
+        Assert_NotNullPtr(m_element);
         return m_element;
     }
 

@@ -13,7 +13,7 @@ namespace sys
 {
 bool set_current_thread_name(const char name[max_thread_name_cch])
 {
-	Check_ValidArg(name != nullptr, false);
+	Check_NotNullArg(name, false);
 
 	wchar_t buff[max_thread_name_cch];
 

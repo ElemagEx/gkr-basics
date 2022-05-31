@@ -12,7 +12,10 @@ thread_worker_base::thread_worker_base()
 
 thread_worker_base::~thread_worker_base()
 {
-    Assert_Check(!joinable());
+    Assert_CheckMsg(
+        !joinable(),
+        "The running thread must be joined before being destructed or call Join method in leaf child class destructor"
+        );
 }
 
 bool thread_worker_base::run()

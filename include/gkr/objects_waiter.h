@@ -142,7 +142,8 @@ public:
     {
         Check_ValidArg(count > 0, wait_result_error);
         Check_ValidArg(count < maximum_wait_objects, wait_result_error);
-        Check_ValidArg(objects != nullptr, wait_result_error);
+
+        Check_NotNullArg(objects, wait_result_error);
 
         Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
 
@@ -169,7 +170,8 @@ public:
 
         Check_ValidArg(count > 0, wait_result_error);
         Check_ValidArg(count < maximum_wait_objects, wait_result_error);
-        Check_ValidArg(objects != nullptr, wait_result_error);
+
+        Check_NotNullArg(objects, wait_result_error);
 
         Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
 
@@ -210,7 +212,8 @@ public:
     {
         Check_ValidArg(count > 0, wait_result_error);
         Check_ValidArg(count < maximum_wait_objects, wait_result_error);
-        Check_ValidArg(objects != nullptr, wait_result_error);
+
+        Check_NotNullArg(objects, wait_result_error);
 
         Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
 

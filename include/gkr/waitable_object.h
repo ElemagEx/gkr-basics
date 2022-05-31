@@ -200,7 +200,7 @@ private:
                 return true;
             }
         }
-        Check_Verify(m_waiters.emplace_front().try_set(objects_waiter), false);
+        Verify_BoolRes(m_waiters.emplace_front().try_set(objects_waiter), false);
         return true;
     }
     bool unregister_waiter(impl::base_objects_waiter& objects_waiter) override

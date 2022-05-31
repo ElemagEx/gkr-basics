@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <functional>
 
-#include "common.h"
+#include "diagnostics.h"
 #include "cpp_feature/lib_raw_memory_algorithms.h"
 
 namespace gkr

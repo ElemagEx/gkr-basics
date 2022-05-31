@@ -161,8 +161,8 @@
     <ClCompile Include="test_waiters.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\gkr\common.h" />
     <ClInclude Include="..\include\gkr\cpp_feature\lib_raw_memory_algorithms.h" />
+    <ClInclude Include="..\include\gkr\diagnostics.h" />
     <ClInclude Include="..\include\gkr\lockfree_forward_list.h" />
     <ClInclude Include="..\include\gkr\sync_event.h" />
     <ClInclude Include="..\include\gkr\lockfree_queue.h" />

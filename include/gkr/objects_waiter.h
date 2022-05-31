@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "diagnostics.h"
 #include "waitable_object.h"
 
 namespace gkr

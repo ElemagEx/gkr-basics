@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "common.h"
+#include "diagnostics.h"
 #include "lockfree_forward_list.h"
 
 namespace gkr

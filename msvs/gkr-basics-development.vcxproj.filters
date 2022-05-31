@@ -46,9 +46,6 @@
     <ClInclude Include="..\include\gkr\waitable_object.h">
       <Filter>include\gkr</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\gkr\common.h">
-      <Filter>include\gkr</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\gkr\sync_event.h">
       <Filter>include\gkr</Filter>
     </ClInclude>
@@ -81,5 +78,8 @@
       <Filter>include\gkr\sys</Filter>
     </ClInclude>
     <ClInclude Include="nowarns.h" />
+    <ClInclude Include="..\include\gkr\diagnostics.h">
+      <Filter>include\gkr</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

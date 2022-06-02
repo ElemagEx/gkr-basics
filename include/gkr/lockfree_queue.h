@@ -185,6 +185,23 @@ public:
     {
         return m_element;
     }
+    template<typename T>
+    T* data() noexcept
+    {
+        Assert_Check(alignof(T) <= m_queue.element_alignment());
+        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+
+        return static_cast<T*>(m_element);
+    }
+    template<typename T>
+    T& value() noexcept
+    {
+        Assert_Check(alignof(T) <= m_queue.element_alignment());
+        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+
+        Assert_NotNullPtr(m_element);
+        return *static_cast<T*>(m_element);
+    }
 
 public:
     void cancel_push()
@@ -311,6 +328,23 @@ public:
     {
         return m_element;
     }
+    template<typename T>
+    T* data() noexcept
+    {
+        Assert_Check(alignof(T) <= m_queue.element_alignment());
+        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+
+        return static_cast<T*>(m_element);
+    }
+    template<typename T>
+    T& value() noexcept
+    {
+        Assert_Check(alignof(T) <= m_queue.element_alignment());
+        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+
+        Assert_NotNullPtr(m_element);
+        return *static_cast<T*>(m_element);
+    }
 
 public:
     void cancel_pop()
@@ -342,11 +376,11 @@ private:
 namespace impl
 {
 
-template<bool MultipleConsumersMultipleProducersSupport, typename ByteAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
 class base_lockfree_queue;
 
-template<typename ByteAllocator>
-class base_lockfree_queue<false, ByteAllocator>
+template<typename BaseAllocator>
+class base_lockfree_queue<false, BaseAllocator>
 {
     base_lockfree_queue           (const base_lockfree_queue&) noexcept = delete;
     base_lockfree_queue& operator=(const base_lockfree_queue&) noexcept = delete;
@@ -370,10 +404,10 @@ private:
     bool m_consumer_entry_owned = false;
 
 protected:
-    base_lockfree_queue() noexcept = default;
+    base_lockfree_queue() noexcept = delete;
    ~base_lockfree_queue() noexcept = default;
 
-    base_lockfree_queue(const ByteAllocator&) noexcept(noexcept(ByteAllocator))
+    base_lockfree_queue(const BaseAllocator&) noexcept
     {
     }
     base_lockfree_queue(base_lockfree_queue&& other) noexcept
@@ -420,12 +454,24 @@ public:
     }
 
 protected:
+    bool element_has_value(size_type index) const
+    {
+        Check_ValidArg(index < m_capacity, false);
+
+        const size_t pos = (m_head_pos / m_capacity) * m_capacity + index;
+
+        return (m_head_pos <= pos) && (pos < m_tail_pos);
+    }
     void hard_reset(
         size_type capacity,
         std::function<void(size_type)> destruct_element,
         std::function<void(size_type,size_type)> realloc_elements
         )
     {
+        if(capacity == npos)
+        {
+            capacity = m_capacity;
+        }
         for(size_type pos = m_head_pos; pos < m_tail_pos; ++pos)
         {
             destruct_element(pos % m_capacity);
@@ -435,12 +481,9 @@ protected:
         m_head_pos = 0;
         m_tail_pos = 0;
 
-        if((capacity != npos) && (capacity != m_capacity))
-        {
-            realloc_elements(m_capacity, capacity);
+        realloc_elements(m_capacity, capacity);
 
-            m_capacity = capacity;
-        }
+        m_capacity = capacity;
     }
 
 protected:
@@ -494,7 +537,7 @@ protected:
 
         m_consumer_entry_owned = true;
 
-        const size_t index = (m_head_pos % m_capacity);
+        const size_type index = (m_head_pos % m_capacity);
 
         return index;
     }
@@ -518,13 +561,9 @@ protected:
         return true;
     }
 };
-template<typename ByteAllocator>
-class base_lockfree_queue<true, ByteAllocator>
+template<typename BaseAllocator>
+class base_lockfree_queue<true, BaseAllocator>
 {
-    using alloc_val_t = typename ByteAllocator::value_type;
-
-    static_assert(sizeof(alloc_val_t) == 1, "The value_type of base allocator must have size 1 byte");
-
     base_lockfree_queue           (const base_lockfree_queue&) noexcept = delete;
     base_lockfree_queue& operator=(const base_lockfree_queue&) noexcept = delete;
 
@@ -537,7 +576,14 @@ public:
     policy::producer_consumer_threading threading;
 
 private:
-    ByteAllocator m_allocator;
+    struct dequeues_entry
+    {
+        size_type free_index;
+        size_type busy_index;
+    };
+    using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<dequeues_entry>;
+
+    TypeAllocator m_allocator;
 
     std::atomic<size_type> m_count     = 0;
     std::atomic<size_type> m_occupied  = 0;
@@ -549,20 +595,15 @@ private:
     std::atomic<size_type> m_busy_head = 0;
     std::atomic<size_type> m_busy_tail = 0;
 
-    size_type m_capacity = 0;
-
-    struct dequeues_entry
-    {
-        size_t free_index;
-        size_t busy_index;
-    } *m_dequeues_entries = nullptr;
+    size_type       m_capacity         = 0;
+    dequeues_entry* m_dequeues_entries = nullptr;
 
 protected:
     base_lockfree_queue() noexcept = delete;
    ~base_lockfree_queue() noexcept = default;
 
-    base_lockfree_queue(const ByteAllocator& byte_allocator) noexcept(noexcept(ByteAllocator))
-        : m_allocator(byte_allocator)
+    base_lockfree_queue(const BaseAllocator& allocator) noexcept(noexcept(BaseAllocator))
+        : m_allocator(allocator)
     {
     }
 
@@ -579,11 +620,11 @@ private:
         }
         else
         {
-            m_dequeues_entries = reinterpret_cast<dequeues_entry*>(m_allocator.allocate(sizeof(dequeues_entry) * m_capacity));
+            m_dequeues_entries = reinterpret_cast<dequeues_entry*>(m_allocator.allocate(m_capacity));
 
             std::uninitialized_move_n(other.m_dequeues_entries, m_capacity, m_dequeues_entries);
 
-            other.m_allocator.deallocate(reinterpret_cast<alloc_val_t*>(other.m_dequeues_entries), m_capacity);
+            other.m_allocator.deallocate(other.m_dequeues_entries, m_capacity);
 
             other.m_dequeues_entries = nullptr;
         }
@@ -608,7 +649,7 @@ protected:
     {
         if(m_dequeues_entries != nullptr)
         {
-            m_allocator.deallocate(reinterpret_cast<alloc_val_t*>(m_dequeues_entries), m_capacity);
+            m_allocator.deallocate(m_dequeues_entries, m_capacity);
         }
           threading = std::move(other.  threading);
         m_allocator = std::move(other.m_allocator);
@@ -644,15 +685,32 @@ public:
     }
 
 protected:
+    bool element_has_value(size_type index) const
+    {
+        Check_ValidArg(index < m_capacity, false);
+
+        for(size_t pos = m_busy_head; pos < m_busy_tail; ++pos)
+        {
+            if(index == m_dequeues_entries[pos % m_capacity].busy_index)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     void hard_reset(
         size_type capacity,
         std::function<void(size_type)> destruct_element,
         std::function<void(size_type,size_type)> realloc_elements
         )
     {
+        if(capacity == npos)
+        {
+            capacity = m_capacity;
+        }
         for(size_type pos = m_busy_head; pos < m_busy_tail; ++pos)
         {
-            destruct_element(pos % m_capacity);
+            destruct_element(m_dequeues_entries[pos % m_capacity].busy_index);
         }
 
         m_count     = 0;
@@ -662,15 +720,18 @@ protected:
         m_busy_head = 0;
         m_busy_tail = 0;
 
-        if((capacity != npos) && (capacity != m_capacity))
+        if(capacity != m_capacity)
         {
             if(m_dequeues_entries != nullptr)
             {
-                m_allocator.deallocate(reinterpret_cast<alloc_val_t*>(m_dequeues_entries), m_capacity);
+                m_allocator.deallocate(m_dequeues_entries, m_capacity);
             }
+        }
 
-            realloc_elements(m_capacity, capacity);
+        realloc_elements(m_capacity, capacity);
 
+        if(capacity != m_capacity)
+        {
             m_capacity = capacity;
 
             if(m_capacity == 0)
@@ -679,12 +740,16 @@ protected:
             }
             else
             {
-                m_dequeues_entries = reinterpret_cast<dequeues_entry*>(m_allocator.allocate(sizeof(dequeues_entry) * m_capacity));
+                m_dequeues_entries = m_allocator.allocate(m_capacity);
             }
         }
-        for(size_t index = 0; index < m_capacity; ++index)
+
+        if(m_dequeues_entries != nullptr)
         {
-            m_dequeues_entries[index].free_index = index;
+            for(size_type index = 0; index < m_capacity; ++index)
+            {
+                m_dequeues_entries[index].free_index = index;
+            }
         }
         m_free_head = 0;
         m_free_tail = m_capacity;
@@ -701,7 +766,7 @@ protected:
             return npos;
         }
 
-        const size_t index = m_dequeues_entries[m_free_head++ % m_capacity].free_index;
+        const size_type index = m_dequeues_entries[m_free_head++ % m_capacity].free_index;
 
         return index;
     }
@@ -733,13 +798,13 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
-        if((diff_type)--m_available < 0)
+        if(diff_type(--m_available) < 0)
         {
             ++m_available;
             return npos;
         }
 
-        const size_t index = m_dequeues_entries[m_busy_head++ % m_capacity].busy_index;
+        const size_type index = m_dequeues_entries[m_busy_head++ % m_capacity].busy_index;
 
         return index;
     }
@@ -769,15 +834,15 @@ protected:
 
 }
 
-template<typename T, bool MultipleConsumersMultipleProducersSupport=false, typename TypeAllocator = std::allocator<T>, typename ByteAllocator = std::allocator<char>>
-class lockfree_queue : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>
+template<typename T, bool MultipleConsumersMultipleProducersSupport=false, typename BaseAllocator = std::allocator<char>>
+class lockfree_queue : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, TypeAllocator, ByteAllocator>;
-    using base_t = impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>;
+    using self_t =            lockfree_queue<T, MultipleConsumersMultipleProducersSupport, BaseAllocator>;
+    using base_t = impl::base_lockfree_queue<   MultipleConsumersMultipleProducersSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -786,28 +851,20 @@ public:
     using size_type = typename base_t::size_type;
 
 private:
+    using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<T>;
+
     TypeAllocator m_allocator;
     element_t*    m_elements = nullptr;
 
 public:
-    using size_type = typename base_t::size_type;
-
-    lockfree_queue(
-        const TypeAllocator& type_allocator = TypeAllocator(),
-        const ByteAllocator& byte_allocator = ByteAllocator()
-        )
-        noexcept(noexcept(TypeAllocator) && noexcept(ByteAllocator))
-        : base_t     (byte_allocator)
-        , m_allocator(type_allocator)
+    lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(noexcept(TypeAllocator))
+        : base_t     (allocator)
+        , m_allocator(allocator)
     {
     }
-    lockfree_queue(
-        size_type capacity,
-        const TypeAllocator& type_allocator = TypeAllocator(),
-        const ByteAllocator& byte_allocator = ByteAllocator()
-        )
-        : base_t     (byte_allocator)
-        , m_allocator(type_allocator)
+    lockfree_queue(size_type capacity, const TypeAllocator& allocator = TypeAllocator())
+        : base_t     (allocator)
+        , m_allocator(allocator)
     {
         reset(capacity);
     }
@@ -831,7 +888,13 @@ private:
         {
             m_elements = m_allocator.allocate(base_t::capacity());
 
-            std::uninitialized_move_n(other.m_elements, base_t::capacity(), m_elements);
+            for(size_t index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index))
+                {
+                    ::new (m_elements + index) element_t(std::move(other.m_elements + index));
+                }
+            }
 
             other.m_allocator.deallocate(other.m_elements, base_t::capacity());
 
@@ -857,7 +920,6 @@ public:
         m_allocator = std::move(other.m_allocator);
 
         move_elements(std::move(other));
-
         return *this;
     }
 
@@ -1074,19 +1136,15 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, typename TypeAllocator, typename ByteAllocator>
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAllocator, ByteAllocator> : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, BaseAllocator> : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
 {
-    using alloc_val_t = typename ByteAllocator::value_type;
-
-    static_assert(sizeof(alloc_val_t) == 1, "The value_type of base allocator must have size 1");
-
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t = lockfree_queue<void, MultipleConsumersMultipleProducersSupport, TypeAllocator, ByteAllocator>;
-    using base_t = impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, ByteAllocator>;
+    using self_t =            lockfree_queue<void, MultipleConsumersMultipleProducersSupport, BaseAllocator>;
+    using base_t = impl::base_lockfree_queue<      MultipleConsumersMultipleProducersSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1094,54 +1152,84 @@ public:
     using size_type = typename base_t::size_type;
 
 private:
-    ByteAllocator m_allocator;
-    size_t        m_alignment;
+    using alloc_value_t = std::max_align_t;
+    using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<alloc_value_t>;
+
+    TypeAllocator m_allocator;
     char*         m_elements  = nullptr;
+    size_type     m_offset    = 0;
     size_type     m_size      = 0;
-    size_type     m_pitch     = 0;
+    size_type     m_alignment = 0;
+    size_type     m_padding   = 0;
+    size_type     m_stride    = 0;
 
 private:
-    static const bool is_power_of_2(size_t value)
+    static bool is_power_of_2(size_type value)
     {
         return (value > 0) && ((value & (value - 1)) == 0);
+    }
+    static size_type calc_alignment(size_type size)
+    {
+        size_type alignment;
+
+        for(alignment = 1; (alignment < size) && (alignment < alignof(alloc_value_t)); alignment <<= 1);
+
+        return alignment;
+    }
+    static size_type calc_offset(char* elements, size_type alignment)
+    {
+        Assert_Check(is_power_of_2(alignment));
+
+        const size_type displace = reinterpret_cast<size_type>(elements) & (alignment - 1);
+
+        const size_type offset = (displace == 0) ? 0 : (alignment - displace);
+
+        return offset;
+    }
+    static void calc_stride_and_padding(size_type size, size_type alignment, size_type& stride, size_type& padding)
+    {
+        Assert_Check(is_power_of_2(alignment));
+
+        if(size <= alignment)
+        {
+            stride = alignment;
+        }
+        else if((size & (alignment - 1)) == 0)
+        {
+            stride = size;
+        }
+        else
+        {
+            stride = (size & ~(alignment - 1)) + alignment;
+        }
+        if(alignment <= alignof(alloc_value_t))
+        {
+            padding = 0;
+        }
+        else
+        {
+            padding = alignment - alignof(alloc_value_t);
+        }
     }
 
 public:
     using size_type = typename base_t::size_type;
 
-    lockfree_queue(
-        const ByteAllocator& byte_allocator = ByteAllocator(),
-        size_t alignment = alignof(std::max_align_t)
-        )
-        noexcept(noexcept(TypeAllocator) && noexcept(ByteAllocator))
-        : base_t     (byte_allocator)
-        , m_allocator(byte_allocator)
-        , m_alignment(     alignment)
+    lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(noexcept(BaseAllocator))
+        : base_t     (allocator)
+        , m_allocator(allocator)
     {
-        Assert_Check(is_power_of_2(alignment));
-        Assert_Check(m_alignment <= alignof(std::max_align_t)); //TODO: NOT IMPLEMENTED: alignment > alignof(std::max_align_t)
     }
-    lockfree_queue(
-        size_type capacity,
-        size_type size,
-        const ByteAllocator& byte_allocator = ByteAllocator()
-        )
-        : base_t     (byte_allocator)
-        , m_allocator(byte_allocator)
+    lockfree_queue(size_type capacity, size_type size, const BaseAllocator& allocator = BaseAllocator())
+        : base_t     (allocator)
+        , m_allocator(allocator)
     {
         reset(capacity, size, 0);
     }
-    lockfree_queue(
-        size_type capacity,
-        size_type size,
-        size_t alignment,
-        const ByteAllocator& byte_allocator = ByteAllocator()
-        )
-        : base_t     (byte_allocator)
-        , m_allocator(byte_allocator)
+    lockfree_queue(size_type capacity, size_type size, size_type alignment, const BaseAllocator& allocator = BaseAllocator())
+        : base_t     (allocator)
+        , m_allocator(allocator)
     {
-        Assert_Check(is_power_of_2(alignment));
-        Assert_Check(m_alignment <= alignof(std::max_align_t)); //TODO: NOT IMPLEMENTED: alignment > alignof(std::max_align_t)
         reset(capacity, size, alignment);
     }
     ~lockfree_queue()
@@ -1155,22 +1243,33 @@ private:
         if(m_allocator == other.m_allocator)
         {
             m_elements = std::exchange(other.m_elements, nullptr);
+            m_offset   = std::exchange(other.m_offset  , 0);
         }
         else if(base_t::capacity() == 0)
         {
             m_elements = nullptr;
+            m_offset   = 0;
         }
         else
         {
-            const size_t cb = base_t::capacity() * m_pitch;
+            const size_type cb_elements = base_t::capacity() * m_stride;
+            const size_type cb_memblock = cb_elements + m_padding;
 
-            m_elements = m_allocator.allocate(cb);
+            Assert_Check((cb_memblock % sizeof(alloc_value_t)) == 0);
 
-            std::memcpy(m_elements, other.m_elements, cb);
+            const size_type count = cb_memblock / sizeof(alloc_value_t);
 
-            other.m_allocator.deallocate(other.m_elements, cb);
+            m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            m_offset   = calc_offset(m_elements, m_alignment);
+
+            m_elements += m_offset;
+            std::memcpy(m_elements, other.m_elements, cb_elements);
+
+            other.m_elements -= other.m_offset;
+            other.m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(other.m_elements), count);
 
             other.m_elements = nullptr;
+            other.m_offset   = 0;
         }
     }
 
@@ -1178,9 +1277,10 @@ public:
     lockfree_queue(lockfree_queue&& other) noexcept
         : base_t     (std::move(other))
         , m_allocator(std::move(other.m_allocator))
-        , m_alignment(         (other.m_alignment))
-        , m_size     (std::exchange(other.m_size , 0))
-        , m_pitch    (std::exchange(other.m_pitch, 0))
+        , m_size     (std::exchange(other.m_size     , 0))
+        , m_alignment(std::exchange(other.m_alignment, 0))
+        , m_padding  (std::exchange(other.m_padding  , 0))
+        , m_stride   (std::exchange(other.m_stride   , 0))
     {
         move_elements(std::move(other));
     }
@@ -1190,15 +1290,23 @@ public:
 
         if(m_elements != nullptr)
         {
-            m_allocator.deallocate(m_elements, base_t::capacity());
+            const size_t cb = (base_t::capacity() * m_stride + m_padding);
+
+            Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+            const size_t count = (cb / sizeof(alloc_value_t));
+
+            m_elements -= m_offset;
+            m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
         }
+
         m_allocator = std::move(other.m_allocator);
-        m_alignment =          (other.m_alignment);
-        m_size      = std::exchange(other.m_size , 0);
-        m_pitch     = std::exchange(other.m_pitch, 0);
+        m_size      = std::exchange(other.m_size     , 0);
+        m_alignment = std::exchange(other.m_alignment, 0);
+        m_padding   = std::exchange(other.m_padding  , 0);
+        m_stride    = std::exchange(other.m_stride   , 0);
 
         move_elements(std::move(other));
-
         return *this;
     }
 
@@ -1213,45 +1321,54 @@ public:
     }
 
 private:
-    static constexpr size_type calc_pitch(size_type size, size_type alignment)
-    {
-        if((size % alignment) == 0)
-        {
-            return (size / alignment) * alignment;
-        }
-        else
-        {
-            return (size / alignment) * alignment + alignment;
-        }
-    }
     void destruct_element(size_type index)
     {
     }
     void realloc_elements(size_type old_capacity, size_type new_capacity)
     {
-        const size_t old_pitch = m_pitch;
-        const size_t new_pitch = calc_pitch(m_size, m_alignment);
+        size_type new_stride , old_stride  = m_stride ;
+        size_type new_padding, old_padding = m_padding;
 
-        if((new_capacity != old_capacity) || (new_pitch != old_pitch))
+        calc_stride_and_padding(m_size, m_alignment, new_stride, new_padding);
+
+        if((new_capacity != old_capacity) || (new_stride != old_stride) || (new_padding != old_padding))
         {
             if(m_elements != nullptr)
             {
-                m_allocator.deallocate(reinterpret_cast<alloc_val_t*>(m_elements), old_capacity * old_pitch);
+                const size_t cb = (old_capacity * old_stride + old_padding);
+
+                Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+                const size_t count = (cb / sizeof(alloc_value_t));
+
+                m_elements -= m_offset;
+                m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
             }
             if(new_capacity == 0)
             {
                 m_elements = nullptr;
+                m_offset   = 0;
             }
             else
             {
-                m_elements = reinterpret_cast<char*>(m_allocator.allocate(new_capacity * new_pitch));
+                const size_t cb = (old_capacity * old_stride + old_padding);
+
+                Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+                const size_t count = (cb / sizeof(alloc_value_t));
+
+                m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+                m_offset   = calc_offset(m_elements, m_alignment);
+
+                m_elements += m_offset;
             }
-            m_pitch = new_pitch;
+            m_stride  = new_stride;
+            m_padding = new_padding;
         }
     }
 
 public:
-    void reset(size_type capacity = npos, size_t size = npos, size_t alignment = npos)
+    void reset(size_type capacity = npos, size_type size = npos, size_type alignment = npos)
     {
         if(size != npos)
         {
@@ -1259,13 +1376,12 @@ public:
         }
         if(alignment != npos)
         {
-            m_alignment = (alignment == 0)
-                ? alignof(std::max_align_t)
-                : alignment;
+            m_alignment = alignment;
         }
-
-    //  Assert_Check(m_size >= m_alignment); //TODO: NOT IMPLEMENTED: alignment > size
-
+        if(m_alignment == 0)
+        {
+            m_alignment = calc_alignment(m_size);
+        }
         base_t::hard_reset(
             capacity,
             [this](size_type index) { destruct_element(index); },
@@ -1276,38 +1392,44 @@ public:
 public:
     void* acquire_producer_element()
     {
-        if(m_pitch == 0) return nullptr;
+        if(m_stride == 0) return nullptr;
 
         const size_type index = base_t::take_producer_entry_ownership();
 
         if(index == npos) return nullptr;
 
-        void* element = m_elements + m_pitch * index;
+        void* element = m_elements + m_stride * index;
 
         return element;
     }
     template<class Element>
     Element* acquire_producer_element()
     {
+        Assert_Check(alignof(Element) <= m_alignment);
+        Assert_Check( sizeof(Element) <= m_size     );
+
         return static_cast<Element*>(acquire_producer_element());
     }
 
 public:
     void* acquire_consumer_element()
     {
-        if(m_pitch == 0) return nullptr;
+        if(m_stride == 0) return nullptr;
 
         const size_type index = base_t::take_consumer_entry_ownership();
 
         if(index == npos) return nullptr;
 
-        void* element = m_elements + m_pitch * index;
+        void* element = m_elements + m_stride * index;
 
         return element;
     }
     template<class Element>
     Element* acquire_consumer_element()
     {
+        Assert_Check(alignof(Element) <= m_alignment);
+        Assert_Check( sizeof(Element) <= m_size     );
+
         return static_cast<Element*>(acquire_consumer_element());
     }
 
@@ -1316,7 +1438,7 @@ private:
     {
         if(element == nullptr) return npos;
 
-        const size_type index = size_type(static_cast<char*>(element) - m_elements) / m_pitch;
+        const size_type index = size_type(static_cast<char*>(element) - m_elements) / m_stride;
 
         Check_ValidState(index < base_t::capacity(), npos);
 
@@ -1326,7 +1448,7 @@ private:
 public:
     bool release_producer_element(void* element, bool push)
     {
-        if(m_pitch == 0) return false;
+        if(m_stride == 0) return false;
 
         const size_type index = index_of_element(element);
 
@@ -1334,7 +1456,7 @@ public:
     }
     bool release_consumer_element(void* element, bool pop)
     {
-        if(m_pitch == 0) return false;
+        if(m_stride == 0) return false;
 
         const size_type index = index_of_element(element);
 
@@ -1351,6 +1473,9 @@ public:
     template<typename Element>
     queue_producer_element<self_t, Element> try_start_push()
     {
+        Assert_Check(alignof(Element) <= m_alignment);
+        Assert_Check( sizeof(Element) <= m_size     );
+
         Element* element = acquire_producer_element<Element>();
 
         return queue_producer_element<self_t, Element>(*this, element);
@@ -1365,13 +1490,16 @@ public:
     template<typename Element>
     queue_consumer_element<self_t, Element> try_start_pop()
     {
+        Assert_Check(alignof(Element) <= m_alignment);
+        Assert_Check( sizeof(Element) <= m_size     );
+
         Element* element = acquire_consumer_element<Element>();
 
         return queue_consumer_element<self_t, Element>(*this, element);
     }
 
 public:
-    bool try_push(const void* data = nullptr, size_t size = npos)
+    bool try_push(const void* data = nullptr, size_type size = npos)
     {
         auto producer_element = try_start_push();
 
@@ -1387,7 +1515,7 @@ public:
         }
         return true;
     }
-    bool try_pop(void* data = nullptr, size_t size = npos)
+    bool try_pop(void* data = nullptr, size_type size = npos)
     {
         auto producer_element = try_start_push();
 

@@ -8,7 +8,6 @@
     <ClCompile Include="test_waiters.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="Test1.cpp" />
     <ClCompile Include="..\src\thread_worker_base.cpp">
       <Filter>src</Filter>
     </ClCompile>

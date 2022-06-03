@@ -5,6 +5,8 @@
 #define DIAGS_MODE_STEADY     2 /* Asserts are disabled and other diagnostics only makes notes - default for RELASE builds */
 #define DIAGS_MODE_INTRUSIVE  3 /* All diagnostics stops execution - default for DEBUG builds */
 
+#define DIAG_NOEXCEPT true
+
 #ifndef DIAGS_MODE
 #if defined(_DEBUG)
 #define DIAGS_MODE DIAGS_MODE_INTRUSIVE

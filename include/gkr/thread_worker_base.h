@@ -36,7 +36,7 @@ protected:
     virtual std::chrono::nanoseconds get_wait_timeout() = 0;
 
     virtual size_t get_wait_objects_count() = 0;
-    virtual waitable_object& get_wait_object(size_t index) = 0;
+    virtual waitable_object* get_wait_object(size_t index) = 0;
 
     virtual bool start() = 0;
     virtual void finish() = 0;
@@ -190,14 +190,23 @@ protected:
     void call_action_method(R (C::*method)(Args...), void* param, void* result)
     {
         void** params = reinterpret_cast<void**>(param);
+        //
+        //TODO:Invastigate warnings reason
+        //
 #ifdef _WIN32
         const size_t count = reinterpret_cast<size_t>(*params);
 
         params += count;
 
+        #if defined(__clang__)
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wunsequenced"
         auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+        #pragma clang diagnostic pop
+        #else
+        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+        #endif
 #else
-        //TODO:Invastigate warning reason
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wsequence-point"
         auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params++)...);

@@ -30,10 +30,11 @@ public:
         return nullptr;
     }
     template<typename... Args>
-    T& emplace_front(Args&&... args)
+    T& emplace_front(Args&&...)
     {
         Assert_NotImplemented();
-        return *(T*)nullptr;
+        static T t;
+        return t;
     }
 };
 

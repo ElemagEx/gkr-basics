@@ -7,15 +7,22 @@
 
 #include <thread>
 
-gkr::sync_event<> e1;
-gkr::sync_event<> e2;
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+#endif
 
-gkr::sync_mutex<> m1;
+static gkr::sync_event<> e1;
+static gkr::sync_event<> e2;
 
-gkr::objects_waiter g_waiter;
+static gkr::sync_mutex<> m1;
+
+static gkr::objects_waiter g_waiter;
 
 //gkr::sync_semaphore<> s1(50);
 
+void foo();
 void foo()
 {
 //  g_waiter.wait(10ms, e1, e2);

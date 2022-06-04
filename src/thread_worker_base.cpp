@@ -147,7 +147,9 @@ bool thread_worker_base::acquire_events()
 
     for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
     {
-        m_objects[index] = &get_wait_object(index - OWN_EVENTS_TO_WAIT);
+        m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
+
+        Check_NotNullPtr(m_objects[index], false);
     }
     return true;
 }

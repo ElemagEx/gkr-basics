@@ -207,16 +207,16 @@ public:
     template<typename T>
     T* data() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue.element_alignment());
-        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
 
         return static_cast<T*>(m_element);
     }
     template<typename T>
     T& value() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue.element_alignment());
-        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
 
         Assert_NotNullPtr(m_element);
         return *static_cast<T*>(m_element);
@@ -350,16 +350,16 @@ public:
     template<typename T>
     T* data() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue.element_alignment());
-        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
 
         return static_cast<T*>(m_element);
     }
     template<typename T>
     T& value() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue.element_alignment());
-        Assert_Check( sizeof(T) <= m_queue.element_size     ());
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
 
         Assert_NotNullPtr(m_element);
         return *static_cast<T*>(m_element);

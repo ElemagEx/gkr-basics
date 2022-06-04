@@ -1,6 +1,12 @@
 #pragma once
 
-#ifdef _MSC_VER
+#if defined(__clang__)
+
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wc++17-extensions" //for [[nodiscard]] attribute
+
+#elif defined(_MSC_VER)
 
 #pragma warning(disable:4710) // 'function' : function not inlined
 #pragma warning(disable:4711) // function 'function' selected for inline expansion

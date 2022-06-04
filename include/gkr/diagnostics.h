@@ -127,14 +127,27 @@ for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && (STOP(DIAG_ID_BAD_
 #endif
 
 #ifndef DIAGS_EXTERNAL_API
-#ifdef _WIN32
-extern "C" __declspec(dllimport) void __stdcall DebugBreak();
-#else
 [[noreturn]]
-inline void DebugBreak() { __builtin_trap(); }
+inline void HALT(int, const char*, const char*, int)
+{
+#if defined(__clang__) || defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_MSC_VER)
+    __debugbreak();
 #endif
+}
+#if defined(__clang__)
 [[noreturn]]
-inline void HALT(int, const char*, const char*, int) { DebugBreak(); }
-inline void STOP(int, const char*, const char*, int) { DebugBreak(); }
-inline void NOTE(int, const char*, const char*, int) {}
+#endif
+inline void STOP(int, const char*, const char*, int)
+{
+#if defined(__clang__) || defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_MSC_VER)
+    __debugbreak();
+#endif
+}
+inline void NOTE(int, const char*, const char*, int)
+{
+}
 #endif

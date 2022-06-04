@@ -10,7 +10,7 @@ class MyThreadWorker : public gkr::thread_worker_base
 public:
     MyThreadWorker() = default;
 
-    virtual ~MyThreadWorker()
+    ~MyThreadWorker() override
     {
         join(true);
     }
@@ -35,9 +35,9 @@ protected:
     {
         return 0;
     }
-    gkr::waitable_object& get_wait_object(size_t) override
+    gkr::waitable_object* get_wait_object(size_t) override
     {
-        return *(gkr::waitable_object*)nullptr;
+        return nullptr;
     }
     void on_action(action_id_t action, void* param, void* result) override
     {

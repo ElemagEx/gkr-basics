@@ -10,7 +10,7 @@ using wait_result_t = unsigned;
 
 constexpr size_t maximum_wait_objects = sizeof(wait_result_t) * 8 - 1;
 
-constexpr wait_result_t wait_result_error   = wait_result_t(0x8000'0000);
+constexpr wait_result_t wait_result_error   = wait_result_t(0x80000000);
 constexpr wait_result_t wait_result_timeout = wait_result_t(0);
 
 inline constexpr bool wait_object_is_signalled(wait_result_t wait_result, size_t index)
@@ -163,11 +163,8 @@ public:
 
         return wait(count, objects);
     }
-    template<typename Rep, typename Period>
     wait_result_t wait(size_t count, waitable_object** objects)
     {
-        using duration = std::chrono::duration<Rep, Period>;
-
         Check_ValidArg(count > 0, wait_result_error);
         Check_ValidArg(count < maximum_wait_objects, wait_result_error);
 

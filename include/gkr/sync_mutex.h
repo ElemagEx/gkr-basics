@@ -6,6 +6,12 @@
 
 namespace gkr
 {
+namespace impl
+{
+template<bool> struct std_mutex;
+template<> struct std_mutex<false> { using type = std::mutex; };
+template<> struct std_mutex<true > { using type = std::recursive_mutex; };
+}
 
 template<unsigned MaxWaiters = 1, bool Recursive=false>
 class sync_mutex final : public impl::waiter_registrator<MaxWaiters>
@@ -21,11 +27,7 @@ public:
    ~sync_mutex() noexcept = default;
 
 private:
-    template<bool> struct std_mutex;
-    template<> struct std_mutex<false> { using type = std::mutex; };
-    template<> struct std_mutex<true > { using type = std::recursive_mutex; };
-
-    using mutex_t = typename std_mutex<Recursive>::type;
+    using mutex_t = typename impl::std_mutex<Recursive>::type;
 
     using base_t = impl::waiter_registrator<MaxWaiters>;
 

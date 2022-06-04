@@ -29,7 +29,7 @@ protected:
    ~base_objects_waiter() noexcept = default;
 
 private:
-    friend class waitable_object;
+    friend class ::gkr::waitable_object;
 
     void notify(bool broadcast)
     {
@@ -109,7 +109,7 @@ protected:
             return ptr.compare_exchange_strong(expected, nullptr);
         }
 
-        std::atomic<impl::base_objects_waiter*> ptr = nullptr;
+        std::atomic<impl::base_objects_waiter*> ptr {nullptr};
     };
 
     void notify_waiter(waiter_t& waiter, bool broadcast)

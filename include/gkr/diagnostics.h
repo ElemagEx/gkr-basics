@@ -130,10 +130,11 @@ for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && (STOP(DIAG_ID_BAD_
 #ifdef _WIN32
 extern "C" __declspec(dllimport) void __stdcall DebugBreak();
 #else
+[[noreturn]]
 inline void DebugBreak() { __builtin_trap(); }
 #endif
 [[noreturn]]
-inline void HALT(int id, const char* msg, const char* file, int line) { DebugBreak(); }
-inline void STOP(int id, const char* msg, const char* file, int line) { DebugBreak(); }
-inline void NOTE(int id, const char* msg, const char* file, int line) {}
+inline void HALT(int, const char*, const char*, int) { DebugBreak(); }
+inline void STOP(int, const char*, const char*, int) { DebugBreak(); }
+inline void NOTE(int, const char*, const char*, int) {}
 #endif

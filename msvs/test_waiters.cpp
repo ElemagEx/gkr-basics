@@ -5,6 +5,8 @@
 #include <gkr/sync_mutex.h>
 #include <gkr/sync_semaphore.h>
 
+#include <thread>
+
 gkr::sync_event<> e1;
 gkr::sync_event<> e2;
 
@@ -14,15 +16,13 @@ gkr::objects_waiter g_waiter;
 
 //gkr::sync_semaphore<> s1(50);
 
-using namespace std::literals::chrono_literals;
-
 void foo()
 {
 //  g_waiter.wait(10ms, e1, e2);
 
     std::lock_guard<gkr::sync_mutex<>> lock(m1);
 
-    std::this_thread::sleep_for(5s);
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 }
 
 int test_waiters()
@@ -35,7 +35,7 @@ int test_waiters()
     std::thread t1(foo);
 //  std::thread t2(foo);
 
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     g_waiter.wait(gkr::timeout_infinite, m1);
 

@@ -195,9 +195,13 @@ protected:
 
         params += count;
 
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<std::remove_reference_t<Args>*>(*params--)...);
+        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
 #else
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<std::remove_reference_t<Args>*>(*params++)...);
+        //TODO:Invastigate warning reason
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wsequence-point"
+        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params++)...);
+        #pragma GCC diagnostic pop
 #endif
         if(result != nullptr)
         {
@@ -210,7 +214,7 @@ protected:
     {
         if(can_reply())
         {
-            *static_cast<T*>(m_reentrancy->result) = std::move(value);
+            *static_cast<T*>(m_reentrancy.result) = std::move(value);
             reply_action();
         }
     }
@@ -219,7 +223,7 @@ protected:
     {
         if(can_reply())
         {
-            *static_cast<T*>(m_reentrancy->result) = value;
+            *static_cast<T*>(m_reentrancy.result) = value;
             reply_action();
         }
     }

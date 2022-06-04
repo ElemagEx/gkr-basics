@@ -35,7 +35,7 @@ protected:
     {
         return 0;
     }
-    gkr::waitable_object& get_wait_object(size_t index) override
+    gkr::waitable_object& get_wait_object(size_t) override
     {
         return *(gkr::waitable_object*)nullptr;
     }
@@ -51,7 +51,7 @@ protected:
     void on_wait_timeout() override
     {
     }
-    void on_wait_success(size_t index) override
+    void on_wait_success(size_t) override
     {
     }
 

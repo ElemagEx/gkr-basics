@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+#include <utility>
 #include <type_traits>
 
 #ifndef __cpp_lib_raw_memory_algorithms
@@ -9,7 +11,7 @@ namespace std
 
 template<class InputIt, class Size, class NoThrowForwardIt>
 std::pair<InputIt, NoThrowForwardIt> uninitialized_move_n(InputIt first, Size count, NoThrowForwardIt d_first)
-    noexcept(std::is_nothrow_move_assignable<std::iterator_traits<NoThrowForwardIt>::value_type>::value)
+    noexcept(std::is_nothrow_move_assignable<typename std::iterator_traits<NoThrowForwardIt>::value_type>::value)
 {
     for( ; count > 0; ++d_first, (void) ++first, --count)
     {

@@ -9,7 +9,11 @@ struct V
 
 int test_lockfree_queue()
 {
-    gkr::lockfree_queue<V, false> queue(10);
+    gkr::lockfree_queue<V, false> queue2(10);
+
+    gkr::lockfree_queue<V, false> queue;
+    
+    queue = std::move(queue2);
 
     queue.threading.set_this_thread_as_exclusive_producer();
     queue.threading.any_thread_can_be_producer();

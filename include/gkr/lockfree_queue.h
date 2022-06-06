@@ -39,6 +39,11 @@ public:
         m_consumer_tid = std::exchange(other.m_consumer_tid, thread_id_t());
         return *this;
     }
+    void swap(producer_consumer_threading& other) noexcept
+    {
+        std::swap(m_producer_tid, other.m_producer_tid);
+        std::swap(m_consumer_tid, other.m_consumer_tid);
+    }
 
 public:
     using thread_id_t = std::thread::id;
@@ -400,11 +405,11 @@ private:
     std::atomic<size_type> m_count {0};
 
     size_type m_capacity = 0;
-    size_type m_head_pos = 0;
     size_type m_tail_pos = 0;
+    size_type m_head_pos = 0;
 
-    bool m_producer_owns_element = false;
-    bool m_consumer_owns_element = false;
+    bool m_producer_owns_tail = false;
+    bool m_consumer_owns_head = false;
 
 protected:
     base_lockfree_queue() noexcept = delete;
@@ -417,25 +422,38 @@ protected:
         : threading(std::move(other.threading))
         , m_count  (other.m_count.exchange(0))
         , m_capacity(std::exchange(other.m_capacity, 0))
-        , m_head_pos(std::exchange(other.m_head_pos, 0))
         , m_tail_pos(std::exchange(other.m_tail_pos, 0))
-        , m_producer_owns_element(std::exchange(m_producer_owns_element, false))
-        , m_consumer_owns_element(std::exchange(m_consumer_owns_element, false))
+        , m_head_pos(std::exchange(other.m_head_pos, 0))
+        , m_producer_owns_tail(std::exchange(m_producer_owns_tail, false))
+        , m_consumer_owns_head(std::exchange(m_consumer_owns_head, false))
     {
     }
-    base_lockfree_queue& operator=(base_lockfree_queue&& other) noexcept(true)
+    base_lockfree_queue& operator=(base_lockfree_queue&& other) noexcept
     {
         threading = std::move(other.threading);
 
         m_count   = other.m_count.exchange(0);
 
         m_capacity = std::exchange(other.m_capacity, 0);
-        m_head_pos = std::exchange(other.m_head_pos, 0);
         m_tail_pos = std::exchange(other.m_tail_pos, 0);
+        m_head_pos = std::exchange(other.m_head_pos, 0);
 
-        m_producer_owns_element = std::exchange(other.m_producer_owns_element, false);
-        m_consumer_owns_element = std::exchange(other.m_consumer_owns_element, false);
+        m_producer_owns_tail = std::exchange(other.m_producer_owns_tail, false);
+        m_consumer_owns_head = std::exchange(other.m_consumer_owns_head, false);
         return *this;
+    }
+    void swap(base_lockfree_queue& other) noexcept
+    {
+        threading.swap(other.threading);
+
+        m_count = other.m_count.exchange(m_count);
+
+        std::swap(m_capacity, other.m_capacity);
+        std::swap(m_tail_pos, other.m_tail_pos);
+        std::swap(m_head_pos, other.m_head_pos);
+
+        std::swap(m_producer_owns_tail, other.m_producer_owns_tail);
+        std::swap(m_consumer_owns_head, other.m_consumer_owns_head);
     }
 
 public:
@@ -457,18 +475,26 @@ public:
     }
 
 protected:
-    bool element_has_value(size_type index) const noexcept(DIAG_NOEXCEPT)
+    bool element_has_value(size_type index) const noexcept
     {
-        Check_ValidArg(index < m_capacity, false);
+        if(index >= m_capacity) return false;
 
-        const size_t pos = (m_head_pos / m_capacity) * m_capacity + index;
+        const size_t tail_index = (m_tail_pos % m_capacity);
+        const size_t head_index = (m_head_pos % m_capacity);
 
-        return (m_head_pos <= pos) && (pos < m_tail_pos);
+        if(head_index < tail_index)
+        {
+            return ((head_index <= index) && (index < tail_index));
+        }
+        else
+        {
+            return ((head_index <= index) || (index < tail_index));
+        }
     }
     void hard_reset(
         size_type capacity,
         std::function<void(size_type)> destruct_element,
-        std::function<void(size_type,size_type)> realloc_elements
+        std::function<void(size_type)> realloc_elements
         )
         noexcept(false)
     {
@@ -485,7 +511,10 @@ protected:
         m_head_pos = 0;
         m_tail_pos = 0;
 
-        realloc_elements(m_capacity, capacity);
+        m_producer_owns_tail = false;
+        m_consumer_owns_head = false;
+
+        realloc_elements(capacity);
 
         m_capacity = capacity;
     }
@@ -495,13 +524,13 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
-        Check_ValidState(!m_producer_owns_element, npos);
+        Check_ValidState(!m_producer_owns_tail, npos);
 
         if(m_count == m_capacity)
         {
             return npos;
         }
-        m_producer_owns_element = true;
+        m_producer_owns_tail = true;
 
         const size_type index = (m_tail_pos % m_capacity);
 
@@ -513,11 +542,11 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidState(m_producer_owns_element, false);
+        Check_ValidState(m_producer_owns_tail, false);
 
         Check_ValidArg(index == (m_tail_pos % m_capacity), false);
 
-        m_producer_owns_element = false;
+        m_producer_owns_tail = false;
 
         if(push)
         {
@@ -532,14 +561,14 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
-        Check_ValidState(!m_consumer_owns_element, npos);
+        Check_ValidState(!m_consumer_owns_head, npos);
 
         if(m_count == 0) 
         {
             return npos;
         }
 
-        m_consumer_owns_element = true;
+        m_consumer_owns_head = true;
 
         const size_type index = (m_head_pos % m_capacity);
 
@@ -551,11 +580,11 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidState(m_consumer_owns_element, false);
+        Check_ValidState(m_consumer_owns_head, false);
 
         Check_ValidState(index == (m_head_pos % m_capacity), false);
 
-        m_consumer_owns_element = false;
+        m_consumer_owns_head = false;
 
         if(pop)
         {
@@ -587,57 +616,76 @@ private:
     };
     using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<dequeues_entry>;
 
-    TypeAllocator m_allocator;
+    TypeAllocator   m_allocator;
+    size_type       m_capacity = 0;
+    dequeues_entry* m_entries  = nullptr;
 
     std::atomic<size_type> m_count     {0};
     std::atomic<size_type> m_occupied  {0};
     std::atomic<size_type> m_available {0};
 
-    std::atomic<size_type> m_free_head {0};
     std::atomic<size_type> m_free_tail {0};
+    std::atomic<size_type> m_free_head {0};
 
-    std::atomic<size_type> m_busy_head {0};
     std::atomic<size_type> m_busy_tail {0};
+    std::atomic<size_type> m_busy_head {0};
 
-    size_type       m_capacity         {0};
-    dequeues_entry* m_dequeues_entries {nullptr};
+private:
+    void clear() noexcept(false)
+    {
+        if(m_entries != nullptr)
+        {
+            std::destroy_n(m_entries, m_capacity);
+
+            m_allocator.deallocate(m_entries, m_capacity);
+        }
+    }
 
 protected:
     base_lockfree_queue() noexcept = delete;
-   ~base_lockfree_queue() noexcept = default;
 
     base_lockfree_queue(const BaseAllocator& allocator) noexcept(std::is_nothrow_copy_constructible<BaseAllocator>::value)
         : m_allocator(allocator)
     {
     }
+    ~base_lockfree_queue() noexcept(noexcept(clear()))
+    {
+        clear();
+    }
 
 private:
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
-    static constexpr bool move_is_noexcept =
-        std::is_nothrow_move_constructible<dequeues_entry>::value
-        &&
-        (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
+    static constexpr bool move_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value;
+    static constexpr bool swap_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap::value;
 
-    void move_dequeues(base_lockfree_queue&& other) noexcept(move_is_noexcept)
+    void relocate_entries(dequeues_entry*& entries, TypeAllocator& allocator) noexcept(noexcept(clear()))
     {
         if(m_capacity == 0)
         {
+            entries = nullptr;
         }
+        else
+        {
+            entries = allocator.allocate(m_capacity);
+
+            std::uninitialized_move_n(m_entries, m_capacity, entries);
+
+            clear();
+            m_entries = nullptr;
+        }
+    }
+    void move_entries(base_lockfree_queue&& other) noexcept(move_is_noexcept)
+    {
 #ifdef __cpp_if_constexpr
-        else if constexpr(!move_is_noexcept)
+        if constexpr(!move_is_noexcept)
 #else
-        else if          (!move_is_noexcept)
+        if          (!move_is_noexcept)
 #endif
         {
             if(m_allocator != other.m_allocator)
             {
-                m_dequeues_entries = reinterpret_cast<dequeues_entry*>(m_allocator.allocate(m_capacity));
-
-                std::uninitialized_move_n(other.m_dequeues_entries, m_capacity, m_dequeues_entries);
-
-                other.m_allocator.deallocate(other.m_dequeues_entries, m_capacity);
-                other.m_dequeues_entries = nullptr;
+                other.relocate_entries(m_entries, m_allocator);
                 return;
             }
         }
@@ -649,42 +697,87 @@ private:
         {
             m_allocator = std::move(other.m_allocator);
         }
-        m_dequeues_entries = std::exchange(other.m_dequeues_entries, nullptr);
+        m_entries = std::exchange(other.m_entries, nullptr);
+    }
+    void swap_entries(base_lockfree_queue&& other) noexcept(swap_is_noexcept)
+    {
+#ifdef __cpp_if_constexpr
+        if constexpr(!swap_is_noexcept)
+#else
+        if          (!swap_is_noexcept)
+#endif
+        {
+            if(m_allocator != other.m_allocator)
+            {
+                dequeues_entry* entries = nullptr;
+
+                this->relocate_entries(  entries, other.m_allocator);
+                other.relocate_entries(m_entries,       m_allocator);
+
+                other.m_entries = entries;
+                return;
+            }
+        }
+#ifdef __cpp_if_constexpr
+        if constexpr(AllocatorTraits::propagate_on_container_swap::value)
+#else
+        if          (AllocatorTraits::propagate_on_container_swap::value)
+#endif
+        {
+            std::swap(m_allocator, other.m_allocator);
+        }
+        std::swap(m_entries, other.m_entries);
     }
 
 protected:
-    base_lockfree_queue(base_lockfree_queue&& other) noexcept(move_is_noexcept)
+    base_lockfree_queue(base_lockfree_queue&& other) noexcept(std::is_nothrow_move_constructible<TypeAllocator>::value)
         :   threading(std::move(other.  threading))
-        , m_allocator(AllocatorTraits:: select_on_container_copy_construction(other.m_allocator))
+        , m_allocator(std::move(other.m_allocator))
+        , m_capacity (std::exchange(other.m_capacity, 0))
+        , m_entries  (std::exchange(other.m_entries , nullptr))
         , m_count    (other.m_count    .exchange(0))
         , m_occupied (other.m_occupied .exchange(0))
         , m_available(other.m_available.exchange(0))
-        , m_free_head(other.m_free_head.exchange(0))
         , m_free_tail(other.m_free_tail.exchange(0))
-        , m_busy_head(other.m_busy_head.exchange(0))
+        , m_free_head(other.m_free_head.exchange(0))
         , m_busy_tail(other.m_busy_tail.exchange(0))
-        , m_capacity (std::exchange(other.m_capacity, 0))
+        , m_busy_head(other.m_busy_head.exchange(0))
     {
-        move_dequeues(std::move(other));
     }
-    base_lockfree_queue& operator=(base_lockfree_queue&& other) noexcept(false)
+    base_lockfree_queue& operator=(base_lockfree_queue&& other) noexcept(move_is_noexcept && noexcept(clear()))
     {
-        if(m_dequeues_entries != nullptr)
-        {
-            m_allocator.deallocate(m_dequeues_entries, m_capacity);
-        }
-          threading = std::move(other.  threading);
+        clear();
+
+        threading   = std::move(other.threading);
+
         m_count     = other.m_count    .exchange(0);
         m_occupied  = other.m_occupied .exchange(0);
         m_available = other.m_available.exchange(0);
-        m_free_head = other.m_free_head.exchange(0);
         m_free_tail = other.m_free_tail.exchange(0);
-        m_busy_head = other.m_busy_head.exchange(0);
+        m_free_head = other.m_free_head.exchange(0);
         m_busy_tail = other.m_busy_tail.exchange(0);
-        m_capacity  = std::exchange(other.m_capacity, 0);
+        m_busy_head = other.m_busy_head.exchange(0);
 
-        move_dequeues(std::move(other));
+        move_entries(std::move(other));
+
+        m_capacity  = std::exchange(other.m_capacity, 0);
         return *this;
+    }
+    void swap(base_lockfree_queue& other) noexcept(swap_is_noexcept)
+    {
+        threading.swap(other.threading);
+
+        m_count     = other.m_count    .exchange(m_count    );
+        m_occupied  = other.m_occupied .exchange(m_occupied );
+        m_available = other.m_available.exchange(m_available);
+        m_free_tail = other.m_free_tail.exchange(m_free_tail);
+        m_free_head = other.m_free_head.exchange(m_free_head);
+        m_busy_tail = other.m_busy_tail.exchange(m_busy_tail);
+        m_busy_head = other.m_busy_head.exchange(m_busy_head);
+
+        swap_entries(std::move(other));
+
+        std::swap(m_capacity, other.m_capacity);
     }
 
 public:
@@ -706,13 +799,13 @@ public:
     }
 
 protected:
-    bool element_has_value(size_type index) const noexcept(false)
+    bool element_has_value(size_type index) const noexcept
     {
-        if(m_capacity == 0) return false;
+        if(index >= m_capacity) return false;
 
         for(size_t pos = m_busy_head; pos < m_busy_tail; ++pos)
         {
-            if(index == m_dequeues_entries[pos % m_capacity].busy_index)
+            if(index == m_entries[pos % m_capacity].busy_index)
             {
                 return true;
             }
@@ -722,7 +815,7 @@ protected:
     void hard_reset(
         size_type capacity,
         std::function<void(size_type)> destruct_element,
-        std::function<void(size_type,size_type)> realloc_elements
+        std::function<void(size_type)> realloc_elements
         )
         noexcept(false)
     {
@@ -732,7 +825,7 @@ protected:
         }
         for(size_type pos = m_busy_head; pos < m_busy_tail; ++pos)
         {
-            destruct_element(m_dequeues_entries[pos % m_capacity].busy_index);
+            destruct_element(m_entries[pos % m_capacity].busy_index);
         }
 
         m_count     = 0;
@@ -744,13 +837,10 @@ protected:
 
         if(m_capacity != capacity)
         {
-            if(m_dequeues_entries != nullptr)
-            {
-                m_allocator.deallocate(m_dequeues_entries, m_capacity);
-            }
+            clear();
         }
 
-        realloc_elements(m_capacity, capacity);
+        realloc_elements(capacity);
 
         if(m_capacity != capacity)
         {
@@ -758,19 +848,21 @@ protected:
 
             if(m_capacity == 0)
             {
-                m_dequeues_entries = nullptr;
+                m_entries = nullptr;
             }
             else
             {
-                m_dequeues_entries = m_allocator.allocate(m_capacity);
+                m_entries = m_allocator.allocate(m_capacity);
+
+                std::uninitialized_default_construct_n(m_entries, m_capacity);
             }
         }
 
-        if(m_dequeues_entries != nullptr)
+        if(m_entries != nullptr)
         {
             for(size_type index = 0; index < m_capacity; ++index)
             {
-                m_dequeues_entries[index].free_index = index;
+                m_entries[index].free_index = index;
             }
         }
         m_free_head = 0;
@@ -788,7 +880,7 @@ protected:
             return npos;
         }
 
-        const size_type index = m_dequeues_entries[m_free_head++ % m_capacity].free_index;
+        const size_type index = m_entries[m_free_head++ % m_capacity].free_index;
 
         return index;
     }
@@ -802,13 +894,13 @@ protected:
 
         if(push)
         {
-            m_dequeues_entries[m_busy_tail++ % m_capacity].busy_index = index;
+            m_entries[m_busy_tail++ % m_capacity].busy_index = index;
 
             ++m_available;
         }
         else
         {
-            m_dequeues_entries[--m_free_head % m_capacity].free_index = index;
+            m_entries[--m_free_head % m_capacity].free_index = index;
 
             --m_occupied;
         }
@@ -826,7 +918,7 @@ protected:
             return npos;
         }
 
-        const size_type index = m_dequeues_entries[m_busy_head++ % m_capacity].busy_index;
+        const size_type index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
         return index;
     }
@@ -840,13 +932,13 @@ protected:
 
         if(pop)
         {
-            m_dequeues_entries[m_free_tail++ % m_capacity].free_index = index;
+            m_entries[m_free_tail++ % m_capacity].free_index = index;
 
             --m_occupied;
         }
         else
         {
-            m_dequeues_entries[--m_busy_head % m_capacity].busy_index = index;
+            m_entries[--m_busy_head % m_capacity].busy_index = index;
 
             ++m_available;
         }
@@ -878,13 +970,51 @@ private:
     TypeAllocator m_allocator;
     element_t*    m_elements = nullptr;
 
+private:
+    void clear() noexcept(false)
+    {
+        if(m_elements != nullptr)
+        {
+            for(size_t index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index))
+                {
+                    std::destroy_at(m_elements + index);
+                }
+            }
+            m_allocator.deallocate(m_elements, base_t::capacity());
+        }
+    }
+    void destruct_element(size_type index) noexcept(std::is_nothrow_destructible<element_t>::value)
+    {
+        std::destroy_at(m_elements + index);
+    }
+    void realloc_elements(size_type new_capacity) noexcept(false)
+    {
+        if(new_capacity != base_t::capacity())
+        {
+            if(m_elements != nullptr)
+            {
+                m_allocator.deallocate(m_elements, base_t::capacity());
+            }
+            if(new_capacity == 0)
+            {
+                m_elements = nullptr;
+            }
+            else
+            {
+                m_elements = m_allocator.allocate(new_capacity);
+            }
+        }
+    }
+
 public:
     void reset(size_type capacity = npos) noexcept(false)
     {
         base_t::hard_reset(
             capacity,
             [this](size_type index) { destruct_element(index); },
-            [this](size_type old_capacity, size_type new_capacity) { realloc_elements(old_capacity, new_capacity); }
+            [this](size_type new_capacity) { realloc_elements(new_capacity); }
             );
     }
 
@@ -900,43 +1030,51 @@ public:
     {
         reset(capacity);
     }
-    ~lockfree_queue() noexcept(noexcept(reset()))
+    ~lockfree_queue() noexcept(noexcept(clear()))
     {
-        reset(0);
+        clear();
     }
 
 private:
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
-    static constexpr bool move_is_noexcept =
-        std::is_nothrow_move_constructible<element_t>::value
-        &&
-        (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
+    static constexpr bool move_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value;
+    static constexpr bool swap_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap::value;
 
-    void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
+    void relocate_elements(element_t*& elements, TypeAllocator& allocator) noexcept(false)
     {
         if(base_t::capacity() == 0)
         {
+            elements = nullptr;
         }
+        else
+        {
+            elements = allocator.allocate(base_t::capacity());
+
+            for(size_t index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index))
+                {
+                    ::new (elements + index) element_t(std::move(m_elements[index]));
+
+                    std::destroy_at(m_elements + index);
+                }
+            }
+            m_allocator.deallocate(m_elements, base_t::capacity());
+            m_elements = nullptr;
+        }
+    }
+    void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
+    {
 #ifdef __cpp_if_constexpr
-        else if constexpr(!move_is_noexcept)
+        if constexpr(!move_is_noexcept)
 #else
-        else if          (!move_is_noexcept)
+        if          (!move_is_noexcept)
 #endif
         {
             if(m_allocator != other.m_allocator)
             {
-                m_elements = reinterpret_cast<element_t*>(m_allocator.allocate(base_t::capacity()));
-
-                for(size_t index = 0; index < base_t::capacity(); ++index)
-                {
-                    if(base_t::element_has_value(index))
-                    {
-                        ::new (m_elements + index) element_t(std::move(other.m_elements[index]));
-                    }
-                }
-                other.m_allocator.deallocate(other.m_elements, base_t::capacity());
-                other.m_elements = nullptr;
+                other.relocate_elements(m_elements, m_allocator);
                 return;
             }
         }
@@ -950,13 +1088,42 @@ private:
         }
         m_elements = std::exchange(other.m_elements, nullptr);
     }
+    void swap_elements(lockfree_queue&& other) noexcept(swap_is_noexcept)
+    {
+#ifdef __cpp_if_constexpr
+        if constexpr(!swap_is_noexcept)
+#else
+        if          (!swap_is_noexcept)
+#endif
+        {
+            if(m_allocator != other.m_allocator)
+            {
+                element_t* elements = nullptr;
+
+                this->relocate_elements(  elements, other.m_allocator);
+                other.relocate_elements(m_elements,       m_allocator);
+
+                other.m_elements = elements;
+                return;
+            }
+        }
+#ifdef __cpp_if_constexpr
+        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+#else
+        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
+#endif
+        {
+            m_allocator = std::swap(other.m_allocator);
+        }
+        m_elements = std::swap(other.m_elements);
+    }
 
 public:
-    lockfree_queue(lockfree_queue&& other) noexcept(move_is_noexcept)
+    lockfree_queue(lockfree_queue&& other) noexcept(std::is_nothrow_move_constructible<TypeAllocator>::value)
         : base_t     (std::move(other))
-        , m_allocator(AllocatorTraits::select_on_container_copy_construction(other.m_allocator))
+        , m_allocator(std::move(other.m_allocator))
+        , m_elements (std::exchange(other.m_elements, nullptr))
     {
-        move_elements(std::move(other));
     }
     lockfree_queue& operator=(lockfree_queue&& other) noexcept(false)
     {
@@ -964,20 +1131,21 @@ public:
         {
             return *this;
         }
-        base_t::operator=(std::move(other));
-
-        if(m_elements != nullptr)
-        {
-            m_allocator.deallocate(m_elements, base_t::capacity());
-        }
+        clear();
         move_elements(std::move(other));
+
+        base_t::operator=(std::move(other));
         return *this;
     }
-    void swap(lockfree_queue& other) noexcept(move_is_noexcept)
+    void swap(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        lockfree_queue queue(std::move(other));
-        other = std::move(*this);
-        *this = std::move(queue);
+        if(this == std::addressof(other))
+        {
+            return;
+        }
+        swap_elements(other);
+
+        base_t::swap(other);
     }
 
 public:
@@ -988,30 +1156,6 @@ public:
     size_type element_size() const noexcept
     {
         return (size_type)sizeof(element_t);
-    }
-
-private:
-    void destruct_element(size_type index) noexcept(std::is_nothrow_destructible<element_t>::value)
-    {
-        std::destroy_at(m_elements + index);
-    }
-    void realloc_elements(size_type old_capacity, size_type new_capacity) noexcept(false)
-    {
-        if(new_capacity != old_capacity)
-        {
-            if(m_elements != nullptr)
-            {
-                m_allocator.deallocate(m_elements, old_capacity);
-            }
-            if(new_capacity == 0)
-            {
-                m_elements = nullptr;
-            }
-            else
-            {
-                m_elements = m_allocator.allocate(new_capacity);
-            }
-        }
     }
 
 public:
@@ -1253,7 +1397,7 @@ private:
 
         return alignment;
     }
-    static size_type calc_offset(char* elements, size_type alignment) noexcept
+    static size_type calc_offset(char* elements, size_type alignment) noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(is_power_of_2(alignment));
 
@@ -1263,7 +1407,7 @@ private:
 
         return offset;
     }
-    static void calc_stride_and_padding(size_type size, size_type alignment, size_type& stride, size_type& padding) noexcept(false)
+    static void calc_stride_and_padding(size_type size, size_type alignment, size_type& stride, size_type& padding) noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(is_power_of_2(alignment));
 
@@ -1289,124 +1433,9 @@ private:
         }
     }
 
-public:
-    void reset(size_type capacity = npos, size_type size = npos, size_type alignment = npos) noexcept(false)
-    {
-        if(size != npos)
-        {
-            m_size = size;
-        }
-        if(alignment != npos)
-        {
-            m_alignment = alignment;
-        }
-        if(m_alignment == 0)
-        {
-            m_alignment = calc_alignment(m_size);
-        }
-        base_t::hard_reset(
-            capacity,
-            [this](size_type index) { destruct_element(index); },
-            [this](size_type old_capacity, size_type new_capacity) { realloc_elements(old_capacity, new_capacity); }
-            );
-    }
-
-public:
-    lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(std::is_nothrow_copy_constructible<BaseAllocator>::value)
-        : base_t     (allocator)
-        , m_allocator(allocator)
-    {
-    }
-    lockfree_queue(size_type capacity, size_type size, const BaseAllocator& allocator = BaseAllocator()) noexcept(noexcept(reset()))
-        : base_t     (allocator)
-        , m_allocator(allocator)
-    {
-        reset(capacity, size, 0);
-    }
-    lockfree_queue(size_type capacity, size_type size, size_type alignment, const BaseAllocator& allocator = BaseAllocator()) noexcept(noexcept(reset()))
-        : base_t     (allocator)
-        , m_allocator(allocator)
-    {
-        reset(capacity, size, alignment);
-    }
-    ~lockfree_queue() noexcept(noexcept(reset()))
-    {
-        reset(0, 0, 0);
-    }
-
 private:
-    using AllocatorTraits = std::allocator_traits<TypeAllocator>;
-
-    static constexpr bool move_is_noexcept =
-        DIAG_NOEXCEPT
-        &&
-        (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
-
-    void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
+    void clear() noexcept(false)
     {
-        if(base_t::capacity() == 0)
-        {
-        }
-#ifdef __cpp_if_constexpr
-        else if constexpr(!move_is_noexcept)
-#else
-        else if          (!move_is_noexcept)
-#endif
-        {
-            if(m_allocator != other.m_allocator)
-            {
-                const size_type cb_elements = base_t::capacity() * m_stride;
-                const size_type cb_memblock = cb_elements + m_padding;
-
-                Assert_Check((cb_memblock % sizeof(alloc_value_t)) == 0);
-
-                const size_type count = cb_memblock / sizeof(alloc_value_t);
-
-                m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
-                m_offset   = calc_offset(m_elements, m_alignment);
-
-                m_elements += m_offset;
-                std::memcpy(m_elements, other.m_elements, cb_elements);
-
-                other.m_elements -= other.m_offset;
-                other.m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(other.m_elements), count);
-
-                other.m_elements = nullptr;
-                other.m_offset   = 0;
-                return;
-            }
-        }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
-#endif
-        {
-            m_allocator = std::move(other.m_allocator);
-        }
-        m_elements = std::exchange(other.m_elements, nullptr);
-        m_offset   = std::exchange(other.m_offset  , 0);
-    }
-
-public:
-    lockfree_queue(lockfree_queue&& other) noexcept(move_is_noexcept)
-        : base_t     (std::move(other))
-        , m_allocator(AllocatorTraits::select_on_container_copy_construction(other.m_allocator))
-        , m_size     (std::exchange(other.m_size     , 0))
-        , m_alignment(std::exchange(other.m_alignment, 0))
-        , m_padding  (std::exchange(other.m_padding  , 0))
-        , m_stride   (std::exchange(other.m_stride   , 0))
-    {
-        move_elements(std::move(other));
-    }
-    lockfree_queue& operator=(lockfree_queue&& other) noexcept
-    {
-        if(this == std::addressof(other))
-        {
-            return *this;
-        }
-        base_t::operator=(std::move(other));
-
         if(m_elements != nullptr)
         {
             const size_t cb = (base_t::capacity() * m_stride + m_padding);
@@ -1418,50 +1447,21 @@ public:
             m_elements -= m_offset;
             m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
         }
-
-        m_size      = std::exchange(other.m_size     , 0);
-        m_alignment = std::exchange(other.m_alignment, 0);
-        m_padding   = std::exchange(other.m_padding  , 0);
-        m_stride    = std::exchange(other.m_stride   , 0);
-
-        move_elements(std::move(other));
-        return *this;
     }
-
-public:
-    size_type element_alignment() const noexcept
-    {
-        return m_alignment;
-    }
-    size_type element_size() const noexcept
-    {
-        return m_size;
-    }
-
-private:
     void destruct_element(size_type) noexcept
     {
     }
-    void realloc_elements(size_type old_capacity, size_type new_capacity) noexcept(false)
+    void realloc_elements(size_type new_capacity) noexcept(false)
     {
-        size_type new_stride , old_stride  = m_stride ;
-        size_type new_padding, old_padding = m_padding;
+        size_type new_stride ;
+        size_type new_padding;
 
         calc_stride_and_padding(m_size, m_alignment, new_stride, new_padding);
 
-        if((new_capacity != old_capacity) || (new_stride != old_stride) || (new_padding != old_padding))
+        if((new_capacity != base_t::capacity()) || (new_stride != m_stride) || (new_padding != m_padding))
         {
-            if(m_elements != nullptr)
-            {
-                const size_t cb = (old_capacity * old_stride + old_padding);
+            clear();
 
-                Assert_Check((cb % sizeof(alloc_value_t)) == 0);
-
-                const size_t count = (cb / sizeof(alloc_value_t));
-
-                m_elements -= m_offset;
-                m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
-            }
             if(new_capacity == 0)
             {
                 m_elements = nullptr;
@@ -1483,6 +1483,196 @@ private:
             m_stride  = new_stride;
             m_padding = new_padding;
         }
+    }
+
+public:
+    void reset(size_type capacity = npos, size_type size = npos, size_type alignment = npos) noexcept(false)
+    {
+        if(size != npos)
+        {
+            m_size = size;
+        }
+        if(alignment != npos)
+        {
+            m_alignment = alignment;
+        }
+        if(m_alignment == 0)
+        {
+            m_alignment = calc_alignment(m_size);
+        }
+        base_t::hard_reset(
+            capacity,
+            [this](size_type index) { destruct_element(index); },
+            [this](size_type new_capacity) { realloc_elements(new_capacity); }
+            );
+    }
+
+public:
+    lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(std::is_nothrow_copy_constructible<BaseAllocator>::value)
+        : base_t     (allocator)
+        , m_allocator(allocator)
+    {
+    }
+    lockfree_queue(size_type capacity, size_type size, const BaseAllocator& allocator = BaseAllocator()) noexcept(noexcept(reset()))
+        : base_t     (allocator)
+        , m_allocator(allocator)
+    {
+        reset(capacity, size, 0);
+    }
+    lockfree_queue(size_type capacity, size_type size, size_type alignment, const BaseAllocator& allocator = BaseAllocator()) noexcept(noexcept(reset()))
+        : base_t     (allocator)
+        , m_allocator(allocator)
+    {
+        reset(capacity, size, alignment);
+    }
+    ~lockfree_queue() noexcept(noexcept(clear()))
+    {
+        clear();
+    }
+
+private:
+    using AllocatorTraits = std::allocator_traits<TypeAllocator>;
+
+    static constexpr bool move_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value;
+    static constexpr bool swap_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap::value;
+
+    void relocate_elements(size_t& offset, char*& elements, TypeAllocator& allocator) noexcept(false)
+    {
+        if(base_t::capacity() == 0)
+        {
+            elements = nullptr;
+        }
+        else
+        {
+            const size_t cb = (base_t::capacity() * m_stride + m_padding);
+
+            Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+            const size_t count = (cb / sizeof(alloc_value_t));
+
+            elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            offset   = calc_offset(elements, m_alignment);
+
+            elements += offset;
+
+            std::memcpy(elements, m_elements, cb);
+
+            m_elements -= m_offset;
+            m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
+            m_elements = nullptr;
+            m_offset   = 0;
+        }
+    }
+    void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
+    {
+#ifdef __cpp_if_constexpr
+        if constexpr(!move_is_noexcept)
+#else
+        if          (!move_is_noexcept)
+#endif
+        {
+            if(m_allocator != other.m_allocator)
+            {
+                other.relocate_elements(m_offset, m_elements, m_allocator);
+                return;
+            }
+        }
+#ifdef __cpp_if_constexpr
+        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+#else
+        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
+#endif
+        {
+            m_allocator = std::move(other.m_allocator);
+        }
+        m_elements = std::exchange(other.m_elements, nullptr);
+        m_offset   = std::exchange(other.m_offset  , 0);
+    }
+    void swap_elements(lockfree_queue&& other) noexcept(swap_is_noexcept)
+    {
+#ifdef __cpp_if_constexpr
+        if constexpr(!swap_is_noexcept)
+#else
+        if          (!swap_is_noexcept)
+#endif
+        {
+            if(m_allocator != other.m_allocator)
+            {
+                size_t offset   = 0;
+                char*  elements = nullptr;
+
+                this->relocate_elements(  offset,   elements, other.m_allocator);
+                other.relocate_elements(m_offset, m_elements,       m_allocator);
+
+                other.m_elements = elements;
+                other.m_offset   = offset;
+                return;
+            }
+        }
+#ifdef __cpp_if_constexpr
+        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+#else
+        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
+#endif
+        {
+            m_allocator = std::swap(other.m_allocator);
+        }
+        m_elements = std::swap(other.m_elements);
+    }
+
+public:
+    lockfree_queue(lockfree_queue&& other) noexcept(std::is_nothrow_move_constructible<TypeAllocator>::value)
+        : base_t     (std::move(other))
+        , m_allocator(std::move(other.m_allocator))
+        , m_elements (std::exchange(other.m_elements , nullptr))
+        , m_offset   (std::exchange(other.m_offset   , 0))
+        , m_size     (std::exchange(other.m_size     , 0))
+        , m_alignment(std::exchange(other.m_alignment, 0))
+        , m_padding  (std::exchange(other.m_padding  , 0))
+        , m_stride   (std::exchange(other.m_stride   , 0))
+    {
+    }
+    lockfree_queue& operator=(lockfree_queue&& other) noexcept(false)
+    {
+        if(this == std::addressof(other))
+        {
+            return *this;
+        }
+        clear();
+        move_elements(std::move(other));
+
+        m_size      = std::exchange(other.m_size     , 0);
+        m_alignment = std::exchange(other.m_alignment, 0);
+        m_padding   = std::exchange(other.m_padding  , 0);
+        m_stride    = std::exchange(other.m_stride   , 0);
+
+        base_t::operator=(std::move(other));
+        return *this;
+    }
+    void swap(lockfree_queue&& other) noexcept(false)
+    {
+        if(this == std::addressof(other))
+        {
+            return;
+        }
+        swap_elements(other);
+
+        m_size      = std::swap(other.m_size     );
+        m_alignment = std::swap(other.m_alignment);
+        m_padding   = std::swap(other.m_padding  );
+        m_stride    = std::swap(other.m_stride   );
+
+        base_t::swap(other);
+    }
+
+public:
+    size_type element_alignment() const noexcept
+    {
+        return m_alignment;
+    }
+    size_type element_size() const noexcept
+    {
+        return m_size;
     }
 
 public:

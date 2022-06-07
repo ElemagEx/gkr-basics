@@ -1113,9 +1113,9 @@ private:
         if          (AllocatorTraits::propagate_on_container_move_assignment::value)
 #endif
         {
-            m_allocator = std::swap(other.m_allocator);
+            std::swap(m_allocator, other.m_allocator);
         }
-        m_elements = std::swap(other.m_elements);
+        std::swap(m_elements, other.m_elements);
     }
 
 public:
@@ -1550,7 +1550,7 @@ private:
 
             const size_t count = (cb / sizeof(alloc_value_t));
 
-            elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            elements = reinterpret_cast<char*>(allocator.allocate(count));
             offset   = calc_offset(elements, m_alignment);
 
             elements += offset;
@@ -1615,9 +1615,9 @@ private:
         if          (AllocatorTraits::propagate_on_container_move_assignment::value)
 #endif
         {
-            m_allocator = std::swap(other.m_allocator);
+            std::swap(m_allocator, other.m_allocator);
         }
-        m_elements = std::swap(other.m_elements);
+        std::swap(m_elements, other.m_elements);
     }
 
 public:

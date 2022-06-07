@@ -12,7 +12,7 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "/EHsc /Wall /FInowarns.h")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_DEBUG")
 else()
-    set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra -Wpedantic -Wconversion")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 endif()
 

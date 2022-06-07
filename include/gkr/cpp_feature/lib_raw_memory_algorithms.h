@@ -49,6 +49,6 @@ ForwardIt destroy_n(ForwardIt first, Size count)
     }
     return first;
 }
-};
+}
 
 #endif

@@ -7,7 +7,6 @@
 #include <cstring>
 #include <cstddef>
 #include <algorithm>
-#include <functional>
 #include <type_traits>
 
 #include "diagnostics.h"
@@ -491,32 +490,15 @@ protected:
             return ((head_index <= index) || (index < tail_index));
         }
     }
-    void hard_reset(
-        size_type capacity,
-        std::function<void(size_type)> destruct_element,
-        std::function<void(size_type)> realloc_elements
-        )
-        noexcept(false)
+    void reset(size_type capacity) noexcept
     {
-        if(capacity == npos)
-        {
-            capacity = m_capacity;
-        }
-        for(size_type pos = m_head_pos; pos < m_tail_pos; ++pos)
-        {
-            destruct_element(pos % m_capacity);
-        }
-
         m_count    = 0;
+        m_capacity = capacity;
         m_head_pos = 0;
         m_tail_pos = 0;
 
         m_producer_owns_tail = false;
         m_consumer_owns_head = false;
-
-        realloc_elements(capacity);
-
-        m_capacity = capacity;
     }
 
 protected:
@@ -812,38 +794,12 @@ protected:
         }
         return false;
     }
-    void hard_reset(
-        size_type capacity,
-        std::function<void(size_type)> destruct_element,
-        std::function<void(size_type)> realloc_elements
-        )
-        noexcept(false)
+    void reset(size_type capacity) noexcept(false)
     {
-        if(capacity == npos)
-        {
-            capacity = m_capacity;
-        }
-        for(size_type pos = m_busy_head; pos < m_busy_tail; ++pos)
-        {
-            destruct_element(m_entries[pos % m_capacity].busy_index);
-        }
-
-        m_count     = 0;
-        m_occupied  = 0;
-        m_available = 0;
-
-        m_busy_head = 0;
-        m_busy_tail = 0;
-
-        if(m_capacity != capacity)
+        if(capacity != m_capacity)
         {
             clear();
-        }
 
-        realloc_elements(capacity);
-
-        if(m_capacity != capacity)
-        {
             m_capacity = capacity;
 
             if(m_capacity == 0)
@@ -857,14 +813,17 @@ protected:
                 std::uninitialized_default_construct_n(m_entries, m_capacity);
             }
         }
-
-        if(m_entries != nullptr)
+        for(size_type index = 0; index < m_capacity; ++index)
         {
-            for(size_type index = 0; index < m_capacity; ++index)
-            {
-                m_entries[index].free_index = index;
-            }
+            m_entries[index].free_index = index;
         }
+        m_count     = 0;
+        m_occupied  = 0;
+        m_available = 0;
+
+        m_busy_head = 0;
+        m_busy_tail = 0;
+
         m_free_head = 0;
         m_free_tail = m_capacity;
     }
@@ -985,37 +944,38 @@ private:
             m_allocator.deallocate(m_elements, base_t::capacity());
         }
     }
-    void destruct_element(size_type index) noexcept(std::is_nothrow_destructible<element_t>::value)
-    {
-        std::destroy_at(m_elements + index);
-    }
-    void realloc_elements(size_type new_capacity) noexcept(false)
-    {
-        if(new_capacity != base_t::capacity())
-        {
-            if(m_elements != nullptr)
-            {
-                m_allocator.deallocate(m_elements, base_t::capacity());
-            }
-            if(new_capacity == 0)
-            {
-                m_elements = nullptr;
-            }
-            else
-            {
-                m_elements = m_allocator.allocate(new_capacity);
-            }
-        }
-    }
 
 public:
     void reset(size_type capacity = npos) noexcept(false)
     {
-        base_t::hard_reset(
-            capacity,
-            [this](size_type index) { destruct_element(index); },
-            [this](size_type new_capacity) { realloc_elements(new_capacity); }
-            );
+        if(capacity == npos)
+        {
+            capacity = base_t::capacity();
+        }
+        if(capacity == base_t::capacity())
+        {
+            for(size_t index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index))
+                {
+                    std::destroy_at(m_elements + index);
+                }
+            }
+            base_t::reset(capacity);
+            return;
+        }
+
+        clear();
+        base_t::reset(capacity);
+
+        if(base_t::capacity() == 0)
+        {
+            m_elements = nullptr;
+        }
+        else
+        {
+            m_elements = m_allocator.allocate(base_t::capacity());
+        }
     }
 
 public:
@@ -1230,7 +1190,7 @@ public:
 
         if((index != npos) && !push)
         {
-            destruct_element(index);
+            std::destroy_at(m_elements + index);
         }
         return base_t::drop_producer_element_ownership(index, push);
     }
@@ -1240,7 +1200,7 @@ public:
 
         if((index != npos) && pop)
         {
-            destruct_element(index);
+            std::destroy_at(m_elements + index);
         }
         return base_t::drop_consumer_element_ownership(index, pop);
     }
@@ -1432,62 +1392,36 @@ private:
             padding = alignment - alignof(alloc_value_t);
         }
     }
+    size_type calc_count() const noexcept(DIAG_NOEXCEPT)
+    {
+        const size_t cb = (base_t::capacity() * m_stride + m_padding);
+
+        Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+        const size_t count = (cb / sizeof(alloc_value_t));
+
+        return count;
+    }
 
 private:
     void clear() noexcept(false)
     {
         if(m_elements != nullptr)
         {
-            const size_t cb = (base_t::capacity() * m_stride + m_padding);
-
-            Assert_Check((cb % sizeof(alloc_value_t)) == 0);
-
-            const size_t count = (cb / sizeof(alloc_value_t));
+            const size_t count = calc_count();
 
             m_elements -= m_offset;
             m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
-        }
-    }
-    void destruct_element(size_type) noexcept
-    {
-    }
-    void realloc_elements(size_type new_capacity) noexcept(false)
-    {
-        size_type new_stride ;
-        size_type new_padding;
-
-        calc_stride_and_padding(m_size, m_alignment, new_stride, new_padding);
-
-        if((new_capacity != base_t::capacity()) || (new_stride != m_stride) || (new_padding != m_padding))
-        {
-            clear();
-
-            if(new_capacity == 0)
-            {
-                m_elements = nullptr;
-                m_offset   = 0;
-            }
-            else
-            {
-                const size_t cb = (new_capacity * new_stride + new_padding);
-
-                Assert_Check((cb % sizeof(alloc_value_t)) == 0);
-
-                const size_t count = (cb / sizeof(alloc_value_t));
-
-                m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
-                m_offset   = calc_offset(m_elements, m_alignment);
-
-                m_elements += m_offset;
-            }
-            m_stride  = new_stride;
-            m_padding = new_padding;
         }
     }
 
 public:
     void reset(size_type capacity = npos, size_type size = npos, size_type alignment = npos) noexcept(false)
     {
+        if(capacity == npos)
+        {
+            capacity = base_t::capacity();
+        }
         if(size != npos)
         {
             m_size = size;
@@ -1500,11 +1434,36 @@ public:
         {
             m_alignment = calc_alignment(m_size);
         }
-        base_t::hard_reset(
-            capacity,
-            [this](size_type index) { destruct_element(index); },
-            [this](size_type new_capacity) { realloc_elements(new_capacity); }
-            );
+        size_type stride;
+        size_type padding;
+        calc_stride_and_padding(m_size, m_alignment, stride, padding);
+
+        if((capacity == base_t::capacity()) && (stride == m_stride) && (padding == m_padding))
+        {
+            base_t::reset(capacity);
+            return;
+        }
+
+        clear();
+        base_t::reset(capacity);
+
+        m_stride  = stride;
+        m_padding = padding;
+
+        if(base_t::capacity() == 0)
+        {
+            m_elements = nullptr;
+            m_offset   = 0;
+        }
+        else
+        {
+            const size_t count = calc_count();
+
+            m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            m_offset   = calc_offset(m_elements, m_alignment);
+
+            m_elements += m_offset;
+        }
     }
 
 public:
@@ -1544,18 +1503,14 @@ private:
         }
         else
         {
-            const size_t cb = (base_t::capacity() * m_stride + m_padding);
-
-            Assert_Check((cb % sizeof(alloc_value_t)) == 0);
-
-            const size_t count = (cb / sizeof(alloc_value_t));
+            const size_t count = calc_count();
 
             elements = reinterpret_cast<char*>(allocator.allocate(count));
             offset   = calc_offset(elements, m_alignment);
 
             elements += offset;
 
-            std::memcpy(elements, m_elements, cb);
+            std::memcpy(elements, m_elements, count * sizeof(alloc_value_t));
 
             m_elements -= m_offset;
             m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);

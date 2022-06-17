@@ -384,13 +384,18 @@ namespace impl
 {
 
 template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
-class base_lockfree_queue;
+class basic_lockfree_queue;
+
+#ifdef RESIZER
+template<bool ResizeSupport>
+class resizer_helper;
+#endif
 
 template<typename BaseAllocator>
-class base_lockfree_queue<false, BaseAllocator>
+class basic_lockfree_queue<false, BaseAllocator>
 {
-    base_lockfree_queue           (const base_lockfree_queue&) noexcept = delete;
-    base_lockfree_queue& operator=(const base_lockfree_queue&) noexcept = delete;
+    basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
+    basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
 
 public:
     using size_type = std::size_t;
@@ -411,13 +416,13 @@ private:
     bool m_consumer_owns_head = false;
 
 protected:
-    base_lockfree_queue() noexcept = delete;
-   ~base_lockfree_queue() noexcept = default;
+    basic_lockfree_queue() noexcept = delete;
+   ~basic_lockfree_queue() noexcept = default;
 
-    base_lockfree_queue(const BaseAllocator&) noexcept
+    basic_lockfree_queue(const BaseAllocator&) noexcept
     {
     }
-    base_lockfree_queue(base_lockfree_queue&& other) noexcept
+    basic_lockfree_queue(basic_lockfree_queue&& other) noexcept
         : threading(std::move(other.threading))
         , m_count  (other.m_count.exchange(0))
         , m_capacity(std::exchange(other.m_capacity, 0))
@@ -427,7 +432,7 @@ protected:
         , m_consumer_owns_head(std::exchange(m_consumer_owns_head, false))
     {
     }
-    base_lockfree_queue& operator=(base_lockfree_queue&& other) noexcept
+    basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept
     {
         threading = std::move(other.threading);
 
@@ -441,7 +446,7 @@ protected:
         m_consumer_owns_head = std::exchange(other.m_consumer_owns_head, false);
         return *this;
     }
-    void swap(base_lockfree_queue& other) noexcept
+    void swap(basic_lockfree_queue& other) noexcept
     {
         threading.swap(other.threading);
 
@@ -474,19 +479,25 @@ public:
     }
 
 protected:
-    bool element_has_value(size_type index) const noexcept
+    bool element_has_value(size_type index, size_type& pos) const noexcept
     {
         if(index >= m_capacity) return false;
 
-        const size_t tail_index = (m_tail_pos % m_capacity);
-        const size_t head_index = (m_head_pos % m_capacity);
+        const size_type tail_index = (m_tail_pos % m_capacity);
+        const size_type head_index = (m_head_pos % m_capacity);
 
         if(head_index < tail_index)
         {
+            pos = (index - head_index);
+
             return ((head_index <= index) && (index < tail_index));
         }
         else
         {
+            pos = (index >= head_index)
+                ? (index              - head_index)
+                : (index + m_capacity - head_index);
+
             return ((head_index <= index) || (index < tail_index));
         }
     }
@@ -499,6 +510,24 @@ protected:
 
         m_producer_owns_tail = false;
         m_consumer_owns_head = false;
+    }
+
+protected:
+    diff_type get_free_elements() const noexcept
+    {
+        return diff_type(m_capacity - m_count);
+    }
+    bool has_owned_elements() const noexcept
+    {
+        return (m_producer_owns_tail || m_producer_owns_tail);
+    }
+    bool can_take_producer_element_ownership() const noexcept
+    {
+        return ((m_capacity > 0) && threading.this_thread_is_valid_producer() && !m_producer_owns_tail);
+    }
+    bool can_take_consumer_element_ownership() const noexcept
+    {
+        return ((m_capacity > 0) && threading.this_thread_is_valid_consumer() && !m_consumer_owns_head);
     }
 
 protected:
@@ -577,10 +606,10 @@ protected:
     }
 };
 template<typename BaseAllocator>
-class base_lockfree_queue<true, BaseAllocator>
+class basic_lockfree_queue<true, BaseAllocator>
 {
-    base_lockfree_queue           (const base_lockfree_queue&) noexcept = delete;
-    base_lockfree_queue& operator=(const base_lockfree_queue&) noexcept = delete;
+    basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
+    basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
 
 public:
     using size_type = std::size_t;
@@ -624,13 +653,13 @@ private:
     }
 
 protected:
-    base_lockfree_queue() noexcept = delete;
+    basic_lockfree_queue() noexcept = delete;
 
-    base_lockfree_queue(const BaseAllocator& allocator) noexcept(std::is_nothrow_copy_constructible<BaseAllocator>::value)
+    basic_lockfree_queue(const BaseAllocator& allocator) noexcept(std::is_nothrow_copy_constructible<BaseAllocator>::value)
         : m_allocator(allocator)
     {
     }
-    ~base_lockfree_queue() noexcept(noexcept(clear()))
+    ~basic_lockfree_queue() noexcept(noexcept(clear()))
     {
         clear();
     }
@@ -657,7 +686,7 @@ private:
             m_entries = nullptr;
         }
     }
-    void move_entries(base_lockfree_queue&& other) noexcept(move_is_noexcept)
+    void move_entries(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
     {
 #ifdef __cpp_if_constexpr
         if constexpr(!move_is_noexcept)
@@ -681,7 +710,7 @@ private:
         }
         m_entries = std::exchange(other.m_entries, nullptr);
     }
-    void swap_entries(base_lockfree_queue&& other) noexcept(swap_is_noexcept)
+    void swap_entries(basic_lockfree_queue&& other) noexcept(swap_is_noexcept)
     {
 #ifdef __cpp_if_constexpr
         if constexpr(!swap_is_noexcept)
@@ -712,7 +741,7 @@ private:
     }
 
 protected:
-    base_lockfree_queue(base_lockfree_queue&& other) noexcept(std::is_nothrow_move_constructible<TypeAllocator>::value)
+    basic_lockfree_queue(basic_lockfree_queue&& other) noexcept(std::is_nothrow_move_constructible<TypeAllocator>::value)
         :   threading(std::move(other.  threading))
         , m_allocator(std::move(other.m_allocator))
         , m_capacity (std::exchange(other.m_capacity, 0))
@@ -726,7 +755,7 @@ protected:
         , m_busy_head(other.m_busy_head.exchange(0))
     {
     }
-    base_lockfree_queue& operator=(base_lockfree_queue&& other) noexcept(move_is_noexcept && noexcept(clear()))
+    basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept && noexcept(clear()))
     {
         clear();
 
@@ -745,7 +774,7 @@ protected:
         m_capacity  = std::exchange(other.m_capacity, 0);
         return *this;
     }
-    void swap(base_lockfree_queue& other) noexcept(swap_is_noexcept)
+    void swap(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
     {
         threading.swap(other.threading);
 
@@ -781,14 +810,15 @@ public:
     }
 
 protected:
-    bool element_has_value(size_type index) const noexcept
+    bool element_has_value(size_type index, size_type& pos) const noexcept
     {
         if(index >= m_capacity) return false;
 
-        for(size_t pos = m_busy_head; pos < m_busy_tail; ++pos)
+        for(size_type busy_pos = m_busy_head; busy_pos < m_busy_tail; ++busy_pos)
         {
-            if(index == m_entries[pos % m_capacity].busy_index)
+            if(index == m_entries[busy_pos % m_capacity].busy_index)
             {
+                pos = (busy_pos - m_busy_head);
                 return true;
             }
         }
@@ -826,6 +856,29 @@ protected:
 
         m_free_head = 0;
         m_free_tail = m_capacity;
+    }
+
+protected:
+    diff_type get_free_elements() const noexcept
+    {
+        return diff_type(m_capacity - m_occupied);
+    }
+    bool has_owned_elements() const noexcept
+    {
+        const size_type busy_count = (m_busy_tail - m_busy_head);
+        const size_type free_count = (m_free_tail - m_free_head);
+
+        const size_type idle_count = busy_count + free_count;
+
+        return (idle_count < m_capacity);
+    }
+    bool can_take_producer_element_ownership() const noexcept
+    {
+        return (m_capacity > 0) && threading.this_thread_is_valid_producer();
+    }
+    bool can_take_consumer_element_ownership() const noexcept
+    {
+        return (m_capacity > 0) && threading.this_thread_is_valid_consumer();
     }
 
 protected:
@@ -905,23 +958,135 @@ protected:
     }
 };
 
+#ifdef RESIZER
+class resizer_state
+{
+    resizer_helper<true>* m_resizer;
+    std::size_t           m_capacity;
+    std::size_t           m_index;
+
+public:
+    bool need_realloc() const
+    {
+        return (m_capacity > 0);
+    }
+    std::size_t get_index() const
+    {
+        return m_index;
+    }
+    template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
+    void update(basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>& basic_queue)
+    {
+        m_index = m_resizer.update(basic_queue, m_capacity);
+    }
+
+    ~resizer_state() noexcept
+    {
+        m_resizer->deactivate(m_capacity);
+    }
+};
+template<>
+class resizer_helper<false>
+{
+};
+template<>
+class resizer_helper<true>
+{
+    std::size_t m_increment = 0;
+    std::size_t m_threshold = 0;
+    std::size_t m_timeout   = 0;
+
+    std::atomic<bool> m_inactive {false};
+
+private:
+    void wait_a_while()
+    {
+        if(m_timeout == 0)
+        {
+            std::this_thread::yield();
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::microseconds(m_timeout));
+        }
+    }
+    friend class resizer_state;
+    void activate()
+    {
+    }
+    void deactivate(std::size_t capacity)
+    {
+    }
+    template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
+    std::size_t update(basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>& basic_queue, std::size_t capacity)
+    {
+        if(capacity == 0) return npos;
+
+        basic_queue.resize(capacity);
+
+        return basic_queue.take_producer_element_ownership();
+    }
+
+public:
+    template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
+    resizer_state take_producer_element_ownership(basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>& basic_queue)
+    {
+        while(m_inactive)
+        {
+            wait_a_while();
+        }
+        if(basic_queue.get_free_elements() > std::diff_type(m_threshold))
+        {
+            const std::size_t index = basic_queue.take_producer_element_ownership();
+
+            return {this, 0, index};
+        }
+        if(!basic_queue.can_take_producer_element_ownership())
+        {
+            return {this, 0, npos};
+        }
+
+        if(deactivate())
+        {
+            while(basic_queue.has_owned_elements())
+            {
+                wait_a_while();
+            }
+        }
+        else
+        {
+            while(m_inactive)
+            {
+                wait_a_while();
+            }
+        }
+
+        const std::size_t capacity =  (m_increment > 0)
+            ? (basic_queue.capacity() + m_increment)
+            : (basic_queue.capacity() * 2);
+
+        return {this, capacity, npos};
+    }
+};
+#endif
 }
 
-template<typename T, bool MultipleConsumersMultipleProducersSupport=false, typename BaseAllocator = std::allocator<char>>
-class lockfree_queue : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
+template<typename T, bool MultipleConsumersMultipleProducersSupport=false, bool ResizeSupport=false, typename BaseAllocator = std::allocator<char>>
+class lockfree_queue : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =            lockfree_queue<T, MultipleConsumersMultipleProducersSupport, BaseAllocator>;
-    using base_t = impl::base_lockfree_queue<   MultipleConsumersMultipleProducersSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport,                BaseAllocator>;
 
 public:
     using base_t::npos;
 
     using element_t = T;
     using size_type = typename base_t::size_type;
+    using diff_type = typename base_t::diff_type;
 
 private:
     using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<T>;
@@ -934,9 +1099,9 @@ private:
     {
         if(m_elements != nullptr)
         {
-            for(size_t index = 0; index < base_t::capacity(); ++index)
+            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
             {
-                if(base_t::element_has_value(index))
+                if(base_t::element_has_value(index, pos))
                 {
                     std::destroy_at(m_elements + index);
                 }
@@ -954,9 +1119,9 @@ public:
         }
         if(capacity == base_t::capacity())
         {
-            for(size_t index = 0; index < base_t::capacity(); ++index)
+            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
             {
-                if(base_t::element_has_value(index))
+                if(base_t::element_has_value(index, pos))
                 {
                     std::destroy_at(m_elements + index);
                 }
@@ -1011,9 +1176,9 @@ private:
         {
             elements = allocator.allocate(base_t::capacity());
 
-            for(size_t index = 0; index < base_t::capacity(); ++index)
+            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
             {
-                if(base_t::element_has_value(index))
+                if(base_t::element_has_value(index, pos))
                 {
                     ::new (elements + index) element_t(std::move(m_elements[index]));
 
@@ -1111,13 +1276,52 @@ public:
 public:
     size_type element_alignment() const noexcept
     {
-        return (size_type)sizeof(element_t);
+        return size_type(sizeof(element_t));
     }
     size_type element_size() const noexcept
     {
-        return (size_type)sizeof(element_t);
+        return size_type(sizeof(element_t));
     }
+#ifdef RESIZER
+private:
+    constexpr bool resize_noexcept = ResizeSupport ? false : DIAG_NOEXCEPT;
 
+    size_type take_producer_element_ownership() noexcept(resize_noexcept)
+    {
+#ifdef __cpp_if_constexpr
+        if constexpr(!ResizeSupport)
+#else
+        if          (!ResizeSupport)
+#endif
+        {
+            return base_t::take_producer_element_ownership();
+        }
+
+        impl::resizer_state state = m_resizer.take_producer_element_ownership(*this);
+
+        if(state.need_realloc())
+        {
+            element_t* elements = m_allocator.allocate(capacity);
+
+            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index, pos))
+                {
+                    ::new (elements + pos) element_t(std::move(m_elements[index]));
+
+                    std::destroy_at(m_elements + index);
+                }
+            }
+            m_allocator.deallocate(m_elements, base_t::capacity());
+
+            m_elements = elements;
+
+            state.update(*this);
+        }
+
+        return state.get_index();;
+    }
+#endif
 public:
     template<typename... Args>
     element_t* acquire_producer_element_ex(Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
@@ -1317,15 +1521,15 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, BaseAllocator> : public impl::base_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, bool ResizeSupport, typename BaseAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, BaseAllocator> : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =            lockfree_queue<void, MultipleConsumersMultipleProducersSupport, BaseAllocator>;
-    using base_t = impl::base_lockfree_queue<      MultipleConsumersMultipleProducersSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport,                BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1394,11 +1598,11 @@ private:
     }
     size_type calc_count() const noexcept(DIAG_NOEXCEPT)
     {
-        const size_t cb = (base_t::capacity() * m_stride + m_padding);
+        const size_type cb = (base_t::capacity() * m_stride + m_padding);
 
         Assert_Check((cb % sizeof(alloc_value_t)) == 0);
 
-        const size_t count = (cb / sizeof(alloc_value_t));
+        const size_type count = (cb / sizeof(alloc_value_t));
 
         return count;
     }
@@ -1408,7 +1612,7 @@ private:
     {
         if(m_elements != nullptr)
         {
-            const size_t count = calc_count();
+            const size_type count = calc_count();
 
             m_elements -= m_offset;
             m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
@@ -1457,7 +1661,7 @@ public:
         }
         else
         {
-            const size_t count = calc_count();
+            const size_type count = calc_count();
 
             m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
             m_offset   = calc_offset(m_elements, m_alignment);
@@ -1495,7 +1699,7 @@ private:
     static constexpr bool move_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value;
     static constexpr bool swap_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap::value;
 
-    void relocate_elements(size_t& offset, char*& elements, TypeAllocator& allocator) noexcept(false)
+    void relocate_elements(size_type& offset, char*& elements, TypeAllocator& allocator) noexcept(false)
     {
         if(base_t::capacity() == 0)
         {
@@ -1503,7 +1707,7 @@ private:
         }
         else
         {
-            const size_t count = calc_count();
+            const size_type count = calc_count();
 
             elements = reinterpret_cast<char*>(allocator.allocate(count));
             offset   = calc_offset(elements, m_alignment);
@@ -1553,8 +1757,8 @@ private:
         {
             if(m_allocator != other.m_allocator)
             {
-                size_t offset   = 0;
-                char*  elements = nullptr;
+                size_type offset   = 0;
+                char*     elements = nullptr;
 
                 this->relocate_elements(  offset,   elements, other.m_allocator);
                 other.relocate_elements(m_offset, m_elements,       m_allocator);

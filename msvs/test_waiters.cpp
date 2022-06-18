@@ -1,9 +1,9 @@
 #include "main.h"
 
 #include <gkr/objects_waiter.h>
-#include <gkr/sync_event.h>
-#include <gkr/sync_mutex.h>
-#include <gkr/sync_semaphore.h>
+#include <gkr/waitable_event.h>
+#include <gkr/waitable_mutex.h>
+#include <gkr/waitable_semaphore.h>
 
 #include <thread>
 
@@ -13,21 +13,21 @@
 #pragma clang diagnostic ignored "-Wexit-time-destructors"
 #endif
 
-static gkr::sync_event<> e1;
-static gkr::sync_event<> e2;
+static gkr::waitable_event<> e1;
+static gkr::waitable_event<> e2;
 
-static gkr::sync_mutex<> m1;
+static gkr::waitable_mutex<> m1;
 
 static gkr::objects_waiter g_waiter;
 
-//gkr::sync_semaphore<> s1(50);
+//gkr::waitable_semaphore<> s1(50);
 
 void foo();
 void foo()
 {
 //  g_waiter.wait(10ms, e1, e2);
 
-    std::lock_guard<gkr::sync_mutex<>> lock(m1);
+    std::lock_guard<gkr::waitable_mutex<>> lock(m1);
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
 }
@@ -37,7 +37,7 @@ int test_waiters()
     int n = 0;
 
 
-//  gkr::sync_event<> e3 = std::move(e1);
+//  gkr::waitable_event<> e3 = std::move(e1);
 
     std::thread t1(foo);
 //  std::thread t2(foo);
@@ -47,7 +47,7 @@ int test_waiters()
     g_waiter.wait(gkr::timeout_infinite, m1);
 
     {
-        std::lock_guard<gkr::sync_mutex<>> lock(m1, std::adopt_lock_t{} );
+        std::lock_guard<gkr::waitable_mutex<>> lock(m1, std::adopt_lock_t{} );
 
         ++n;
     }

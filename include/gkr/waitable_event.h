@@ -6,23 +6,23 @@ namespace gkr
 {
 
 template<unsigned MaxWaiters = 1>
-class sync_event final : public impl::waiter_registrator<MaxWaiters>
+class waitable_event final : public impl::waiter_registrator<MaxWaiters>
 {
-    sync_event           (const sync_event&) noexcept = delete;
-    sync_event& operator=(const sync_event&) noexcept = delete;
+    waitable_event           (const waitable_event&) noexcept = delete;
+    waitable_event& operator=(const waitable_event&) noexcept = delete;
 
 public:
-    sync_event() noexcept = default;
-   ~sync_event() noexcept = default;
+    waitable_event() noexcept = default;
+   ~waitable_event() noexcept = default;
 
-    sync_event(bool manual_reset) noexcept : m_manual_reset(manual_reset)
+    waitable_event(bool manual_reset) noexcept : m_manual_reset(manual_reset)
     {
     }
-    sync_event(sync_event&& other) noexcept : m_manual_reset(other.m_manual_reset)
+    waitable_event(waitable_event&& other) noexcept : m_manual_reset(other.m_manual_reset)
     {
         m_signaled.store(other.m_signaled.exchange(false));
     }
-    sync_event& operator=(sync_event&& other) noexcept
+    waitable_event& operator=(waitable_event&& other) noexcept
     {
         m_manual_reset = other.m_manual_reset;
 

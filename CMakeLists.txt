@@ -43,20 +43,22 @@ target_sources(
     ${gkr_basics_inc_path}/lockfree_forward_list.h
     ${gkr_basics_inc_path}/lockfree_queue.h
     ${gkr_basics_inc_path}/objects_waiter.h
-    ${gkr_basics_inc_path}/sync_event.h
-    ${gkr_basics_inc_path}/sync_mutex.h
-    ${gkr_basics_inc_path}/sync_semaphore.h
     ${gkr_basics_inc_path}/waitable_object.h
-    ${gkr_basics_inc_path}/sys/stack_alloc.h
+    ${gkr_basics_inc_path}/waitable_event.h
+    ${gkr_basics_inc_path}/waitable_mutex.h
+    ${gkr_basics_inc_path}/waitable_semaphore.h
     ${gkr_basics_inc_path}/cpp_feature/lib_exchange_function.h
     ${gkr_basics_inc_path}/cpp_feature/lib_raw_memory_algorithms.h
+    ${gkr_basics_inc_path}/sys/stack_alloc.h
+    ${gkr_basics_inc_path}/log/entry.h
+    ${gkr_basics_inc_path}/log/consumer.h
     )
 # Headers + Implementations
 target_sources(
     gkr-basics
     PRIVATE
-    ${gkr_basics_inc_path}/thread_worker_base.h
-    ${gkr_basics_src_path}/thread_worker_base.cpp
+    ${gkr_basics_inc_path}/basic_thread_worker.h
+    ${gkr_basics_src_path}/basic_thread_worker.cpp
     ${gkr_basics_inc_path}/sys/thread_name.h
     ${gkr_basics_src_path}/sys/thread_name.cpp
     ${gkr_basics_inc_path}/log/logger.h

@@ -2,7 +2,7 @@
 
 #include "entry.h"
 
-#include <gkr/thread_worker_base.h>
+#include <gkr/basic_thread_worker.h>
 #include <gkr/lockfree_queue.h>
 
 #include <memory>
@@ -21,15 +21,13 @@ namespace log
 struct name_id_pair;
 class consumer;
 
-class logger final : public thread_worker_base
+class logger final : public basic_thread_worker
 {
     logger           (const logger&) noexcept = delete;
     logger& operator=(const logger&) noexcept = delete;
 
     logger           (logger&&) noexcept = delete;
     logger& operator=(logger&&) noexcept = delete;
-
-    using base_t = thread_worker_base;
 
 public:
     logger();
@@ -96,7 +94,7 @@ private:
     };
 
 private:
-    sync_event<> m_has_entries_event;
+    waitable_event<> m_has_entries_event;
 
     std::vector<std::shared_ptr<consumer>> m_consumers;
 

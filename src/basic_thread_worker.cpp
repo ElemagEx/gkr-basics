@@ -1,4 +1,4 @@
-#include <gkr/thread_worker_base.h>
+#include <gkr/basic_thread_worker.h>
 
 #include <gkr/sys/stack_alloc.h>
 #include <gkr/sys/thread_name.h>
@@ -6,11 +6,11 @@
 namespace gkr
 {
 
-thread_worker_base::thread_worker_base()
+basic_thread_worker::basic_thread_worker()
 {
 }
 
-thread_worker_base::~thread_worker_base() noexcept(DIAG_NOEXCEPT)
+basic_thread_worker::~basic_thread_worker() noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(
         !joinable(),
@@ -18,7 +18,7 @@ thread_worker_base::~thread_worker_base() noexcept(DIAG_NOEXCEPT)
         );
 }
 
-bool thread_worker_base::run()
+bool basic_thread_worker::run()
 {
     std::lock_guard<decltype(m_mutex)> lock(m_mutex);
 
@@ -33,12 +33,12 @@ bool thread_worker_base::run()
     return running();
 }
 
-bool thread_worker_base::quit()
+bool basic_thread_worker::quit()
 {
     return enqueue_action(ACTION_QUIT);
 }
 
-bool thread_worker_base::join(bool send_quit_signal)
+bool basic_thread_worker::join(bool send_quit_signal)
 {
     if(!m_thread.joinable()) return false;
 
@@ -51,7 +51,7 @@ bool thread_worker_base::join(bool send_quit_signal)
     return true;
 }
 
-bool thread_worker_base::update_wait()
+bool basic_thread_worker::update_wait()
 {
     m_updating = true;
 
@@ -60,7 +60,7 @@ bool thread_worker_base::update_wait()
     return enqueue_action(ACTION_UPDATE);
 }
 
-bool thread_worker_base::enqueue_action(action_id_t action, void* param, action_param_deleter_t deleter)
+bool basic_thread_worker::enqueue_action(action_id_t action, void* param, action_param_deleter_t deleter)
 {
     std::lock_guard<decltype(m_sync_queue_mutex)> lock(m_sync_queue_mutex);
 
@@ -73,7 +73,7 @@ bool thread_worker_base::enqueue_action(action_id_t action, void* param, action_
     return true;
 }
 
-void thread_worker_base::execute_action(action_id_t action, void* param, void* result)
+void basic_thread_worker::execute_action(action_id_t action, void* param, void* result)
 {
     if(in_worker_thread())
     {
@@ -93,7 +93,7 @@ void thread_worker_base::execute_action(action_id_t action, void* param, void* r
     }
 }
 
-bool thread_worker_base::can_reply()
+bool basic_thread_worker::can_reply()
 {
     Check_ValidState(in_worker_thread(), false);
     Check_ValidState(m_reentrancy.count > 0, false);
@@ -101,7 +101,7 @@ bool thread_worker_base::can_reply()
     return ((m_reentrancy.count == 1) && (m_reentrancy.result != nullptr));
 }
 
-void thread_worker_base::reply_action()
+void basic_thread_worker::reply_action()
 {
     if(can_reply())
     {
@@ -111,7 +111,7 @@ void thread_worker_base::reply_action()
     }
 }
 
-void thread_worker_base::thread_proc()
+void basic_thread_worker::thread_proc()
 {
     m_waiter.wait(timeout_infinite, m_work_event);
 
@@ -136,7 +136,7 @@ void thread_worker_base::thread_proc()
     safe_finish();
 }
 
-bool thread_worker_base::safe_start() noexcept
+bool basic_thread_worker::safe_start() noexcept
 {
 #ifndef __cpp_exceptions
     return start();
@@ -157,7 +157,7 @@ bool thread_worker_base::safe_start() noexcept
 #endif
 }
 
-void thread_worker_base::safe_finish() noexcept
+void basic_thread_worker::safe_finish() noexcept
 {
 #ifndef __cpp_exceptions
     finish();
@@ -177,7 +177,7 @@ void thread_worker_base::safe_finish() noexcept
 #endif
 }
 
-bool thread_worker_base::safe_acquire_events() noexcept
+bool basic_thread_worker::safe_acquire_events() noexcept
 {
     m_objects[OWN_EVENT_HAS_ASYNC_ACTION] = &m_wake_event;
     m_objects[OWN_EVENT_HAS_SYNC_ACTION ] = &m_work_event;
@@ -218,7 +218,7 @@ bool thread_worker_base::safe_acquire_events() noexcept
     return true;
 }
 
-bool thread_worker_base::main_loop()
+bool basic_thread_worker::main_loop()
 {
     m_objects = static_cast<waitable_object**>(stack_alloc(m_count * sizeof(waitable_object*)));
 
@@ -260,7 +260,7 @@ bool thread_worker_base::main_loop()
     return false;
 }
 
-void thread_worker_base::dequeue_actions()
+void basic_thread_worker::dequeue_actions()
 {
     for(item_t item; ; )
     {
@@ -280,7 +280,7 @@ void thread_worker_base::dequeue_actions()
     }
 }
 
-void thread_worker_base::safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller)
+void basic_thread_worker::safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller)
 {
     Assert_Check(!cross_thread_caller || (m_reentrancy.count == 0));
 
@@ -323,7 +323,7 @@ void thread_worker_base::safe_do_action(action_id_t action, void* param, void* r
     --m_reentrancy.count;
 }
 
-void thread_worker_base::safe_notify_timeout()
+void basic_thread_worker::safe_notify_timeout()
 {
 #ifndef __cpp_exceptions
     on_wait_timeout();
@@ -343,7 +343,7 @@ void thread_worker_base::safe_notify_timeout()
 #endif
 }
 
-void thread_worker_base::safe_notify_complete(std::size_t index)
+void basic_thread_worker::safe_notify_complete(std::size_t index)
 {
 #ifndef __cpp_exceptions
     on_wait_success(index);

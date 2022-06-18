@@ -23,19 +23,19 @@ constexpr std::ptrdiff_t Default_LeastMaxValue = 0;
 }
 
 template<unsigned MaxWaiters = 1, std::ptrdiff_t LeastMaxValue = impl::Default_LeastMaxValue>
-class sync_semaphore final : public impl::waiter_registrator<MaxWaiters>
+class waitable_semaphore final : public impl::waiter_registrator<MaxWaiters>
 {
-    sync_semaphore           (const sync_semaphore&) noexcept = delete;
-    sync_semaphore& operator=(const sync_semaphore&) noexcept = delete;
+    waitable_semaphore           (const waitable_semaphore&) noexcept = delete;
+    waitable_semaphore& operator=(const waitable_semaphore&) noexcept = delete;
 
-    sync_semaphore           (sync_semaphore&& other) noexcept = delete;
-    sync_semaphore& operator=(sync_semaphore&& other) noexcept = delete;
+    waitable_semaphore           (waitable_semaphore&& other) noexcept = delete;
+    waitable_semaphore& operator=(waitable_semaphore&& other) noexcept = delete;
 
 public:
-    sync_semaphore() noexcept = delete;
-   ~sync_semaphore() noexcept = default;
+    waitable_semaphore() noexcept = delete;
+   ~waitable_semaphore() noexcept = default;
 
-    sync_semaphore(std::ptrdiff_t desired) : m_semaphore(desired)
+    waitable_semaphore(std::ptrdiff_t desired) : m_semaphore(desired)
     {
     }
 

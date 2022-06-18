@@ -14,17 +14,17 @@ template<> struct std_mutex<true > { using type = std::recursive_mutex; };
 }
 
 template<unsigned MaxWaiters = 1, bool Recursive=false>
-class sync_mutex final : public impl::waiter_registrator<MaxWaiters>
+class waitable_mutex final : public impl::waiter_registrator<MaxWaiters>
 {
-    sync_mutex           (const sync_mutex&) noexcept = delete;
-    sync_mutex& operator=(const sync_mutex&) noexcept = delete;
+    waitable_mutex           (const waitable_mutex&) noexcept = delete;
+    waitable_mutex& operator=(const waitable_mutex&) noexcept = delete;
 
-    sync_mutex           (sync_mutex&& other) noexcept = delete;
-    sync_mutex& operator=(sync_mutex&& other) noexcept = delete;
+    waitable_mutex           (waitable_mutex&& other) noexcept = delete;
+    waitable_mutex& operator=(waitable_mutex&& other) noexcept = delete;
 
 public:
-    sync_mutex() noexcept = default;
-   ~sync_mutex() noexcept = default;
+    waitable_mutex() noexcept = default;
+   ~waitable_mutex() noexcept = default;
 
 private:
     using mutex_t = typename impl::std_mutex<Recursive>::type;

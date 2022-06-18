@@ -14,7 +14,7 @@ logger::logger()
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
 {
-    base_t::join(true);
+    join(true);
 }
 
 const char* logger::get_name() noexcept

@@ -5,7 +5,7 @@
 #include <thread>
 #include <functional>
 
-#include "sync_event.h"
+#include "waitable_event.h"
 #include "objects_waiter.h"
 
 #ifndef GKR_TWB_API
@@ -31,20 +31,20 @@ struct result<void>
 };
 }
 
-class thread_worker_base
+class basic_thread_worker
 {
-    thread_worker_base           (const thread_worker_base&) noexcept = delete;
-    thread_worker_base& operator=(const thread_worker_base&) noexcept = delete;
+    basic_thread_worker           (const basic_thread_worker&) noexcept = delete;
+    basic_thread_worker& operator=(const basic_thread_worker&) noexcept = delete;
 
-    thread_worker_base           (thread_worker_base&&) noexcept = delete;
-    thread_worker_base& operator=(thread_worker_base&&) noexcept = delete;
+    basic_thread_worker           (basic_thread_worker&&) noexcept = delete;
+    basic_thread_worker& operator=(basic_thread_worker&&) noexcept = delete;
 
 public:
     using action_id_t = std::size_t;
 
 protected:
-    GKR_TWB_API          thread_worker_base();
-    GKR_TWB_API virtual ~thread_worker_base() noexcept(DIAG_NOEXCEPT);
+    GKR_TWB_API          basic_thread_worker();
+    GKR_TWB_API virtual ~basic_thread_worker() noexcept(DIAG_NOEXCEPT);
 
 protected:
     virtual const char* get_name() noexcept = 0;
@@ -154,9 +154,9 @@ private:
     bool m_running  = false;
     bool m_updating = false;
 
-    sync_event<> m_wake_event;
-    sync_event<> m_work_event;
-    sync_event<> m_done_event;
+    waitable_event<> m_wake_event;
+    waitable_event<> m_work_event;
+    waitable_event<> m_done_event;
 
     objects_waiter m_waiter;
 

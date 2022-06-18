@@ -16,17 +16,17 @@ class waitable_object;
 namespace impl
 {
 
-class base_objects_waiter
+class basic_objects_waiter
 {
-    base_objects_waiter           (const base_objects_waiter&) noexcept = delete;
-    base_objects_waiter& operator=(const base_objects_waiter&) noexcept = delete;
+    basic_objects_waiter           (const basic_objects_waiter&) noexcept = delete;
+    basic_objects_waiter& operator=(const basic_objects_waiter&) noexcept = delete;
 
-    base_objects_waiter           (base_objects_waiter&&) noexcept = delete;
-    base_objects_waiter& operator=(base_objects_waiter&&) noexcept = delete;
+    basic_objects_waiter           (basic_objects_waiter&&) noexcept = delete;
+    basic_objects_waiter& operator=(basic_objects_waiter&&) noexcept = delete;
 
 protected:
-    base_objects_waiter() noexcept = default;
-   ~base_objects_waiter() noexcept = default;
+    basic_objects_waiter() noexcept = default;
+   ~basic_objects_waiter() noexcept = default;
 
 private:
     friend class ::gkr::waitable_object;
@@ -72,9 +72,9 @@ private:
     [[nodiscard]]
     virtual bool try_consume() = 0;
 
-    virtual bool register_waiter(impl::base_objects_waiter& objects_waiter) = 0;
+    virtual bool register_waiter(impl::basic_objects_waiter& objects_waiter) = 0;
 
-    virtual bool unregister_waiter(impl::base_objects_waiter& objects_waiter) = 0;
+    virtual bool unregister_waiter(impl::basic_objects_waiter& objects_waiter) = 0;
 
 protected:
     struct waiter_t
@@ -96,25 +96,25 @@ protected:
             return *this;
         }
 
-        bool try_set(impl::base_objects_waiter& objects_waiter)
+        bool try_set(impl::basic_objects_waiter& objects_waiter)
         {
-            impl::base_objects_waiter* expected = nullptr;
+            impl::basic_objects_waiter* expected = nullptr;
 
             return ptr.compare_exchange_strong(expected, &objects_waiter);
         }
-        bool try_reset(impl::base_objects_waiter& objects_waiter)
+        bool try_reset(impl::basic_objects_waiter& objects_waiter)
         {
-            impl::base_objects_waiter* expected = &objects_waiter;
+            impl::basic_objects_waiter* expected = &objects_waiter;
 
             return ptr.compare_exchange_strong(expected, nullptr);
         }
 
-        std::atomic<impl::base_objects_waiter*> ptr {nullptr};
+        std::atomic<impl::basic_objects_waiter*> ptr {nullptr};
     };
 
     void notify_waiter(waiter_t& waiter, bool broadcast)
     {
-        impl::base_objects_waiter* objects_waiter = waiter.ptr.load();
+        impl::basic_objects_waiter* objects_waiter = waiter.ptr.load();
 
         if(objects_waiter != nullptr)
         {
@@ -142,7 +142,7 @@ protected:
 private:
     waiter_t m_waiters[MaxWaiters] = {};
 
-    bool register_waiter(impl::base_objects_waiter& objects_waiter) override
+    bool register_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
         for(waiter_t& waiter : m_waiters)
         {
@@ -153,7 +153,7 @@ private:
         }
         Check_Failure(false);
     }
-    bool unregister_waiter(impl::base_objects_waiter& objects_waiter) override
+    bool unregister_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
         for(waiter_t& waiter : m_waiters)
         {
@@ -191,19 +191,22 @@ protected:
 private:
     lockfree_forward_list<waiter_t> m_waiters;
 
-    bool register_waiter(impl::base_objects_waiter& objects_waiter) override
+    bool register_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
-        for(waiter_t& waiter : m_waiters)
+        auto end = m_waiters.end();
+
+        for(auto it = m_waiters.first(); it != end; )
         {
-            if(waiter.try_set(objects_waiter))
+            m_waiters.get_next_or_add_new(it);
+
+            if(it->try_set(objects_waiter))
             {
                 return true;
             }
         }
-        Verify_BoolRes(m_waiters.emplace_front().try_set(objects_waiter), false);
-        return true;
+        Check_Failure(false);
     }
-    bool unregister_waiter(impl::base_objects_waiter& objects_waiter) override
+    bool unregister_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
         for(waiter_t& waiter : m_waiters)
         {

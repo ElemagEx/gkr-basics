@@ -10,7 +10,7 @@ thread_worker_base::thread_worker_base()
 {
 }
 
-thread_worker_base::~thread_worker_base()
+thread_worker_base::~thread_worker_base() noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(
         !joinable(),
@@ -51,13 +51,13 @@ bool thread_worker_base::join(bool send_quit_signal)
     return true;
 }
 
-void thread_worker_base::update_wait()
+bool thread_worker_base::update_wait()
 {
     m_updating = true;
 
-    if(in_worker_thread()) return;
+    if(in_worker_thread()) return true;
 
-    enqueue_action(ACTION_UPDATE);
+    return enqueue_action(ACTION_UPDATE);
 }
 
 bool thread_worker_base::enqueue_action(action_id_t action, void* param, action_param_deleter_t deleter)
@@ -73,28 +73,24 @@ bool thread_worker_base::enqueue_action(action_id_t action, void* param, action_
     return true;
 }
 
-bool thread_worker_base::execute_action(action_id_t action, void* param, void* result)
+void thread_worker_base::execute_action(action_id_t action, void* param, void* result)
 {
-    bool succeeded;
-
     if(in_worker_thread())
     {
-        succeeded = do_action(action, param, result, false);
+        safe_do_action(action, param, result, false);
     }
     else
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        Check_ValidState(running(), false);
+        Check_ValidState(running(),);
 
         m_func = func_t{action, param, result};
 
         m_work_event.fire();
 
-        succeeded = (wait_result_error != m_waiter.wait(timeout_infinite, m_done_event));
+        m_waiter.wait(timeout_infinite, m_done_event);
     }
-
-    return succeeded;
 }
 
 bool thread_worker_base::can_reply()
@@ -125,7 +121,7 @@ void thread_worker_base::thread_proc()
 
     sys::set_current_thread_name(name);
 
-    m_running = start();
+    m_running = safe_start();
     m_done_event.fire();
 
     do
@@ -137,19 +133,87 @@ void thread_worker_base::thread_proc()
 
     dequeue_actions();
 
-    finish();
+    safe_finish();
 }
 
-bool thread_worker_base::acquire_events()
+bool thread_worker_base::safe_start() noexcept
+{
+#ifndef __cpp_exceptions
+    return start();
+#else
+    try
+    {
+        return start();
+    }
+    catch(const std::exception& e)
+    {
+        on_exception(false, &e);
+    }
+    catch(...)
+    {
+        on_exception(false, nullptr);
+    }
+    return false;
+#endif
+}
+
+void thread_worker_base::safe_finish() noexcept
+{
+#ifndef __cpp_exceptions
+    finish();
+#else
+    try
+    {
+        finish();
+    }
+    catch(const std::exception& e)
+    {
+        on_exception(false, &e);
+    }
+    catch(...)
+    {
+        on_exception(false, nullptr);
+    }
+#endif
+}
+
+bool thread_worker_base::safe_acquire_events() noexcept
 {
     m_objects[OWN_EVENT_HAS_ASYNC_ACTION] = &m_wake_event;
     m_objects[OWN_EVENT_HAS_SYNC_ACTION ] = &m_work_event;
 
-    for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
+    for(std::size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
     {
+#ifndef __cpp_exceptions
         m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
 
-        Check_NotNullPtr(m_objects[index], false);
+        if(m_objects[index] == nullptr)
+        {
+            m_count = index;
+            Check_Failure(true);
+        }
+#else
+        try
+        {
+            m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
+
+            if(m_objects[index] == nullptr)
+            {
+                m_count = index;
+                Check_Failure(true);
+            }
+        }
+        catch(const std::exception& e)
+        {
+            m_count = index;
+            return on_exception(true, &e);
+        }
+        catch(...)
+        {
+            m_count = index;
+            return on_exception(true, nullptr);
+        }
+#endif
     }
     return true;
 }
@@ -158,7 +222,7 @@ bool thread_worker_base::main_loop()
 {
     m_objects = static_cast<waitable_object**>(stack_alloc(m_count * sizeof(waitable_object*)));
 
-    if(!acquire_events()) return false;
+    if(!safe_acquire_events()) return false;
 
     const auto timeout = get_wait_timeout();
 
@@ -172,15 +236,15 @@ bool thread_worker_base::main_loop()
 
         if(wait_result == wait_result_timeout)
         {
-            on_wait_timeout();
+            safe_notify_timeout();
         }
         else
         {
-            for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
+            for(std::size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
             {
                 if(wait_object_is_signalled(wait_result, index))
                 {
-                    on_wait_success(index - OWN_EVENTS_TO_WAIT);
+                    safe_notify_complete(index - OWN_EVENTS_TO_WAIT);
                 }
             }
             if(wait_object_is_signalled(wait_result, OWN_EVENT_HAS_ASYNC_ACTION))
@@ -189,7 +253,7 @@ bool thread_worker_base::main_loop()
             }
             if(wait_object_is_signalled(wait_result, OWN_EVENT_HAS_SYNC_ACTION))
             {
-                do_action(m_func.action, m_func.param, m_func.result, true);
+                safe_do_action(m_func.action, m_func.param, m_func.result, true);
             }
         }
     }
@@ -207,7 +271,7 @@ void thread_worker_base::dequeue_actions()
             m_sync_queue_items.pop();
         }
 
-        do_action(item.action, item.param, nullptr, false);
+        safe_do_action(item.action, item.param, nullptr, false);
 
         if(item.deleter)
         {
@@ -216,7 +280,7 @@ void thread_worker_base::dequeue_actions()
     }
 }
 
-bool thread_worker_base::do_action(action_id_t action, void* param, void* result, bool cross_thread_caller)
+void thread_worker_base::safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller)
 {
     Assert_Check(!cross_thread_caller || (m_reentrancy.count == 0));
 
@@ -231,7 +295,22 @@ bool thread_worker_base::do_action(action_id_t action, void* param, void* result
         case ACTION_UPDATE: m_running = true ; break;
         case ACTION_QUIT  : m_running = false; break;
         default:
+#ifndef __cpp_exceptions
             on_action(action, param, result);
+#else
+            try
+            {
+                on_action(action, param, result);
+            }
+            catch(const std::exception& e)
+            {
+                m_running = on_exception(true, &e);
+            }
+            catch(...)
+            {
+                m_running = on_exception(true, nullptr);
+            }
+#endif
             break;
     }
     if(cross_thread_caller)
@@ -242,8 +321,46 @@ bool thread_worker_base::do_action(action_id_t action, void* param, void* result
     }
 
     --m_reentrancy.count;
+}
 
-    return true;
+void thread_worker_base::safe_notify_timeout()
+{
+#ifndef __cpp_exceptions
+    on_wait_timeout();
+#else
+    try
+    {
+        on_wait_timeout();
+    }
+    catch(const std::exception& e)
+    {
+        m_running = on_exception(true, &e);
+    }
+    catch(...)
+    {
+        m_running = on_exception(true, nullptr);
+    }
+#endif
+}
+
+void thread_worker_base::safe_notify_complete(std::size_t index)
+{
+#ifndef __cpp_exceptions
+    on_wait_success(index);
+#else
+    try
+    {
+        on_wait_success(index);
+    }
+    catch(const std::exception& e)
+    {
+        m_running = on_exception(true, &e);
+    }
+    catch(...)
+    {
+        m_running = on_exception(true, nullptr);
+    }
+#endif
 }
 
 }

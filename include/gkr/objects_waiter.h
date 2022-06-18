@@ -18,10 +18,10 @@ inline constexpr bool wait_object_is_signalled(wait_result_t wait_result, size_t
     return (wait_result & (wait_result_t(1) << index)) != 0;
 }
 
-constexpr std::chrono::milliseconds timeout_infinite = std::chrono::milliseconds::max ();
-constexpr std::chrono::milliseconds timeout_ignore   = std::chrono::milliseconds::zero();
+constexpr std::chrono::nanoseconds timeout_infinite = std::chrono::nanoseconds::max ();
+constexpr std::chrono::nanoseconds timeout_ignore   = std::chrono::nanoseconds::zero();
 
-class objects_waiter : public impl::base_objects_waiter
+class objects_waiter : public impl::basic_objects_waiter
 {
     objects_waiter           (const objects_waiter&) noexcept = delete;
     objects_waiter& operator=(const objects_waiter&) noexcept = delete;

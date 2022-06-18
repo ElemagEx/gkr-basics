@@ -14,6 +14,22 @@
 
 namespace gkr
 {
+namespace impl
+{
+template<class T>
+struct result
+{
+    T value;
+    T* ptr() { return &value; }
+    T& val() { return  value; }
+};
+template<>
+struct result<void>
+{
+    void* ptr() { return nullptr; }
+    void  val() { return; }
+};
+}
 
 class thread_worker_base
 {
@@ -28,15 +44,16 @@ public:
 
 protected:
     GKR_TWB_API          thread_worker_base();
-    GKR_TWB_API virtual ~thread_worker_base();
+    GKR_TWB_API virtual ~thread_worker_base() noexcept(DIAG_NOEXCEPT);
 
 protected:
-    virtual const char* get_name() = 0;
+    virtual const char* get_name() noexcept = 0;
 
-    virtual std::chrono::nanoseconds get_wait_timeout() = 0;
+    virtual std::chrono::nanoseconds get_wait_timeout() noexcept = 0;
 
-    virtual size_t get_wait_objects_count() = 0;
-    virtual waitable_object* get_wait_object(size_t index) = 0;
+    virtual std::size_t get_wait_objects_count() noexcept = 0;
+
+    virtual waitable_object* get_wait_object(std::size_t index) = 0;
 
     virtual bool start() = 0;
     virtual void finish() = 0;
@@ -44,7 +61,9 @@ protected:
     virtual void on_action(action_id_t action, void* param, void* result) = 0;
 
     virtual void on_wait_timeout() = 0;
-    virtual void on_wait_success(size_t index) = 0;
+    virtual void on_wait_success(std::size_t index) = 0;
+
+    virtual bool on_exception(bool can_continue, const std::exception* e) noexcept = 0;
 
 public:
     GKR_TWB_API bool run();
@@ -52,15 +71,15 @@ public:
     GKR_TWB_API bool quit();
     GKR_TWB_API bool join(bool send_quit_signal);
 
-    GKR_TWB_API void update_wait();
+    GKR_TWB_API bool update_wait();
 
 public:
     using action_param_deleter_t = std::function<void(void*)>;
 
     GKR_TWB_API bool enqueue_action(action_id_t action, void* param = nullptr, action_param_deleter_t deleter = nullptr);
-    GKR_TWB_API bool execute_action(action_id_t action, void* param = nullptr, void* result = nullptr);
+    GKR_TWB_API void execute_action(action_id_t action, void* param = nullptr, void* result = nullptr);
 
-protected:
+private:
     GKR_TWB_API bool can_reply();
     GKR_TWB_API void reply_action();
 
@@ -85,16 +104,22 @@ public:
 private:
     void thread_proc();
 
-    bool acquire_events();
+    bool safe_start () noexcept;
+    void safe_finish() noexcept;
+
+    bool safe_acquire_events() noexcept;
 
     bool main_loop();
 
     void dequeue_actions();
 
-    bool do_action(action_id_t action, void* param, void* result, bool cross_thread_caller);
+    void safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller);
+
+    void safe_notify_timeout();
+    void safe_notify_complete(std::size_t index);
 
 private:
-    enum : size_t
+    enum : std::size_t
     {
         OWN_EVENT_HAS_ASYNC_ACTION,
         OWN_EVENT_HAS_SYNC_ACTION,
@@ -113,8 +138,8 @@ private:
     };
     struct reentrancy_t
     {
-        size_t count;
-        void** result;
+        std::size_t count;
+        void**      result;
     };
 
     reentrancy_t m_reentrancy = {};
@@ -123,8 +148,8 @@ private:
 
     waitable_object** m_objects = nullptr;
 
-    size_t m_count  = 0;
-    func_t m_func   = {};
+    std::size_t m_count  = 0;
+    func_t      m_func   = {};
 
     bool m_running  = false;
     bool m_updating = false;
@@ -146,78 +171,6 @@ private:
     std::mutex         m_sync_queue_mutex;
 
 public:
-    template<typename R, typename C, typename... Args>
-    R execute_action_ex(action_id_t action, /*C* obj, */R (C::*method)(Args...), Args... args)
-    {
-        if(in_worker_thread())
-        {
-            return (static_cast<C*>(this)->*method)(args...);
-        }
-
-		constexpr size_t count = sizeof...(args);
-#ifdef _WIN32
-        const void* params[count + 1] = { reinterpret_cast<const void*>(count), static_cast<const void*>(&args)... };
-#else
-        const void* params[count + 0] = {                                       static_cast<const void*>(&args)... };
-#endif
-        R result;
-
-        execute_action(action, params, &result);
-
-        return result;
-    }
-#if 0
-    template<typename C, typename... Args>
-    void execute_action_ex(action_id_t action, /*C* obj, */auto (C::*method)(Args...), Args&&... args)
-    {
-        if(in_worker_thread())
-        {
-            (static_cast<C*>(this)->*method)(args...);
-            return;
-        }
-
-        constexpr size_t count = sizeof...(args);
-#ifdef _WIN32
-        const void* params[count + 1] = { reinterpret_cast<const void*>(count), static_cast<const void*>(&args)... };
-#else
-        const void* params[count + 0] = {                                       static_cast<const void*>(&args)... };
-#endif
-        execute_action(action, params);
-    }
-#endif
-protected:
-    template<class R, class C, typename ... Args>
-    void call_action_method(R (C::*method)(Args...), void* param, void* result)
-    {
-        void** params = reinterpret_cast<void**>(param);
-        //
-        //TODO:Invastigate warnings reason
-        //
-#ifdef _WIN32
-        const size_t count = reinterpret_cast<size_t>(*params);
-
-        params += count;
-
-        #if defined(__clang__)
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wunsequenced"
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
-        #pragma clang diagnostic pop
-        #else
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
-        #endif
-#else
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wsequence-point"
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params++)...);
-        #pragma GCC diagnostic pop
-#endif
-        if(result != nullptr)
-        {
-            *static_cast<decltype(ret)*>(result) = ret;
-        }
-    }
-
     template<typename T>
     void reply_action(T&& value)
     {
@@ -236,6 +189,79 @@ protected:
             reply_action();
         }
     }
+
+    template<typename R, typename... Args>
+    R execute_action_method(action_id_t action, Args&&... args)
+    {
+        Assert_Check(!in_worker_thread());
+
+        constexpr std::size_t count = sizeof...(args);
+
+        const void* params[count + 1] = {reinterpret_cast<const void*>(count), static_cast<const void*>(std::addressof(args))...};
+
+        impl::result<R> result;
+
+        execute_action(action, params, result.ptr());
+
+        return result.val();
+    }
+
+protected:
+#if defined(__clang__) && defined(__linux__)
+#define RIGHT_TO_LEFT_ARGS_IN_STACK 0
+#else
+#define RIGHT_TO_LEFT_ARGS_IN_STACK 1
+#endif
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsequenced"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsequence-point"
+#endif
+
+    template<class R, class C, typename... Args>
+    void call_action_method(R (C::*method)(Args...), void* param, void* result)
+    {
+        void** params = reinterpret_cast<void**>(param);
+
+#if RIGHT_TO_LEFT_ARGS_IN_STACK
+        const std::size_t count = reinterpret_cast<std::size_t>(*params);
+
+        params += count;
+
+        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+#else
+        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
+#endif
+        if(result != nullptr)
+        {
+            *static_cast<decltype(ret)*>(result) = ret;
+        }
+    }
+    template<class C, typename... Args>
+    void call_action_method(void (C::*method)(Args...), void* param)
+    {
+        void** params = reinterpret_cast<void**>(param);
+
+#if RIGHT_TO_LEFT_ARGS_IN_STACK
+        const std::size_t count = reinterpret_cast<std::size_t>(*params);
+
+        params += count;
+
+        (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+#else
+        (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
+#endif
+    }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+#undef RIGHT_TO_LEFT_ARGS_IN_STACK
 };
 
 }

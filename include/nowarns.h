@@ -5,6 +5,16 @@
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #pragma clang diagnostic ignored "-Wc++98-compat"
 #pragma clang diagnostic ignored "-Wc++17-extensions" //for [[nodiscard]] attribute
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+#pragma clang diagnostic ignored "-Wpadded"
+#pragma clang diagnostic ignored "-Walloca"
+#pragma clang diagnostic ignored "-Wweak-vtables"
+
+#elif defined(__GNUC__)
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 #elif defined(_MSC_VER)
 
@@ -20,6 +30,7 @@
 
 // prevent unsignificant warnings
 #pragma warning(disable:4061) // enumerator 'identifier' in switch of enum 'enumeration' is not explicitly handled by a case label
+#pragma warning(disable:4100) // 'identifier' : unreferenced formal parameter
 #pragma warning(disable:4514) // 'function' : unreferenced inline function has been removed
 #pragma warning(disable:4820) // 'bytes' bytes padding added after construct 'member_name'
 #pragma warning(disable:5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified

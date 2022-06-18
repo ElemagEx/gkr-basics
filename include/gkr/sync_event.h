@@ -66,7 +66,7 @@ public:
     }
 
 private:
-    std::atomic<bool> m_signaled;
+    std::atomic<bool> m_signaled      {false};
     bool              m_manual_reset = false;
 };
 

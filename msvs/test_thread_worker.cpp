@@ -10,19 +10,33 @@ class MyThreadWorker : public gkr::thread_worker_base
 public:
     MyThreadWorker() = default;
 
-    ~MyThreadWorker() override
+    virtual ~MyThreadWorker() override
     {
         join(true);
     }
 
+private:
+    int sum(int x, int y, int z)
+    {
+        return (x + y + z);
+    }
+
 protected:
-    const char* get_name() override
+    const char* get_name() noexcept override
     {
         return "test-thread-0";
     }
-    std::chrono::nanoseconds get_wait_timeout() override
+    std::chrono::nanoseconds get_wait_timeout() noexcept override
     {
         return std::chrono::nanoseconds::max();
+    }
+    size_t get_wait_objects_count() noexcept override
+    {
+        return 0;
+    }
+    gkr::waitable_object* get_wait_object(size_t) override
+    {
+        return nullptr;
     }
     bool start() override
     {
@@ -30,14 +44,6 @@ protected:
     }
     void finish() override
     {
-    }
-    size_t get_wait_objects_count() override
-    {
-        return 0;
-    }
-    gkr::waitable_object* get_wait_object(size_t) override
-    {
-        return nullptr;
     }
     void on_action(action_id_t action, void* param, void* result) override
     {
@@ -54,17 +60,15 @@ protected:
     void on_wait_success(size_t) override
     {
     }
-
-private:
-    int sum(int x, int y)
+    bool on_exception(bool, const std::exception*) noexcept override
     {
-        return (x + y);
+        return true;
     }
 
 public:
-    int sum_in_thread(int x, int y)
+    int sum_in_thread(int x, int y, int z)
     {
-        return execute_action_ex<int>(1, &MyThreadWorker::sum, x, y);
+        return execute_action_method<int>(action_id_t(1), x, y, z);
     }
 };
 
@@ -72,10 +76,12 @@ int test_thread_worker()
 {
     MyThreadWorker myThread;
 
+    int result = 0;
+
     if(myThread.run())
     {
-        myThread.sum_in_thread(2, 3);
+        result = myThread.sum_in_thread(1, 2, 3);
     }
 
-    return 0;
+    return result;
 }

@@ -35,11 +35,11 @@ namespace gkr
 {
 namespace sys
 {
-bool set_current_thread_name(const char* name)
+bool set_current_thread_name(const char name[max_thread_name_cch])
 {
 	Check_ValidArg(name != nullptr, false);
 
-	return (0 == prctl(PR_SET_NAME, (long)name, 0, 0, 0));
+	return (0 == prctl(PR_SET_NAME, long(name), 0, 0, 0));
 }
 }
 }

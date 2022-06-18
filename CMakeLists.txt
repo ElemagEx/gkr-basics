@@ -11,8 +11,11 @@ set(CMAKE_VS_JUST_MY_CODE_DEBUGGING ON)
 if(MSVC)
     set(CMAKE_CXX_FLAGS "/EHsc /Wall /FInowarns.h")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_DEBUG")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "-pthread -Weverything -include\"nowarns.h\"")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 else()
-    set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra -Wpedantic -Wconversion")
+    set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra -Wpedantic -Wconversion -include\"nowarns.h\"")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 endif()
 
@@ -56,6 +59,10 @@ target_sources(
     ${gkr_basics_src_path}/thread_worker_base.cpp
     ${gkr_basics_inc_path}/sys/thread_name.h
     ${gkr_basics_src_path}/sys/thread_name.cpp
+    ${gkr_basics_inc_path}/log/logger.h
+    ${gkr_basics_src_path}/log/logger.cpp
+    ${gkr_basics_inc_path}/log/logging.h
+    ${gkr_basics_src_path}/log/logging.cpp
     )
 
 target_include_directories(gkr-basics PUBLIC ${gkr_basics_include})

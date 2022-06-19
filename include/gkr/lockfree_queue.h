@@ -531,7 +531,7 @@ protected:
     }
 
 protected:
-    size_type take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    size_type try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
@@ -547,6 +547,10 @@ protected:
 
         return index;
     }
+//  template<typename Rep, typename Period>
+//  size_type take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+//  {
+//  }
     bool drop_producer_element_ownership(size_type index, bool push) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
@@ -568,7 +572,7 @@ protected:
     }
 
 protected:
-    size_type take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    size_type try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
@@ -882,7 +886,7 @@ protected:
     }
 
 protected:
-    size_type take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    size_type try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
@@ -920,7 +924,7 @@ protected:
     }
 
 protected:
-    size_type take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    size_type try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
@@ -1024,7 +1028,7 @@ private:
 
         basic_queue.resize(capacity);
 
-        return basic_queue.take_producer_element_ownership();
+        return basic_queue.try_take_producer_element_ownership();
     }
 
 public:
@@ -1037,7 +1041,7 @@ public:
         }
         if(basic_queue.get_free_elements() > std::diff_type(m_threshold))
         {
-            const std::size_t index = basic_queue.take_producer_element_ownership();
+            const std::size_t index = basic_queue.try_take_producer_element_ownership();
 
             return {this, 0, index};
         }
@@ -1085,8 +1089,8 @@ public:
     using base_t::npos;
 
     using element_t = T;
-    using size_type = typename base_t::size_type;
-    using diff_type = typename base_t::diff_type;
+    using size_type = std::size_t;
+    using diff_type = std::ptrdiff_t;
 
 private:
     using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<T>;
@@ -1294,7 +1298,7 @@ private:
         if          (!ResizeSupport)
 #endif
         {
-            return base_t::take_producer_element_ownership();
+            return base_t::try_take_producer_element_ownership();
         }
 
         impl::resizer_state state = m_resizer.take_producer_element_ownership(*this);
@@ -1324,9 +1328,9 @@ private:
 #endif
 public:
     template<typename... Args>
-    element_t* acquire_producer_element_ex(Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
+    element_t* try_acquire_producer_element_ex(Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
     {
-        const size_type index = base_t::take_producer_element_ownership();
+        const size_type index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1334,9 +1338,9 @@ public:
 
         return new (element) T(std::forward<Args>(args)...);
     }
-    element_t* acquire_producer_element() noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
+    element_t* try_acquire_producer_element() noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
     {
-        const size_type index = base_t::take_producer_element_ownership();
+        const size_type index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1344,9 +1348,9 @@ public:
 
         return new (element) T();
     }
-    element_t* acquire_producer_element(T&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
+    element_t* try_acquire_producer_element(T&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
     {
-        const size_type index = base_t::take_producer_element_ownership();
+        const size_type index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1354,9 +1358,9 @@ public:
 
         return new (element) T(std::move(value));
     }
-    element_t* acquire_producer_element(const T& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
+    element_t* try_acquire_producer_element(const T& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
     {
-        const size_type index = base_t::take_producer_element_ownership();
+        const size_type index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1364,9 +1368,9 @@ public:
 
         return new (element) T(value);
     }
-    element_t* acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
+    element_t* try_acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
     {
-        const size_type index = base_t::take_consumer_element_ownership();
+        const size_type index = base_t::try_take_consumer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1416,33 +1420,33 @@ public:
     template<typename... Args>
     queue_producer_element_t try_start_emplace(Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
     {
-        T* element = acquire_producer_element_ex(std::forward<Args>(args)...);
+        T* element = try_acquire_producer_element_ex(std::forward<Args>(args)...);
 
         return queue_producer_element_t(*this, element);
     }
 
     queue_producer_element_t try_start_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
     {
-        T* element = acquire_producer_element();
+        T* element = try_acquire_producer_element();
 
         return queue_producer_element_t(*this, element);
     }
     queue_producer_element_t try_start_push(element_t&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
     {
-        T* element = acquire_producer_element(std::move(value));
+        T* element = try_acquire_producer_element(std::move(value));
 
         return queue_producer_element_t(*this, element);
     }
     queue_producer_element_t try_start_push(const element_t& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
     {
-        T* element = acquire_producer_element(value);
+        T* element = try_acquire_producer_element(value);
 
         return queue_producer_element_t(*this, element);
     }
 
     queue_consumer_element_t try_start_pop() noexcept(DIAG_NOEXCEPT)
     {
-        T* element = acquire_consumer_element();
+        T* element = try_acquire_consumer_element();
 
         return queue_consumer_element_t(*this, element);
     }
@@ -1534,7 +1538,8 @@ private:
 public:
     using base_t::npos;
 
-    using size_type = typename base_t::size_type;
+    using size_type = std::size_t;
+    using diff_type = std::ptrdiff_t;
 
 private:
     using alloc_value_t = std::max_align_t;
@@ -1808,7 +1813,7 @@ public:
         base_t::operator=(std::move(other));
         return *this;
     }
-    void swap(lockfree_queue&& other) noexcept(false)
+    void swap(lockfree_queue&& other) noexcept(swap_is_noexcept)
     {
         if(this == std::addressof(other))
         {
@@ -1816,10 +1821,10 @@ public:
         }
         swap_elements(other);
 
-        m_size      = std::swap(other.m_size     );
-        m_alignment = std::swap(other.m_alignment);
-        m_padding   = std::swap(other.m_padding  );
-        m_stride    = std::swap(other.m_stride   );
+        std::swap(m_size     , other.m_size     );
+        std::swap(m_alignment, other.m_alignment);
+        std::swap(m_padding  , other.m_padding  );
+        std::swap(m_stride   , other.m_stride   );
 
         base_t::swap(other);
     }
@@ -1835,11 +1840,11 @@ public:
     }
 
 public:
-    void* acquire_producer_element() noexcept(DIAG_NOEXCEPT)
+    void* try_acquire_producer_element() noexcept(DIAG_NOEXCEPT)
     {
         if(m_stride == 0) return nullptr;
 
-        const size_type index = base_t::take_producer_element_ownership();
+        const size_type index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1848,20 +1853,20 @@ public:
         return element;
     }
     template<class Element>
-    Element* acquire_producer_element() noexcept(DIAG_NOEXCEPT)
+    Element* try_acquire_producer_element() noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
 
-        return static_cast<Element*>(acquire_producer_element());
+        return static_cast<Element*>(try_acquire_producer_element());
     }
 
 public:
-    void* acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
+    void* try_acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
     {
         if(m_stride == 0) return nullptr;
 
-        const size_type index = base_t::take_consumer_element_ownership();
+        const size_type index = base_t::try_take_consumer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1870,12 +1875,12 @@ public:
         return element;
     }
     template<class Element>
-    Element* acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
+    Element* try_acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
 
-        return static_cast<Element*>(acquire_consumer_element());
+        return static_cast<Element*>(try_acquire_consumer_element());
     }
 
 private:
@@ -1911,7 +1916,7 @@ public:
 public:
     queue_producer_element<self_t, void> try_start_push() noexcept(DIAG_NOEXCEPT)
     {
-        void* element = acquire_producer_element();
+        void* element = try_acquire_producer_element();
 
         return queue_producer_element<self_t, void>(*this, element);
     }
@@ -1921,14 +1926,14 @@ public:
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
 
-        Element* element = acquire_producer_element<Element>();
+        Element* element = try_acquire_producer_element<Element>();
 
         return queue_producer_element<self_t, Element>(*this, element);
     }
 
     queue_consumer_element<self_t, void> try_start_pop() noexcept(DIAG_NOEXCEPT)
     {
-        void* element = acquire_consumer_element();
+        void* element = try_acquire_consumer_element();
 
         return queue_consumer_element<self_t, void>(*this, element);
     }
@@ -1938,7 +1943,7 @@ public:
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
 
-        Element* element = acquire_consumer_element<Element>();
+        Element* element = try_acquire_consumer_element<Element>();
 
         return queue_consumer_element<self_t, Element>(*this, element);
     }

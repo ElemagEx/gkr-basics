@@ -1,5 +1,7 @@
 #pragma once
 
+#include "entry.h"
+
 #include <memory>
 #include <cstdarg>
 
@@ -26,9 +28,16 @@ public:
     GKR_LOG_API static bool init(
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
-        std::size_t max_queue_entries  = 16
+        std::size_t max_queue_entries  = 16,
+        std::size_t max_message_chars  = (1024 - sizeof(entry_info))
         );
     GKR_LOG_API static void done();
+
+public:
+    GKR_LOG_API static bool change_log_queue(
+        std::size_t max_queue_entries = std::size_t(-1),
+        std::size_t max_message_chars = std::size_t(-1)
+        );
 
 public:
     GKR_LOG_API static bool set_severities(bool clear_existing, const name_id_pair* severities);

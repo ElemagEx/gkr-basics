@@ -10,10 +10,6 @@
 #include <cstdarg>
 #include <unordered_map>
 
-#ifndef GKR_LOG_MAX_FORMATTED_MSG_CCH
-#define GKR_LOG_MAX_FORMATTED_MSG_CCH (1024 - sizeof(::gkr::log::entry_info))
-#endif
-
 namespace gkr
 {
 namespace log
@@ -54,7 +50,7 @@ private:
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept override;
 
 public:
-    bool resize_log_queue(std::size_t max_queue_entries);
+    bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
 public:
     void set_severities(bool clear_existing, const name_id_pair* severities);
@@ -75,7 +71,7 @@ public:
 private:
     struct msg_entry : public entry_info
     {
-        char message[GKR_LOG_MAX_FORMATTED_MSG_CCH];
+        char message[1];
     };
 
 private:
@@ -85,14 +81,14 @@ private:
 
     void check_thread_registered();
 
-    bool prepare_msg_entry(msg_entry& entry, int severity, int facility, const char* message, va_list args);
+    bool prepare_msg_entry(msg_entry& entry, std::size_t cch, int severity, int facility, const char* message, va_list args);
 
     void consume_msg_entry(const msg_entry& entry);
 
 private:
     enum : action_id_t
     {
-        ACTION_RESIZE_LOG_QUEUE ,
+        ACTION_CHANGE_LOG_QUEUE ,
         ACTION_SET_SEVERITIES   ,
         ACTION_SET_FACILITIES   ,
         ACTION_SET_SEVERITY     ,
@@ -107,7 +103,7 @@ private:
     static constexpr unsigned max_name_cch = 16;
     struct thread_name_t { char name[max_name_cch] {0}; };
 
-    using lockfree_queue_t = lockfree_queue<msg_entry, true, false>;
+    using lockfree_queue_t = lockfree_queue<void, true, false>;
 
 private:
     waitable_event<> m_has_entries_event;

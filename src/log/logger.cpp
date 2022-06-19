@@ -61,7 +61,7 @@ void logger::on_action(action_id_t action, void* param, void* result)
 {
     switch(action)
     {
-        case ACTION_RESIZE_LOG_QUEUE : call_action_method(&logger::resize_log_queue , param, result); break;
+        case ACTION_CHANGE_LOG_QUEUE : call_action_method(&logger::change_log_queue , param, result); break;
         case ACTION_SET_SEVERITIES   : call_action_method(&logger::set_severities   , param); break;
         case ACTION_SET_FACILITIES   : call_action_method(&logger::set_facilities   , param); break;
         case ACTION_SET_SEVERITY     : call_action_method(&logger::set_severity     , param, result); break;
@@ -87,20 +87,25 @@ bool logger::on_exception(bool can_continue, const std::exception* e) noexcept
     return true;
 }
 
-bool logger::resize_log_queue(std::size_t max_queue_entries)
+bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars)
 {
     Check_ValidArg(max_queue_entries > 0, false);
+    Check_ValidArg(max_message_chars > 0, false);
 
+    const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
+        ? max_message_chars
+        : max_message_chars + sizeof(entry_info)
+        ;
     if(!running())
     {
-        m_log_queue.reset(max_queue_entries);
+        m_log_queue.reset(max_queue_entries, queue_entry_size, alignof(entry_info));
         return true;
     }
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_RESIZE_LOG_QUEUE, max_queue_entries);
+        return execute_action_method<bool>(ACTION_CHANGE_LOG_QUEUE, max_queue_entries, max_message_chars);
     }
-    Assert_NotImplemented();
+    Check_Failure(false);
 }
 
 void logger::set_severities(bool clear_existing, const name_id_pair* severities)
@@ -226,13 +231,15 @@ bool logger::log_message(bool wait, int severity, int facility, const char* mess
 
     check_thread_registered();
 
+    const std::size_t cch = m_log_queue.element_size() - sizeof(entry_info);
+
     auto element = m_log_queue.try_start_push(); //TODO:WAIT - not try
 
     Check_ValidState(element.push_in_progress(), false);
 
-    msg_entry& entry = *element;
+    msg_entry& entry = element.value<msg_entry>();
 
-    if(!prepare_msg_entry(entry, severity, facility, message, args))
+    if(!prepare_msg_entry(entry, cch, severity, facility, message, args))
     {
         element.cancel_push();
         return false;
@@ -283,17 +290,17 @@ void logger::check_thread_registered()
     register_thread(std::this_thread::get_id(), name);
 }
 
-bool logger::prepare_msg_entry(msg_entry& entry, int severity, int facility, const char* message, va_list args)
+bool logger::prepare_msg_entry(msg_entry& entry, std::size_t cch, int severity, int facility, const char* message, va_list args)
 {
     if(args == nullptr)
     {
-        const std::size_t len = std::strlen(std::strncpy(entry.message, message, GKR_LOG_MAX_FORMATTED_MSG_CCH));
+        const std::size_t len = std::strlen(std::strncpy(entry.message, message, cch));
 
         entry.head.mesageLen = std::uint16_t(len);
     }
     else
     {
-        const int len = std::vsnprintf(entry.message, GKR_LOG_MAX_FORMATTED_MSG_CCH, message, args);
+        const int len = std::vsnprintf(entry.message, cch, message, args);
 
         Check_ValidState(len >= 0, false);
 

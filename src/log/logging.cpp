@@ -12,12 +12,13 @@ static logger s_logger;
 bool logging::init(
     const name_id_pair* severities,
     const name_id_pair* facilities,
-    std::size_t max_queue_entries
+    std::size_t max_queue_entries,
+    std::size_t max_message_chars
     )
 {
     Check_ValidState(!s_logger.running(), false);
 
-    s_logger.resize_log_queue(max_queue_entries);
+    s_logger.change_log_queue(max_queue_entries, max_message_chars);
 
     if(!s_logger.run()) return false;
 
@@ -32,6 +33,14 @@ void logging::done()
     if(!s_logger.running()) return;
 
     s_logger.join(true);
+}
+
+bool logging::change_log_queue(
+    std::size_t max_queue_entries,
+    std::size_t max_message_chars
+    )
+{
+    return s_logger.change_log_queue(max_queue_entries, max_message_chars);
 }
 
 bool logging::set_severities(bool clear_existing, const name_id_pair* severities)

@@ -3,6 +3,12 @@
 #include <gkr/log/logging.h>
 #include <gkr/log/consumer.h>
 
+#include <gkr/sys/thread_name.h>
+#include <gkr/misc/union_cast.h>
+#include <gkr/misc/stamp.h>
+
+#include <cstring>
+
 namespace gkr
 {
 namespace log
@@ -41,10 +47,8 @@ waitable_object* logger::get_wait_object(size_t index)
 
 bool logger::start()
 {
-    m_log_queue.reset(32);
     m_log_queue.threading.any_thread_can_be_producer();
     m_log_queue.threading.set_this_thread_as_exclusive_consumer();
-
     return true;
 }
 
@@ -57,6 +61,7 @@ void logger::on_action(action_id_t action, void* param, void* result)
 {
     switch(action)
     {
+        case ACTION_RESIZE_LOG_QUEUE : call_action_method(&logger::resize_log_queue , param, result); break;
         case ACTION_SET_SEVERITIES   : call_action_method(&logger::set_severities   , param); break;
         case ACTION_SET_FACILITIES   : call_action_method(&logger::set_facilities   , param); break;
         case ACTION_SET_SEVERITY     : call_action_method(&logger::set_severity     , param, result); break;
@@ -64,6 +69,8 @@ void logger::on_action(action_id_t action, void* param, void* result)
         case ACTION_ADD_CONSUMER     : call_action_method(&logger::add_consumer     , param, result); break;
         case ACTION_DEL_CONSUMER     : call_action_method(&logger::del_consumer     , param, result); break;
         case ACTION_DEL_ALL_CONSUMERS: call_action_method(&logger::del_all_consumers, param); break;
+        case ACTION_REGISTER_THREAD  : call_action_method(&logger::register_thread  , param); break;
+        case ACTION_SYNC_LOG_MESSAGE : call_action_method(&logger::sync_log_message , param); break;
     }
 }
 
@@ -78,6 +85,22 @@ void logger::on_wait_success(size_t index)
 bool logger::on_exception(bool can_continue, const std::exception* e) noexcept
 {
     return true;
+}
+
+bool logger::resize_log_queue(std::size_t max_queue_entries)
+{
+    Check_ValidArg(max_queue_entries > 0, false);
+
+    if(!running())
+    {
+        m_log_queue.reset(max_queue_entries);
+        return true;
+    }
+    if(!in_worker_thread())
+    {
+        return execute_action_method<bool>(ACTION_RESIZE_LOG_QUEUE, max_queue_entries);
+    }
+    Assert_NotImplemented();
 }
 
 void logger::set_severities(bool clear_existing, const name_id_pair* severities)
@@ -185,12 +208,123 @@ bool logger::del_consumer(std::shared_ptr<consumer> consumer)
 
 void logger::del_all_consumers()
 {
+    if(!in_worker_thread())
+    {
+        return execute_action_method<void>(ACTION_DEL_ALL_CONSUMERS);
+    }
     for(auto it = m_consumers.rbegin(); it != m_consumers.rend(); ++it)
     {
         (*it)->done_logging();
         (*it) .reset();
     }
     m_consumers.clear();
+}
+
+bool logger::log_message(bool wait, int severity, int facility, const char* message, va_list args)
+{
+    Check_NotNullArg(message, false);
+
+    check_thread_registered();
+
+    auto element = m_log_queue.try_start_push(); //TODO:WAIT - not try
+
+    Check_ValidState(element.push_in_progress(), false);
+
+    msg_entry& entry = *element;
+
+    if(!prepare_msg_entry(entry, severity, facility, message, args))
+    {
+        element.cancel_push();
+        return false;
+    }
+    if(wait)
+    {
+        sync_log_message(entry);
+        element.cancel_push();
+    }
+    return true;
+}
+
+void logger::register_thread(std::thread::id tid, const char* name)
+{
+    if(!in_worker_thread())
+    {
+        return execute_action_method<void>(ACTION_REGISTER_THREAD, tid, name);
+    }
+    thread_name_t& thread_name = m_thread_names[tid];
+
+    if(name != nullptr)
+    {
+        std::strncpy(thread_name.name, name, max_name_cch - 1);
+    }
+}
+
+void logger::sync_log_message(const msg_entry& entry)
+{
+    if(!in_worker_thread())
+    {
+        return execute_action_method<void>(ACTION_SYNC_LOG_MESSAGE, entry);
+    }
+    consume_msg_entry(entry);
+}
+
+void logger::check_thread_registered()
+{
+    static thread_local bool thread_registered = false;
+
+    if(thread_registered) return;
+
+    thread_registered = true;
+
+    char name[sys::max_thread_name_cch];
+
+    if(!Verify_BoolRes(sys::get_current_thread_name(name))) return;
+
+    register_thread(std::this_thread::get_id(), name);
+}
+
+bool logger::prepare_msg_entry(msg_entry& entry, int severity, int facility, const char* message, va_list args)
+{
+    if(args == nullptr)
+    {
+        const std::size_t len = std::strlen(std::strncpy(entry.message, message, GKR_LOG_MAX_FORMATTED_MSG_CCH));
+
+        entry.head.mesageLen = std::uint16_t(len);
+    }
+    else
+    {
+        const int len = std::vsnprintf(entry.message, GKR_LOG_MAX_FORMATTED_MSG_CCH, message, args);
+
+        Check_ValidState(len >= 0, false);
+
+        entry.head.mesageLen = std::uint16_t(len);
+    }
+
+    auto tid = std::this_thread::get_id();
+
+    entry.head.tid       = misc::union_cast<std::int64_t>(tid);
+    entry.head.stamp     = misc::get_stamp();
+    entry.head.severity  = std::uint16_t(severity);
+    entry.head.facility  = std::uint16_t(facility);
+
+    entry.threadName     = m_thread_names[tid].name;
+    entry.messageText    = entry.message;
+
+    auto itSeverity = m_severities.find(entry.head.severity);
+    auto itFacility = m_facilities.find(entry.head.facility);
+
+    entry.severityName = (itSeverity == m_severities.end()) ? nullptr : itSeverity->second;
+    entry.facilityName = (itFacility == m_facilities.end()) ? nullptr : itFacility->second;
+
+    return true;
+}
+
+void logger::consume_msg_entry(const msg_entry& entry)
+{
+    for(auto& consumer : m_consumers)
+    {
+        consumer->consume_log_message(entry);
+    }
 }
 
 }

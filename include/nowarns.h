@@ -1,10 +1,15 @@
 #pragma once
 
+#if !defined(__GNUC__)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #if defined(__clang__)
 
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #pragma clang diagnostic ignored "-Wc++98-compat"
 #pragma clang diagnostic ignored "-Wc++17-extensions" //for [[nodiscard]] attribute
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wglobal-constructors"
 #pragma clang diagnostic ignored "-Wexit-time-destructors"

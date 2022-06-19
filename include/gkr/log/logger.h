@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <vector>
+#include <cstdarg>
 #include <unordered_map>
 
 #ifndef GKR_LOG_MAX_FORMATTED_MSG_CCH
@@ -53,6 +54,9 @@ private:
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept override;
 
 public:
+    bool resize_log_queue(std::size_t max_queue_entries);
+
+public:
     void set_severities(bool clear_existing, const name_id_pair* severities);
     void set_facilities(bool clear_existing, const name_id_pair* facilities);
 
@@ -66,24 +70,29 @@ public:
     void del_all_consumers();
 
 public:
+    bool log_message(bool wait, int severity, int facility, const char* message, va_list args);
 
 private:
     struct msg_entry : public entry_info
     {
         char message[GKR_LOG_MAX_FORMATTED_MSG_CCH];
     };
-    using lockfree_queue_t = lockfree_queue<msg_entry, true, false>;
 
-    lockfree_queue_t m_log_queue;
-
-#if 0
 private:
-    bool SetThreadName(const char* name, size_t threadId = 0);
-    void LogMessage(const char* file, int line, int flags, int severity, int facility, void* data, const char* message, char* args);
-#endif
+    void register_thread(std::thread::id tid, const char* name);
+
+    void sync_log_message(const msg_entry& entry);
+
+    void check_thread_registered();
+
+    bool prepare_msg_entry(msg_entry& entry, int severity, int facility, const char* message, va_list args);
+
+    void consume_msg_entry(const msg_entry& entry);
+
 private:
     enum : action_id_t
     {
+        ACTION_RESIZE_LOG_QUEUE ,
         ACTION_SET_SEVERITIES   ,
         ACTION_SET_FACILITIES   ,
         ACTION_SET_SEVERITY     ,
@@ -91,17 +100,26 @@ private:
         ACTION_ADD_CONSUMER     ,
         ACTION_DEL_CONSUMER     ,
         ACTION_DEL_ALL_CONSUMERS,
+        ACTION_REGISTER_THREAD  ,
+        ACTION_SYNC_LOG_MESSAGE , 
     };
+
+    static constexpr unsigned max_name_cch = 16;
+    struct thread_name_t { char name[max_name_cch] {0}; };
+
+    using lockfree_queue_t = lockfree_queue<msg_entry, true, false>;
 
 private:
     waitable_event<> m_has_entries_event;
+
+    lockfree_queue_t m_log_queue;
 
     std::vector<std::shared_ptr<consumer>> m_consumers;
 
     std::unordered_map<unsigned short, const char*> m_severities;
     std::unordered_map<unsigned short, const char*> m_facilities;
 
-    std::unordered_map<std::thread::id,const char*> m_threads;
+    std::unordered_map<std::thread::id, thread_name_t> m_thread_names;
 };
 
 }

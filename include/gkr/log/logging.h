@@ -25,7 +25,8 @@ class logging
 public:
     GKR_LOG_API static bool init(
         const name_id_pair* severities = nullptr,
-        const name_id_pair* facilities = nullptr
+        const name_id_pair* facilities = nullptr,
+        std::size_t max_queue_entries  = 16
         );
     GKR_LOG_API static void done();
 
@@ -43,13 +44,10 @@ public:
     GKR_LOG_API static bool del_all_consumers();
 
 public:
-    GKR_LOG_API static void log_message  (bool instant, int severity, int facility, void* data, const char* message, ...);
-    GKR_LOG_API static void log_message_v(bool instant, int severity, int facility, void* data, const char* message, va_list);
+    GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* message);
+    GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* message, ...);
+    GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* message, va_list args);
 };
 
 }
 }
-
-#ifndef GKR_LOG
-#define GKR_LOG(severity, facility, message, ...) ::gkr::log::logging::log_message(false, severity, facility, message, __VA_ARGS__)
-#endif

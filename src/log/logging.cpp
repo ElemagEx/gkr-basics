@@ -11,10 +11,13 @@ static logger s_logger;
 
 bool logging::init(
     const name_id_pair* severities,
-    const name_id_pair* facilities
+    const name_id_pair* facilities,
+    std::size_t max_queue_entries
     )
 {
     Check_ValidState(!s_logger.running(), false);
+
+    s_logger.resize_log_queue(max_queue_entries);
 
     if(!s_logger.run()) return false;
 
@@ -84,6 +87,30 @@ bool logging::del_all_consumers()
     s_logger.del_all_consumers();
 
     return true;
+}
+
+bool logging::log_simple_message(bool wait, int severity, int facility, const char* message)
+{
+    Check_ValidState(s_logger.running(), false);
+
+    return s_logger.log_message(wait, severity, facility, message, nullptr);
+}
+
+bool logging::log_format_message(bool wait, int severity, int facility, const char* message, ...)
+{
+    Check_ValidState(s_logger.running(), false);
+
+    va_list args;
+    va_start(args, message);
+
+    return s_logger.log_message(wait, severity, facility, message, args);
+}
+
+bool logging::log_valist_message(bool wait, int severity, int facility, const char* message, va_list args)
+{
+    Check_ValidState(s_logger.running(), false);
+
+    return s_logger.log_message(wait, severity, facility, message, args);
 }
 
 }

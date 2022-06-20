@@ -1371,7 +1371,7 @@ private:
     {
         if(m_elements != nullptr)
         {
-            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
+            for(size_type pos = npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -1391,7 +1391,7 @@ public:
         }
         if(capacity == base_t::capacity())
         {
-            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
+            for(size_type pos = npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -1448,7 +1448,7 @@ private:
         {
             elements = allocator.allocate(base_t::capacity());
 
-            for(size_type pos, index = 0; index < base_t::capacity(); ++index)
+            for(size_type pos = npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {

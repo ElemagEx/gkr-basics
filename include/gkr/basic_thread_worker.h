@@ -170,7 +170,13 @@ private:
     std::queue<item_t> m_sync_queue_items;
     std::mutex         m_sync_queue_mutex;
 
-public:
+protected:
+    objects_waiter& get_waiter()
+    {
+        Assert_Check(in_worker_thread());
+        return m_waiter;
+    }
+
     template<typename T>
     void reply_action(T&& value)
     {
@@ -190,6 +196,7 @@ public:
         }
     }
 
+public:
     template<typename R, typename... Args>
     R execute_action_method(action_id_t action, Args&&... args)
     {

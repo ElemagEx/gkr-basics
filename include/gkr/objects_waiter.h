@@ -13,7 +13,7 @@ constexpr size_t maximum_wait_objects = sizeof(wait_result_t) * 8 - 1;
 constexpr wait_result_t wait_result_error   = wait_result_t(0x80000000);
 constexpr wait_result_t wait_result_timeout = wait_result_t(0);
 
-inline constexpr bool wait_object_is_signalled(wait_result_t wait_result, size_t index)
+inline constexpr bool wait_object_is_signalled(wait_result_t wait_result, size_t index) noexcept
 {
     return (wait_result & (wait_result_t(1) << index)) != 0;
 }
@@ -134,7 +134,7 @@ public:
     {
         constexpr size_t count = sizeof...(waitable_objects);
 
-        waitable_object* objects[count] = { &waitable_objects... };
+        waitable_object* objects[count] = {&waitable_objects...};
 
         return check(count, objects);
     }
@@ -159,7 +159,7 @@ public:
     {
         constexpr size_t count = sizeof...(waitable_objects);
 
-        waitable_object* objects[count] = { &waitable_objects... };
+        waitable_object* objects[count] = {&waitable_objects...};
 
         return wait(count, objects);
     }
@@ -200,7 +200,7 @@ public:
     {
         constexpr size_t count = sizeof...(waitable_objects);
 
-        waitable_object* objects[count] = { &waitable_objects... };
+        waitable_object* objects[count] = {&waitable_objects...};
 
         return wait(timeout, count, objects);
     }

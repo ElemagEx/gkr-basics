@@ -15,8 +15,75 @@
 
 namespace gkr
 {
-namespace policy
+
+class waitable_object;
+class objects_waiter;
+
+namespace detail
 {
+
+class queue_no_synchronization
+{
+    queue_no_synchronization           (const queue_no_synchronization&) noexcept = delete;
+    queue_no_synchronization& operator=(const queue_no_synchronization&) noexcept = delete;
+
+public:
+    queue_no_synchronization() noexcept = default;
+   ~queue_no_synchronization() noexcept = default;
+
+    queue_no_synchronization           (queue_no_synchronization&&) noexcept = default;
+    queue_no_synchronization& operator=(queue_no_synchronization&&) noexcept = default;
+
+    void swap(queue_no_synchronization& other) noexcept
+    {
+    }
+
+public:
+    template<bool IsFull>
+    void notify_queue_full() noexcept
+    {
+    }
+    template<bool IsEmpty>
+    void notify_queue_empty() noexcept
+    {
+    }
+
+public:
+    static constexpr bool has_internal_wait = false;
+    static constexpr bool has_external_wait = false;
+
+public:
+    template<typename Rep, typename Period>
+    bool producer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
+    {
+        return false;
+    }
+    template<typename Rep, typename Period>
+    bool producer_wait(objects_waiter& waiter, std::chrono::duration<Rep, Period>& timeout) noexcept
+    {
+        return false;
+    }
+    template<typename Rep, typename Period>
+    bool consumer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
+    {
+        return false;
+    }
+    template<typename Rep, typename Period>
+    bool consumer_wait(objects_waiter& waiter, std::chrono::duration<Rep, Period>& timeout) noexcept
+    {
+        return false;
+    }
+
+public:
+    waitable_object* queue_has_space_waitable_object() noexcept
+    {
+        return nullptr;
+    }
+    waitable_object* queue_non_empty_waitable_object() noexcept
+    {
+        return nullptr;
+    }
+};
 
 class producer_consumer_threading
 {
@@ -383,7 +450,7 @@ private:
 namespace impl
 {
 
-template<bool MultipleConsumersMultipleProducersSupport, typename BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, typename Synchronization, typename BaseAllocator>
 class basic_lockfree_queue;
 
 #ifdef RESIZER
@@ -391,8 +458,8 @@ template<bool ResizeSupport>
 class resizer_helper;
 #endif
 
-template<typename BaseAllocator>
-class basic_lockfree_queue<false, BaseAllocator>
+template<typename Synchronization, typename BaseAllocator>
+class basic_lockfree_queue<false, Synchronization, BaseAllocator>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -403,9 +470,11 @@ public:
 
     static constexpr size_type npos = size_type(-1);
 
-    policy::producer_consumer_threading threading;
+    detail::producer_consumer_threading threading;
 
 private:
+    Synchronization m_synchronization;
+
     std::atomic<size_type> m_count {0};
 
     size_type m_capacity = 0;
@@ -450,6 +519,8 @@ protected:
     {
         threading.swap(other.threading);
 
+        m_synchronization.swap(other.m_synchronization);
+
         m_count = other.m_count.exchange(m_count);
 
         std::swap(m_capacity, other.m_capacity);
@@ -476,6 +547,16 @@ public:
     size_type capacity() const noexcept
     {
         return m_capacity;
+    }
+
+public:
+    waitable_object* queue_has_space_waitable_object()
+    {
+        return m_synchronization.queue_has_space_waitable_object();
+    }
+    waitable_object* queue_non_empty_waitable_object()
+    {
+        return m_synchronization.queue_non_empty_waitable_object();
     }
 
 protected:
@@ -510,6 +591,16 @@ protected:
 
         m_producer_owns_tail = false;
         m_consumer_owns_head = false;
+
+        if(m_capacity == 0)
+        {
+            m_synchronization.notify_queue_full<true>();
+        }
+        else
+        {
+            m_synchronization.notify_queue_full<false>();
+        }
+        m_synchronization.notify_queue_empty<true>();
     }
 
 protected:
@@ -539,6 +630,7 @@ protected:
 
         if(m_count == m_capacity)
         {
+            m_synchronization.notify_queue_full<true>();
             return npos;
         }
         m_producer_owns_tail = true;
@@ -547,10 +639,34 @@ protected:
 
         return index;
     }
-//  template<typename Rep, typename Period>
-//  size_type take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
-//  {
-//  }
+    template<typename Rep, typename Period>
+    size_type take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_t index = try_take_producer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_producer_element_ownership()) return npos;
+
+            if(!m_synchronization.producer_wait(timeout)) return npos;
+        }
+    }
+    template<typename Rep, typename Period>
+    size_type take_producer_element_ownership(objects_waiter& waiter, std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_t index = try_take_producer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_producer_element_ownership()) return npos;
+
+            if(!m_synchronization.producer_wait(waiter, timeout)) return npos;
+        }
+    }
     bool drop_producer_element_ownership(size_type index, bool push) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
@@ -566,7 +682,17 @@ protected:
         if(push)
         {
             ++m_tail_pos;
-            ++m_count;
+
+            const size_type count = ++m_count;
+
+            if(count == m_capacity)
+            {
+                m_synchronization.notify_queue_full<true>();
+            }
+            if(count == 1)
+            {
+                m_synchronization.notify_queue_empty<false>();
+            }
         }
         return true;
     }
@@ -580,6 +706,7 @@ protected:
 
         if(m_count == 0) 
         {
+            m_synchronization.notify_queue_empty<true>();
             return npos;
         }
 
@@ -588,6 +715,34 @@ protected:
         const size_type index = (m_head_pos % m_capacity);
 
         return index;
+    }
+    template<typename Rep, typename Period>
+    size_type take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_t index = try_take_consumer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_consumer_element_ownership()) return npos;
+
+            if(!m_synchronization.consumer_wait(timeout)) return npos;
+        }
+    }
+    template<typename Rep, typename Period>
+    size_type take_consumer_element_ownership(objects_waiter& waiter, std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_t index = try_take_consumer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_consumer_element_ownership()) return npos;
+
+            if(!m_synchronization.consumer_wait(waiter, timeout)) return npos;
+        }
     }
     bool drop_consumer_element_ownership(size_type index, bool pop) noexcept(DIAG_NOEXCEPT)
     {
@@ -604,13 +759,23 @@ protected:
         if(pop)
         {
             ++m_head_pos;
-            --m_count;
+
+            const size_type count = m_count--;
+
+            if(count == m_capacity)
+            {
+                m_synchronization.notify_queue_full<false>();
+            }
+            if(count == 1)
+            {
+                m_synchronization.notify_queue_empty<true>();
+            }
         }
         return true;
     }
 };
-template<typename BaseAllocator>
-class basic_lockfree_queue<true, BaseAllocator>
+template<typename Synchronization, typename BaseAllocator>
+class basic_lockfree_queue<true, Synchronization, BaseAllocator>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -621,9 +786,11 @@ public:
 
     static constexpr size_type npos = size_type(-1);
 
-    policy::producer_consumer_threading threading;
+    detail::producer_consumer_threading threading;
 
 private:
+    Synchronization m_synchronization;
+
     struct dequeues_entry
     {
         size_type free_index;
@@ -813,6 +980,16 @@ public:
         return m_capacity;
     }
 
+public:
+    waitable_object* queue_has_space_waitable_object()
+    {
+        return m_synchronization.queue_has_space_waitable_object();
+    }
+    waitable_object* queue_non_empty_waitable_object()
+    {
+        return m_synchronization.queue_non_empty_waitable_object();
+    }
+
 protected:
     bool element_has_value(size_type index, size_type& pos) const noexcept
     {
@@ -860,6 +1037,16 @@ protected:
 
         m_free_head = 0;
         m_free_tail = m_capacity;
+
+        if(m_capacity == 0)
+        {
+            m_synchronization.notify_queue_full<true>();
+        }
+        else
+        {
+            m_synchronization.notify_queue_full<false>();
+        }
+        m_synchronization.notify_queue_empty<true>();
     }
 
 protected:
@@ -892,6 +1079,7 @@ protected:
 
         if(++m_occupied > m_capacity)
         {
+            m_synchronization.notify_queue_full<true>();
             --m_occupied;
             return npos;
         }
@@ -899,6 +1087,34 @@ protected:
         const size_type index = m_entries[m_free_head++ % m_capacity].free_index;
 
         return index;
+    }
+    template<typename Rep, typename Period>
+    size_type take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_t index = try_take_producer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_producer_element_ownership()) return npos;
+
+            if(!m_synchronization.producer_wait(timeout)) return npos;
+        }
+    }
+    template<typename Rep, typename Period>
+    size_type take_producer_element_ownership(objects_waiter& waiter, std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_t index = try_take_producer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_producer_element_ownership()) return npos;
+
+            if(!m_synchronization.producer_wait(waiter, timeout)) return npos;
+        }
     }
     bool drop_producer_element_ownership(size_type index, bool push) noexcept(DIAG_NOEXCEPT)
     {
@@ -913,12 +1129,20 @@ protected:
             m_entries[m_busy_tail++ % m_capacity].busy_index = index;
 
             ++m_available;
+
+            if(++m_count == m_capacity)
+            {
+                m_synchronization.notify_queue_full<true>();
+            }
+            m_synchronization.notify_queue_empty<false>();
         }
         else
         {
             m_entries[--m_free_head % m_capacity].free_index = index;
 
             --m_occupied;
+
+            m_synchronization.notify_queue_full<false>();
         }
         return true;
     }
@@ -930,6 +1154,7 @@ protected:
 
         if(diff_type(--m_available) < 0)
         {
+            m_synchronization.notify_queue_empty<true>();
             ++m_available;
             return npos;
         }
@@ -937,6 +1162,34 @@ protected:
         const size_type index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
         return index;
+    }
+    template<typename Rep, typename Period>
+    size_type take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_type index = try_take_consumer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_consumer_element_ownership()) return npos;
+
+            if(!m_synchronization.consumer_wait(timeout)) return npos;
+        }
+    }
+    template<typename Rep, typename Period>
+    size_type take_consumer_element_ownership(objects_waiter& waiter, std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const size_type index = try_take_consumer_element_ownership();
+
+            if(index != npos) return index;
+
+            if(!can_take_consumer_element_ownership()) return npos;
+
+            if(!m_synchronization.consumer_wait(waiter, timeout)) return npos;
+        }
     }
     bool drop_consumer_element_ownership(size_type index, bool pop) noexcept(DIAG_NOEXCEPT)
     {
@@ -951,12 +1204,20 @@ protected:
             m_entries[m_free_tail++ % m_capacity].free_index = index;
 
             --m_occupied;
+
+            if(--m_count == 0)
+            {
+                m_synchronization.notify_queue_empty<true>();
+            }
+            m_synchronization.notify_queue_full<false>();
         }
         else
         {
             m_entries[--m_busy_head % m_capacity].busy_index = index;
 
             ++m_available;
+
+            m_synchronization.notify_queue_empty<false>();
         }
         return true;
     }
@@ -1075,15 +1336,22 @@ public:
 #endif
 }
 
-template<typename T, bool MultipleConsumersMultipleProducersSupport=false, bool ResizeSupport=false, typename BaseAllocator = std::allocator<char>>
-class lockfree_queue : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
+template<
+    typename T,
+    bool MultipleConsumersMultipleProducersSupport=false,
+    bool ResizeSupport=false,
+    typename Synchronization=detail::queue_no_synchronization,
+    typename BaseAllocator  =std::allocator<char>
+    >
+class lockfree_queue
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Synchronization, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport,                BaseAllocator>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, Synchronization, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport,                Synchronization, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1256,10 +1524,8 @@ public:
     }
     lockfree_queue& operator=(lockfree_queue&& other) noexcept(false)
     {
-        if(this == std::addressof(other))
-        {
-            return *this;
-        }
+        if(this == &other) return *this;
+
         clear();
         move_elements(std::move(other));
 
@@ -1268,10 +1534,8 @@ public:
     }
     void swap(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        if(this == std::addressof(other))
-        {
-            return;
-        }
+        if(this == &other) return;
+
         swap_elements(other);
 
         base_t::swap(other);
@@ -1525,15 +1789,21 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, bool ResizeSupport, typename BaseAllocator>
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, BaseAllocator> : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, BaseAllocator>
+template<
+    bool MultipleConsumersMultipleProducersSupport,
+    bool ResizeSupport,
+    typename Synchronization,
+    typename BaseAllocator
+    >
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, Synchronization, BaseAllocator>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Synchronization, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport,                BaseAllocator>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, Synchronization, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport,                Synchronization, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1798,10 +2068,8 @@ public:
     }
     lockfree_queue& operator=(lockfree_queue&& other) noexcept(false)
     {
-        if(this == std::addressof(other))
-        {
-            return *this;
-        }
+        if(this == &other) return *this;
+
         clear();
         move_elements(std::move(other));
 
@@ -1815,10 +2083,8 @@ public:
     }
     void swap(lockfree_queue&& other) noexcept(swap_is_noexcept)
     {
-        if(this == std::addressof(other))
-        {
-            return;
-        }
+        if(this == &other) return;
+
         swap_elements(other);
 
         std::swap(m_size     , other.m_size     );

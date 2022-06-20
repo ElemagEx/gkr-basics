@@ -66,6 +66,10 @@ protected:
     waitable_object() noexcept = default;
    ~waitable_object() noexcept = default;
 
+   void swap(waitable_object&)
+   {
+   }
+
 private:
     friend class objects_waiter;
 
@@ -77,50 +81,55 @@ private:
     virtual bool unregister_waiter(impl::basic_objects_waiter& objects_waiter) = 0;
 
 protected:
-    struct waiter_t
+    class waiter_t
     {
+        std::atomic<impl::basic_objects_waiter*> ptr {nullptr};
+
+    public:
         waiter_t           (const waiter_t&) noexcept = delete;
         waiter_t& operator=(const waiter_t&) noexcept = delete;
 
         waiter_t() noexcept = default;
        ~waiter_t() noexcept = default;
 
-        waiter_t(waiter_t&& other) noexcept
+        waiter_t(waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
             Assert_Check(other.ptr.load() == nullptr);
         }
-        waiter_t& operator=(waiter_t&& other) noexcept
+        waiter_t& operator=(waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
             Assert_Check(other.ptr.load() == nullptr);
             Assert_Check(      ptr.load() == nullptr);
             return *this;
         }
+        void swap(waiter_t& other) noexcept(DIAG_NOEXCEPT)
+        {
+            Assert_Check(other.ptr.load() == nullptr);
+            Assert_Check(      ptr.load() == nullptr);
+        }
 
-        bool try_set(impl::basic_objects_waiter& objects_waiter)
+        bool try_set(impl::basic_objects_waiter& objects_waiter) noexcept
         {
             impl::basic_objects_waiter* expected = nullptr;
 
             return ptr.compare_exchange_strong(expected, &objects_waiter);
         }
-        bool try_reset(impl::basic_objects_waiter& objects_waiter)
+        bool try_reset(impl::basic_objects_waiter& objects_waiter) noexcept
         {
             impl::basic_objects_waiter* expected = &objects_waiter;
 
             return ptr.compare_exchange_strong(expected, nullptr);
         }
-
-        std::atomic<impl::basic_objects_waiter*> ptr {nullptr};
-    };
-
-    void notify_waiter(waiter_t& waiter, bool broadcast)
-    {
-        impl::basic_objects_waiter* objects_waiter = waiter.ptr.load();
-
-        if(objects_waiter != nullptr)
+        void notify(bool broadcast)
         {
-            objects_waiter->notify(broadcast);
+            impl::basic_objects_waiter* objects_waiter = ptr.load();
+
+            if(objects_waiter != nullptr)
+            {
+                objects_waiter->notify(broadcast);
+            }
         }
-    }
+    };
 };
 
 namespace impl
@@ -133,16 +142,41 @@ class waiter_registrator : public waitable_object
     waiter_registrator& operator=(const waiter_registrator&) noexcept = delete;
 
 protected:
-    waiter_registrator           (waiter_registrator&&) noexcept = default;
-    waiter_registrator& operator=(waiter_registrator&&) noexcept = default;
-
     waiter_registrator() noexcept = default;
    ~waiter_registrator() noexcept = default;
+
+    waiter_registrator(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+        : waitable_object(std::move(other))
+    {
+        for(unsigned index = 0; index < MaxWaiters; ++index)
+        {
+            m_waiters[index] = std::move(other.m_waiters[index]);
+        }
+    }
+    waiter_registrator& operator=(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+    {
+        waitable_object::operator=(std::move(other));
+
+        for(unsigned index = 0; index < MaxWaiters; ++index)
+        {
+            m_waiters[index] = std::move(other.m_waiters[index]);
+        }
+        return *this;
+    }
+    void swap(waiter_registrator& other) noexcept(DIAG_NOEXCEPT)
+    {
+        waitable_object::swap(other);
+
+        for(unsigned index = 0; index < MaxWaiters; ++index)
+        {
+            m_waiters[index].swap(other.m_waiters[index]);
+        }
+    }
 
 private:
     waiter_t m_waiters[MaxWaiters] = {};
 
-    bool register_waiter(impl::basic_objects_waiter& objects_waiter) override
+    virtual bool register_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
         for(waiter_t& waiter : m_waiters)
         {
@@ -153,7 +187,7 @@ private:
         }
         Check_Failure(false);
     }
-    bool unregister_waiter(impl::basic_objects_waiter& objects_waiter) override
+    virtual bool unregister_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
         for(waiter_t& waiter : m_waiters)
         {
@@ -170,7 +204,7 @@ protected:
     {
         for(waiter_t& waiter : m_waiters)
         {
-            waitable_object::notify_waiter(waiter, broadcast);
+            waiter.notify(broadcast);
         }
     }
 };
@@ -182,11 +216,29 @@ class waiter_registrator<0> : public waitable_object
     waiter_registrator& operator=(const waiter_registrator&) noexcept = delete;
 
 protected:
-    waiter_registrator           (waiter_registrator&&) noexcept = default;
-    waiter_registrator& operator=(waiter_registrator&&) noexcept = default;
-
     waiter_registrator() noexcept = default;
    ~waiter_registrator() noexcept = default;
+
+    waiter_registrator(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+        : waitable_object(std::move(other))
+        , m_waiters(std::move(other.m_waiters))
+    {
+    }
+    waiter_registrator& operator=(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+    {
+        waitable_object::operator=(std::move(other));
+
+        m_waiters = std::move(other.m_waiters);
+
+        return *this;
+    }
+
+    void swap(waiter_registrator& other) noexcept(DIAG_NOEXCEPT)
+    {
+        waitable_object::swap(other);
+
+        m_waiters.swap(other.m_waiters);
+    }
 
 private:
     lockfree_forward_list<waiter_t> m_waiters;
@@ -223,7 +275,7 @@ protected:
     {
         for(waiter_t& waiter : m_waiters)
         {
-            waitable_object::notify_waiter(waiter, broadcast);
+            waiter.notify(broadcast);
         }
     }
 };

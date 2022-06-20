@@ -40,9 +40,10 @@ public:
 private:
     static constexpr bool move_is_noexcept =
         std::allocator_traits<allocator_type>::is_always_equal::value ||
+        std::allocator_traits<allocator_type>::propagate_on_container_swap::value ||
         std::allocator_traits<allocator_type>::propagate_on_container_move_assignment::value
         ;
-    static_assert(move_is_noexcept, "Only always-equal or propagate-on-move-assignment allocators are supported");
+    static_assert(move_is_noexcept, "Only always-equal or propagate-on move-assignment/swap allocators are supported");
 
 private:
     next_t         m_first {nullptr};
@@ -61,7 +62,7 @@ public:
         clear();
     }
     lockfree_forward_list(lockfree_forward_list&& other) noexcept(std::is_nothrow_move_constructible<allocator_type>::value)
-        : m_first    (other.exchange(nullptr))
+        : m_first    (other.m_first.exchange(nullptr))
         , m_allocator(std::move(other.m_allocator))
     {
     }
@@ -82,6 +83,13 @@ public:
             }
         }
         return *this;
+    }
+    void swap(lockfree_forward_list& other) noexcept
+    {
+        if(this != &other)
+        {
+            m_first.store(other.m_first.exchange(m_first.load()));
+        }
     }
 
 private:

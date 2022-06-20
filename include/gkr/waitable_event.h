@@ -5,34 +5,42 @@
 namespace gkr
 {
 
-template<unsigned MaxWaiters = 1>
+template<bool ManualReset=false, unsigned MaxWaiters=1>
 class waitable_event final : public impl::waiter_registrator<MaxWaiters>
 {
     waitable_event           (const waitable_event&) noexcept = delete;
     waitable_event& operator=(const waitable_event&) noexcept = delete;
 
+private:
+    using base_t = impl::waiter_registrator<MaxWaiters>;
+
 public:
     waitable_event() noexcept = default;
    ~waitable_event() noexcept = default;
 
-    waitable_event(bool manual_reset) noexcept : m_manual_reset(manual_reset)
-    {
-    }
-    waitable_event(waitable_event&& other) noexcept : m_manual_reset(other.m_manual_reset)
+    waitable_event(waitable_event&& other) noexcept : base_t(std::move(other))
     {
         m_signaled.store(other.m_signaled.exchange(false));
     }
     waitable_event& operator=(waitable_event&& other) noexcept
     {
-        m_manual_reset = other.m_manual_reset;
+        if(this != &other)
+        {
+            base_t::operator=(std::move(other));
 
-        m_signaled.store(other.m_signaled.exchange(false));
-
+            m_signaled.store(other.m_signaled.exchange(false));
+        }
         return *this;
     }
+    void swap(waitable_event& other) noexcept
+    {
+        if(this != &other)
+        {
+            base_t::swap(other);
 
-private:
-    using base_t = impl::waiter_registrator<MaxWaiters>;
+            m_signaled.store(other.m_signaled.exchange(m_signaled.load()));
+        }
+    }
 
 public:
     void fire()
@@ -41,7 +49,7 @@ public:
 
         if(m_signaled.compare_exchange_strong(expected, true))
         {
-            base_t::notify_all_waiters(m_manual_reset);
+            base_t::notify_all_waiters(ManualReset);
         }
     }
     void reset()
@@ -53,7 +61,11 @@ public:
     [[nodiscard]]
     bool try_consume() override
     {
-        if(m_manual_reset)
+#ifdef __cpp_if_constexpr
+        if constexpr(ManualReset)
+#else
+        if          (ManualReset)
+#endif
         {
             return m_signaled.load();
         }
@@ -66,8 +78,7 @@ public:
     }
 
 private:
-    std::atomic<bool> m_signaled      {false};
-    bool              m_manual_reset = false;
+    std::atomic<bool> m_signaled {false};
 };
 
 }

@@ -3,7 +3,7 @@
 #include "entry.h"
 
 #include <gkr/basic_thread_worker.h>
-#include <gkr/lockfree_queue.h>
+#include <gkr/waitable_lockfree_queue.h>
 
 #include <memory>
 #include <vector>
@@ -103,11 +103,9 @@ private:
     static constexpr unsigned max_name_cch = 16;
     struct thread_name_t { char name[max_name_cch] {0}; };
 
-    using lockfree_queue_t = lockfree_queue<void, true, false>;
+    using lockfree_queue_t = lockfree_queue<void, true, false, detail::queue_simple_synchronization>;
 
 private:
-    waitable_event<> m_has_entries_event;
-
     lockfree_queue_t m_log_queue;
 
     std::vector<std::shared_ptr<consumer>> m_consumers;

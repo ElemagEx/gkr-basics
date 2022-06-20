@@ -42,7 +42,7 @@ waitable_object* logger::get_wait_object(size_t index)
 {
     Check_ValidState(index == 0, nullptr);
 
-    return &m_has_entries_event;
+    return m_log_queue.queue_non_empty_waitable_object();
 }
 
 bool logger::start()
@@ -80,6 +80,15 @@ void logger::on_wait_timeout()
 
 void logger::on_wait_success(size_t index)
 {
+    Check_ValidState(index == 0, );
+
+    auto element = m_log_queue.try_start_pop(/*get_waiter()*/); //TODO:WAIT - not try
+
+    Check_ValidState(element.pop_in_progress(), );
+
+    msg_entry& entry = element.value<msg_entry>();
+
+    consume_msg_entry(entry);
 }
 
 bool logger::on_exception(bool can_continue, const std::exception* e) noexcept
@@ -233,7 +242,7 @@ bool logger::log_message(bool wait, int severity, int facility, const char* mess
 
     const std::size_t cch = m_log_queue.element_size() - sizeof(entry_info);
 
-    auto element = m_log_queue.try_start_push(); //TODO:WAIT - not try
+    auto element = m_log_queue.try_start_push(/*get_waiter()*/); //TODO:WAIT - not try
 
     Check_ValidState(element.push_in_progress(), false);
 

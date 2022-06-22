@@ -121,7 +121,7 @@ public:
     {
         Check_NotNullPtr(m_objects_waiter, false);
 
-        return wait(*m_objects_waiter, timeout, m_has_space_event);
+        return wait(*m_objects_waiter, timeout, m_non_empty_event);
     }
 
 public:

@@ -26,26 +26,26 @@ protected:
     {
         return "test-thread-0";
     }
-    std::chrono::nanoseconds get_wait_timeout() noexcept override
+    virtual std::chrono::nanoseconds get_wait_timeout() noexcept override
     {
         return std::chrono::nanoseconds::max();
     }
-    size_t get_wait_objects_count() noexcept override
+    virtual size_t get_wait_objects_count() noexcept override
     {
         return 0;
     }
-    gkr::waitable_object* get_wait_object(size_t) override
+    virtual gkr::waitable_object* get_wait_object(size_t) override
     {
         return nullptr;
     }
-    bool start() override
+    virtual bool start() override
     {
         return true;
     }
-    void finish() override
+    virtual void finish() override
     {
     }
-    void on_action(action_id_t action, void* param, void* result) override
+    virtual void on_action(action_id_t action, void* param, void* result) override
     {
         switch(action)
         {
@@ -54,13 +54,13 @@ protected:
                 break;
         }
     }
-    void on_wait_timeout() override
+    virtual void on_wait_timeout() override
     {
     }
-    void on_wait_success(size_t) override
+    virtual void on_wait_success(size_t) override
     {
     }
-    bool on_exception(bool, const std::exception*) noexcept override
+    virtual bool on_exception(bool, const std::exception*) noexcept override
     {
         return true;
     }

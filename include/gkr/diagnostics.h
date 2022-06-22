@@ -19,9 +19,11 @@
 #ifndef DIAG_SRC_LOCATION
 #undef  DIAG_SRC_PROTOTYPE
 #if   defined(__cpp_lib_stacktrace)
+#include <stacktrace>
 #define  DIAG_SRC_LOCATION  ,       std::basic_stacktrace::current()
 #define  DIAG_SRC_PROTOTYPE , const std::basic_stacktrace&
 #elif defined(__cpp_lib_source_location)
+#include <source_location>
 #define  DIAG_SRC_LOCATION  ,       std::source_location::current()
 #define  DIAG_SRC_PROTOTYPE , const std::source_location&
 #else
@@ -134,7 +136,7 @@ for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && NOTE(DIAG_ID_BAD_A
 for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && STOP(DIAG_ID_BAD_ARRAY_ARG, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 
 #else
-#error Unknown diag mode
+#error Unknown diagnostics mode
 #endif
 
 #ifndef DIAG_NOEXCEPT

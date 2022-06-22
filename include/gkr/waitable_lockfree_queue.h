@@ -4,6 +4,10 @@
 #include "waitable_event.h"
 #include "objects_waiter.h"
 
+#ifdef LOCKFREE_QUEUE_EXCLUDE_WAITING
+#error The classes in this file are not functional when lock-free queue waiting is excluded
+#endif
+
 namespace gkr
 {
 namespace detail
@@ -18,7 +22,8 @@ public:
    ~queue_simple_synchronization() noexcept = default;
 
     queue_simple_synchronization(queue_simple_synchronization&& other) noexcept
-        : m_has_space_event(std::move(other.m_has_space_event))
+        : m_objects_waiter(other.m_objects_waiter)
+        , m_has_space_event(std::move(other.m_has_space_event))
         , m_non_empty_event(std::move(other.m_non_empty_event))
     {
     }
@@ -33,6 +38,12 @@ public:
     {
         m_has_space_event.swap(other.m_has_space_event);
         m_non_empty_event.swap(other.m_non_empty_event);
+    }
+
+public:
+    void set_waiter(objects_waiter& waiter)
+    {
+        m_objects_waiter = &waiter;
     }
 
 public:
@@ -91,29 +102,26 @@ private:
     }
 
 public:
-    static constexpr bool has_internal_wait = false;
-    static constexpr bool has_external_wait = true;
+    template<typename Rep, typename Period>
+    static constexpr bool has_wait()
+    {
+        return true;
+    }
 
 public:
     template<typename Rep, typename Period>
     bool producer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
     {
-        return false;
-    }
-    template<typename Rep, typename Period>
-    bool producer_wait(objects_waiter& waiter, std::chrono::duration<Rep, Period>& timeout) noexcept
-    {
-        return wait(waiter, timeout, m_has_space_event);
+        Check_NotNullPtr(m_objects_waiter, false);
+
+        return wait(*m_objects_waiter, timeout, m_has_space_event);
     }
     template<typename Rep, typename Period>
     bool consumer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
     {
-        return false;
-    }
-    template<typename Rep, typename Period>
-    bool consumer_wait(objects_waiter& waiter, std::chrono::duration<Rep, Period>& timeout) noexcept
-    {
-        return wait(waiter, timeout, m_non_empty_event);
+        Check_NotNullPtr(m_objects_waiter, false);
+
+        return wait(*m_objects_waiter, timeout, m_has_space_event);
     }
 
 public:
@@ -127,6 +135,7 @@ public:
     }
 
 private:
+    objects_waiter*      m_objects_waiter {nullptr};
     waitable_event<true> m_has_space_event;
     waitable_event<true> m_non_empty_event;
 };

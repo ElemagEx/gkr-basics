@@ -16,6 +16,7 @@ namespace log
 
 logger::logger()
 {
+    m_log_queue.get_synchronization().set_waiter(get_waiter());
 }
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
@@ -82,11 +83,11 @@ void logger::on_wait_success(size_t index)
 {
     Check_ValidState(index == 0, );
 
-    auto element = m_log_queue.try_start_pop(/*get_waiter()*/); //TODO:WAIT - not try
+    auto element = m_log_queue.start_pop<msg_entry>(timeout_infinite);
 
     Check_ValidState(element.pop_in_progress(), );
 
-    msg_entry& entry = element.value<msg_entry>();
+    msg_entry& entry = *element;
 
     consume_msg_entry(entry);
 }
@@ -242,11 +243,11 @@ bool logger::log_message(bool wait, int severity, int facility, const char* mess
 
     const std::size_t cch = m_log_queue.element_size() - sizeof(entry_info);
 
-    auto element = m_log_queue.try_start_push(/*get_waiter()*/); //TODO:WAIT - not try
+    auto element = m_log_queue.start_push<msg_entry>(timeout_infinite);
 
     Check_ValidState(element.push_in_progress(), false);
 
-    msg_entry& entry = element.value<msg_entry>();
+    msg_entry& entry = *element;
 
     if(!prepare_msg_entry(entry, cch, severity, facility, message, args))
     {
@@ -305,7 +306,7 @@ bool logger::prepare_msg_entry(msg_entry& entry, std::size_t cch, int severity, 
     {
         const std::size_t len = std::strlen(std::strncpy(entry.message, message, cch));
 
-        entry.head.mesageLen = std::uint16_t(len);
+        entry.mesageLen = std::uint16_t(len);
     }
     else
     {
@@ -313,21 +314,21 @@ bool logger::prepare_msg_entry(msg_entry& entry, std::size_t cch, int severity, 
 
         Check_ValidState(len >= 0, false);
 
-        entry.head.mesageLen = std::uint16_t(len);
+        entry.mesageLen = std::uint16_t(len);
     }
 
     auto tid = std::this_thread::get_id();
 
-    entry.head.tid       = misc::union_cast<std::int64_t>(tid);
-    entry.head.stamp     = misc::get_stamp();
-    entry.head.severity  = std::uint16_t(severity);
-    entry.head.facility  = std::uint16_t(facility);
+    entry.tid      = misc::union_cast<std::int64_t>(tid);
+    entry.stamp    = misc::get_stamp();
+    entry.severity = std::uint16_t(severity);
+    entry.facility = std::uint16_t(facility);
 
-    entry.threadName     = m_thread_names[tid].name;
-    entry.messageText    = entry.message;
+    entry.threadName  = m_thread_names[tid].name;
+    entry.messageText = entry.message;
 
-    auto itSeverity = m_severities.find(entry.head.severity);
-    auto itFacility = m_facilities.find(entry.head.facility);
+    auto itSeverity = m_severities.find(entry.severity);
+    auto itFacility = m_facilities.find(entry.facility);
 
     entry.severityName = (itSeverity == m_severities.end()) ? nullptr : itSeverity->second;
     entry.facilityName = (itFacility == m_facilities.end()) ? nullptr : itFacility->second;

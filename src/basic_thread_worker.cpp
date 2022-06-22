@@ -242,16 +242,16 @@ bool basic_thread_worker::main_loop()
         {
             for(std::size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
             {
-                if(wait_object_is_signalled(wait_result, index))
+                if(waitable_object_wait_is_completed(wait_result, index))
                 {
                     safe_notify_complete(index - OWN_EVENTS_TO_WAIT);
                 }
             }
-            if(wait_object_is_signalled(wait_result, OWN_EVENT_HAS_ASYNC_ACTION))
+            if(waitable_object_wait_is_completed(wait_result, OWN_EVENT_HAS_ASYNC_ACTION))
             {
                 dequeue_actions();
             }
-            if(wait_object_is_signalled(wait_result, OWN_EVENT_HAS_SYNC_ACTION))
+            if(waitable_object_wait_is_completed(wait_result, OWN_EVENT_HAS_SYNC_ACTION))
             {
                 safe_do_action(m_func.action, m_func.param, m_func.result, true);
             }

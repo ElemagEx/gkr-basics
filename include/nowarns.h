@@ -6,9 +6,11 @@
 
 #if defined(__clang__)
 
+#pragma clang diagnostic ignored "-Wunknown-attributes" //for [[no_unique_address]] attribute
+#pragma clang diagnostic ignored "-Wc++17-extensions"   //for [[nodiscard]] attribute
+
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wc++17-extensions" //for [[nodiscard]] attribute
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wglobal-constructors"
@@ -42,7 +44,8 @@
 #pragma warning(disable:5039) // 'function': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
 
 //#ifndef maybe_unused
-//#pragma warning(disable:5051) // attribute 'maybe_unused' requires at least '/std:c++17'; ignored
+//#pragma warning(disable:5051) // attribute 'attribute-name' requires at least 'standard-level'; ignored
 //#endif
+#pragma warning(disable:4848) // support for attribute 'no_unique_address' in C++17 and earlier is a vendor extension
 
 #endif

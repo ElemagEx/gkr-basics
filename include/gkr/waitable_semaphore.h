@@ -1,28 +1,15 @@
 #pragma once
 
-#include "waitable_object.h"
-
 #ifdef __cpp_lib_semaphore
+
+#include "waitable_object.h"
 
 #include <semaphore>
 
 namespace gkr
 {
 
-namespace impl
-{
-#if defined(_MSC_VER)
-constexpr std::ptrdiff_t Default_LeastMaxValue = std::_Semaphore_max;
-#elif defined(__GNUC__)
-constexpr std::ptrdiff_t Default_LeastMaxValue = 0;
-#elif defined(__clang__)
-constexpr std::ptrdiff_t Default_LeastMaxValue = 0;
-#else
-constexpr std::ptrdiff_t Default_LeastMaxValue = 0;
-#endif
-}
-
-template<unsigned MaxWaiters = 1, std::ptrdiff_t LeastMaxValue = impl::Default_LeastMaxValue>
+template<std::ptrdiff_t LeastMaxValue = std::counting_semaphore<>::max(), unsigned MaxWaiters = 1>
 class waitable_semaphore final : public impl::waiter_registrator<MaxWaiters>
 {
     waitable_semaphore           (const waitable_semaphore&) noexcept = delete;
@@ -68,9 +55,19 @@ public:
 
 private:
     [[nodiscard]]
-    bool try_consume() override
+    virtual bool try_consume() override
     {
         return m_semaphore.try_acquire();
+    }
+
+private:
+    using self_t = waitable_semaphore<LeastMaxValue, MaxWaiters>;
+
+    friend class waitable_object_guard<self_t>;
+
+    void unlock()
+    {
+        release();
     }
 
 private:

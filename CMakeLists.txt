@@ -15,7 +15,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "-pthread -Weverything -include\"nowarns.h\"")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 else()
-    set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra -Wpedantic -Wconversion -include\"nowarns.h\"")
+    set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -include\"nowarns.h\"")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 endif()
 

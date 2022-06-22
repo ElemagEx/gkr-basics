@@ -13,7 +13,7 @@ template<> struct std_mutex<false> { using type = std::mutex; };
 template<> struct std_mutex<true > { using type = std::recursive_mutex; };
 }
 
-template<unsigned MaxWaiters = 1, bool Recursive=false>
+template<bool Recursive=false, unsigned MaxWaiters = 1>
 class waitable_mutex final : public impl::waiter_registrator<MaxWaiters>
 {
     waitable_mutex           (const waitable_mutex&) noexcept = delete;
@@ -50,7 +50,7 @@ public:
 
 private:
     [[nodiscard]]
-    bool try_consume() override
+    virtual bool try_consume() override
     {
         return m_mutex.try_lock();
     }

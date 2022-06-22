@@ -173,7 +173,6 @@ private:
 protected:
     objects_waiter& get_waiter()
     {
-        Assert_Check(in_worker_thread());
         return m_waiter;
     }
 

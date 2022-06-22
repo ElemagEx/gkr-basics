@@ -1,8 +1,7 @@
 #pragma once
 
-#include <list>
-#include <atomic>
 #include <mutex>
+#include <atomic>
 #include <condition_variable>
 
 #include "diagnostics.h"
@@ -83,46 +82,46 @@ private:
 protected:
     class waiter_t
     {
-        std::atomic<impl::basic_objects_waiter*> ptr {nullptr};
-
-    public:
         waiter_t           (const waiter_t&) noexcept = delete;
         waiter_t& operator=(const waiter_t&) noexcept = delete;
 
+        std::atomic<impl::basic_objects_waiter*> m_objects_waiter {nullptr};
+
+    public:
         waiter_t() noexcept = default;
        ~waiter_t() noexcept = default;
 
         waiter_t(waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
-            Assert_Check(other.ptr.load() == nullptr);
+            Assert_Check(other.m_objects_waiter.load() == nullptr);
         }
         waiter_t& operator=(waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
-            Assert_Check(other.ptr.load() == nullptr);
-            Assert_Check(      ptr.load() == nullptr);
+            Assert_Check(other.m_objects_waiter.load() == nullptr);
+            Assert_Check(      m_objects_waiter.load() == nullptr);
             return *this;
         }
         void swap(waiter_t& other) noexcept(DIAG_NOEXCEPT)
         {
-            Assert_Check(other.ptr.load() == nullptr);
-            Assert_Check(      ptr.load() == nullptr);
+            Assert_Check(other.m_objects_waiter.load() == nullptr);
+            Assert_Check(      m_objects_waiter.load() == nullptr);
         }
 
         bool try_set(impl::basic_objects_waiter& objects_waiter) noexcept
         {
             impl::basic_objects_waiter* expected = nullptr;
 
-            return ptr.compare_exchange_strong(expected, &objects_waiter);
+            return m_objects_waiter.compare_exchange_strong(expected, &objects_waiter);
         }
         bool try_reset(impl::basic_objects_waiter& objects_waiter) noexcept
         {
             impl::basic_objects_waiter* expected = &objects_waiter;
 
-            return ptr.compare_exchange_strong(expected, nullptr);
+            return m_objects_waiter.compare_exchange_strong(expected, nullptr);
         }
         void notify(bool broadcast)
         {
-            impl::basic_objects_waiter* objects_waiter = ptr.load();
+            impl::basic_objects_waiter* objects_waiter = m_objects_waiter.load();
 
             if(objects_waiter != nullptr)
             {
@@ -148,7 +147,7 @@ protected:
     waiter_registrator(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
         : waitable_object(std::move(other))
     {
-        for(unsigned index = 0; index < MaxWaiters; ++index)
+        for(decltype(MaxWaiters) index = 0; index < MaxWaiters; ++index)
         {
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
@@ -157,7 +156,7 @@ protected:
     {
         waitable_object::operator=(std::move(other));
 
-        for(unsigned index = 0; index < MaxWaiters; ++index)
+        for(decltype(MaxWaiters) index = 0; index < MaxWaiters; ++index)
         {
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
@@ -208,7 +207,6 @@ protected:
         }
     }
 };
-
 template<>
 class waiter_registrator<0> : public waitable_object
 {
@@ -243,11 +241,11 @@ protected:
 private:
     lockfree_forward_list<waiter_t> m_waiters;
 
-    bool register_waiter(impl::basic_objects_waiter& objects_waiter) override
+    virtual bool register_waiter(impl::basic_objects_waiter& objects_waiter) override
     {
         auto end = m_waiters.end();
 
-        for(auto it = m_waiters.first(); it != end; )
+        for(auto it = m_waiters.before_begin(); it != end; )
         {
             m_waiters.get_next_or_add_new(it);
 
@@ -281,5 +279,48 @@ protected:
 };
 
 }
+
+template<typename WaitableObject>
+class waitable_object_guard
+{
+    waitable_object_guard           (const waitable_object_guard&) noexcept = delete;
+    waitable_object_guard& operator=(const waitable_object_guard&) noexcept = delete;
+#ifdef __cpp_guaranteed_copy_elision
+private:
+    waitable_object_guard           (waitable_object_guard&&) noexcept = delete;
+    waitable_object_guard& operator=(waitable_object_guard&&) noexcept = delete;
+#else
+public:
+    waitable_object_guard           (waitable_object_guard&&) noexcept = default;
+    waitable_object_guard& operator=(waitable_object_guard&&) noexcept = default;
+#endif
+public:
+    explicit waitable_object_guard(WaitableObject& object) noexcept : m_object(&object)
+    {
+    }
+    waitable_object_guard() noexcept : m_object(nullptr)
+    {
+    }
+    ~waitable_object_guard() noexcept(false)
+    {
+        if(m_object != nullptr)
+        {
+            m_object->unlock();
+        }
+    }
+
+public:
+    bool wait_is_completed() const noexcept
+    {
+        return (m_object != nullptr);
+    }
+    explicit operator bool() const noexcept
+    {
+        return (m_object != nullptr);
+    }
+
+private:
+    WaitableObject* m_object;
+};
 
 }

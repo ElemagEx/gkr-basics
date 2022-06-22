@@ -17,14 +17,12 @@ struct entry_head
 	std::uint16_t mesageLen;
 	std::uint16_t _reserved;
 };
-struct entry_info
+struct entry_info : public entry_head
 {
 	const char* threadName;
 	const char* messageText;
 	const char* severityName;
 	const char* facilityName;
-
-	entry_head head;
 };
 
 }

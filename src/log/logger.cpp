@@ -92,7 +92,7 @@ void logger::on_wait_success(size_t index)
     consume_msg_entry(entry);
 }
 
-bool logger::on_exception(bool can_continue, const std::exception* e) noexcept
+bool logger::on_exception(bool, const std::exception*) noexcept
 {
     return true;
 }

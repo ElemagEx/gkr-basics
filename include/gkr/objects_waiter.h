@@ -10,7 +10,7 @@ using wait_result_t = unsigned;
 
 constexpr std::size_t maximum_wait_objects = sizeof(wait_result_t) * 8 - 1;
 
-constexpr wait_result_t wait_result_error   = wait_result_t(0x80000000);
+constexpr wait_result_t wait_result_error   = wait_result_t(1U << maximum_wait_objects);
 constexpr wait_result_t wait_result_timeout = wait_result_t(0);
 
 inline constexpr bool waitable_object_wait_is_completed(wait_result_t wait_result, std::size_t index) noexcept
@@ -26,8 +26,8 @@ class objects_waiter : public impl::basic_objects_waiter
     objects_waiter           (const objects_waiter&) noexcept = delete;
     objects_waiter& operator=(const objects_waiter&) noexcept = delete;
 
-    objects_waiter           (objects_waiter&& other) noexcept = delete;
-    objects_waiter& operator=(objects_waiter&& other) noexcept = delete;
+    objects_waiter           (objects_waiter&&) noexcept = delete;
+    objects_waiter& operator=(objects_waiter&&) noexcept = delete;
 
 public:
     objects_waiter() noexcept = default;
@@ -39,11 +39,12 @@ private:
         waitable_object** objects;
         std::size_t       count;
         node_t*           next;
-    } *first = nullptr;
+    };
+    node_t *m_first = nullptr;
 
     bool find_object(waitable_object* object) noexcept
     {
-        for(node_t* node = first; node != nullptr; node = node->next)
+        for(node_t* node = m_first; node != nullptr; node = node->next)
         {
             for(std::size_t index = 0; index < node->count; ++index)
             {
@@ -55,18 +56,19 @@ private:
         }
         return false;
     }
-    bool register_self(std::size_t count, waitable_object** objects) noexcept
+    std::size_t register_self(std::size_t count, waitable_object** objects) noexcept
     {
-        bool result = true;
-
         for(std::size_t index = 0; index < count; ++index)
         {
             if(!find_object(objects[index]))
             {
-                result = objects[index]->register_waiter(*this) && result;
+                if(!objects[index]->register_waiter(*this))
+                {
+                    return index;
+                }
             }
         }
-        return result;
+        return count;
     }
     void unregiser_self(std::size_t count, waitable_object** objects) noexcept
     {
@@ -80,42 +82,47 @@ private:
     }
 
 private:
-    class exception_guard
+    class waiter_guard
     {
-        objects_waiter* parent;
-        node_t          node;
+        objects_waiter* m_parent;
+        node_t          m_node;
     public:
-        exception_guard(objects_waiter& waiter, std::size_t count, waitable_object** objects) noexcept
-            : parent(nullptr)
-            , node  {objects, count, waiter.first}
+        waiter_guard(objects_waiter& waiter, std::size_t count, waitable_object** objects) noexcept
+            : m_parent(nullptr)
+            , m_node  {objects, count, waiter.m_first}
         {
-            if(!waiter.register_self(count, objects)) return;
+            const std::size_t registered = waiter.register_self(count, objects);
 
-            waiter.first = &node;
+            if(registered < count)
+            {
+                waiter.unregiser_self(registered, objects);
+                return;
+            }
+            waiter.m_first = &m_node;
 
-            parent = &waiter;
+            m_parent = &waiter;
         }
-        ~exception_guard() noexcept
+        ~waiter_guard() noexcept
         {
             if(initialization_failed()) return;
 
-            objects_waiter& waiter = *parent;
+            objects_waiter& waiter = *m_parent;
 
             node_t** prev;
-            for(prev = &waiter.first; *prev != &node; prev = &(*prev)->next);
-            *prev = node.next;
+            for(prev = &waiter.m_first; *prev != &m_node; prev = &(*prev)->next);
+            *prev = m_node.next;
 
-            waiter.unregiser_self(node.count, node.objects);
+            waiter.unregiser_self(m_node.count, m_node.objects);
         }
         bool initialization_failed() const noexcept
         {
-            return (parent == nullptr);
+            return (m_parent == nullptr);
         }
     };
     friend class exception_guard;
 
 private:
-    bool collect_result(wait_result_t& result, std::size_t count, waitable_object** objects) noexcept
+    static bool collect_result(wait_result_t& result, std::size_t count, waitable_object** objects) noexcept
     {
         result = 0;
         for(std::size_t index = 0; index < count; ++index)
@@ -130,7 +137,7 @@ private:
 
 public:
     template<typename... WaitableObjects>
-    wait_result_t check(WaitableObjects&... waitable_objects)
+    static wait_result_t check(WaitableObjects&... waitable_objects)
     {
         constexpr std::size_t count = sizeof...(waitable_objects);
 
@@ -138,7 +145,7 @@ public:
 
         return check(count, objects);
     }
-    wait_result_t check(std::size_t count, waitable_object** objects)
+    static wait_result_t check(std::size_t count, waitable_object** objects)
     {
         Check_ValidArg(count > 0, wait_result_error);
         Check_ValidArg(count < maximum_wait_objects, wait_result_error);
@@ -180,17 +187,18 @@ public:
         }
         std::unique_lock<std::mutex> lock(m_mutex);
 
-        exception_guard guard(*this, count, objects);
+        waiter_guard guard(*this, count, objects);
 
         if(guard.initialization_failed())
         {
             return wait_result_error;
         }
-        do
+        for( ; ; )
         {
             m_cvar.wait(lock);
+
+            if(collect_result(result, count, objects)) break;
         }
-        while(!collect_result(result, count, objects));
 
         return result;
     }
@@ -229,7 +237,7 @@ public:
 
         std::unique_lock<std::mutex> lock(m_mutex);
 
-        exception_guard guard(*this, count, objects);
+        waiter_guard guard(*this, count, objects);
 
         if(guard.initialization_failed())
         {
@@ -269,16 +277,16 @@ public:
 };
 
 template<typename WaitableObject>
-inline waitable_object_guard<WaitableObject> guard_waitable_object(wait_result_t wait_result, std::size_t index, WaitableObject& object) noexcept
+inline waitable_object_guard<WaitableObject> guard_waitable_object(
+    wait_result_t wait_result,
+    std::size_t index,
+    WaitableObject& object
+    ) noexcept
 {
-    if(waitable_object_wait_is_completed(wait_result, index))
-    {
-        return waitable_object_guard<WaitableObject>(object);
-    }
-    else
-    {
-        return waitable_object_guard<WaitableObject>();
-    }
+    return waitable_object_guard<WaitableObject>(
+        object,
+        waitable_object_wait_is_completed(wait_result, index)
+        );
 }
 
 }

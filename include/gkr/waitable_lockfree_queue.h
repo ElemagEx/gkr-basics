@@ -4,10 +4,6 @@
 #include "waitable_event.h"
 #include "objects_waiter.h"
 
-#ifdef LOCKFREE_QUEUE_EXCLUDE_WAITING
-#error The classes in this file are not functional when lock-free queue waiting is excluded
-#endif
-
 namespace gkr
 {
 namespace detail

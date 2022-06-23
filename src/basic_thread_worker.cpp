@@ -81,7 +81,7 @@ void basic_thread_worker::execute_action(action_id_t action, void* param, void* 
     }
     else
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
 
         Check_ValidState(running(),);
 

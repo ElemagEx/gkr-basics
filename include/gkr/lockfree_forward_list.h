@@ -5,7 +5,6 @@
 #include <utility>
 #include <type_traits>
 
-#include "diagnostics.h"
 #include "cpp_feature/lib_exchange_function.h"
 #include "cpp_feature/lib_raw_memory_algorithms.h"
 
@@ -30,11 +29,11 @@ private:
         node_t() noexcept = default;
        ~node_t() noexcept = default;
 
-        node_t           (const node_t&) noexcept = delete;
-        node_t& operator=(const node_t&) noexcept = delete;
-
         node_t           (node_t&&) noexcept = delete;
         node_t& operator=(node_t&&) noexcept = delete;
+
+        node_t           (const node_t&) noexcept = delete;
+        node_t& operator=(const node_t&) noexcept = delete;
     };
 
 public:

@@ -16,9 +16,7 @@
 namespace gkr
 {
 
-#ifndef LOCKFREE_QUEUE_EXCLUDE_WAITING
 class waitable_object;
-#endif
 
 namespace detail
 {
@@ -35,7 +33,7 @@ public:
     queue_no_synchronization           (queue_no_synchronization&&) noexcept = default;
     queue_no_synchronization& operator=(queue_no_synchronization&&) noexcept = default;
 
-    void swap(queue_no_synchronization& other) noexcept
+    void swap(queue_no_synchronization&) noexcept
     {
     }
 
@@ -48,7 +46,7 @@ public:
     void notify_queue_empty() noexcept
     {
     }
-#ifndef LOCKFREE_QUEUE_EXCLUDE_WAITING
+#ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 public:
     template<typename Rep, typename Period>
     static constexpr bool has_wait()
@@ -58,16 +56,16 @@ public:
 
 public:
     template<typename Rep, typename Period>
-    bool producer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
+    bool producer_wait(std::chrono::duration<Rep, Period>&) noexcept
     {
         return false;
     }
     template<typename Rep, typename Period>
-    bool consumer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
+    bool consumer_wait(std::chrono::duration<Rep, Period>&) noexcept
     {
         return false;
     }
-
+#endif
 public:
     waitable_object* queue_has_space_waitable_object() noexcept
     {
@@ -77,7 +75,6 @@ public:
     {
         return nullptr;
     }
-#endif
 };
 
 class producer_consumer_threading
@@ -714,7 +711,7 @@ protected:
         }
         return true;
     }
-#ifndef LOCKFREE_QUEUE_EXCLUDE_WAITING
+
 public:
     waitable_object* queue_has_space_waitable_object()
     {
@@ -724,7 +721,7 @@ public:
     {
         return m_synchronization.queue_non_empty_waitable_object();
     }
-
+#ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period>
     using has_wait_t = typename std::enable_if<Synchronization::template has_wait<Rep, Period>(), int>::type;
@@ -1152,7 +1149,7 @@ protected:
         }
         return true;
     }
-#ifndef LOCKFREE_QUEUE_EXCLUDE_WAITING
+
 public:
     waitable_object* queue_has_space_waitable_object()
     {
@@ -1162,7 +1159,7 @@ public:
     {
         return m_synchronization.queue_non_empty_waitable_object();
     }
-
+#ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period>
     using has_wait_t = typename std::enable_if<Synchronization::template has_wait<Rep, Period>(), int>::type;
@@ -1764,7 +1761,7 @@ public:
 
         return true;
     }
-#ifndef LOCKFREE_QUEUE_EXCLUDE_WAITING
+#ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period, typename Ret=int>
     using has_wait_t = typename std::enable_if<Synchronization::template has_wait<Rep, Period>(), Ret>::type;
@@ -2404,7 +2401,7 @@ public:
         }
         return true;
     }
-#ifndef LOCKFREE_QUEUE_EXCLUDE_WAITING
+#ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period, typename Ret=int>
     using has_wait_t = typename std::enable_if<Synchronization::template has_wait<Rep, Period>(), Ret>::type;

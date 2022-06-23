@@ -32,7 +32,7 @@ private:
 
     void notify(bool broadcast)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
 
         if(broadcast)
         {
@@ -91,17 +91,17 @@ protected:
         waiter_t() noexcept = default;
        ~waiter_t() noexcept = default;
 
-        waiter_t(waiter_t&& other) noexcept(DIAG_NOEXCEPT)
+        waiter_t([[maybe_unused]] waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
             Assert_Check(other.m_objects_waiter.load() == nullptr);
         }
-        waiter_t& operator=(waiter_t&& other) noexcept(DIAG_NOEXCEPT)
+        waiter_t& operator=([[maybe_unused]] waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
             Assert_Check(other.m_objects_waiter.load() == nullptr);
             Assert_Check(      m_objects_waiter.load() == nullptr);
             return *this;
         }
-        void swap(waiter_t& other) noexcept(DIAG_NOEXCEPT)
+        void swap([[maybe_unused]] waiter_t& other) noexcept(DIAG_NOEXCEPT)
         {
             Assert_Check(other.m_objects_waiter.load() == nullptr);
             Assert_Check(      m_objects_waiter.load() == nullptr);
@@ -135,16 +135,16 @@ namespace impl
 {
 
 template<unsigned MaxWaiters>
-class waiter_registrator : public waitable_object
+class waitable_registrator : public waitable_object
 {
-    waiter_registrator           (const waiter_registrator&) noexcept = delete;
-    waiter_registrator& operator=(const waiter_registrator&) noexcept = delete;
+    waitable_registrator           (const waitable_registrator&) noexcept = delete;
+    waitable_registrator& operator=(const waitable_registrator&) noexcept = delete;
 
 protected:
-    waiter_registrator() noexcept = default;
-   ~waiter_registrator() noexcept = default;
+    waitable_registrator() noexcept = default;
+   ~waitable_registrator() noexcept = default;
 
-    waiter_registrator(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+    waitable_registrator(waitable_registrator&& other) noexcept(DIAG_NOEXCEPT)
         : waitable_object(std::move(other))
     {
         for(decltype(MaxWaiters) index = 0; index < MaxWaiters; ++index)
@@ -152,7 +152,7 @@ protected:
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
     }
-    waiter_registrator& operator=(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+    waitable_registrator& operator=(waitable_registrator&& other) noexcept(DIAG_NOEXCEPT)
     {
         waitable_object::operator=(std::move(other));
 
@@ -162,7 +162,7 @@ protected:
         }
         return *this;
     }
-    void swap(waiter_registrator& other) noexcept(DIAG_NOEXCEPT)
+    void swap(waitable_registrator& other) noexcept(DIAG_NOEXCEPT)
     {
         waitable_object::swap(other);
 
@@ -208,21 +208,21 @@ protected:
     }
 };
 template<>
-class waiter_registrator<0> : public waitable_object
+class waitable_registrator<0> : public waitable_object
 {
-    waiter_registrator           (const waiter_registrator&) noexcept = delete;
-    waiter_registrator& operator=(const waiter_registrator&) noexcept = delete;
+    waitable_registrator           (const waitable_registrator&) noexcept = delete;
+    waitable_registrator& operator=(const waitable_registrator&) noexcept = delete;
 
 protected:
-    waiter_registrator() noexcept = default;
-   ~waiter_registrator() noexcept = default;
+    waitable_registrator() noexcept = default;
+   ~waitable_registrator() noexcept = default;
 
-    waiter_registrator(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+    waitable_registrator(waitable_registrator&& other) noexcept(DIAG_NOEXCEPT)
         : waitable_object(std::move(other))
         , m_waiters(std::move(other.m_waiters))
     {
     }
-    waiter_registrator& operator=(waiter_registrator&& other) noexcept(DIAG_NOEXCEPT)
+    waitable_registrator& operator=(waitable_registrator&& other) noexcept(DIAG_NOEXCEPT)
     {
         waitable_object::operator=(std::move(other));
 
@@ -231,7 +231,7 @@ protected:
         return *this;
     }
 
-    void swap(waiter_registrator& other) noexcept(DIAG_NOEXCEPT)
+    void swap(waitable_registrator& other) noexcept(DIAG_NOEXCEPT)
     {
         waitable_object::swap(other);
 
@@ -295,7 +295,8 @@ public:
     waitable_object_guard& operator=(waitable_object_guard&&) noexcept = default;
 #endif
 public:
-    explicit waitable_object_guard(WaitableObject& object) noexcept : m_object(&object)
+    explicit waitable_object_guard(WaitableObject& object, bool set = true) noexcept
+        : m_object(set ? &object : nullptr)
     {
     }
     waitable_object_guard() noexcept : m_object(nullptr)

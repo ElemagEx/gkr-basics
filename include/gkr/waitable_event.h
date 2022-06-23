@@ -6,14 +6,14 @@ namespace gkr
 {
 
 template<bool ManualReset=false, unsigned MaxWaiters=1>
-class waitable_event final : public impl::waiter_registrator<MaxWaiters>
+class waitable_event final : public impl::waitable_registrator<MaxWaiters>
 {
     waitable_event           (const waitable_event&) noexcept = delete;
     waitable_event& operator=(const waitable_event&) noexcept = delete;
 
 private:
     using self_t = waitable_event<ManualReset, MaxWaiters>;
-    using base_t = impl::waiter_registrator<MaxWaiters>;
+    using base_t = impl::waitable_registrator<MaxWaiters>;
 
 public:
     waitable_event() noexcept = default;

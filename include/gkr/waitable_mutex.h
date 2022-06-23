@@ -14,7 +14,7 @@ template<> struct std_mutex<true > { using type = std::recursive_mutex; };
 }
 
 template<bool Recursive=false, unsigned MaxWaiters = 1>
-class waitable_mutex final : public impl::waiter_registrator<MaxWaiters>
+class waitable_mutex final : public impl::waitable_registrator<MaxWaiters>
 {
     waitable_mutex           (const waitable_mutex&) noexcept = delete;
     waitable_mutex& operator=(const waitable_mutex&) noexcept = delete;
@@ -29,7 +29,7 @@ public:
 private:
     using mutex_t = typename impl::std_mutex<Recursive>::type;
 
-    using base_t = impl::waiter_registrator<MaxWaiters>;
+    using base_t = impl::waitable_registrator<MaxWaiters>;
 
 public:
     void lock()

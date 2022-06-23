@@ -8,14 +8,23 @@
     <ClCompile Include="test_waiters.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\thread_worker_base.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\sys\thread_name.cpp">
       <Filter>src\sys</Filter>
     </ClCompile>
     <ClCompile Include="test_thread_worker.cpp">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\logging.cpp">
+      <Filter>src\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\logger.cpp">
+      <Filter>src\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libmain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\basic_thread_worker.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -39,6 +48,15 @@
     </Filter>
     <Filter Include="include\gkr\sys">
       <UniqueIdentifier>{59775b5a-b176-4c03-81b7-4f2ff1fc9b07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\gkr\log">
+      <UniqueIdentifier>{9d03fd6b-1233-4a9b-8427-5a56de26bb90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\gkr\misc">
+      <UniqueIdentifier>{7c4e15b3-02b4-47b7-b605-d637d628cc0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\log">
+      <UniqueIdentifier>{9da33e45-8f7c-47ee-b37b-21fb3ef7e12c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -76,9 +94,29 @@
     <ClInclude Include="..\include\gkr\sys\thread_name.h">
       <Filter>include\gkr\sys</Filter>
     </ClInclude>
-    <ClInclude Include="nowarns.h" />
     <ClInclude Include="..\include\gkr\diagnostics.h">
       <Filter>include\gkr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\cpp_feature\lib_exchange_function.h">
+      <Filter>include\gkr\cpp_feature</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\log\consumer.h">
+      <Filter>include\gkr\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\log\entry.h">
+      <Filter>include\gkr\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\log\logger.h">
+      <Filter>include\gkr\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\log\logging.h">
+      <Filter>include\gkr\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\misc\stamp.h">
+      <Filter>include\gkr\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gkr\misc\union_cast.h">
+      <Filter>include\gkr\misc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -213,10 +213,12 @@ public:
     }
 
 protected:
+#ifndef GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
 #if defined(__clang__) && defined(__linux__)
-#define RIGHT_TO_LEFT_ARGS_IN_STACK 0
+#define GKR_RIGHT_TO_LEFT_ARGS_IN_STACK 0
 #else
-#define RIGHT_TO_LEFT_ARGS_IN_STACK 1
+#define GKR_RIGHT_TO_LEFT_ARGS_IN_STACK 1
+#endif
 #endif
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -231,7 +233,7 @@ protected:
     {
         void** params = reinterpret_cast<void**>(param);
 
-#if RIGHT_TO_LEFT_ARGS_IN_STACK
+#if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
         const std::size_t count = reinterpret_cast<std::size_t>(*params);
 
         params += count;
@@ -250,7 +252,7 @@ protected:
     {
         void** params = reinterpret_cast<void**>(param);
 
-#if RIGHT_TO_LEFT_ARGS_IN_STACK
+#if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
         const std::size_t count = reinterpret_cast<std::size_t>(*params);
 
         params += count;
@@ -266,8 +268,6 @@ protected:
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
-
-#undef RIGHT_TO_LEFT_ARGS_IN_STACK
 };
 
 }

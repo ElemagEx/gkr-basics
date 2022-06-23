@@ -4,7 +4,8 @@
 #include <atomic>
 #include <condition_variable>
 
-#include "diagnostics.h"
+#include <gkr/diag/diagnostics.h>
+
 #include "lockfree_forward_list.h"
 
 namespace gkr

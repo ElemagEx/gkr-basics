@@ -47,7 +47,7 @@ add_library(
 target_sources(
     gkr-basics
     PRIVATE
-    "${gkr_basics_inc_path}/diagnostics.h"
+    "${gkr_basics_inc_path}/diag/diagnostics.h"
     "${gkr_basics_inc_path}/lockfree_forward_list.h"
     "${gkr_basics_inc_path}/lockfree_queue.h"
     "${gkr_basics_inc_path}/objects_waiter.h"

@@ -1,6 +1,6 @@
 #include "main.h"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diag/diagnostics.h>
 
 #include <gkr/basic_thread_worker.h>
 

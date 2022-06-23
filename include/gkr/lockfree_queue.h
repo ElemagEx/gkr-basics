@@ -9,7 +9,8 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "diagnostics.h"
+#include <gkr/diag/diagnostics.h>
+
 #include "cpp_feature/lib_exchange_function.h"
 #include "cpp_feature/lib_raw_memory_algorithms.h"
 

@@ -1,4 +1,4 @@
-#include <gkr/diagnostics.h>
+#include <gkr/diag/diagnostics.h>
 #include <gkr/sys/thread_name.h>
 
 #ifdef _WIN32

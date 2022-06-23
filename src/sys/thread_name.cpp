@@ -12,7 +12,7 @@ namespace sys
 {
 bool set_current_thread_name(const char name[max_thread_name_cch])
 {
-	Check_NotNullArg(name, false);
+	Check_Arg_NotNull(name, false);
 
 	wchar_t buff[max_thread_name_cch];
 
@@ -26,7 +26,7 @@ bool set_current_thread_name(const char name[max_thread_name_cch])
 }
 bool get_current_thread_name(char name[max_thread_name_cch])
 {
-	Check_NotNullArg(name, false);
+	Check_Arg_NotNull(name, false);
 
 	wchar_t* buff;
 
@@ -55,13 +55,13 @@ namespace sys
 {
 bool set_current_thread_name(const char name[max_thread_name_cch])
 {
-	Check_ValidArg(name != nullptr, false);
+	Check_Arg_IsValid(name != nullptr, false);
 
 	return (0 == prctl(PR_SET_NAME, long(name), 0, 0, 0));
 }
 bool get_current_thread_name(char name[max_thread_name_cch])
 {
-	Check_ValidArg(name != nullptr, false);
+	Check_Arg_IsValid(name != nullptr, false);
 
 	return (0 == prctl(PR_GET_NAME, long(name), 0, 0, 0));
 }

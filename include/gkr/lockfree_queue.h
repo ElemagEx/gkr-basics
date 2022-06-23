@@ -641,7 +641,7 @@ protected:
 
         Check_ValidState(m_producer_tid_owner == std::this_thread::get_id(), false);
 
-        Check_ValidArg(index == (m_tail_pos % m_capacity), false);
+        Check_Arg_IsValid(index == (m_tail_pos % m_capacity), false);
 
         m_producer_tid_owner = thread_id_t();
 
@@ -1083,9 +1083,9 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidArg(index < m_capacity, false);
+        Check_Arg_IsValid(index < m_capacity, false);
 
-        Check_ValidArg(m_entries[index].tid_owner == std::this_thread::get_id(), false);
+        Check_Arg_IsValid(m_entries[index].tid_owner == std::this_thread::get_id(), false);
 
         m_entries[index].tid_owner = thread_id_t();
 
@@ -1136,9 +1136,9 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidArg(index < m_capacity, false);
+        Check_Arg_IsValid(index < m_capacity, false);
 
-        Check_ValidArg(m_entries[index].tid_owner == std::this_thread::get_id(), false);
+        Check_Arg_IsValid(m_entries[index].tid_owner == std::this_thread::get_id(), false);
 
         m_entries[index].tid_owner = thread_id_t();
 

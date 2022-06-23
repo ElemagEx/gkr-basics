@@ -103,8 +103,8 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     {
         return execute_action_method<bool>(ACTION_CHANGE_LOG_QUEUE, max_queue_entries, max_message_chars);
     }
-    Check_ValidArg(max_queue_entries > 0, false);
-    Check_ValidArg(max_message_chars > 0, false);
+    Check_Arg_IsValid(max_queue_entries > 0, false);
+    Check_Arg_IsValid(max_message_chars > 0, false);
 
     const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
         ? lockfree_queue_t::npos
@@ -163,7 +163,7 @@ bool logger::set_severity(const name_id_pair& severity)
     {
         return execute_action_method<bool>(ACTION_SET_SEVERITY, severity);
     }
-    Check_NotNullArg(severity.name, false);
+    Check_Arg_NotNull(severity.name, false);
 
     m_severities[severity.id] = severity.name;
 
@@ -176,7 +176,7 @@ bool logger::set_facility(const name_id_pair& facility)
     {
         return execute_action_method<bool>(ACTION_SET_FACILITY, facility);
     }
-    Check_NotNullArg(facility.name, false);
+    Check_Arg_NotNull(facility.name, false);
 
     m_facilities[facility.id] = facility.name;
 
@@ -189,13 +189,13 @@ bool logger::add_consumer(std::shared_ptr<consumer> consumer)
     {
         return execute_action_method<bool>(ACTION_ADD_CONSUMER, consumer);
     }
-    Check_NotNullArg(consumer, false);
+    Check_Arg_NotNull(consumer, false);
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
         if(*it == consumer)
         {
-            Check_InvalidArg(consumer, false);
+            Check_Arg_Invalid(consumer, false);
         }
     }
     if(!consumer->init_logging())
@@ -214,7 +214,7 @@ bool logger::del_consumer(std::shared_ptr<consumer> consumer)
     {
         return execute_action_method<bool>(ACTION_DEL_CONSUMER, consumer);
     }
-    Check_NotNullArg(consumer, false);
+    Check_Arg_NotNull(consumer, false);
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
@@ -225,7 +225,7 @@ bool logger::del_consumer(std::shared_ptr<consumer> consumer)
             return true;
         }
     }
-    Check_InvalidArg(consumer, false);
+    Check_Arg_Invalid(consumer, false);
 }
 
 void logger::del_all_consumers()
@@ -244,7 +244,7 @@ void logger::del_all_consumers()
 
 bool logger::log_message(bool wait, int severity, int facility, const char* message, va_list args)
 {
-    Check_NotNullArg(message, false);
+    Check_Arg_NotNull(message, false);
 
     check_thread_registered();
 

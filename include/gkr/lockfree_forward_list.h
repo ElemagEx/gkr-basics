@@ -228,7 +228,7 @@ private:
 public:
     bool get_next_or_add_new(iterator& it) noexcept(add_new_is_noexcept)
     {
-        Check_ValidArg(it != end(), false);
+        Check_Arg_IsValid(it != end(), false);
 
         next_t& next = it.is_before_begin()
             ? m_first

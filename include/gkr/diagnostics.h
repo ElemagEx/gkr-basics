@@ -127,67 +127,67 @@
 //
 // Checks are disabled
 //
-#define Check_ValidState(check, ...)
-#define Check_NotNullPtr(ptr,   ...)
-#define Check_Failure(          ...)    return __VA_ARGS__
+#define Check_NotNullPtr(ptr,    ...)
+#define Check_ValidState(check,  ...)
+#define Check_FailureMsg(msg,    ...)   return __VA_ARGS__
+#define Check_Failure(           ...)   return __VA_ARGS__
 
-#define Check_ValidArg(check, ...)
-#define Check_NotNullArg(ptr, ...)
-#define Check_InvalidArg(arg, ...)      return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)
+#define Check_Arg_NotNull(ptr,   ...)
+#define Check_Arg_Invalid(arg,   ...)   return __VA_ARGS__
 
-#define Check_ValidArrayArg(ndx, cnt, check, ...)
+#define Check_Arg_Array(ndx, cnt, check, ...)
 
 #elif (DIAG_MODE == DIAG_MODE_DEFAULT)
 //
 // Checks are silint
 //
-#define Check_ValidState(check, ...)    if(!(check)   ) return __VA_ARGS__
-#define Check_NotNullPtr(ptr,   ...)    if((ptr)==NULL) return __VA_ARGS__
-#define Check_Failure(          ...)                    return __VA_ARGS__
+#define Check_NotNullPtr(ptr,    ...)   if(((ptr)==NULL)) return __VA_ARGS__
+#define Check_ValidState(check,  ...)   if(!(check)     ) return __VA_ARGS__
+#define Check_FailureMsg(msg,    ...)                     return __VA_ARGS__
+#define Check_Failure(           ...)                     return __VA_ARGS__
 
-#define Check_ValidArg(check, ...)      if(!(check)   ) return __VA_ARGS__
-#define Check_NotNullArg(ptr, ...)      if((ptr)==NULL) return __VA_ARGS__
-#define Check_InvalidArg(arg, ...)                      return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check)     ) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                     return __VA_ARGS__
 
-#define Check_ValidArrayArg(ndx, cnt, check, ...) \
+//TODO:Make C alternative
+#define Check_Arg_Array(ndx, cnt, check, ...) \
 for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check)) return __VA_ARGS__
 
 #elif (DIAG_MODE == DIAG_MODE_STEADY) || (DIAG_MODE == DIAG_MODE_NOISY)
 //
 // Checks makes warns fails
 //
-#define Check_Arg_IsValid(check, ...)
-#define Check_Arg_NotNull(ptr,   ...)
-#define Check_Arg_Failure(arg,   ...)
+#define Check_NotNullPtr(ptr,    ...)   if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_ValidState(check,  ...)   if(!(check)      && DIAG_WARN(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_FailureMsg(msg,    ...)                       DIAG_WARN(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Failure(           ...)                       DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
 
-#define Check_Arg_Array(ndx, cnt, check, ...)
+#define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                       DIAG_WARN(DIAG_ID_ARG_INVALID    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
-#define Check_NotNullPtr(ptr,   ...)    if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_ValidState(check, ...)    if(!(check)      && DIAG_WARN(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_FailureMsg(msg,   ...)                        DIAG_WARN(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Failure(          ...)                        DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
-
-#define Check_ValidArg(check, ...)      if(!(check)      && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_NotNullArg(ptr, ...)      if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_InvalidArg(arg, ...)                          DIAG_WARN(DIAG_ID_ARG_INVALID    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
-
-#define Check_ValidArrayArg(ndx, cnt, check, ...) \
+//TODO:Make C alternative
+#define Check_Arg_Array(ndx, cnt, check, ...) \
 for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 
 #elif (DIAG_MODE == DIAG_MODE_INTRUSIVE)
 //
 // Checks stops execution
 //
-#define Check_ValidState(check, ...)    if(!(check)       && DIAG_STOP(DIAG_ID_VALID_STATE  , #check  DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_NotNullPtr(ptr,   ...)    if((ptr)==nullptr && DIAG_STOP(DIAG_ID_NOT_NULL_PTR , #ptr    DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Failure(          ...)                         DIAG_STOP(DIAG_ID_STATE_FAILURE, nullptr DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_NotNullPtr(ptr,    ...)   if(((ptr)==NULL) && DIAG_STOP(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_ValidState(check,  ...)   if(!(check)      && DIAG_STOP(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_FailureMsg(msg,    ...)                       DIAG_STOP(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Failure(           ...)                       DIAG_STOP(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
 
-#define Check_ValidArg(check, ...)      if(!(check)       && DIAG_STOP(DIAG_ID_NOT_VALID_ARG, #check  DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_NotNullArg(ptr, ...)      if((ptr)==nullptr && DIAG_STOP(DIAG_ID_NOT_NULL_ARG , #ptr    DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_InvalidArg(arg, ...)                           DIAG_STOP(DIAG_ID_INVALID_ARG  , #arg    DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_STOP(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                       DIAG_STOP(DIAG_ID_ARG_INVALID    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
-#define Check_ValidArrayArg(ndx, cnt, check, ...) \
-for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_STOP(DIAG_ID_BAD_ARRAY_ARG, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+//TODO:Make C alternative
+#define Check_Arg_Array(ndx, cnt, check, ...) \
+for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 
 #else
 #error Unknown diagnostics mode

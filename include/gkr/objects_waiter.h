@@ -147,12 +147,12 @@ public:
     }
     static wait_result_t check(std::size_t count, waitable_object** objects)
     {
-        Check_ValidArg(count > 0, wait_result_error);
-        Check_ValidArg(count < maximum_wait_objects, wait_result_error);
+        Check_Arg_IsValid(count > 0, wait_result_error);
+        Check_Arg_IsValid(count < maximum_wait_objects, wait_result_error);
 
-        Check_NotNullArg(objects, wait_result_error);
+        Check_Arg_NotNull(objects, wait_result_error);
 
-        Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
+        Check_Arg_Array(index, count, objects[index] != nullptr, wait_result_error);
 
         wait_result_t result;
 
@@ -172,12 +172,12 @@ public:
     }
     wait_result_t wait(std::size_t count, waitable_object** objects)
     {
-        Check_ValidArg(count > 0, wait_result_error);
-        Check_ValidArg(count < maximum_wait_objects, wait_result_error);
+        Check_Arg_IsValid(count > 0, wait_result_error);
+        Check_Arg_IsValid(count < maximum_wait_objects, wait_result_error);
 
-        Check_NotNullArg(objects, wait_result_error);
+        Check_Arg_NotNull(objects, wait_result_error);
 
-        Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
+        Check_Arg_Array(index, count, objects[index] != nullptr, wait_result_error);
 
         wait_result_t result;
 
@@ -215,12 +215,12 @@ public:
     template<typename Rep, typename Period>
     wait_result_t wait(std::chrono::duration<Rep, Period> timeout, std::size_t count, waitable_object** objects)
     {
-        Check_ValidArg(count > 0, wait_result_error);
-        Check_ValidArg(count < maximum_wait_objects, wait_result_error);
+        Check_Arg_IsValid(count > 0, wait_result_error);
+        Check_Arg_IsValid(count < maximum_wait_objects, wait_result_error);
 
-        Check_NotNullArg(objects, wait_result_error);
+        Check_Arg_NotNull(objects, wait_result_error);
 
-        Check_ValidArrayArg(index, count, objects[index] != nullptr, wait_result_error);
+        Check_Arg_Array(index, count, objects[index] != nullptr, wait_result_error);
 
         using duration_t = std::chrono::duration<Rep, Period>;
 

@@ -161,7 +161,7 @@ public:
         iterator_t& operator=(      iterator_t&& other) noexcept { if(this != &other) node = std::exchange(other.node, nullptr); return *this; }
         iterator_t& operator=(const iterator_t&  other) noexcept { if(this != &other) node =               other.node          ; return *this; }
 
-        void swap(iterator_t& other) noexcept { std::swap(node, other.node); }
+        void swap(iterator_t& other) noexcept { if(this != &other) std::swap(node, other.node); }
 
         bool is_before_begin() const { return (node == before_begin_node()); }
         bool has_normal_node() const { return (node != before_begin_node()) && (node != nullptr); }

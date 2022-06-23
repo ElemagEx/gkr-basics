@@ -5,6 +5,7 @@
 #include <utility>
 #include <type_traits>
 
+#include "diagnostics.h"
 #include "cpp_feature/lib_exchange_function.h"
 #include "cpp_feature/lib_raw_memory_algorithms.h"
 
@@ -146,7 +147,9 @@ public:
     template<typename Node, typename Value>
     struct iterator_t
     {
-        iterator_t() noexcept = default;
+        static Node* before_begin_node() { return reinterpret_cast<Node*>(std::size_t(-1)); }
+
+        iterator_t() noexcept = delete;
        ~iterator_t() noexcept = default;
 
         iterator_t(Node* n) noexcept : node(n) {}
@@ -159,16 +162,21 @@ public:
 
         void swap(iterator_t& other) noexcept { std::swap(node, other.node); }
 
+        bool is_before_begin() const { return (node == before_begin_node()); }
+        bool has_normal_node() const { return (node != before_begin_node()) && (node != nullptr); }
+
         bool operator==(const iterator_t& other) const noexcept { return (node == other.node); }
         bool operator!=(const iterator_t& other) const noexcept { return (node != other.node); }
 
-        Value& operator* () noexcept { return  node->value; }
-        Value* operator->() noexcept { return &node->value; }
+        Value& operator* () noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); return  node->value; }
+        Value* operator->() noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); return &node->value; }
 
-        iterator_t& operator++()    noexcept {                          node = node->next.load(); return *this; }
-        iterator_t  operator++(int) noexcept { iterator_t prev = *this; node = node->next.load(); return  prev; }
+        void increment() noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); node = node->next.load(); }
 
-        Node* node = nullptr;
+        iterator_t& operator++()    noexcept(DIAG_NOEXCEPT) {                          increment(); return *this; }
+        iterator_t  operator++(int) noexcept(DIAG_NOEXCEPT) { iterator_t prev = *this; increment(); return  prev; }
+
+        Node* node;
     };
     using       iterator = iterator_t<      node_t,       T>;
     using const_iterator = iterator_t<const node_t, const T>;
@@ -194,7 +202,7 @@ public:
 public:
     iterator before_begin() noexcept
     {
-        return iterator(reinterpret_cast<node_t*>(std::size_t(-1)));
+        return iterator(iterator::before_begin_node());
     }
     iterator begin() noexcept
     {
@@ -220,7 +228,9 @@ private:
 public:
     bool get_next_or_add_new(iterator& it) noexcept(add_new_is_noexcept)
     {
-        next_t& next = (it == before_begin())
+        Check_ValidArg(it != end(), false);
+
+        next_t& next = it.is_before_begin()
             ? m_first
             : it.node->next
             ;

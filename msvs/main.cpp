@@ -72,9 +72,63 @@ public:
 #include <gkr/objects_waiter.h>
 #include <gkr/waitable_semaphore.h>
 
+#define TEST_CALL_CONV /*__cdecl*/
+
+static int TEST_CALL_CONV actual_function_difference(int a, int b)
+{
+    return (a - b);
+}
+
+template<typename R, typename... Args>
+static R execute_function_proxy(R (TEST_CALL_CONV *func)(Args...), void** params)
+{
+// Ignore clang and GNUC warnings
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wunsequenced"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wsequence-point"
+#endif
+
+#if 1 // The correct way to call arguments with right-to-left placement in stack
+    const std::size_t count = reinterpret_cast<std::size_t>(*params);
+
+    params += count;
+
+    R ret = (*func)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+
+#else // The correct way to call arguments with left-to-right placement in stack
+
+    R ret = (*func)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
+
+#endif
+    return ret;
+}
+
+template<typename R, typename... Args>
+static R execute_function_remote(Args... args)
+{
+    constexpr std::size_t count = sizeof...(args);
+
+    void* params[count + 1] = {reinterpret_cast<void*>(count), static_cast<void*>(std::addressof(args))...};
+
+    return execute_function_proxy<R>(actual_function_difference, params);
+}
+
+static bool is_right_to_left_args_in_stack()
+{
+    int result = execute_function_remote<int>(10, 1);
+
+    return (result > 0);
+}
+
 int main()
 {
     int n  =0;
+
+    bool flag = is_right_to_left_args_in_stack();
+
+    n += int(flag);
+
 #if 0
     gkr::sys::set_current_thread_name("gkr-main-thread");
 
@@ -115,7 +169,7 @@ int main()
 #endif
 //  test_lockfree_queue();
 //  test_waiters();
-//  test_thread_worker();
+    test_thread_worker();
 
     return n;
 }

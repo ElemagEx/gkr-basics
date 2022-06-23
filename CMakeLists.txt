@@ -23,9 +23,9 @@ else()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 endif()
 
-include(warnings) #include ./cmake/warnings.cmake - generates variables ${CMAKE_CXX_FLAGS_WARNINGS_INCLUDE} and ${CMAKE_CXX_FLAGS_WARNINGS_EXCLUDE}
+include(warnings) #includes ./cmake/warnings.cmake - sets variable ${CMAKE_CXX_FLAGS_WARNINGS}
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_WARNINGS_INCLUDE} ${CMAKE_CXX_FLAGS_WARNINGS_EXCLUDE}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_WARNINGS}")
 
 message(STATUS "CMAKE_CXX_FLAGS         = ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG   = ${CMAKE_CXX_FLAGS_DEBUG}")

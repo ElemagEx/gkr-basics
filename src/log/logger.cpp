@@ -99,23 +99,30 @@ bool logger::on_exception(bool, const std::exception*) noexcept
 
 bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars)
 {
+    if(in_worker_thread())
+    {
+        return execute_action_method<bool>(ACTION_CHANGE_LOG_QUEUE, max_queue_entries, max_message_chars);
+    }
     Check_ValidArg(max_queue_entries > 0, false);
     Check_ValidArg(max_message_chars > 0, false);
 
+    const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
+        ? lockfree_queue_t::npos
+        : max_queue_entries
+        ;
     const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
-        ? max_message_chars
+        ? lockfree_queue_t::npos
         : max_message_chars + sizeof(entry_info)
         ;
     if(!running())
     {
-        m_log_queue.reset(max_queue_entries, queue_entry_size, alignof(entry_info));
+        m_log_queue.reset(queue_capacity, queue_entry_size, alignof(entry_info));
         return true;
     }
-    if(!in_worker_thread())
+    else
     {
-        return execute_action_method<bool>(ACTION_CHANGE_LOG_QUEUE, max_queue_entries, max_message_chars);
+        Check_Failure(false);
     }
-    Check_Failure(false);
 }
 
 void logger::set_severities(bool clear_existing, const name_id_pair* severities)
@@ -191,9 +198,9 @@ bool logger::add_consumer(std::shared_ptr<consumer> consumer)
             Check_InvalidArg(consumer, false);
         }
     }
-    if(!Verify_BoolRes(consumer->init_logging()))
+    if(!consumer->init_logging())
     {
-        return false;
+        Check_Failure(false);
     }
 
     m_consumers.push_back(consumer);
@@ -295,7 +302,7 @@ void logger::check_thread_registered()
 
     char name[sys::max_thread_name_cch];
 
-    if(!Verify_BoolRes(sys::get_current_thread_name(name))) return;
+    if(!sys::get_current_thread_name(name)) return;
 
     register_thread(std::this_thread::get_id(), name);
 }

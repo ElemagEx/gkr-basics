@@ -1,5 +1,7 @@
 #include "main.h"
 
+#include <gkr/diagnostics.h>
+
 #include <gkr/basic_thread_worker.h>
 
 class MyThreadWorker : public gkr::basic_thread_worker
@@ -8,8 +10,9 @@ class MyThreadWorker : public gkr::basic_thread_worker
     MyThreadWorker& operator=(const MyThreadWorker&) noexcept = delete;
 
 public:
-    MyThreadWorker() = default;
-
+    MyThreadWorker()
+    {
+    }
     virtual ~MyThreadWorker() override
     {
         join(true);

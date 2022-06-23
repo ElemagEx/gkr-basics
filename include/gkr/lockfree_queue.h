@@ -135,15 +135,13 @@ public:
 public:
     bool this_thread_is_valid_producer() const noexcept
     {
-        const thread_id_t no_thread_id;
-
-        return (m_producer_tid == no_thread_id) || (m_producer_tid == std::this_thread::get_id());
+        return (m_producer_tid == thread_id_t()) || (m_producer_tid == std::this_thread::get_id());
     }
     bool this_thread_is_valid_consumer() const noexcept
     {
         const thread_id_t no_thread_id;
 
-        return (m_consumer_tid == no_thread_id) || (m_consumer_tid == std::this_thread::get_id());
+        return (m_consumer_tid == thread_id_t()) || (m_consumer_tid == std::this_thread::get_id());
     }
 
 private:
@@ -473,8 +471,10 @@ private:
     size_type m_tail_pos = 0;
     size_type m_head_pos = 0;
 
-    bool m_producer_owns_tail = false;
-    bool m_consumer_owns_head = false;
+    using thread_id_t = std::thread::id;
+
+    thread_id_t m_producer_tid_owner = thread_id_t();
+    thread_id_t m_consumer_tid_owner = thread_id_t();
 
 protected:
     basic_lockfree_queue() noexcept = delete;
@@ -493,8 +493,8 @@ protected:
         , m_capacity(std::exchange(other.m_capacity, 0))
         , m_tail_pos(std::exchange(other.m_tail_pos, 0))
         , m_head_pos(std::exchange(other.m_head_pos, 0))
-        , m_producer_owns_tail(std::exchange(m_producer_owns_tail, false))
-        , m_consumer_owns_head(std::exchange(m_consumer_owns_head, false))
+        , m_producer_tid_owner(std::exchange(other.m_producer_tid_owner, thread_id_t()))
+        , m_consumer_tid_owner(std::exchange(other.m_consumer_tid_owner, thread_id_t()))
     {
     }
     basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept
@@ -509,8 +509,8 @@ protected:
         m_tail_pos = std::exchange(other.m_tail_pos, 0);
         m_head_pos = std::exchange(other.m_head_pos, 0);
 
-        m_producer_owns_tail = std::exchange(other.m_producer_owns_tail, false);
-        m_consumer_owns_head = std::exchange(other.m_consumer_owns_head, false);
+        m_producer_tid_owner = std::exchange(other.m_producer_tid_owner, thread_id_t());
+        m_consumer_tid_owner = std::exchange(other.m_consumer_tid_owner, thread_id_t());
         return *this;
     }
     void swap(basic_lockfree_queue& other) noexcept
@@ -525,8 +525,8 @@ protected:
         std::swap(m_tail_pos, other.m_tail_pos);
         std::swap(m_head_pos, other.m_head_pos);
 
-        std::swap(m_producer_owns_tail, other.m_producer_owns_tail);
-        std::swap(m_consumer_owns_head, other.m_consumer_owns_head);
+        std::swap(m_producer_tid_owner, other.m_producer_tid_owner);
+        std::swap(m_consumer_tid_owner, other.m_consumer_tid_owner);
     }
 
 public:
@@ -583,8 +583,8 @@ protected:
         m_head_pos = 0;
         m_tail_pos = 0;
 
-        m_producer_owns_tail = false;
-        m_consumer_owns_head = false;
+        m_producer_tid_owner = thread_id_t();
+        m_consumer_tid_owner = thread_id_t();
 
         if(m_capacity == 0)
         {
@@ -604,15 +604,15 @@ protected:
     }
     bool has_owned_elements() const noexcept
     {
-        return (m_producer_owns_tail || m_producer_owns_tail);
+        return ((m_producer_tid_owner != thread_id_t()) || (m_consumer_tid_owner != thread_id_t()));
     }
     bool can_take_producer_element_ownership() const noexcept
     {
-        return ((m_capacity > 0) && threading.this_thread_is_valid_producer() && !m_producer_owns_tail);
+        return ((m_capacity > 0) && threading.this_thread_is_valid_producer() && (m_producer_tid_owner == thread_id_t()));
     }
     bool can_take_consumer_element_ownership() const noexcept
     {
-        return ((m_capacity > 0) && threading.this_thread_is_valid_consumer() && !m_consumer_owns_head);
+        return ((m_capacity > 0) && threading.this_thread_is_valid_consumer() && (m_consumer_tid_owner == thread_id_t()));
     }
 
 protected:
@@ -620,14 +620,14 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
-        Check_ValidState(!m_producer_owns_tail, npos);
+        Check_ValidState(m_producer_tid_owner == thread_id_t(), npos);
 
         if(m_count == m_capacity)
         {
             m_synchronization.template notify_queue_full<true>();
             return npos;
         }
-        m_producer_owns_tail = true;
+        m_producer_tid_owner = std::this_thread::get_id();
 
         const size_type index = (m_tail_pos % m_capacity);
 
@@ -639,11 +639,11 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidState(m_producer_owns_tail, false);
+        Check_ValidState(m_producer_tid_owner == std::this_thread::get_id(), false);
 
         Check_ValidArg(index == (m_tail_pos % m_capacity), false);
 
-        m_producer_owns_tail = false;
+        m_producer_tid_owner = thread_id_t();
 
         if(push)
         {
@@ -668,7 +668,7 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
-        Check_ValidState(!m_consumer_owns_head, npos);
+        Check_ValidState(m_consumer_tid_owner == thread_id_t(), npos);
 
         if(m_count == 0) 
         {
@@ -676,7 +676,7 @@ protected:
             return npos;
         }
 
-        m_consumer_owns_head = true;
+        m_consumer_tid_owner = std::this_thread::get_id();
 
         const size_type index = (m_head_pos % m_capacity);
 
@@ -688,11 +688,11 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidState(m_consumer_owns_head, false);
+        Check_ValidState(m_consumer_tid_owner == std::this_thread::get_id(), false);
 
         Check_ValidState(index == (m_head_pos % m_capacity), false);
 
-        m_consumer_owns_head = false;
+        m_consumer_tid_owner = thread_id_t();
 
         if(pop)
         {
@@ -774,10 +774,13 @@ public:
 private:
     Synchronization m_synchronization;
 
+    using thread_id_t = std::thread::id;
+
     struct dequeues_entry
     {
-        size_type free_index;
-        size_type busy_index;
+        size_type   free_index;
+        size_type   busy_index;
+        thread_id_t  tid_owner;
     };
     using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<dequeues_entry>;
 
@@ -1010,7 +1013,7 @@ protected:
         }
         for(size_type index = 0; index < m_capacity; ++index)
         {
-            m_entries[index].free_index = index;
+            m_entries[index] = dequeues_entry{index, 0, thread_id_t()};
         }
         m_count     = 0;
         m_occupied  = 0;
@@ -1070,6 +1073,8 @@ protected:
 
         const size_type index = m_entries[m_free_head++ % m_capacity].free_index;
 
+        m_entries[index].tid_owner = std::this_thread::get_id();
+
         return index;
     }
     bool drop_producer_element_ownership(size_type index, bool push) noexcept(DIAG_NOEXCEPT)
@@ -1079,6 +1084,10 @@ protected:
         if(index == npos) return false;
 
         Check_ValidArg(index < m_capacity, false);
+
+        Check_ValidArg(m_entries[index].tid_owner == std::this_thread::get_id(), false);
+
+        m_entries[index].tid_owner = thread_id_t();
 
         if(push)
         {
@@ -1117,6 +1126,8 @@ protected:
 
         const size_type index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
+        m_entries[index].tid_owner = std::this_thread::get_id();
+
         return index;
     }
     bool drop_consumer_element_ownership(size_type index, bool pop) noexcept(DIAG_NOEXCEPT)
@@ -1126,6 +1137,10 @@ protected:
         if(index == npos) return false;
 
         Check_ValidArg(index < m_capacity, false);
+
+        Check_ValidArg(m_entries[index].tid_owner == std::this_thread::get_id(), false);
+
+        m_entries[index].tid_owner = thread_id_t();
 
         if(pop)
         {

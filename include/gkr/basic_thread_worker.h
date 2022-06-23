@@ -8,8 +8,8 @@
 #include "waitable_event.h"
 #include "objects_waiter.h"
 
-#ifndef GKR_TWB_API
-#define GKR_TWB_API
+#ifndef GKR_BTW_API
+#define GKR_BTW_API
 #endif
 
 namespace gkr
@@ -43,8 +43,8 @@ public:
     using action_id_t = std::size_t;
 
 protected:
-    GKR_TWB_API          basic_thread_worker();
-    GKR_TWB_API virtual ~basic_thread_worker() noexcept(DIAG_NOEXCEPT);
+    GKR_BTW_API          basic_thread_worker();
+    GKR_BTW_API virtual ~basic_thread_worker() noexcept(DIAG_NOEXCEPT);
 
 protected:
     virtual const char* get_name() noexcept = 0;
@@ -66,22 +66,22 @@ protected:
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept = 0;
 
 public:
-    GKR_TWB_API bool run();
+    GKR_BTW_API bool run();
 
-    GKR_TWB_API bool quit();
-    GKR_TWB_API bool join(bool send_quit_signal);
+    GKR_BTW_API bool quit();
+    GKR_BTW_API bool join(bool send_quit_signal);
 
-    GKR_TWB_API bool update_wait();
+    GKR_BTW_API bool update_wait();
 
 public:
     using action_param_deleter_t = std::function<void(void*)>;
 
-    GKR_TWB_API bool enqueue_action(action_id_t action, void* param = nullptr, action_param_deleter_t deleter = nullptr);
-    GKR_TWB_API void execute_action(action_id_t action, void* param = nullptr, void* result = nullptr);
+    GKR_BTW_API bool enqueue_action(action_id_t action, void* param = nullptr, action_param_deleter_t deleter = nullptr);
+    GKR_BTW_API void execute_action(action_id_t action, void* param = nullptr, void* result = nullptr);
 
 private:
-    GKR_TWB_API bool can_reply();
-    GKR_TWB_API void reply_action();
+    GKR_BTW_API bool can_reply();
+    GKR_BTW_API void reply_action();
 
 public:
     std::thread::id get_id()

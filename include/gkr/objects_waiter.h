@@ -40,7 +40,7 @@ private:
         std::size_t       count;
         node_t*           next;
     };
-    node_t *m_first = nullptr;
+    node_t* m_first = nullptr;
 
     bool find_object(waitable_object* object) noexcept
     {
@@ -122,7 +122,7 @@ private:
     friend class exception_guard;
 
 private:
-    static bool collect_result(wait_result_t& result, std::size_t count, waitable_object** objects) noexcept
+    static bool collect_result(wait_result_t& result, std::size_t count, waitable_object** objects)
     {
         result = 0;
         for(std::size_t index = 0; index < count; ++index)

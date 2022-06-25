@@ -108,7 +108,7 @@ private:
     static constexpr unsigned max_name_cch = 16;
     struct thread_name_t { char name[max_name_cch] {0}; };
 
-    using lockfree_queue_t = lockfree_queue<void, true, false, detail::queue_simple_synchronization>;
+    using lockfree_queue_t = lockfree_queue<void, true, true, impl::queue_simple_synchronization>;
 
 private:
     objects_waiter m_producer_waiter;

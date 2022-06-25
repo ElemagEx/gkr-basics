@@ -17,8 +17,8 @@ namespace log
 
 logger::logger()
 {
-    m_log_queue.get_synchronization().set_producer_waiter(m_producer_waiter);
-    m_log_queue.get_synchronization().set_consumer_waiter(get_waiter());
+    m_log_queue.set_producer_waiter(m_producer_waiter);
+    m_log_queue.set_consumer_waiter(get_waiter());
 }
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
@@ -45,7 +45,7 @@ waitable_object* logger::get_wait_object(size_t index)
 {
     Check_ValidState(index == 0, nullptr);
 
-    return m_log_queue.get_synchronization().queue_non_empty_waitable_object();
+    return m_log_queue.queue_non_empty_waitable_object();
 }
 
 bool logger::start()
@@ -125,8 +125,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     }
     else
     {
-    //  m_log_queue.resize(queue_capacity, queue_entry_size, alignof(message));
-        Check_Failure(false);
+        return m_log_queue.resize(queue_capacity, queue_entry_size, alignof(message));
     }
 }
 

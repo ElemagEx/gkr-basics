@@ -12,7 +12,9 @@ int test_lockfree_queue()
     gkr::lockfree_queue<V, false, false> queue2(10);
 
     gkr::lockfree_queue<V, false, false> queue;
-    
+
+    //queue.acquire_consumer_element(std::chrono::nanoseconds::max());// uncomment line for error
+
     queue = std::move(queue2);
 
     queue.threading.set_this_thread_as_exclusive_producer();

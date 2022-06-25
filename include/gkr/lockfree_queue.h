@@ -11,8 +11,12 @@
 
 #include <gkr/diag/diagnostics.h>
 
+#ifndef __cpp_lib_exchange_function
 #include "cpp_feature/lib_exchange_function.h"
+#endif
+#ifndef __cpp_lib_raw_memory_algorithms
 #include "cpp_feature/lib_raw_memory_algorithms.h"
+#endif
 
 namespace gkr
 {
@@ -67,15 +71,6 @@ public:
         return false;
     }
 #endif
-public:
-    waitable_object* queue_has_space_waitable_object() noexcept
-    {
-        return nullptr;
-    }
-    waitable_object* queue_non_empty_waitable_object() noexcept
-    {
-        return nullptr;
-    }
 };
 
 class producer_consumer_threading
@@ -549,7 +544,7 @@ public:
     }
 
 public:
-    Synchronization& get_synchronization()
+    Synchronization& get_synchronization() noexcept
     {
         return m_synchronization;
     }
@@ -713,15 +708,6 @@ protected:
         return true;
     }
 
-public:
-    waitable_object* queue_has_space_waitable_object()
-    {
-        return m_synchronization.queue_has_space_waitable_object();
-    }
-    waitable_object* queue_non_empty_waitable_object()
-    {
-        return m_synchronization.queue_non_empty_waitable_object();
-    }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period>
@@ -973,7 +959,7 @@ public:
     }
 
 public:
-    Synchronization& get_synchronization()
+    Synchronization& get_synchronization() noexcept
     {
         return m_synchronization;
     }
@@ -1166,15 +1152,6 @@ protected:
         return true;
     }
 
-public:
-    waitable_object* queue_has_space_waitable_object()
-    {
-        return m_synchronization.queue_has_space_waitable_object();
-    }
-    waitable_object* queue_non_empty_waitable_object()
-    {
-        return m_synchronization.queue_non_empty_waitable_object();
-    }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period>

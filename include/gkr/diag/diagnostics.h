@@ -94,11 +94,12 @@
 #define DIAG_ID_CHECK_STATE     6
 #define DIAG_ID_CHECK_FAIL_MSG  7
 #define DIAG_ID_CHECK_FAILURE   8
-#define DIAG_ID_ARG_NOT_VALID   9
-#define DIAG_ID_ARG_NOT_NULL    10
-#define DIAG_ID_ARG_INVALID     11
-#define DIAG_ID_ARG_BAD_ARRAY   12
-#define DIAG_ID_COUNT           13
+#define DIAG_ID_CHECK_RECOVERY  9
+#define DIAG_ID_ARG_NOT_VALID   10
+#define DIAG_ID_ARG_NOT_NULL    11
+#define DIAG_ID_ARG_INVALID     12
+#define DIAG_ID_ARG_BAD_ARRAY   13
+#define DIAG_ID_COUNT           14
 
 //
 // Assert_xxx
@@ -131,6 +132,7 @@
 #define Check_ValidState(check,  ...)
 #define Check_FailureMsg(msg,    ...)   return __VA_ARGS__
 #define Check_Failure(           ...)   return __VA_ARGS__
+#define Check_Recovery(msg          )
 
 #define Check_Arg_IsValid(check, ...)
 #define Check_Arg_NotNull(ptr,   ...)
@@ -146,6 +148,7 @@
 #define Check_ValidState(check,  ...)   if(!(check)     ) return __VA_ARGS__
 #define Check_FailureMsg(msg,    ...)                     return __VA_ARGS__
 #define Check_Failure(           ...)                     return __VA_ARGS__
+#define Check_Recovery(msg          )
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)     ) return __VA_ARGS__
 #define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL)) return __VA_ARGS__
@@ -163,6 +166,7 @@ for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check)) return __VA_ARGS__
 #define Check_ValidState(check,  ...)   if(!(check)      && DIAG_WARN(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_FailureMsg(msg,    ...)                       DIAG_WARN(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
 #define Check_Failure(           ...)                       DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Recovery(msg          )                       DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
@@ -180,6 +184,7 @@ for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_WARN(DIAG_ID_
 #define Check_ValidState(check,  ...)   if(!(check)      && DIAG_STOP(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_FailureMsg(msg,    ...)                       DIAG_STOP(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
 #define Check_Failure(           ...)                       DIAG_STOP(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Recovery(msg          )                       DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_STOP(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__

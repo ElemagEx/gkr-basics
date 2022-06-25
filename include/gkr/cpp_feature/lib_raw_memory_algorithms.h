@@ -1,10 +1,11 @@
 #pragma once
 
 #include <memory>
-#include <utility>
-#include <type_traits>
 
 #ifndef __cpp_lib_raw_memory_algorithms
+
+#include <utility>
+#include <type_traits>
 
 namespace std
 {

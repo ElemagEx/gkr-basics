@@ -171,7 +171,7 @@ private:
     std::mutex         m_sync_queue_mutex;
 
 protected:
-    objects_waiter& get_waiter()
+    objects_waiter& get_waiter() noexcept
     {
         return m_waiter;
     }

@@ -29,7 +29,7 @@ public:
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
         std::size_t max_queue_entries  = 16,
-        std::size_t max_message_chars  = (1024 - sizeof(entry_info))
+        std::size_t max_message_chars  = (1024 - sizeof(message))
         );
     GKR_LOG_API static void done();
 
@@ -40,8 +40,8 @@ public:
         );
 
 public:
-    GKR_LOG_API static bool set_severities(bool clear_existing, const name_id_pair* severities);
-    GKR_LOG_API static bool set_facilities(bool clear_existing, const name_id_pair* facilities);
+    GKR_LOG_API static bool set_severities(bool clear_existing, const name_id_pair* severities = nullptr);
+    GKR_LOG_API static bool set_facilities(bool clear_existing, const name_id_pair* facilities = nullptr);
 
     GKR_LOG_API static bool set_severity(const name_id_pair& severity);
     GKR_LOG_API static bool set_facility(const name_id_pair& facility);
@@ -53,9 +53,9 @@ public:
     GKR_LOG_API static bool del_all_consumers();
 
 public:
-    GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* message);
-    GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* message, ...);
-    GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* message, va_list args);
+    GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* format);
+    GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* format, ...);
+    GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args);
 };
 
 }

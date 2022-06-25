@@ -56,8 +56,8 @@ public:
     void set_severities(bool clear_existing, const name_id_pair* severities);
     void set_facilities(bool clear_existing, const name_id_pair* facilities);
 
-    bool set_severity(const name_id_pair& severity);
-    bool set_facility(const name_id_pair& facility);
+    void set_severity(const name_id_pair& severity);
+    void set_facility(const name_id_pair& facility);
 
 public:
     bool add_consumer(std::shared_ptr<consumer> consumer);
@@ -66,24 +66,29 @@ public:
     void del_all_consumers();
 
 public:
-    bool log_message(bool wait, int severity, int facility, const char* message, va_list args);
+    bool log_message(bool wait, int severity, int facility, const char* format, std::va_list args);
 
 private:
-    struct msg_entry : public entry_info
+    struct message_data : public message
     {
-        char message[1];
+        message_data() = delete;
+       ~message_data() = delete;
+
+        char buffer[1];
     };
 
 private:
     void register_thread(std::thread::id tid, const char* name);
 
-    void sync_log_message(const msg_entry& entry);
+    void sync_log_message(message_data& entry);
 
     void check_thread_registered();
 
-    bool prepare_msg_entry(msg_entry& entry, std::size_t cch, int severity, int facility, const char* message, va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args);
 
-    void consume_msg_entry(const msg_entry& entry);
+    void prepare_message(message_data& msg);
+
+    void consume_message(const message_data& msg);
 
 private:
     enum : action_id_t
@@ -106,6 +111,8 @@ private:
     using lockfree_queue_t = lockfree_queue<void, true, false, detail::queue_simple_synchronization>;
 
 private:
+    objects_waiter m_producer_waiter;
+
     lockfree_queue_t m_log_queue;
 
     std::vector<std::shared_ptr<consumer>> m_consumers;

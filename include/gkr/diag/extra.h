@@ -19,6 +19,7 @@ inline const char* DIAG_GET_PREFIX(int id)
         "Valid State Check fail: ",
         "Failure: ",
         "General Failure",
+        "Failure with Recovery: "
         "Argument Check Fail: ",
         "Argument NULL Pointer: ",
         "Invalid Argument: ",

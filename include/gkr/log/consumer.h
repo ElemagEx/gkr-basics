@@ -5,7 +5,7 @@ namespace gkr
 namespace log
 {
 
-struct entry_info;
+struct message;
 
 class consumer
 {
@@ -15,7 +15,7 @@ public:
 	virtual bool init_logging() = 0;
 	virtual void done_logging() = 0;
 
-	virtual void consume_log_message(const entry_info& entry) = 0;
+	virtual void consume_log_message(const message& msg) = 0;
 };
 
 }

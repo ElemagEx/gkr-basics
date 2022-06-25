@@ -1,14 +1,16 @@
 #pragma once
 
+//TODO: Move file to log directory
+
 #include <chrono>
 #include <ctime>
 
 namespace gkr
 {
-namespace misc
+namespace log
 {
 
-inline long long get_stamp()
+inline long long calc_stamp()
 {
     auto now = std::chrono::system_clock::now();
 

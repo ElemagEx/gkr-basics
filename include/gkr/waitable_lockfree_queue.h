@@ -18,7 +18,8 @@ public:
    ~queue_simple_synchronization() noexcept = default;
 
     queue_simple_synchronization(queue_simple_synchronization&& other) noexcept
-        : m_objects_waiter(other.m_objects_waiter)
+        : m_producer_waiter(other.m_producer_waiter)
+        , m_consumer_waiter(other.m_consumer_waiter)
         , m_has_space_event(std::move(other.m_has_space_event))
         , m_non_empty_event(std::move(other.m_non_empty_event))
     {
@@ -37,9 +38,13 @@ public:
     }
 
 public:
-    void set_waiter(objects_waiter& waiter)
+    void set_producer_waiter(objects_waiter& waiter) noexcept
     {
-        m_objects_waiter = &waiter;
+        m_producer_waiter = &waiter;
+    }
+    void set_consumer_waiter(objects_waiter& waiter) noexcept
+    {
+        m_consumer_waiter = &waiter;
     }
 
 public:
@@ -108,16 +113,16 @@ public:
     template<typename Rep, typename Period>
     bool producer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
     {
-        Check_NotNullPtr(m_objects_waiter, false);
+        Check_NotNullPtr(m_producer_waiter, false);
 
-        return wait(*m_objects_waiter, timeout, m_has_space_event);
+        return wait(*m_producer_waiter, timeout, m_has_space_event);
     }
     template<typename Rep, typename Period>
     bool consumer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
     {
-        Check_NotNullPtr(m_objects_waiter, false);
+        Check_NotNullPtr(m_consumer_waiter, false);
 
-        return wait(*m_objects_waiter, timeout, m_non_empty_event);
+        return wait(*m_consumer_waiter, timeout, m_non_empty_event);
     }
 
 public:
@@ -131,7 +136,8 @@ public:
     }
 
 private:
-    objects_waiter*      m_objects_waiter {nullptr};
+    objects_waiter*      m_producer_waiter = nullptr;
+    objects_waiter*      m_consumer_waiter = nullptr;
     waitable_event<true> m_has_space_event;
     waitable_event<true> m_non_empty_event;
 };

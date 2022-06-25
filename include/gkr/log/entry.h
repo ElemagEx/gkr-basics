@@ -1,5 +1,7 @@
 #pragma once
 
+//TODO:Rename file to message
+
 #include <cinttypes>
 
 namespace gkr
@@ -7,7 +9,7 @@ namespace gkr
 namespace log
 {
 
-struct entry_head
+struct message_head
 {
 	std::int64_t  tid;
 	std::int64_t  stamp;
@@ -17,7 +19,7 @@ struct entry_head
 	std::uint16_t mesageLen;
 	std::uint16_t _reserved;
 };
-struct entry_info : public entry_head
+struct message : public message_head
 {
 	const char* threadName;
 	const char* messageText;

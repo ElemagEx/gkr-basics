@@ -5,7 +5,7 @@
 #include <gkr/log/entry.h>
 #include <gkr/sys/thread_name.h>
 #include <gkr/misc/stamp.h>
-#if 0
+#if 1
 #define SEVERITY_FATAL   0
 #define SEVERITY_ERROR   1
 #define SEVERITY_WARNING 2
@@ -43,11 +43,11 @@ class console_consumer : public gkr::log::consumer
     virtual void done_logging() override
     {
     }
-    virtual void consume_log_message(const gkr::log::entry_info& entry) override
+    virtual void consume_log_message(const gkr::log::message& msg) override
     {
         std::tm tm;
         unsigned ns;
-        gkr::misc::decompose_stamp(true, entry.stamp, tm, ns);
+        gkr::log::decompose_stamp(true, msg.stamp, tm, ns);
 
         using ulonglong = unsigned long long;
 
@@ -56,11 +56,11 @@ class console_consumer : public gkr::log::consumer
             tm.tm_min,
             tm.tm_sec,
             (ns / 1000000U),
-            ulonglong(entry.tid),
-            entry.threadName,
-            entry.severityName,
-            entry.facilityName,
-            entry.messageText
+            ulonglong(msg.tid),
+            msg.threadName,
+            msg.severityName,
+            msg.facilityName,
+            msg.messageText
             );
     }
 public:
@@ -120,7 +120,7 @@ static bool is_right_to_left_args_in_stack()
 
     return (result > 0);
 }
-
+#include <cstring>
 int main()
 {
     int n  =0;
@@ -129,15 +129,15 @@ int main()
 
     n += int(flag);
 
-#if 0
+#if 1
     gkr::sys::set_current_thread_name("gkr-main-thread");
 
     gkr::log::logging::init(g_severities, g_facilities);
 
     gkr::log::logging::add_consumer(std::make_shared<console_consumer>());
 
-    gkr::log::logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCRO, "First log message");
-    gkr::log::logging::log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCRO, "Second log message %i", 10);
+    gkr::log::logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
+    gkr::log::logging::log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 #endif
 
     gkr::waitable_mutex<> mutex;
@@ -169,7 +169,7 @@ int main()
 #endif
 //  test_lockfree_queue();
 //  test_waiters();
-    test_thread_worker();
+//  test_thread_worker();
 
     return n;
 }

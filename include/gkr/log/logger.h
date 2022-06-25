@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entry.h"
+#include "message.h"
 
 #include <gkr/basic_thread_worker.h>
 #include <gkr/waitable_lockfree_queue.h>

@@ -8,10 +8,10 @@
 #include <gkr/diag/diagnostics.h>
 
 #ifndef __cpp_lib_exchange_function
-#include "cpp_feature/lib_exchange_function.h"
+#include "cpp/lib_exchange_function.h"
 #endif
 #ifndef __cpp_lib_raw_memory_algorithms
-#include "cpp_feature/lib_raw_memory_algorithms.h"
+#include "cpp/lib_raw_memory_algorithms.h"
 #endif
 
 namespace gkr

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entry.h"
+#include "message.h"
 
 #include <memory>
 #include <cstdarg>

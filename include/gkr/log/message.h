@@ -1,7 +1,5 @@
 #pragma once
 
-//TODO:Rename file to message
-
 #include <cinttypes>
 
 namespace gkr

@@ -1,7 +1,5 @@
 #pragma once
 
-//TODO: Move file to log directory
-
 #include <chrono>
 #include <ctime>
 

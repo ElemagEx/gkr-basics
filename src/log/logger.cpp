@@ -1,11 +1,12 @@
 #include <gkr/log/logger.h>
 
 #include <gkr/log/logging.h>
+#include <gkr/log/message.h>
 #include <gkr/log/consumer.h>
+#include <gkr/log/stamp.h>
 
 #include <gkr/sys/thread_name.h>
 #include <gkr/misc/union_cast.h>
-#include <gkr/misc/stamp.h>
 
 #include <cstring>
 

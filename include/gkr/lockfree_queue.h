@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include <gkr/diag/diagnostics.h>
+#include "diag/diagnostics.h"
 
 #ifndef __cpp_lib_exchange_function
 #include "cpp/lib_exchange_function.h"
@@ -62,6 +62,29 @@ public:
     {
         return (m_element != nullptr);
     }
+
+public:
+    const Element* data() const noexcept
+    {
+        return m_element;
+    }
+    const Element& value() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_element);
+        return *m_element;
+    }
+    const Element& operator*() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_element);
+        return *m_element;
+    }
+    const Element* operator->() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_element);
+        return m_element;
+    }
+
+public:
     Element* data() noexcept
     {
         return m_element;
@@ -132,6 +155,31 @@ public:
     {
         return (m_element != nullptr);
     }
+
+public:
+    const void* data() const noexcept
+    {
+        return m_element;
+    }
+    template<typename T>
+    const T* data() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+
+        return static_cast<const T*>(m_element);
+    }
+    template<typename T>
+    const T& value() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+
+        Assert_NotNullPtr(m_element);
+        return *static_cast<const T*>(m_element);
+    }
+
+public:
     void* data() noexcept
     {
         return m_element;
@@ -205,6 +253,29 @@ public:
     {
         return (m_element != nullptr);
     }
+
+public:
+    const Element* data() const noexcept
+    {
+        return m_element;
+    }
+    const Element& value() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_element);
+        return *m_element;
+    }
+    const Element& operator*() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_element);
+        return *m_element;
+    }
+    const Element* operator->() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_element);
+        return m_element;
+    }
+
+public:
     Element* data() noexcept
     {
         return m_element;
@@ -275,6 +346,31 @@ public:
     {
         return (m_element != nullptr);
     }
+
+public:
+    const void* data() const noexcept
+    {
+        return m_element;
+    }
+    template<typename T>
+    const T* data() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+
+        return static_cast<T*>(m_element);
+    }
+    template<typename T>
+    const T& value() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(alignof(T) <= m_queue->element_alignment());
+        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+
+        Assert_NotNullPtr(m_element);
+        return *static_cast<T*>(m_element);
+    }
+
+public:
     void* data() noexcept
     {
         return m_element;
@@ -400,42 +496,42 @@ protected:
     }
 
 protected:
-    void reset(size_t)
+    void reset(size_t) noexcept
     {
     }
 
 protected:
-    void notify_producer_overtake()
+    void notify_producer_overtake() noexcept
     {
     }
-    void notify_producer_take()
+    void notify_producer_take() noexcept
     {
     }
-    void notify_producer_commit()
+    void notify_producer_commit() noexcept
     {
     }
-    void notify_producer_cancel()
+    void notify_producer_cancel() noexcept
     {
     }
 
 protected:
-    void notify_consumer_overtake()
+    void notify_consumer_overtake() noexcept
     {
     }
-    void notify_consumer_take()
+    void notify_consumer_take() noexcept
     {
     }
-    void notify_consumer_commit()
+    void notify_consumer_commit() noexcept
     {
     }
-    void notify_consumer_cancel()
+    void notify_consumer_cancel() noexcept
     {
     }
 
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period>
-    static constexpr bool has_wait()
+    static constexpr bool has_wait() noexcept
     {
         return false;
     }
@@ -696,7 +792,7 @@ protected:
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
     template<typename Rep, typename Period>
-    size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout)
     {
         for( ; ; )
         {
@@ -710,7 +806,7 @@ protected:
         }
     }
     template<typename Rep, typename Period>
-    size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout)
     {
         for( ; ; )
         {
@@ -1102,7 +1198,7 @@ protected:
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
     template<typename Rep, typename Period>
-    size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout)
     {
         for( ; ; )
         {
@@ -1116,7 +1212,7 @@ protected:
         }
     }
     template<typename Rep, typename Period>
-    size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout)
     {
         for( ; ; )
         {
@@ -1555,7 +1651,7 @@ public:
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 public:
     template<typename Rep, typename Period, typename... Args>
-    element_t* acquire_producer_element_ex(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
+    element_t* acquire_producer_element_ex(std::chrono::duration<Rep, Period> timeout, Args&&... args)
     {
         const size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -1566,13 +1662,13 @@ public:
         return new (element) element_t(std::forward<Args>(args)...);
     }
     template<typename... Args>
-    element_t* acquire_producer_element_ex(Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
+    element_t* acquire_producer_element_ex(Args&&... args)
     {
         return acquire_producer_element_ex(std::chrono::nanoseconds::max(), std::forward<Args>(args)...);
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_producer_element(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
+    element_t* acquire_producer_element(std::chrono::duration<Rep, Period> timeout)
     {
         const size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -1582,13 +1678,13 @@ public:
 
         return new (element) element_t();
     }
-    element_t* acquire_producer_element() noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
+    element_t* acquire_producer_element()
     {
         return acquire_producer_element(std::chrono::nanoseconds::max());
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_producer_element(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
+    element_t* acquire_producer_element(std::chrono::duration<Rep, Period> timeout, element_t&& value)
     {
         const size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -1598,13 +1694,13 @@ public:
 
         return new (element) element_t(std::move(value));
     }
-    element_t* acquire_producer_element(element_t&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
+    element_t* acquire_producer_element(element_t&& value)
     {
         return acquire_producer_element(std::chrono::nanoseconds::max(), std::move(value));
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_producer_element(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
+    element_t* acquire_producer_element(std::chrono::duration<Rep, Period> timeout, const element_t& value)
     {
         const size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -1614,13 +1710,13 @@ public:
 
         return new (element) element_t(value);
     }
-    element_t* acquire_producer_element(const element_t& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
+    element_t* acquire_producer_element(const element_t& value)
     {
         return acquire_producer_element(std::chrono::nanoseconds::max(), value);
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_consumer_element(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_consumer_element(std::chrono::duration<Rep, Period> timeout)
     {
         const size_t index = base_t::take_consumer_element_ownership(timeout);
 
@@ -1630,170 +1726,128 @@ public:
 
         return element;
     }
-    element_t* acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_consumer_element()
     {
         return acquire_consumer_element(std::chrono::nanoseconds::max());
     }
 
 public:
     template<typename Rep, typename Period, typename... Args>
-    element_t* start_emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
+    element_t* start_emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args)
     {
         element_t* element = acquire_producer_element_ex(timeout, std::forward<Args>(args)...);
 
         return queue_producer_element_t(*this, element);
     }
     template<typename... Args>
-    element_t* start_emplace(Args&&... args) noexcept(DIAG_NOEXCEPT && std::is_nothrow_constructible<element_t, Args...>::value)
+    element_t* start_emplace(Args&&... args)
     {
         return start_emplace(std::chrono::nanoseconds::max(), std::forward<Args>(args)...);
     }
 
     template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout)
     {
         element_t* element = acquire_producer_element(timeout);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_default_constructible<element_t>::value)
+    queue_producer_element_t start_push()
     {
         return start_push(std::chrono::nanoseconds::max());
     }
 
     template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, element_t&& value)
     {
         element_t* element = acquire_producer_element(timeout, std::move(value));
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(element_t&& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<element_t>::value)
+    queue_producer_element_t start_push(element_t&& value)
     {
         return start_push(std::chrono::nanoseconds::max(), std::move(value));
     }
 
     template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, const element_t& value)
     {
         element_t* element = acquire_producer_element(timeout, value);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(const element_t& value) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<element_t>::value)
+    queue_producer_element_t start_push(const element_t& value)
     {
         return start_push(std::chrono::nanoseconds::max(), value);
     }
 
     template<typename Rep, typename Period>
-    queue_consumer_element_t start_pop(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element_t start_pop(std::chrono::duration<Rep, Period> timeout)
     {
         element_t* element = acquire_consumer_element(timeout);
 
         return queue_consumer_element_t(*this, element);
     }
-    queue_consumer_element_t start_pop() noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element_t start_pop()
     {
         return start_pop(std::chrono::nanoseconds::max());
     }
 
 public:
     template<typename Rep, typename Period, typename... Args>
-    bool emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_constructible<element_t, Args...>::value
-        )
+    bool emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args)
     {
         return start_emplace(timeout, std::forward<Args>(args)...).push_in_progress();
     }
     template<typename... Args>
-    bool emplace(Args&&... args) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_constructible<element_t, Args...>::value
-        )
+    bool emplace(Args&&... args)
     {
         return emplace(std::chrono::nanoseconds::max(), std::forward<Args>(args)...).push_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_default_constructible<element_t>::value
-        )
+    bool push(std::chrono::duration<Rep, Period> timeout)
     {
         return start_push(timeout).push_in_progress();
     }
-    bool push() noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_default_constructible<element_t>::value
-        )
+    bool push()
     {
         return push(std::chrono::nanoseconds::max()).push_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_move_constructible<element_t>::value
-        )
+    bool push(std::chrono::duration<Rep, Period> timeout, element_t&& value)
     {
         return start_push(timeout, std::move(value)).push_in_progress();
     }
-    bool push(element_t&& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_move_constructible<element_t>::value
-        )
+    bool push(element_t&& value)
     {
         return push(std::chrono::nanoseconds::max(), std::move(value)).push_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_copy_constructible<element_t>::value
-        )
+    bool push(std::chrono::duration<Rep, Period> timeout, const element_t& value)
     {
         return start_push(timeout, value).push_in_progress();
     }
-    bool push(const element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_copy_constructible<element_t>::value
-        )
+    bool push(const element_t& value)
     {
         return push(std::chrono::nanoseconds::max(), value).push_in_progress();
     }
 
 public:
     template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value
-        )
+    bool pop(std::chrono::duration<Rep, Period> timeout)
     {
         return start_pop(timeout).pop_in_progress();
     }
-    bool pop() noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value
-        )
+    bool pop()
     {
         return pop(std::chrono::nanoseconds::max());
     }
 
     template<typename Rep, typename Period>
-    bool copy_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_copy_assignable<element_t>::value
-        )
+    bool copy_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value)
     {
         auto consumer_element = start_pop(timeout);
 
@@ -1803,21 +1857,13 @@ public:
 
         return true;
     }
-    bool copy_and_pop(element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_copy_assignable<element_t>::value
-        )
+    bool copy_and_pop(element_t& value)
     {
         return copy_and_pop(std::chrono::nanoseconds::max(), value);
     }
 
     template<typename Rep, typename Period>
-    bool move_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_move_assignable<element_t>::value
-        )
+    bool move_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value)
     {
         auto consumer_element = start_pop(timeout);
 
@@ -1827,11 +1873,7 @@ public:
 
         return true;
     }
-    bool move_and_pop(element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value &&
-        std::is_nothrow_move_assignable<element_t>::value
-        )
+    bool move_and_pop(element_t& value)
     {
         return move_and_pop(std::chrono::nanoseconds::max(), value);
     }
@@ -2304,7 +2346,7 @@ public:
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 public:
     template<typename Rep, typename Period>
-    void* acquire_producer_element(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    void* acquire_producer_element(std::chrono::duration<Rep, Period> timeout)
     {
         if(m_stride == 0) return nullptr;
 
@@ -2316,13 +2358,13 @@ public:
 
         return element;
     }
-    void* acquire_producer_element() noexcept(DIAG_NOEXCEPT)
+    void* acquire_producer_element()
     {
         return acquire_producer_element(std::chrono::nanoseconds::max());
     }
 
     template<class Element, typename Rep, typename Period>
-    Element* acquire_producer_element(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    Element* acquire_producer_element(std::chrono::duration<Rep, Period> timeout)
     {
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
@@ -2330,14 +2372,14 @@ public:
         return static_cast<Element*>(acquire_producer_element(timeout));
     }
     template<class Element>
-    Element* acquire_producer_element() noexcept(DIAG_NOEXCEPT)
+    Element* acquire_producer_element()
     {
         return acquire_producer_element<Element>(std::chrono::nanoseconds::max());
     }
 
 public:
     template<typename Rep, typename Period>
-    void* acquire_consumer_element(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    void* acquire_consumer_element(std::chrono::duration<Rep, Period> timeout)
     {
         if(m_stride == 0) return nullptr;
 
@@ -2349,13 +2391,13 @@ public:
 
         return element;
     }
-    void* acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
+    void* acquire_consumer_element()
     {
         return acquire_consumer_element(std::chrono::nanoseconds::max());
     }
 
     template<class Element, typename Rep, typename Period>
-    Element* acquire_consumer_element(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    Element* acquire_consumer_element(std::chrono::duration<Rep, Period> timeout)
     {
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
@@ -2363,26 +2405,26 @@ public:
         return static_cast<Element*>(acquire_consumer_element(timeout));
     }
     template<class Element>
-    Element* acquire_consumer_element() noexcept(DIAG_NOEXCEPT)
+    Element* acquire_consumer_element()
     {
         return acquire_consumer_element<Element>(std::chrono::nanoseconds::max());
     }
 
 public:
     template<typename Rep, typename Period>
-    queue_producer_element<self_t, void> start_push(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element<self_t, void> start_push(std::chrono::duration<Rep, Period> timeout)
     {
         void* element = acquire_producer_element(timeout);
 
         return queue_producer_element<self_t, void>(*this, element);
     }
-    queue_producer_element<self_t, void> start_push() noexcept(DIAG_NOEXCEPT)
+    queue_producer_element<self_t, void> start_push()
     {
         return start_push(std::chrono::nanoseconds::max());
     }
 
     template<class Element, typename Rep, typename Period>
-    queue_producer_element<self_t, Element> start_push(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element<self_t, Element> start_push(std::chrono::duration<Rep, Period> timeout)
     {
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
@@ -2392,25 +2434,25 @@ public:
         return queue_producer_element<self_t, Element>(*this, element);
     }
     template<class Element>
-    queue_producer_element<self_t, Element> start_push() noexcept(DIAG_NOEXCEPT)
+    queue_producer_element<self_t, Element> start_push()
     {
         return start_push<Element>(std::chrono::nanoseconds::max());
     }
 
     template<typename Rep, typename Period>
-    queue_consumer_element<self_t, void> start_pop(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element<self_t, void> start_pop(std::chrono::duration<Rep, Period> timeout)
     {
         void* element = acquire_consumer_element(timeout);
 
         return queue_consumer_element<self_t, void>(*this, element);
     }
-    queue_consumer_element<self_t, void> start_pop() noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element<self_t, void> start_pop()
     {
         return start_pop(std::chrono::nanoseconds::max());
     }
 
     template<class Element, typename Rep, typename Period>
-    queue_consumer_element<self_t, Element> start_pop(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element<self_t, Element> start_pop(std::chrono::duration<Rep, Period> timeout)
     {
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
@@ -2420,14 +2462,14 @@ public:
         return queue_consumer_element<self_t, Element>(*this, element);
     }
     template<class Element>
-    queue_consumer_element<self_t, Element> start_pop() noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element<self_t, Element> start_pop()
     {
         return start_pop<Element>(std::chrono::nanoseconds::max());
     }
 
 public:
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, size_t size = npos) noexcept(false)
+    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, size_t size = npos)
     {
         auto producer_element = start_push(timeout);
 
@@ -2443,13 +2485,13 @@ public:
         }
         return true;
     }
-    bool push(const void* data = nullptr, size_t size = npos) noexcept(false)
+    bool push(const void* data = nullptr, size_t size = npos)
     {
         return push(std::chrono::nanoseconds::max(), data, size);
     }
 
     template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, size_t size = npos) noexcept(false)
+    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, size_t size = npos)
     {
         auto producer_element = start_pop(timeout);
 
@@ -2465,7 +2507,7 @@ public:
         }
         return true;
     }
-    bool pop(void* data = nullptr, size_t size = npos) noexcept(false)
+    bool pop(void* data = nullptr, size_t size = npos)
     {
         return pop(std::chrono::nanoseconds::max(), data, size);
     }

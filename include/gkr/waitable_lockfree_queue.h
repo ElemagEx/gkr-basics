@@ -47,7 +47,7 @@ protected:
     }
 
 protected:
-    void reset(size_t capacity)
+    void reset(size_t capacity) noexcept
     {
         m_busy_count = 0;
         m_free_count = capacity;
@@ -64,11 +64,11 @@ protected:
     }
 
 protected:
-    void notify_producer_overtake()
+    void notify_producer_overtake() noexcept
     {
         m_has_space_event.reset();
     }
-    void notify_producer_take()
+    void notify_producer_take() noexcept(DIAG_NOEXCEPT)
     {
         const std::ptrdiff_t new_free_count = std::ptrdiff_t(--m_free_count);
 
@@ -79,14 +79,14 @@ protected:
             m_has_space_event.reset();
         }
     }
-    void notify_producer_commit()
+    void notify_producer_commit() noexcept
     {
         if(++m_busy_count == 1)
         {
             m_has_items_event.fire();
         }
     }
-    void notify_producer_cancel()
+    void notify_producer_cancel() noexcept
     {
         if(++m_free_count == 1)
         {
@@ -95,11 +95,11 @@ protected:
     }
 
 protected:
-    void notify_consumer_overtake()
+    void notify_consumer_overtake() noexcept
     {
         m_has_items_event.reset();
     }
-    void notify_consumer_take()
+    void notify_consumer_take() noexcept(DIAG_NOEXCEPT)
     {
         const std::ptrdiff_t new_busy_count = std::ptrdiff_t(--m_busy_count);
 
@@ -110,14 +110,14 @@ protected:
             m_has_items_event.reset();
         }
     }
-    void notify_consumer_commit()
+    void notify_consumer_commit() noexcept
     {
         if(++m_free_count == 1)
         {
             m_has_space_event.fire();
         }
     }
-    void notify_consumer_cancel()
+    void notify_consumer_cancel() noexcept
     {
         if(++m_busy_count == 1)
         {
@@ -210,14 +210,14 @@ public:
 
 protected:
     template<typename Rep, typename Period>
-    bool producer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
+    bool producer_wait(std::chrono::duration<Rep, Period>& timeout)
     {
         Check_NotNullPtr(m_producer_waiter, false);
 
         return base_t::wait(*m_producer_waiter, timeout, *base_t::queue_has_space_waitable_object());
     }
     template<typename Rep, typename Period>
-    bool consumer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
+    bool consumer_wait(std::chrono::duration<Rep, Period>& timeout)
     {
         Check_NotNullPtr(m_consumer_waiter, false);
 

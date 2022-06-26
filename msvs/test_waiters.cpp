@@ -5,6 +5,12 @@
 #include <gkr/waitable_mutex.h>
 #include <gkr/waitable_semaphore.h>
 
+#include <gkr/waitable_event.h>
+#include <gkr/waitable_mutex.h>
+#include <gkr/waitable_semaphore.h>
+
+#include <gkr/objects_waiter.h>
+
 #include <thread>
 
 #if defined(__clang__)
@@ -58,6 +64,30 @@ int test_waiters()
 //  e2.set();
 
     t1.join();
+
+    gkr::waitable_mutex<> mutex;
+    gkr::waitable_event<> event1, event2;
+//  gkr::waitable_semaphore<> semaphore(1);
+
+    event1.fire();
+    event2.fire();
+
+    gkr::objects_waiter waiter;
+
+    auto wait_result = waiter.wait(mutex, event1, event2/*, semaphore*/);
+
+    if(auto guard = gkr::guard_waitable_object(wait_result, 0, mutex))
+    {
+    }
+    if(auto guard = gkr::guard_waitable_object(wait_result, 1, event1))
+    {
+    }
+    if(auto guard = gkr::guard_waitable_object(wait_result, 2, event2))
+    {
+    }
+//  if(auto guard = gkr::guard_waitable_object(wait_result, 3, semaphore); guard.wait_is_completed())
+//  {
+//  }
 
     return n;
 }

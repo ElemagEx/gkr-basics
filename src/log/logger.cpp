@@ -45,7 +45,7 @@ waitable_object* logger::get_wait_object(size_t index)
 {
     Check_ValidState(index == 0, nullptr);
 
-    return m_log_queue.queue_non_empty_waitable_object();
+    return m_log_queue.queue_has_items_waitable_object();
 }
 
 bool logger::start()
@@ -57,6 +57,8 @@ bool logger::start()
 
 void logger::finish()
 {
+    process_pending_messages();
+
     del_all_consumers();
 }
 
@@ -92,8 +94,7 @@ void logger::on_wait_success(size_t index)
 
     message_data& msg = *element;
 
-    prepare_message(msg);
-    consume_message(msg);
+    process_message(msg);
 }
 
 bool logger::on_exception(bool, const std::exception*) noexcept
@@ -243,12 +244,14 @@ void logger::del_all_consumers()
     {
         return execute_action_method<void>(ACTION_DEL_ALL_CONSUMERS);
     }
-    for(auto it = m_consumers.rbegin(); it != m_consumers.rend(); ++it)
+    while(!m_consumers.empty())
     {
-        (*it)->done_logging();
-        (*it) .reset();
+        std::shared_ptr<consumer> consumer = m_consumers.back();
+
+        m_consumers.pop_back();
+
+        consumer->done_logging();
     }
-    m_consumers.clear();
 }
 
 bool logger::log_message(bool wait, int severity, int facility, const char* format, std::va_list args)
@@ -304,8 +307,7 @@ void logger::sync_log_message(message_data& msg)
     {
         return execute_action_method<void>(ACTION_SYNC_LOG_MESSAGE, msg);
     }
-    prepare_message(msg);
-    consume_message(msg);
+    process_message(msg);
 }
 
 void logger::check_thread_registered()
@@ -350,6 +352,12 @@ bool logger::compose_message(message_data& msg, std::size_t cch, int severity, i
     }
 
     return true;
+}
+
+void logger::process_message(message_data& msg)
+{
+    prepare_message(msg);
+    consume_message(msg);
 }
 
 void logger::prepare_message(message_data& msg)
@@ -397,6 +405,20 @@ void logger::consume_message(const message_data& msg)
         consumer->consume_log_message(msg);
     }
 #endif
+}
+
+void logger::process_pending_messages()
+{
+    for( ; ; )
+    {
+        auto element = m_log_queue.try_start_pop<message_data>();
+
+        if(!element.pop_in_progress()) break;
+
+        message_data& msg = *element;
+
+        process_message(msg);
+    }
 }
 
 }

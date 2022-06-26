@@ -86,9 +86,12 @@ private:
 
     bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args);
 
+    void process_message(message_data& msg);
     void prepare_message(message_data& msg);
 
     void consume_message(const message_data& msg);
+
+    void process_pending_messages();
 
 private:
     enum : action_id_t
@@ -108,7 +111,7 @@ private:
     static constexpr unsigned max_name_cch = 16;
     struct thread_name_t { char name[max_name_cch] {0}; };
 
-    using lockfree_queue_t = lockfree_queue<void, true, true, impl::queue_simple_synchronization>;
+    using lockfree_queue_t = lockfree_queue<void, true, true, impl::queue_simple_synchronization<1,1>>;
 
 private:
     objects_waiter m_producer_waiter;

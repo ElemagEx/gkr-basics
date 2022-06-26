@@ -55,14 +55,16 @@ target_sources(
     "${gkr_basics_inc_path}/waitable_event.h"
     "${gkr_basics_inc_path}/waitable_mutex.h"
     "${gkr_basics_inc_path}/waitable_semaphore.h"
-    "${gkr_basics_inc_path}/cpp_feature/lib_exchange_function.h"
-    "${gkr_basics_inc_path}/cpp_feature/lib_raw_memory_algorithms.h"
-    "${gkr_basics_inc_path}/misc/stamp.h"
+    "${gkr_basics_inc_path}/waitable_lockfree_queue.h"
     "${gkr_basics_inc_path}/misc/union_cast.h"
+    "${gkr_basics_inc_path}/misc/stack_args_order.h"
+    "${gkr_basics_inc_path}/cpp/lib_exchange_function.h"
+    "${gkr_basics_inc_path}/cpp/lib_raw_memory_algorithms.h"
     "${gkr_basics_inc_path}/sys/stack_alloc.h"
     "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_inc_path}/log/consumer.h"
-    "${gkr_basics_inc_path}/log/entry.h"
+    "${gkr_basics_inc_path}/log/message.h"
+    "${gkr_basics_inc_path}/log/stamp.h"
     )
 # Headers + Implementations
 target_sources(
@@ -93,6 +95,7 @@ if(GKR_BASIC_DEVELOPMENT)
         "${gkr_main_src_path}/test_lockfree_queue.cpp"
         "${gkr_main_src_path}/test_thread_worker.cpp"
         "${gkr_main_src_path}/test_waiters.cpp"
+        "${gkr_main_src_path}/test_logging.cpp"
         )
     target_link_libraries(main gkr-basics)
 endif()

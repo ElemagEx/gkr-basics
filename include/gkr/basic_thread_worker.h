@@ -77,14 +77,16 @@ public:
     using action_param_deleter_t = std::function<void(void*)>;
 
     GKR_BTW_API bool enqueue_action(action_id_t action, void* param = nullptr, action_param_deleter_t deleter = nullptr);
-    GKR_BTW_API void execute_action(action_id_t action, void* param = nullptr, void* result = nullptr);
+    GKR_BTW_API void perform_action(action_id_t action, void* param = nullptr, void* result = nullptr);
 
 private:
+    GKR_BTW_API void process_action(action_id_t action, void* param, void* result);
+
     GKR_BTW_API bool can_reply();
     GKR_BTW_API void reply_action();
 
 public:
-    std::thread::id get_id()
+    std::thread::id get_thread_id()
     {
         return m_thread.get_id();
     }
@@ -207,7 +209,7 @@ public:
 
         impl::result<R> result;
 
-        execute_action(action, params, result.ptr());
+        process_action(action, params, result.ptr());
 
         return result.val();
     }
@@ -231,6 +233,8 @@ protected:
     template<class R, class C, typename... Args>
     void call_action_method(R (C::*method)(Args...), void* param, void* result)
     {
+        Assert_Check(in_worker_thread());
+
         void** params = reinterpret_cast<void**>(param);
 
 #if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
@@ -250,6 +254,8 @@ protected:
     template<class C, typename... Args>
     void call_action_method(void (C::*method)(Args...), void* param)
     {
+        Assert_Check(in_worker_thread());
+
         void** params = reinterpret_cast<void**>(param);
 
 #if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK

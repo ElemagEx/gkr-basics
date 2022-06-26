@@ -20,7 +20,7 @@ basic_thread_worker::~basic_thread_worker() noexcept(DIAG_NOEXCEPT)
 
 bool basic_thread_worker::run()
 {
-    std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     Check_ValidState(!m_thread.joinable(), false);
 
@@ -73,7 +73,7 @@ bool basic_thread_worker::enqueue_action(action_id_t action, void* param, action
     return true;
 }
 
-void basic_thread_worker::execute_action(action_id_t action, void* param, void* result)
+void basic_thread_worker::perform_action(action_id_t action, void* param, void* result)
 {
     if(in_worker_thread())
     {
@@ -81,16 +81,21 @@ void basic_thread_worker::execute_action(action_id_t action, void* param, void* 
     }
     else
     {
-        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
-
-        Check_ValidState(running(),);
-
-        m_func = func_t{action, param, result};
-
-        m_work_event.fire();
-
-        m_waiter.wait(timeout_infinite, m_done_event);
+        process_action(action, param, result);
     }
+}
+
+void basic_thread_worker::process_action(action_id_t action, void* param, void* result)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    Check_ValidState(running(),);
+
+    m_func = func_t{action, param, result};
+
+    m_work_event.fire();
+
+    m_waiter.wait(timeout_infinite, m_done_event);
 }
 
 bool basic_thread_worker::can_reply()
@@ -122,6 +127,7 @@ void basic_thread_worker::thread_proc()
     sys::set_current_thread_name(name);
 
     m_running = safe_start();
+
     m_done_event.fire();
 
     do

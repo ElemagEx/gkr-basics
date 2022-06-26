@@ -148,7 +148,7 @@ protected:
     waitable_registrator(waitable_registrator&& other) noexcept(DIAG_NOEXCEPT)
         : waitable_object(std::move(other))
     {
-        for(decltype(MaxWaiters) index = 0; index < MaxWaiters; ++index)
+        for(std::size_t index = 0; index < std::size_t(MaxWaiters); ++index)
         {
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
@@ -157,7 +157,7 @@ protected:
     {
         waitable_object::operator=(std::move(other));
 
-        for(decltype(MaxWaiters) index = 0; index < MaxWaiters; ++index)
+        for(std::size_t index = 0; index < std::size_t(MaxWaiters); ++index)
         {
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
@@ -167,10 +167,16 @@ protected:
     {
         waitable_object::swap(other);
 
-        for(unsigned index = 0; index < MaxWaiters; ++index)
+        for(std::size_t index = 0; index < std::size_t(MaxWaiters); ++index)
         {
             m_waiters[index].swap(other.m_waiters[index]);
         }
+    }
+
+public:
+    static constexpr unsigned max_waiters()
+    {
+        return MaxWaiters;
     }
 
 private:
@@ -237,6 +243,12 @@ protected:
         waitable_object::swap(other);
 
         m_waiters.swap(other.m_waiters);
+    }
+
+public:
+    static constexpr unsigned max_waiters()
+    {
+        return 0;
     }
 
 private:

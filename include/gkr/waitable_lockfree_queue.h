@@ -8,6 +8,7 @@ namespace gkr
 {
 namespace impl
 {
+template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
 class queue_basic_synchronization
 {
     queue_basic_synchronization           (const queue_basic_synchronization&) noexcept = delete;
@@ -18,54 +19,107 @@ protected:
    ~queue_basic_synchronization() noexcept = default;
 
     queue_basic_synchronization(queue_basic_synchronization&& other) noexcept
-        : m_has_space_event(std::move(other.m_has_space_event))
-        , m_non_empty_event(std::move(other.m_non_empty_event))
+        : m_busy_count(other.m_busy_count.exchange(0))
+        , m_free_count(other.m_free_count.exchange(0))
+        , m_has_space_event(std::move(other.m_has_space_event))
+        , m_has_items_event(std::move(other.m_has_items_event))
     {
     }
     queue_basic_synchronization& operator=(queue_basic_synchronization&& other) noexcept
     {
+        m_busy_count = other.m_busy_count.exchange(0);
+        m_free_count = other.m_free_count.exchange(0);
+
         m_has_space_event = std::move(other.m_has_space_event);
-        m_non_empty_event = std::move(other.m_non_empty_event);
+        m_has_items_event = std::move(other.m_has_items_event);
         return *this;
     }
 
     void swap(queue_basic_synchronization& other) noexcept
     {
+        m_busy_count = other.m_busy_count.exchange(m_busy_count);
+        m_free_count = other.m_free_count.exchange(m_free_count);
+
         m_has_space_event.swap(other.m_has_space_event);
-        m_non_empty_event.swap(other.m_non_empty_event);
+        m_has_items_event.swap(other.m_has_items_event);
     }
 
 protected:
-    template<bool IsFull>
-    void notify_queue_full() noexcept
+    void reset(std::size_t capacity)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(IsFull)
-#else
-        if          (IsFull)
-#endif
+        m_busy_count = 0;
+        m_free_count = capacity;
+
+        if(capacity > 0)
+        {
+            m_has_space_event.fire();
+        }
+        else
         {
             m_has_space_event.reset();
         }
-        else
+        m_has_items_event.reset();
+    }
+
+protected:
+    void notify_producer_overtake()
+    {
+        m_has_space_event.reset();
+    }
+    void notify_producer_take()
+    {
+        const std::ptrdiff_t new_free_count = std::ptrdiff_t(--m_free_count);
+
+        Assert_Check(new_free_count >= 0);
+
+        if(new_free_count == 0)
+        {
+            m_has_space_event.reset();
+        }
+    }
+    void notify_producer_commit()
+    {
+        if(++m_busy_count == 1)
+        {
+            m_has_items_event.fire();
+        }
+    }
+    void notify_producer_cancel()
+    {
+        if(++m_free_count == 1)
         {
             m_has_space_event.fire();
         }
     }
-    template<bool IsEmpty>
-    void notify_queue_empty() noexcept
+
+protected:
+    void notify_consumer_overtake()
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(IsEmpty)
-#else
-        if          (IsEmpty)
-#endif
+        m_has_items_event.reset();
+    }
+    void notify_consumer_take()
+    {
+        const std::ptrdiff_t new_busy_count = std::ptrdiff_t(--m_busy_count);
+
+        Assert_Check(new_busy_count >= 0);
+
+        if(new_busy_count == 0)
         {
-            m_non_empty_event.reset();
+            m_has_items_event.reset();
         }
-        else
+    }
+    void notify_consumer_commit()
+    {
+        if(++m_free_count == 1)
         {
-            m_non_empty_event.fire();
+            m_has_space_event.fire();
+        }
+    }
+    void notify_consumer_cancel()
+    {
+        if(++m_busy_count == 1)
+        {
+            m_has_items_event.fire();
         }
     }
 
@@ -81,12 +135,14 @@ protected:
 
         waiter.wait(timeout, object);
 
-        const auto end_time = std::chrono::steady_clock::now();
+        if(timeout != duration_t::max())
+        {
+            const auto end_time = std::chrono::steady_clock::now();
 
-        const duration_t elapsed_time = std::chrono::duration_cast<duration_t>(end_time - start_time);
+            const duration_t elapsed_time = std::chrono::duration_cast<duration_t>(end_time - start_time);
 
-        timeout -= elapsed_time;
-
+            timeout -= elapsed_time;
+        }
         return true;
     }
 
@@ -95,22 +151,26 @@ public:
     {
         return &m_has_space_event;
     }
-    waitable_object* queue_non_empty_waitable_object() noexcept
+    waitable_object* queue_has_items_waitable_object() noexcept
     {
-        return &m_non_empty_event;
+        return &m_has_items_event;
     }
 
 private:
-    waitable_event<true> m_has_space_event;
-    waitable_event<true> m_non_empty_event;
+    std::atomic<std::size_t> m_busy_count {0}; 
+    std::atomic<std::size_t> m_free_count {0};
+
+    waitable_event<true, ProducerMaxWaiters> m_has_space_event;
+    waitable_event<true, ConsumerMaxWaiters> m_has_items_event;
 };
 
-class queue_simple_synchronization : public queue_basic_synchronization
+template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
+class queue_simple_synchronization : public queue_basic_synchronization<ProducerMaxWaiters, ConsumerMaxWaiters>
 {
     queue_simple_synchronization           (const queue_simple_synchronization&) noexcept = delete;
     queue_simple_synchronization& operator=(const queue_simple_synchronization&) noexcept = delete;
 
-    using base_t = queue_basic_synchronization;
+    using base_t = queue_basic_synchronization<ProducerMaxWaiters, ConsumerMaxWaiters>;
 
 protected:
     queue_simple_synchronization() noexcept = default;
@@ -152,14 +212,14 @@ protected:
     {
         Check_NotNullPtr(m_producer_waiter, false);
 
-        return wait(*m_producer_waiter, timeout, *base_t::queue_has_space_waitable_object());
+        return base_t::wait(*m_producer_waiter, timeout, *base_t::queue_has_space_waitable_object());
     }
     template<typename Rep, typename Period>
     bool consumer_wait(std::chrono::duration<Rep, Period>& timeout) noexcept
     {
         Check_NotNullPtr(m_consumer_waiter, false);
 
-        return wait(*m_consumer_waiter, timeout, *base_t::queue_non_empty_waitable_object());
+        return base_t::wait(*m_consumer_waiter, timeout, *base_t::queue_has_items_waitable_object());
     }
 
 private:

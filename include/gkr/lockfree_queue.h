@@ -399,14 +399,38 @@ protected:
     }
 
 protected:
-    template<bool IsFull>
-    void notify_queue_full() noexcept
+    void reset(std::size_t)
     {
     }
-    template<bool IsEmpty>
-    void notify_queue_empty() noexcept
+
+protected:
+    void notify_producer_overtake()
     {
     }
+    void notify_producer_take()
+    {
+    }
+    void notify_producer_commit()
+    {
+    }
+    void notify_producer_cancel()
+    {
+    }
+
+protected:
+    void notify_consumer_overtake()
+    {
+    }
+    void notify_consumer_take()
+    {
+    }
+    void notify_consumer_commit()
+    {
+    }
+    void notify_consumer_cancel()
+    {
+    }
+
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
     template<typename Rep, typename Period>
@@ -558,6 +582,8 @@ protected:
     }
     void reset(size_type capacity) noexcept
     {
+        base_t::reset(capacity);
+
         m_count    = 0;
         m_capacity = capacity;
         m_head_pos = 0;
@@ -565,27 +591,9 @@ protected:
 
         m_producer_tid_owner = thread_id_t();
         m_consumer_tid_owner = thread_id_t();
-
-        if(m_capacity == 0)
-        {
-            base_t::template notify_queue_full<true>();
-        }
-        else
-        {
-            base_t::template notify_queue_full<false>();
-        }
-        base_t::template notify_queue_empty<true>();
     }
 
 protected:
-    diff_type get_free_elements() const noexcept
-    {
-        return diff_type(m_capacity - m_count);
-    }
-    bool has_owned_elements() const noexcept
-    {
-        return ((m_producer_tid_owner != thread_id_t()) || (m_consumer_tid_owner != thread_id_t()));
-    }
     bool can_take_producer_element_ownership() const noexcept
     {
         return ((m_capacity > 0) && threading.this_thread_is_valid_producer() && (m_producer_tid_owner == thread_id_t()));
@@ -604,9 +612,11 @@ protected:
 
         if(m_count == m_capacity)
         {
-            base_t::template notify_queue_full<true>();
+            base_t::notify_producer_overtake();
             return npos;
         }
+        base_t::notify_producer_take();
+
         m_producer_tid_owner = std::this_thread::get_id();
 
         const size_type index = (m_tail_pos % m_capacity);
@@ -628,17 +638,13 @@ protected:
         if(push)
         {
             ++m_tail_pos;
+            ++m_count;
 
-            const size_type count = ++m_count;
-
-            if(count == m_capacity)
-            {
-                base_t::template notify_queue_full<true>();
-            }
-            if(count == 1)
-            {
-                base_t::template notify_queue_empty<false>();
-            }
+            base_t::notify_producer_commit();
+        }
+        else
+        {
+            base_t::notify_producer_cancel();
         }
         return true;
     }
@@ -652,9 +658,10 @@ protected:
 
         if(m_count == 0) 
         {
-            base_t::template notify_queue_empty<true>();
+            base_t::notify_consumer_overtake();
             return npos;
         }
+        base_t::notify_consumer_take();
 
         m_consumer_tid_owner = std::this_thread::get_id();
 
@@ -677,17 +684,13 @@ protected:
         if(pop)
         {
             ++m_head_pos;
+            --m_count;
 
-            const size_type count = m_count--;
-
-            if(count == m_capacity)
-            {
-                base_t::template notify_queue_full<false>();
-            }
-            if(count == 1)
-            {
-                base_t::template notify_queue_empty<true>();
-            }
+            base_t::notify_producer_commit();
+        }
+        else
+        {
+            base_t::notify_producer_cancel();
         }
         return true;
     }
@@ -955,6 +958,8 @@ protected:
     }
     void reset(size_type capacity) noexcept(false)
     {
+        base_t::reset(capacity);
+
         if(capacity != m_capacity)
         {
             clear();
@@ -985,32 +990,9 @@ protected:
 
         m_free_head = 0;
         m_free_tail = m_capacity;
-
-        if(m_capacity == 0)
-        {
-            base_t::template notify_queue_full<true>();
-        }
-        else
-        {
-            base_t::template notify_queue_full<false>();
-        }
-        base_t::template notify_queue_empty<true>();
     }
 
 protected:
-    diff_type get_free_elements() const noexcept
-    {
-        return diff_type(m_capacity - m_occupied);
-    }
-    bool has_owned_elements() const noexcept
-    {
-        const size_type busy_count = (m_busy_tail - m_busy_head);
-        const size_type free_count = (m_free_tail - m_free_head);
-
-        const size_type idle_count = busy_count + free_count;
-
-        return (idle_count < m_capacity);
-    }
     bool can_take_producer_element_ownership() const noexcept
     {
         return (m_capacity > 0) && threading.this_thread_is_valid_producer();
@@ -1027,10 +1009,11 @@ protected:
 
         if(++m_occupied > m_capacity)
         {
-            base_t::template notify_queue_full<true>();
+            base_t::notify_producer_overtake();
             --m_occupied;
             return npos;
         }
+        base_t::notify_producer_take();
 
         const size_type index = m_entries[m_free_head++ % m_capacity].free_index;
 
@@ -1055,12 +1038,9 @@ protected:
             m_entries[m_busy_tail++ % m_capacity].busy_index = index;
 
             ++m_available;
+            ++m_count;
 
-            if(++m_count == m_capacity)
-            {
-                base_t::template notify_queue_full<true>();
-            }
-            base_t::template notify_queue_empty<false>();
+            base_t::notify_producer_commit();
         }
         else
         {
@@ -1068,7 +1048,7 @@ protected:
 
             --m_occupied;
 
-            base_t::template notify_queue_full<false>();
+            base_t::notify_producer_cancel();
         }
         return true;
     }
@@ -1080,10 +1060,11 @@ protected:
 
         if(diff_type(--m_available) < 0)
         {
-            base_t::template notify_queue_empty<true>();
+            base_t::notify_consumer_overtake();
             ++m_available;
             return npos;
         }
+        base_t::notify_consumer_take();
 
         const size_type index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
@@ -1108,12 +1089,9 @@ protected:
             m_entries[m_free_tail++ % m_capacity].free_index = index;
 
             --m_occupied;
+            --m_count;
 
-            if(--m_count == 0)
-            {
-                base_t::template notify_queue_empty<true>();
-            }
-            base_t::template notify_queue_full<false>();
+            base_t::notify_consumer_commit();
         }
         else
         {
@@ -1121,7 +1099,7 @@ protected:
 
             ++m_available;
 
-            base_t::template notify_queue_empty<false>();
+            base_t::notify_consumer_cancel();
         }
         return true;
     }

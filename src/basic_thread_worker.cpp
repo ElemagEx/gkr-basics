@@ -188,7 +188,7 @@ bool basic_thread_worker::safe_acquire_events() noexcept
     m_objects[OWN_EVENT_HAS_ASYNC_ACTION] = &m_wake_event;
     m_objects[OWN_EVENT_HAS_SYNC_ACTION ] = &m_work_event;
 
-    for(std::size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
+    for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
     {
 #ifndef __cpp_exceptions
         m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
@@ -246,7 +246,7 @@ bool basic_thread_worker::main_loop()
         }
         else
         {
-            for(std::size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
+            for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
             {
                 if(waitable_object_wait_is_completed(wait_result, index))
                 {
@@ -349,7 +349,7 @@ void basic_thread_worker::safe_notify_timeout()
 #endif
 }
 
-void basic_thread_worker::safe_notify_complete(std::size_t index)
+void basic_thread_worker::safe_notify_complete(size_t index)
 {
 #ifndef __cpp_exceptions
     on_wait_success(index);

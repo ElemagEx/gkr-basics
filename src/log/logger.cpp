@@ -102,7 +102,7 @@ bool logger::on_exception(bool, const std::exception*) noexcept
     return true;
 }
 
-bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars)
+bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars)
 {
     if(running() && !in_worker_thread())
     {
@@ -111,11 +111,11 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
+    const size_t queue_capacity   = (max_queue_entries == size_t(-1))
         ? lockfree_queue_t::npos
         : max_queue_entries
         ;
-    const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
+    const size_t queue_entry_size = (max_message_chars == size_t(-1))
         ? lockfree_queue_t::npos
         : max_message_chars + sizeof(message)
         ;
@@ -260,11 +260,11 @@ bool logger::log_message(bool wait, int severity, int facility, const char* form
 
     check_thread_registered();
 
-    const std::size_t size = m_log_queue.element_size();
+    const size_t size = m_log_queue.element_size();
 
     Assert_Check(size > sizeof(message));
 
-    const std::size_t cch = size - sizeof(message);
+    const size_t cch = size - sizeof(message);
 
     auto element = m_log_queue.start_push<message_data>(timeout_infinite);
 
@@ -325,7 +325,7 @@ void logger::check_thread_registered()
     register_thread(std::this_thread::get_id(), name);
 }
 
-bool logger::compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args)
+bool logger::compose_message(message_data& msg, size_t cch, int severity, int facility, const char* format, std::va_list args)
 {
     msg.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
     msg.stamp    = calc_stamp();
@@ -338,7 +338,7 @@ bool logger::compose_message(message_data& msg, std::size_t cch, int severity, i
 
         msg.buffer[cch - 1] = 0;
 
-        const std::size_t len = std::strlen(msg.buffer);
+        const size_t len = std::strlen(msg.buffer);
 
         msg.mesageLen = std::uint16_t(len);
     }
@@ -376,8 +376,8 @@ void logger::prepare_message(message_data& msg)
 void logger::consume_message(const message_data& msg)
 {
 #ifdef __cpp_exceptions
-    std::size_t count = m_consumers.size();
-    std::size_t index = 0;
+    size_t count = m_consumers.size();
+    size_t index = 0;
 
     do
     {

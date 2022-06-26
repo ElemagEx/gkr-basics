@@ -16,6 +16,7 @@
 
 namespace gkr
 {
+using std::size_t;
 
 template<typename T, typename Allocator=std::allocator<T>>
 class lockfree_forward_list
@@ -152,7 +153,7 @@ public:
     template<typename Node, typename Value>
     struct iterator_t
     {
-        static Node* before_begin_node() { return reinterpret_cast<Node*>(std::size_t(-1)); }
+        static Node* before_begin_node() { return reinterpret_cast<Node*>(size_t(-1)); }
 
         iterator_t() noexcept = delete;
        ~iterator_t() noexcept = default;

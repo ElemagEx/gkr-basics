@@ -5,6 +5,7 @@
 
 namespace gkr
 {
+using std::size_t;
 
 namespace impl
 {
@@ -34,7 +35,7 @@ R execute_function_proxy(R (*func)(Args...), void** params)
 {
 
 #if 1 // The correct way to call function arguments with right-to-left order in stack
-    const std::size_t count = reinterpret_cast<std::size_t>(*params);
+    const size_t count = reinterpret_cast<size_t>(*params);
 
     params += count;
 
@@ -51,7 +52,7 @@ template<typename R, typename C, typename... Args>
 R execute_method_proxy(C& obj, R (C::*method)(Args...), void** params)
 {
 #if 1 // The correct way to call method arguments with right-to-left order in stack
-    const std::size_t count = reinterpret_cast<std::size_t>(*params);
+    const size_t count = reinterpret_cast<size_t>(*params);
 
     params += count;
 
@@ -73,7 +74,7 @@ R execute_method_proxy(C& obj, R (C::*method)(Args...), void** params)
 template<typename R, typename... Args>
 R execute_difference_function_remote(Args... args)
 {
-    constexpr std::size_t count = sizeof...(args);
+    constexpr size_t count = sizeof...(args);
 
     void* params[count + 1] = {reinterpret_cast<void*>(count), static_cast<void*>(std::addressof(args))...};
 
@@ -83,7 +84,7 @@ R execute_difference_function_remote(Args... args)
 template<typename R, typename C, typename... Args>
 R execute_difference_method_remote(C& obj, Args... args)
 {
-    constexpr std::size_t count = sizeof...(args);
+    constexpr size_t count = sizeof...(args);
 
     void* params[count + 1] = {reinterpret_cast<void*>(count), static_cast<void*>(std::addressof(args))...};
 

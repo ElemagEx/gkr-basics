@@ -10,6 +10,7 @@
 
 namespace gkr
 {
+using std::size_t;
 
 class waitable_object;
 
@@ -148,7 +149,7 @@ protected:
     waitable_registrator(waitable_registrator&& other) noexcept(DIAG_NOEXCEPT)
         : waitable_object(std::move(other))
     {
-        for(std::size_t index = 0; index < std::size_t(MaxWaiters); ++index)
+        for(size_t index = 0; index < size_t(MaxWaiters); ++index)
         {
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
@@ -157,7 +158,7 @@ protected:
     {
         waitable_object::operator=(std::move(other));
 
-        for(std::size_t index = 0; index < std::size_t(MaxWaiters); ++index)
+        for(size_t index = 0; index < size_t(MaxWaiters); ++index)
         {
             m_waiters[index] = std::move(other.m_waiters[index]);
         }
@@ -167,7 +168,7 @@ protected:
     {
         waitable_object::swap(other);
 
-        for(std::size_t index = 0; index < std::size_t(MaxWaiters); ++index)
+        for(size_t index = 0; index < size_t(MaxWaiters); ++index)
         {
             m_waiters[index].swap(other.m_waiters[index]);
         }

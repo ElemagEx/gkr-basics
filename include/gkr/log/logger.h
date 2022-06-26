@@ -12,6 +12,8 @@
 
 namespace gkr
 {
+using std::size_t;
+
 namespace log
 {
 
@@ -50,7 +52,7 @@ private:
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept override;
 
 public:
-    bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
+    bool change_log_queue(size_t max_queue_entries, size_t max_message_chars);
 
 public:
     void set_severities(bool clear_existing, const name_id_pair* severities);
@@ -84,7 +86,7 @@ private:
 
     void check_thread_registered();
 
-    bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args);
+    bool compose_message(message_data& msg, size_t cch, int severity, int facility, const char* format, std::va_list args);
 
     void process_message(message_data& msg);
     void prepare_message(message_data& msg);

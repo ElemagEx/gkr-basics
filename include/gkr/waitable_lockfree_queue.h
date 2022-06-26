@@ -6,6 +6,8 @@
 
 namespace gkr
 {
+using std::size_t;
+
 namespace impl
 {
 template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
@@ -45,7 +47,7 @@ protected:
     }
 
 protected:
-    void reset(std::size_t capacity)
+    void reset(size_t capacity)
     {
         m_busy_count = 0;
         m_free_count = capacity;
@@ -157,8 +159,8 @@ public:
     }
 
 private:
-    std::atomic<std::size_t> m_busy_count {0}; 
-    std::atomic<std::size_t> m_free_count {0};
+    std::atomic<size_t> m_busy_count {0}; 
+    std::atomic<size_t> m_free_count {0};
 
     waitable_event<true, ProducerMaxWaiters> m_has_space_event;
     waitable_event<true, ConsumerMaxWaiters> m_has_items_event;

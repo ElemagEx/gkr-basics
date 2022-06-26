@@ -11,6 +11,8 @@
 
 namespace gkr
 {
+using std::size_t;
+
 namespace log
 {
 
@@ -28,15 +30,15 @@ public:
     GKR_LOG_API static bool init(
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
-        std::size_t max_queue_entries  = 16,
-        std::size_t max_message_chars  = (1024 - sizeof(message))
+        size_t max_queue_entries  = 16,
+        size_t max_message_chars  = (1024 - sizeof(message))
         );
     GKR_LOG_API static void done();
 
 public:
     GKR_LOG_API static bool change_log_queue(
-        std::size_t max_queue_entries = std::size_t(-1),
-        std::size_t max_message_chars = std::size_t(-1)
+        size_t max_queue_entries = size_t(-1),
+        size_t max_message_chars = size_t(-1)
         );
 
 public:

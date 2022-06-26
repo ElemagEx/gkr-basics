@@ -9,12 +9,12 @@ namespace gkr
 
 using wait_result_t = unsigned;
 
-constexpr std::size_t maximum_wait_objects = sizeof(wait_result_t) * 8 - 1;
+constexpr size_t maximum_wait_objects = sizeof(wait_result_t) * 8 - 1;
 
 constexpr wait_result_t wait_result_error   = wait_result_t(1U << maximum_wait_objects);
 constexpr wait_result_t wait_result_timeout = wait_result_t(0);
 
-inline constexpr bool waitable_object_wait_is_completed(wait_result_t wait_result, std::size_t index) noexcept
+inline constexpr bool waitable_object_wait_is_completed(wait_result_t wait_result, size_t index) noexcept
 {
     return (wait_result & (wait_result_t(1) << index)) != 0;
 }
@@ -38,7 +38,7 @@ private:
     struct node_t
     {
         waitable_object** objects;
-        std::size_t       count;
+        size_t            count;
         node_t*           next;
     };
     node_t* m_first = nullptr;
@@ -47,7 +47,7 @@ private:
     {
         for(node_t* node = m_first; node != nullptr; node = node->next)
         {
-            for(std::size_t index = 0; index < node->count; ++index)
+            for(size_t index = 0; index < node->count; ++index)
             {
                 if(object == node->objects[index])
                 {
@@ -57,9 +57,9 @@ private:
         }
         return false;
     }
-    std::size_t register_self(std::size_t count, waitable_object** objects) noexcept
+    size_t register_self(size_t count, waitable_object** objects) noexcept
     {
-        for(std::size_t index = 0; index < count; ++index)
+        for(size_t index = 0; index < count; ++index)
         {
             if(!find_object(objects[index]))
             {
@@ -71,9 +71,9 @@ private:
         }
         return count;
     }
-    void unregiser_self(std::size_t count, waitable_object** objects) noexcept
+    void unregiser_self(size_t count, waitable_object** objects) noexcept
     {
-        for(std::size_t index = 0; index < count; ++index)
+        for(size_t index = 0; index < count; ++index)
         {
             if(!find_object(objects[index]))
             {
@@ -88,11 +88,11 @@ private:
         objects_waiter* m_parent;
         node_t          m_node;
     public:
-        waiter_guard(objects_waiter& waiter, std::size_t count, waitable_object** objects) noexcept
+        waiter_guard(objects_waiter& waiter, size_t count, waitable_object** objects) noexcept
             : m_parent(nullptr)
             , m_node  {objects, count, waiter.m_first}
         {
-            const std::size_t registered = waiter.register_self(count, objects);
+            const size_t registered = waiter.register_self(count, objects);
 
             if(registered < count)
             {
@@ -123,10 +123,10 @@ private:
     friend class exception_guard;
 
 private:
-    static bool collect_result(wait_result_t& result, std::size_t count, waitable_object** objects)
+    static bool collect_result(wait_result_t& result, size_t count, waitable_object** objects)
     {
         result = 0;
-        for(std::size_t index = 0; index < count; ++index)
+        for(size_t index = 0; index < count; ++index)
         {
             if(objects[index]->try_consume())
             {
@@ -140,13 +140,13 @@ public:
     template<typename... WaitableObjects>
     static wait_result_t check(WaitableObjects&... waitable_objects)
     {
-        constexpr std::size_t count = sizeof...(waitable_objects);
+        constexpr size_t count = sizeof...(waitable_objects);
 
         waitable_object* objects[count] = {&waitable_objects...};
 
         return check(count, objects);
     }
-    static wait_result_t check(std::size_t count, waitable_object** objects)
+    static wait_result_t check(size_t count, waitable_object** objects)
     {
         Check_Arg_IsValid(count > 0, wait_result_error);
         Check_Arg_IsValid(count < maximum_wait_objects, wait_result_error);
@@ -165,13 +165,13 @@ public:
     template<typename... WaitableObjects>
     wait_result_t wait(WaitableObjects&... waitable_objects)
     {
-        constexpr std::size_t count = sizeof...(waitable_objects);
+        constexpr size_t count = sizeof...(waitable_objects);
 
         waitable_object* objects[count] = {&waitable_objects...};
 
         return wait(count, objects);
     }
-    wait_result_t wait(std::size_t count, waitable_object** objects)
+    wait_result_t wait(size_t count, waitable_object** objects)
     {
         Check_Arg_IsValid(count > 0, wait_result_error);
         Check_Arg_IsValid(count < maximum_wait_objects, wait_result_error);
@@ -207,14 +207,14 @@ public:
     template<typename Rep, typename Period, typename... WaitableObjects>
     wait_result_t wait(std::chrono::duration<Rep, Period> timeout, WaitableObjects&... waitable_objects)
     {
-        constexpr std::size_t count = sizeof...(waitable_objects);
+        constexpr size_t count = sizeof...(waitable_objects);
 
         waitable_object* objects[count] = {&waitable_objects...};
 
         return wait(timeout, count, objects);
     }
     template<typename Rep, typename Period>
-    wait_result_t wait(std::chrono::duration<Rep, Period> timeout, std::size_t count, waitable_object** objects)
+    wait_result_t wait(std::chrono::duration<Rep, Period> timeout, size_t count, waitable_object** objects)
     {
         Check_Arg_IsValid(count > 0, wait_result_error);
         Check_Arg_IsValid(count < maximum_wait_objects, wait_result_error);
@@ -280,7 +280,7 @@ public:
 template<typename WaitableObject>
 inline waitable_object_guard<WaitableObject> guard_waitable_object(
     wait_result_t wait_result,
-    std::size_t index,
+    size_t index,
     WaitableObject& object
     ) noexcept
 {

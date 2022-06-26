@@ -12,8 +12,8 @@ static logger s_logger;
 bool logging::init(
     const name_id_pair* severities,
     const name_id_pair* facilities,
-    std::size_t max_queue_entries,
-    std::size_t max_message_chars
+    size_t max_queue_entries,
+    size_t max_message_chars
     )
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);
@@ -39,8 +39,8 @@ void logging::done()
 }
 
 bool logging::change_log_queue(
-    std::size_t max_queue_entries,
-    std::size_t max_message_chars
+    size_t max_queue_entries,
+    size_t max_message_chars
     )
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);

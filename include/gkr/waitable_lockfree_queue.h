@@ -11,23 +11,23 @@ using std::size_t;
 namespace impl
 {
 template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
-class queue_basic_synchronization
+class queue_basic_wait_support
 {
-    queue_basic_synchronization           (const queue_basic_synchronization&) noexcept = delete;
-    queue_basic_synchronization& operator=(const queue_basic_synchronization&) noexcept = delete;
+    queue_basic_wait_support           (const queue_basic_wait_support&) noexcept = delete;
+    queue_basic_wait_support& operator=(const queue_basic_wait_support&) noexcept = delete;
 
 protected:
-    queue_basic_synchronization() noexcept = default;
-   ~queue_basic_synchronization() noexcept = default;
+    queue_basic_wait_support() noexcept = default;
+   ~queue_basic_wait_support() noexcept = default;
 
-    queue_basic_synchronization(queue_basic_synchronization&& other) noexcept
+    queue_basic_wait_support(queue_basic_wait_support&& other) noexcept
         : m_busy_count(other.m_busy_count.exchange(0))
         , m_free_count(other.m_free_count.exchange(0))
         , m_has_space_event(std::move(other.m_has_space_event))
         , m_has_items_event(std::move(other.m_has_items_event))
     {
     }
-    queue_basic_synchronization& operator=(queue_basic_synchronization&& other) noexcept
+    queue_basic_wait_support& operator=(queue_basic_wait_support&& other) noexcept
     {
         m_busy_count = other.m_busy_count.exchange(0);
         m_free_count = other.m_free_count.exchange(0);
@@ -37,7 +37,7 @@ protected:
         return *this;
     }
 
-    void swap(queue_basic_synchronization& other) noexcept
+    void swap(queue_basic_wait_support& other) noexcept
     {
         m_busy_count = other.m_busy_count.exchange(m_busy_count);
         m_free_count = other.m_free_count.exchange(m_free_count);
@@ -167,24 +167,24 @@ private:
 };
 
 template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
-class queue_simple_synchronization : public queue_basic_synchronization<ProducerMaxWaiters, ConsumerMaxWaiters>
+class queue_simple_wait_support : public queue_basic_wait_support<ProducerMaxWaiters, ConsumerMaxWaiters>
 {
-    queue_simple_synchronization           (const queue_simple_synchronization&) noexcept = delete;
-    queue_simple_synchronization& operator=(const queue_simple_synchronization&) noexcept = delete;
+    queue_simple_wait_support           (const queue_simple_wait_support&) noexcept = delete;
+    queue_simple_wait_support& operator=(const queue_simple_wait_support&) noexcept = delete;
 
-    using base_t = queue_basic_synchronization<ProducerMaxWaiters, ConsumerMaxWaiters>;
+    using base_t = queue_basic_wait_support<ProducerMaxWaiters, ConsumerMaxWaiters>;
 
 protected:
-    queue_simple_synchronization() noexcept = default;
-   ~queue_simple_synchronization() noexcept = default;
+    queue_simple_wait_support() noexcept = default;
+   ~queue_simple_wait_support() noexcept = default;
 
-    queue_simple_synchronization(queue_simple_synchronization&& other) noexcept
+    queue_simple_wait_support(queue_simple_wait_support&& other) noexcept
         : base_t(std::move(other))
         , m_producer_waiter(std::exchange(other.m_producer_waiter, nullptr))
         , m_consumer_waiter(std::exchange(other.m_consumer_waiter, nullptr))
     {
     }
-    queue_simple_synchronization& operator=(queue_simple_synchronization&& other) noexcept
+    queue_simple_wait_support& operator=(queue_simple_wait_support&& other) noexcept
     {
         base_t::operator=(std::move(other));
         m_producer_waiter = std::exchange(other.m_producer_waiter, nullptr);
@@ -192,7 +192,7 @@ protected:
         return *this;
     }
 
-    void swap(queue_simple_synchronization& other) noexcept
+    void swap(queue_simple_wait_support& other) noexcept
     {
         std::swap(m_producer_waiter, other.m_producer_waiter);
         std::swap(m_consumer_waiter, other.m_consumer_waiter);

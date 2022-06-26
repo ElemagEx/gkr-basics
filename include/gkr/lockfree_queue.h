@@ -383,19 +383,19 @@ private:
     thread_id_t m_consumer_tid;
 };
 
-class queue_no_synchronization
+class queue_no_wait_support
 {
-    queue_no_synchronization           (const queue_no_synchronization&) noexcept = delete;
-    queue_no_synchronization& operator=(const queue_no_synchronization&) noexcept = delete;
+    queue_no_wait_support           (const queue_no_wait_support&) noexcept = delete;
+    queue_no_wait_support& operator=(const queue_no_wait_support&) noexcept = delete;
 
 protected:
-    queue_no_synchronization() noexcept = default;
-   ~queue_no_synchronization() noexcept = default;
+    queue_no_wait_support() noexcept = default;
+   ~queue_no_wait_support() noexcept = default;
 
-    queue_no_synchronization           (queue_no_synchronization&&) noexcept = default;
-    queue_no_synchronization& operator=(queue_no_synchronization&&) noexcept = default;
+    queue_no_wait_support           (queue_no_wait_support&&) noexcept = default;
+    queue_no_wait_support& operator=(queue_no_wait_support&&) noexcept = default;
 
-    void swap(queue_no_synchronization&) noexcept
+    void swap(queue_no_wait_support&) noexcept
     {
     }
 
@@ -444,23 +444,23 @@ protected:
     template<typename Rep, typename Period>
     bool producer_wait(std::chrono::duration<Rep, Period>&) noexcept
     {
-        static_assert(has_wait<Rep, Period>(), "You cannot wait on this queue - use other queue synchronization class to activate waiting functionality");
+        static_assert(has_wait<Rep, Period>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
         return false;
     }
     template<typename Rep, typename Period>
     bool consumer_wait(std::chrono::duration<Rep, Period>&) noexcept
     {
-        static_assert(has_wait<Rep, Period>(), "You cannot wait on this queue - use other queue synchronization class to activate waiting functionality");
+        static_assert(has_wait<Rep, Period>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
         return false;
     }
 #endif
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, typename Synchronization, typename BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, typename WaitSupport, typename BaseAllocator>
 class basic_lockfree_queue;
 
-template<typename Synchronization, typename BaseAllocator>
-class basic_lockfree_queue<false, Synchronization, BaseAllocator> : public Synchronization
+template<typename WaitSupport, typename BaseAllocator>
+class basic_lockfree_queue<false, WaitSupport, BaseAllocator> : public WaitSupport
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -471,7 +471,7 @@ public:
     impl::producer_consumer_threading threading;
 
 private:
-    using base_t = Synchronization;
+    using base_t = WaitSupport;
 
     std::atomic<size_t> m_count {0};
 
@@ -725,8 +725,8 @@ protected:
     }
 #endif
 };
-template<typename Synchronization, typename BaseAllocator>
-class basic_lockfree_queue<true, Synchronization, BaseAllocator> : public Synchronization
+template<typename WaitSupport, typename BaseAllocator>
+class basic_lockfree_queue<true, WaitSupport, BaseAllocator> : public WaitSupport
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -737,7 +737,7 @@ public:
     impl::producer_consumer_threading threading;
 
 private:
-    using base_t = Synchronization;
+    using base_t = WaitSupport;
 
     using thread_id_t = std::thread::id;
 
@@ -1138,18 +1138,18 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool ResizeSupport=false,
-    typename Synchronization=impl::queue_no_synchronization,
-    typename BaseAllocator  =std::allocator<char>
+    typename WaitSupport  =impl::queue_no_wait_support,
+    typename BaseAllocator=std::allocator<char>
     >
 class lockfree_queue
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Synchronization, BaseAllocator>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, Synchronization, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport,                Synchronization, BaseAllocator>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport,                WaitSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1732,18 +1732,18 @@ public:
 template<
     bool MultipleConsumersMultipleProducersSupport,
     bool ResizeSupport,
-    typename Synchronization,
+    typename WaitSupport,
     typename BaseAllocator
     >
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, Synchronization, BaseAllocator>
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Synchronization, BaseAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport, BaseAllocator>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, Synchronization, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport,                Synchronization, BaseAllocator>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport,                WaitSupport, BaseAllocator>;
 
 public:
     using base_t::npos;

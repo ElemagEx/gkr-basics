@@ -17,6 +17,8 @@ namespace log
 
 logger::logger()
 {
+    check_args_order();
+
     m_log_queue.set_producer_waiter(m_producer_waiter);
     m_log_queue.set_consumer_waiter(get_waiter());
 }

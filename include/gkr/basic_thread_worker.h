@@ -8,6 +8,8 @@
 #include "waitable_event.h"
 #include "objects_waiter.h"
 
+#include <gkr/misc/stack_args_order.h>
+
 #ifndef GKR_BTW_API
 #define GKR_BTW_API
 #endif
@@ -233,6 +235,15 @@ protected:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsequence-point"
 #endif
+
+    static void check_args_order()
+    {
+#if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
+        Assert_Check( method_args_stack_order_is_right_to_left());
+#else
+        Assert_Check(!method_args_stack_order_is_right_to_left());
+#endif
+    }
 
     template<class R, class C, typename... Args>
     void call_action_method(R (C::*method)(Args...), void* param, void* result)

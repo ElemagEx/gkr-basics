@@ -13,7 +13,7 @@ int test_lockfree_queue()
 
     gkr::lockfree_queue<V, false, false> queue;
 
-    //queue.acquire_consumer_element(std::chrono::nanoseconds::max());// uncomment line for error
+    //queue.acquire_consumer_element();// uncomment line for error
 
     queue = std::move(queue2);
 

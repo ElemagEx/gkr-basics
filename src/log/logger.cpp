@@ -35,7 +35,7 @@ const char* logger::get_name() noexcept
 
 std::chrono::nanoseconds logger::get_wait_timeout() noexcept
 {
-    return timeout_infinite;
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(timeout_infinite);
 }
 
 size_t logger::get_wait_objects_count() noexcept
@@ -90,7 +90,7 @@ void logger::on_wait_success(size_t index)
 {
     Check_ValidState(index == 0, );
 
-    auto element = m_log_queue.start_pop<message_data>(timeout_infinite);
+    auto element = m_log_queue.start_pop<message_data>();
 
     Check_ValidState(element.pop_in_progress(), );
 
@@ -268,7 +268,7 @@ bool logger::log_message(bool wait, int severity, int facility, const char* form
 
     const size_t cch = size - sizeof(message);
 
-    auto element = m_log_queue.start_push<message_data>(timeout_infinite);
+    auto element = m_log_queue.start_push<message_data>();
 
     Check_ValidState(element.push_in_progress(), false);
 

@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <type_traits>
 
+#ifndef GKR_LOCKFREE_QUEUE_SINGLE_HEADER
+
 #include "diag/diagnostics.h"
 
 #ifndef __cpp_lib_exchange_function
@@ -16,6 +18,33 @@
 #endif
 #ifndef __cpp_lib_raw_memory_algorithms
 #include "cpp/lib_raw_memory_algorithms.h"
+#endif
+
+#else
+
+#ifndef __cpp_lib_exchange_function
+#error  You must use C++14 or preinclude implementation of std::exchange
+#endif
+#ifndef __cpp_lib_raw_memory_algorithms
+#error  You must use C++17 or preinclude implementation of raw memory algorithms
+#endif
+
+#ifndef DIAG_NOEXCEPT
+#define DIAG_NOEXCEPT true
+#endif
+#ifndef Assert_NotNullPtr
+#define Assert_NotNullPtr(ptr)
+#endif
+#ifndef Assert_Check
+#define Assert_Check(cond)
+#endif
+#ifndef Check_ValidState
+#define Check_ValidState(cond, ...)  if(!(cond)) return __VA_ARGS__
+#endif
+#ifndef Check_Arg_IsValid
+#define Check_Arg_IsValid(cond, ...) if(!(cond)) return __VA_ARGS__
+#endif
+
 #endif
 
 namespace gkr
@@ -1802,7 +1831,7 @@ public:
     template<typename... Args>
     bool emplace(Args&&... args)
     {
-        return emplace(std::chrono::nanoseconds::max(), std::forward<Args>(args)...).push_in_progress();
+        return emplace(std::chrono::nanoseconds::max(), std::forward<Args>(args)...);
     }
 
     template<typename Rep, typename Period>
@@ -1812,7 +1841,7 @@ public:
     }
     bool push()
     {
-        return push(std::chrono::nanoseconds::max()).push_in_progress();
+        return push(std::chrono::nanoseconds::max());
     }
 
     template<typename Rep, typename Period>
@@ -1822,7 +1851,7 @@ public:
     }
     bool push(element_t&& value)
     {
-        return push(std::chrono::nanoseconds::max(), std::move(value)).push_in_progress();
+        return push(std::chrono::nanoseconds::max(), std::move(value));
     }
 
     template<typename Rep, typename Period>
@@ -1832,7 +1861,7 @@ public:
     }
     bool push(const element_t& value)
     {
-        return push(std::chrono::nanoseconds::max(), value).push_in_progress();
+        return push(std::chrono::nanoseconds::max(), value);
     }
 
 public:

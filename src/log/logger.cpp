@@ -124,6 +124,11 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     if(!running())
     {
         m_log_queue.reset(queue_capacity, queue_entry_size, alignof(message));
+
+        Check_ValidState(m_log_queue.capacity() > 0, false);
+
+        Check_ValidState(m_log_queue.element_size() > sizeof(message), false);
+
         return true;
     }
     else

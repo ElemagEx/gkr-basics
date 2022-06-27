@@ -4,7 +4,7 @@
 #include <atomic>
 #include <condition_variable>
 
-#include <gkr/diag/diagnostics.h>
+#include "diag/diagnostics.h"
 
 #include "lockfree_forward_list.h"
 
@@ -34,7 +34,7 @@ private:
 
     void notify(bool broadcast)
     {
-        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
 
         if(broadcast)
         {

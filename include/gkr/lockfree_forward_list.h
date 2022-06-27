@@ -5,13 +5,30 @@
 #include <utility>
 #include <type_traits>
 
-#include <gkr/diag/diagnostics.h>
+#ifndef GKR_LOCKFREE_FORWARD_LIST_SINGLE_HEADER
+
+#include "diag/diagnostics.h"
 
 #ifndef __cpp_lib_exchange_function
 #include "cpp/lib_exchange_function.h"
 #endif
-#ifndef __cpp_lib_raw_memory_algorithms
-#include "cpp/lib_raw_memory_algorithms.h"
+
+#else
+
+#ifndef __cpp_lib_exchange_function
+#error  You must use C++14 or preinclude implementation of std::exchange
+#endif
+
+#ifndef DIAG_NOEXCEPT
+#define DIAG_NOEXCEPT true
+#endif
+#ifndef Assert_Check
+#define Assert_Check(cond)
+#endif
+#ifndef Check_Arg_IsValid
+#define Check_Arg_IsValid(cond, ...) if(!(cond)) return __VA_ARGS__
+#endif
+
 #endif
 
 namespace gkr
@@ -141,7 +158,7 @@ public:
         {
             node_t* next = node->next.exchange(nullptr);
 
-            std::destroy_at(node);
+            node->~node_t();
 
             m_allocator.deallocate(node, 1);
 

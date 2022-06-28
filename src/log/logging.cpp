@@ -131,7 +131,7 @@ bool logging::del_all_consumers()
 
 bool logging::log_simple_message(bool wait, int severity, int facility, const char* format)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     Check_Arg_NotNull(format, false);
 
@@ -140,7 +140,7 @@ bool logging::log_simple_message(bool wait, int severity, int facility, const ch
 
 bool logging::log_format_message(bool wait, int severity, int facility, const char* format, ...)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     Check_Arg_NotNull(format, false);
 
@@ -155,7 +155,7 @@ bool logging::log_format_message(bool wait, int severity, int facility, const ch
 
 bool logging::log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     Check_Arg_NotNull(format, false);
 

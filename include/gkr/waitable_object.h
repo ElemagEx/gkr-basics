@@ -36,7 +36,7 @@ private:
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        if(broadcast)
+        if(broadcast || m_always_broadcast)
         {
             m_cvar.notify_all();
         }
@@ -46,9 +46,16 @@ private:
         }
     }
 
+public:
+    void set_always_broadcast(bool always_broadcast)
+    {
+        m_always_broadcast = always_broadcast;
+    }
+
 protected:
     std::mutex m_mutex;
     std::condition_variable m_cvar;
+    bool m_always_broadcast = false;
 };
 
 }

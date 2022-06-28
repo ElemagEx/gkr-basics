@@ -229,5 +229,96 @@ private:
     objects_waiter* m_consumer_waiter = nullptr;
 };
 
+template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
+class queue_default_wait_support : public queue_basic_wait_support<ProducerMaxWaiters, ConsumerMaxWaiters>
+{
+    queue_default_wait_support           (const queue_default_wait_support&) noexcept = delete;
+    queue_default_wait_support& operator=(const queue_default_wait_support&) noexcept = delete;
+
+    using base_t = queue_basic_wait_support<ProducerMaxWaiters, ConsumerMaxWaiters>;
+
+protected:
+    queue_default_wait_support() noexcept = default;
+   ~queue_default_wait_support() noexcept = default;
+
+    queue_default_wait_support(queue_default_wait_support&& other) noexcept
+        : base_t(std::move(other))
+        , m_producer_waiter(std::exchange(other.m_producer_waiter, nullptr))
+        , m_consumer_waiter(std::exchange(other.m_consumer_waiter, nullptr))
+    {
+    }
+    queue_default_wait_support& operator=(queue_default_wait_support&& other) noexcept
+    {
+        base_t::operator=(std::move(other));
+        m_producer_waiter = std::exchange(other.m_producer_waiter, nullptr);
+        m_consumer_waiter = std::exchange(other.m_consumer_waiter, nullptr);
+        return *this;
+    }
+
+    void swap(queue_default_wait_support& other) noexcept
+    {
+        std::swap(m_producer_waiter, other.m_producer_waiter);
+        std::swap(m_consumer_waiter, other.m_consumer_waiter);
+    }
+
+public:
+    void set_producer_waiter(objects_waiter& waiter) noexcept
+    {
+        m_producer_waiter = &waiter;
+    }
+    void set_consumer_waiter(objects_waiter& waiter) noexcept
+    {
+        m_consumer_waiter = &waiter;
+    }
+
+private:
+    objects_waiter* get_producer_waiter()
+    {
+        if(m_producer_waiter != nullptr)
+        {
+            return m_producer_waiter;
+        }
+        else
+        {
+            return get_this_thread_objects_waiter();
+        }
+    }
+    objects_waiter* get_consumer_waiter()
+    {
+        if(m_producer_waiter != nullptr)
+        {
+            return m_consumer_waiter;
+        }
+        else
+        {
+            return get_this_thread_objects_waiter();
+        }
+    }
+
+protected:
+    template<typename Rep, typename Period>
+    bool producer_wait(std::chrono::duration<Rep, Period>& timeout)
+    {
+        objects_waiter* waiter = get_producer_waiter();
+
+        Check_NotNullPtr(waiter, false);
+
+        return base_t::wait(*waiter, timeout, *base_t::queue_has_space_waitable_object());
+    }
+    template<typename Rep, typename Period>
+    bool consumer_wait(std::chrono::duration<Rep, Period>& timeout)
+    {
+        objects_waiter* waiter = get_consumer_waiter();
+
+        Check_NotNullPtr(waiter, false);
+
+        return base_t::wait(*m_consumer_waiter, timeout, *base_t::queue_has_items_waitable_object());
+    }
+
+private:
+    objects_waiter* m_producer_waiter = nullptr;
+    objects_waiter* m_consumer_waiter = nullptr;
+};
+
 }
 }

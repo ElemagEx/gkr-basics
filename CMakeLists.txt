@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
-set(CMAKE_VS_JUST_MY_CODE_DEBUGGING ON)
+    set(CMAKE_VS_JUST_MY_CODE_DEBUGGING ON)
 endif()
 
 if(MSVC)
@@ -26,6 +26,15 @@ endif()
 include(warnings) #includes ./cmake/warnings.cmake - sets variable ${CMAKE_CXX_FLAGS_WARNINGS}
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_WARNINGS}")
+
+option(GKR_INTRUSIVE_DIAGNOSITCS "Intrusive Diagnostics in DEBUG builds" ON)
+if(GKR_INTRUSIVE_DIAGNOSITCS)
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DDIAG_MODE=4")
+    else()
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDIAG_MODE=4")
+    endif()
+endif()
 
 message(STATUS "CMAKE_CXX_FLAGS         = ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG   = ${CMAKE_CXX_FLAGS_DEBUG}")

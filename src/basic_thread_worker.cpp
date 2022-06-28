@@ -8,6 +8,13 @@ namespace gkr
 
 basic_thread_worker::basic_thread_worker()
 {
+    m_assist_waiter.set_always_broadcast(true);
+
+    m_actions_queue.threading.any_thread_can_be_producer();
+    m_actions_queue.reset(initial_actions_queue_capacity);
+
+    m_actions_queue.set_producer_waiter(m_assist_waiter);
+    m_actions_queue.set_consumer_waiter(m_thread_waiter);
 }
 
 basic_thread_worker::~basic_thread_worker() noexcept(DIAG_NOEXCEPT)
@@ -28,14 +35,9 @@ bool basic_thread_worker::run()
 
     m_work_event.fire();
 
-    m_waiter.wait(timeout_infinite, m_done_event);
+    m_assist_waiter.wait(m_done_event);
 
     return running();
-}
-
-bool basic_thread_worker::quit()
-{
-    return enqueue_action(ACTION_QUIT);
 }
 
 bool basic_thread_worker::join(bool send_quit_signal)
@@ -51,26 +53,46 @@ bool basic_thread_worker::join(bool send_quit_signal)
     return true;
 }
 
+bool basic_thread_worker::quit()
+{
+    Check_ValidState(running(), false);
+
+    if(in_worker_thread())
+    {
+        m_running = false;
+        return true;
+    }
+    else
+    {
+        return enqueue_action(ACTION_QUIT);
+    }
+}
+
 bool basic_thread_worker::update_wait()
 {
-    m_updating = true;
+    Check_ValidState(running(), false);
 
-    if(in_worker_thread()) return true;
+    if(in_worker_thread())
+    {
+        m_updating = true;
+        return true;
+    }
+    else
+    {
+        return enqueue_action(ACTION_UPDATE);
+    }
+}
 
-    return enqueue_action(ACTION_UPDATE);
+bool basic_thread_worker::resize_actions_queue(size_t capacity)
+{
+    return m_actions_queue.resize(capacity);
 }
 
 bool basic_thread_worker::enqueue_action(action_id_t action, void* param, action_param_deleter_t deleter)
 {
-    std::lock_guard<decltype(m_sync_queue_mutex)> lock(m_sync_queue_mutex);
-
     Check_ValidState(running(), false);
 
-    m_sync_queue_items.push({action, param, deleter});
-
-    m_wake_event.fire();
-
-    return true;
+    return m_actions_queue.push({action, param, deleter});
 }
 
 void basic_thread_worker::perform_action(action_id_t action, void* param, void* result)
@@ -95,7 +117,7 @@ void basic_thread_worker::process_action(action_id_t action, void* param, void* 
 
     m_work_event.fire();
 
-    m_waiter.wait(timeout_infinite, m_done_event);
+    m_assist_waiter.wait(m_done_event);
 }
 
 bool basic_thread_worker::can_reply()
@@ -106,19 +128,20 @@ bool basic_thread_worker::can_reply()
     return ((m_reentrancy.count == 1) && (m_reentrancy.result != nullptr));
 }
 
-void basic_thread_worker::reply_action()
+bool basic_thread_worker::reply_action()
 {
-    if(can_reply())
-    {
-        m_reentrancy.result = nullptr;
+    if(!can_reply()) return false;
 
-        m_done_event.fire();
-    }
+    m_reentrancy.result = nullptr;
+
+    m_done_event.fire();
+
+    return true;
 }
 
 void basic_thread_worker::thread_proc()
 {
-    m_waiter.wait(timeout_infinite, m_work_event);
+    m_thread_waiter.wait(m_work_event);
 
     m_reentrancy = {0, nullptr};
 
@@ -137,13 +160,15 @@ void basic_thread_worker::thread_proc()
     }
     while(main_loop());
 
-    dequeue_actions();
+    dequeue_actions(true);
 
     safe_finish();
 }
 
 bool basic_thread_worker::safe_start() noexcept
 {
+    m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
+
 #ifndef __cpp_exceptions
     return start();
 #else
@@ -185,7 +210,7 @@ void basic_thread_worker::safe_finish() noexcept
 
 bool basic_thread_worker::safe_acquire_events() noexcept
 {
-    m_objects[OWN_EVENT_HAS_ASYNC_ACTION] = &m_wake_event;
+    m_objects[OWN_EVENT_HAS_ASYNC_ACTION] =  m_actions_queue.queue_has_items_waitable_object();
     m_objects[OWN_EVENT_HAS_SYNC_ACTION ] = &m_work_event;
 
     for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
@@ -236,7 +261,7 @@ bool basic_thread_worker::main_loop()
     {
         if(m_updating) return true;
 
-        const wait_result_t wait_result = m_waiter.wait(timeout, m_count, m_objects);
+        const wait_result_t wait_result = m_thread_waiter.wait(timeout, m_count, m_objects);
 
         Check_ValidState(wait_result != wait_result_error, false);
 
@@ -255,7 +280,7 @@ bool basic_thread_worker::main_loop()
             }
             if(waitable_object_wait_is_completed(wait_result, OWN_EVENT_HAS_ASYNC_ACTION))
             {
-                dequeue_actions();
+                dequeue_actions(false);
             }
             if(waitable_object_wait_is_completed(wait_result, OWN_EVENT_HAS_SYNC_ACTION))
             {
@@ -266,24 +291,24 @@ bool basic_thread_worker::main_loop()
     return false;
 }
 
-void basic_thread_worker::dequeue_actions()
+void basic_thread_worker::dequeue_actions(bool all)
 {
-    for(item_t item; ; )
+    do
     {
-        {
-            std::lock_guard<decltype(m_sync_queue_mutex)> lock(m_sync_queue_mutex);
-            if(m_sync_queue_items.empty()) return;
-            item = m_sync_queue_items.front();
-            m_sync_queue_items.pop();
-        }
+        auto element = m_actions_queue.try_start_pop();
 
-        safe_do_action(item.action, item.param, nullptr, false);
+        if(!element.pop_in_progress()) break;
 
-        if(item.deleter)
+        queued_action& action = *element;
+
+        safe_do_action(action.id, action.param, nullptr, false);
+
+        if(action.deleter)
         {
-            item.deleter(item.param);
+            action.deleter(action.param);
         }
     }
+    while(all);
 }
 
 void basic_thread_worker::safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller)
@@ -298,8 +323,8 @@ void basic_thread_worker::safe_do_action(action_id_t action, void* param, void* 
     }
     switch(action)
     {
-        case ACTION_UPDATE: m_running = true ; break;
-        case ACTION_QUIT  : m_running = false; break;
+        case ACTION_UPDATE: m_updating = true ; break;
+        case ACTION_QUIT  : m_running  = false; break;
         default:
 #ifndef __cpp_exceptions
             on_action(action, param, result);

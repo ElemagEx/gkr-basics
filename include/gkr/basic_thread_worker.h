@@ -1,14 +1,14 @@
 #pragma once
 
-#include <queue>
 #include <mutex>
 #include <thread>
 #include <functional>
 
-#include "waitable_event.h"
 #include "objects_waiter.h"
+#include "waitable_event.h"
+#include "waitable_lockfree_queue.h"
 
-#include <gkr/misc/stack_args_order.h>
+#include "misc/stack_args_order.h"
 
 #ifndef GKR_BTW_API
 #define GKR_BTW_API
@@ -46,6 +46,8 @@ class basic_thread_worker
 public:
     using action_id_t = size_t;
 
+    using action_param_deleter_t = std::function<void(void*)>;
+
 protected:
     GKR_BTW_API          basic_thread_worker();
     GKR_BTW_API virtual ~basic_thread_worker() noexcept(DIAG_NOEXCEPT);
@@ -71,15 +73,16 @@ protected:
 
 public:
     GKR_BTW_API bool run();
-
-    GKR_BTW_API bool quit();
     GKR_BTW_API bool join(bool send_quit_signal);
+
+public:
+    GKR_BTW_API bool quit();
 
     GKR_BTW_API bool update_wait();
 
-public:
-    using action_param_deleter_t = std::function<void(void*)>;
+    GKR_BTW_API bool resize_actions_queue(size_t capacity);
 
+public:
     GKR_BTW_API bool enqueue_action(action_id_t action, void* param = nullptr, action_param_deleter_t deleter = nullptr);
     GKR_BTW_API void perform_action(action_id_t action, void* param = nullptr, void* result = nullptr);
 
@@ -87,7 +90,7 @@ private:
     GKR_BTW_API void process_action(action_id_t action, void* param, void* result);
 
     GKR_BTW_API bool can_reply();
-    GKR_BTW_API void reply_action();
+    GKR_BTW_API bool reply_action();
 
 public:
     std::thread::id get_thread_id()
@@ -117,7 +120,7 @@ private:
 
     bool main_loop();
 
-    void dequeue_actions();
+    void dequeue_actions(bool all);
 
     void safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller);
 
@@ -160,50 +163,67 @@ private:
     bool m_running  = false;
     bool m_updating = false;
 
-    objects_waiter m_waiter;
+    objects_waiter m_thread_waiter;
+    objects_waiter m_assist_waiter;
 
     using waitable_event_t = waitable_event<false, 1>;
 
-    waitable_event_t m_wake_event;
     waitable_event_t m_work_event;
     waitable_event_t m_done_event;
 
 private:
-    struct item_t
+    struct queued_action
     {
-        action_id_t            action;
+        action_id_t            id;
         void*                  param;
         action_param_deleter_t deleter;
     };
-    std::queue<item_t> m_sync_queue_items;
-    std::mutex         m_sync_queue_mutex;
+    using actions_queue_t = lockfree_queue<queued_action, true, true, gkr::impl::queue_simple_wait_support<1,1>>;
+
+    actions_queue_t m_actions_queue;
 
 protected:
-    objects_waiter& get_waiter() noexcept
+    static constexpr size_t initial_actions_queue_capacity = 8;
+
+protected:
+    objects_waiter& get_thread_waiter() noexcept
     {
-        return m_waiter;
+        return m_thread_waiter;
+    }
+    objects_waiter& get_assist_waiter() noexcept
+    {
+        return m_assist_waiter;
     }
 
+protected:
     template<typename T>
-    void reply_action(T&& value)
+    bool reply_action(T&& value)
     {
-        if(can_reply())
+        if(!can_reply())
         {
-            *static_cast<T*>(m_reentrancy.result) = std::move(value);
-            reply_action();
+            return false;
         }
+        if(*m_reentrancy.result != nullptr)
+        {
+            *static_cast<T*>(*m_reentrancy.result) = std::move(value);
+        }
+        return reply_action();
     }
     template<typename T>
-    void reply_action(const T& value)
+    bool reply_action(const T& value)
     {
-        if(can_reply())
+        if(!can_reply())
+        {
+            return false;
+        }
+        if(m_reentrancy.result != nullptr)
         {
             *static_cast<T*>(m_reentrancy.result) = value;
-            reply_action();
         }
+        return reply_action();
     }
 
-public:
+protected:
     template<typename R, typename... Args>
     R execute_action_method(action_id_t action, Args&&... args)
     {

@@ -50,7 +50,9 @@ public:
 
 #include <gkr/log/logging.h>
 
-static gkr::log::name_id_pair g_severities[] = {
+using namespace gkr::log;
+
+static name_id_pair g_severities[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -58,7 +60,7 @@ static gkr::log::name_id_pair g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-static gkr::log::name_id_pair g_facilities[] = {
+static name_id_pair g_facilities[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},
@@ -66,20 +68,31 @@ static gkr::log::name_id_pair g_facilities[] = {
     {nullptr  , 0               }
 };
 
+//static logging s_logging(g_severities, g_facilities);
+
 #include <thread>
+#include <gkr/sys/thread_name.h>
+
+static void bar()
+{
+    gkr::sys::set_current_thread_name("gkr-bar");
+    logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
+}
 
 int test_logging()
 {
-    gkr::log::logging::init(g_severities, g_facilities);
+    logging::init(g_severities, g_facilities);
 
-    gkr::log::logging::add_consumer(std::make_shared<console_consumer>());
+    logging::add_consumer(std::make_shared<console_consumer>());
 
-    gkr::log::logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
-    gkr::log::logging::log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
+    logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
-    //std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::thread t([] () { bar(); });
+    t.join();
 
-    gkr::log::logging::done();
+    logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
+
+    logging::done();
 
     return 0;
 }

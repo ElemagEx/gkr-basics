@@ -5,7 +5,6 @@
 #include <gkr/log/consumer.h>
 #include <gkr/log/stamp.h>
 
-#include <gkr/sys/thread_name.h>
 #include <gkr/misc/union_cast.h>
 
 #include <cstring>
@@ -19,8 +18,8 @@ logger::logger()
 {
     check_args_order();
 
-    m_log_queue.set_producer_waiter(m_producer_waiter);
-    m_log_queue.set_consumer_waiter(get_waiter());
+    m_log_queue.set_producer_waiter(get_assist_waiter());
+    m_log_queue.set_consumer_waiter(get_thread_waiter());
 }
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
@@ -76,7 +75,7 @@ void logger::on_action(action_id_t action, void* param, void* result)
         case ACTION_ADD_CONSUMER     : call_action_method(&logger::add_consumer     , param, result); break;
         case ACTION_DEL_CONSUMER     : call_action_method(&logger::del_consumer     , param, result); break;
         case ACTION_DEL_ALL_CONSUMERS: call_action_method(&logger::del_all_consumers, param); break;
-        case ACTION_REGISTER_THREAD  : call_action_method(&logger::register_thread  , param); break;
+        case ACTION_SET_THREAD_NAME  : call_action_method(&logger::set_thread_name  , param); break;
         case ACTION_SYNC_LOG_MESSAGE : call_action_method(&logger::sync_log_message , param); break;
     }
 }
@@ -261,11 +260,27 @@ void logger::del_all_consumers()
     }
 }
 
+void logger::set_thread_name(tid_t tid, const char* name)
+{
+    if(!in_worker_thread())
+    {
+        return execute_action_method<void>(ACTION_SET_THREAD_NAME, tid, name);
+    }
+    if(name == nullptr)
+    {
+        m_thread_ids.erase(tid);
+    }
+    else
+    {
+        m_thread_ids[tid] = name;
+    }
+}
+
 bool logger::log_message(bool wait, int severity, int facility, const char* format, std::va_list args)
 {
     Check_Arg_NotNull(format, false);
 
-    check_thread_registered();
+    Check_ValidState(running(), false);
 
     const size_t size = m_log_queue.element_size();
 
@@ -292,22 +307,6 @@ bool logger::log_message(bool wait, int severity, int facility, const char* form
     return true;
 }
 
-void logger::register_thread(std::thread::id tid, const char* name)
-{
-    if(!in_worker_thread())
-    {
-        return execute_action_method<void>(ACTION_REGISTER_THREAD, tid, name);
-    }
-    thread_name_t& thread_name = m_thread_names[tid];
-
-    if(name != nullptr)
-    {
-        std::strncpy(thread_name.name, name, max_name_cch);
-
-        thread_name.name[max_name_cch-1] = 0;
-    }
-}
-
 void logger::sync_log_message(message_data& msg)
 {
     if(!in_worker_thread())
@@ -315,21 +314,6 @@ void logger::sync_log_message(message_data& msg)
         return execute_action_method<void>(ACTION_SYNC_LOG_MESSAGE, msg);
     }
     process_message(msg);
-}
-
-void logger::check_thread_registered()
-{
-    static thread_local bool thread_registered = false;
-
-    if(thread_registered) return;
-
-    thread_registered = true;
-
-    char name[sys::max_thread_name_cch];
-
-    if(!sys::get_current_thread_name(name)) return;
-
-    register_thread(std::this_thread::get_id(), name);
 }
 
 bool logger::compose_message(message_data& msg, size_t cch, int severity, int facility, const char* format, std::va_list args)
@@ -369,15 +353,18 @@ void logger::process_message(message_data& msg)
 
 void logger::prepare_message(message_data& msg)
 {
-    auto tid = misc::union_cast<std::thread::id>(msg.tid);
+    msg.messageText = msg.buffer;
 
+    auto itThreadId = m_thread_ids.find(msg.tid);
     auto itSeverity = m_severities.find(msg.severity);
     auto itFacility = m_facilities.find(msg.facility);
 
-    msg.threadName   = m_thread_names[tid].name;
-    msg.messageText  = msg.buffer;
-    msg.severityName = (itSeverity == m_severities.end()) ? nullptr : itSeverity->second;
-    msg.facilityName = (itFacility == m_facilities.end()) ? nullptr : itFacility->second;
+    static constexpr char s_empty_name[1] = {0};
+
+    msg.threadName   = (itThreadId == m_thread_ids.end()) ? s_empty_name : itThreadId->second;
+    msg.severityName = (itSeverity == m_severities.end()) ? s_empty_name : itSeverity->second;
+    msg.facilityName = (itFacility == m_facilities.end()) ? s_empty_name : itFacility->second;
+
 }
 
 void logger::consume_message(const message_data& msg)

@@ -4,6 +4,8 @@
 
 #include "waitable_object.h"
 
+#include <memory>
+
 namespace gkr
 {
 
@@ -276,6 +278,23 @@ public:
         return result;
     }
 };
+
+inline bool install_this_thread_objects_waiter() noexcept
+{
+    extern thread_local std::shared_ptr<objects_waiter> g_this_thread_objects_waiter;
+
+    if(g_this_thread_objects_waiter) return false;
+
+    g_this_thread_objects_waiter = std::make_shared<objects_waiter>();
+
+    return true;
+}
+inline objects_waiter* get_this_thread_objects_waiter() noexcept
+{
+    extern thread_local std::shared_ptr<objects_waiter> g_this_thread_objects_waiter;
+
+    return g_this_thread_objects_waiter.get();
+}
 
 template<typename WaitableObject>
 inline waitable_object_guard<WaitableObject> guard_waitable_object(

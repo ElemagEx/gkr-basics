@@ -24,7 +24,7 @@ struct name_id_pair
 
 class consumer;
 
-class logging
+class logging final
 {
 public:
     GKR_LOG_API static bool init(
@@ -58,6 +58,34 @@ public:
     GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* format);
     GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* format, ...);
     GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args);
+
+public:
+    logging(
+        const name_id_pair* severities = nullptr,
+        const name_id_pair* facilities = nullptr,
+        size_t max_queue_entries  = 16,
+        size_t max_message_chars  = (1024 - sizeof(message))
+        )
+    {
+        m_initialized = init(severities, facilities, max_queue_entries, max_message_chars);
+    }
+    ~logging()
+    {
+        if(m_initialized) done();
+    }
+
+private:
+    bool m_initialized = false;
+
+private:
+    logging           (const logging&) noexcept = delete;
+    logging& operator=(const logging&) noexcept = delete;
+
+    logging           (logging&&) noexcept = delete;
+    logging& operator=(logging&&) noexcept = delete;
+
+private:
+    static void check_thread();
 };
 
 }

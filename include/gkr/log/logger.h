@@ -68,6 +68,11 @@ public:
     void del_all_consumers();
 
 public:
+    using tid_t = decltype(message::tid);
+
+    void set_thread_name(tid_t tid, const char* name);
+
+public:
     bool log_message(bool wait, int severity, int facility, const char* format, std::va_list args);
 
 private:
@@ -80,11 +85,7 @@ private:
     };
 
 private:
-    void register_thread(std::thread::id tid, const char* name);
-
     void sync_log_message(message_data& entry);
-
-    void check_thread_registered();
 
     bool compose_message(message_data& msg, size_t cch, int severity, int facility, const char* format, std::va_list args);
 
@@ -106,18 +107,13 @@ private:
         ACTION_ADD_CONSUMER     ,
         ACTION_DEL_CONSUMER     ,
         ACTION_DEL_ALL_CONSUMERS,
-        ACTION_REGISTER_THREAD  ,
+        ACTION_SET_THREAD_NAME  ,
         ACTION_SYNC_LOG_MESSAGE , 
     };
-
-    static constexpr unsigned max_name_cch = 16;
-    struct thread_name_t { char name[max_name_cch] {0}; };
 
     using lockfree_queue_t = lockfree_queue<void, true, true, impl::queue_simple_wait_support<1,1>>;
 
 private:
-    objects_waiter m_producer_waiter;
-
     lockfree_queue_t m_log_queue;
 
     std::vector<std::shared_ptr<consumer>> m_consumers;
@@ -125,7 +121,7 @@ private:
     std::unordered_map<unsigned short, const char*> m_severities;
     std::unordered_map<unsigned short, const char*> m_facilities;
 
-    std::unordered_map<std::thread::id, thread_name_t> m_thread_names;
+    std::unordered_map<tid_t, const char*> m_thread_ids;
 };
 
 }

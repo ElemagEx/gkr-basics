@@ -1,6 +1,8 @@
 #include <gkr/log/logging.h>
 
 #include <gkr/log/logger.h>
+#include <gkr/sys/thread_name.h>
+#include <gkr/misc/union_cast.h>
 
 namespace gkr
 {
@@ -131,18 +133,22 @@ bool logging::del_all_consumers()
 
 bool logging::log_simple_message(bool wait, int severity, int facility, const char* format)
 {
+    Check_Arg_NotNull(format, false);
+
     if(s_logger == nullptr) return false;
 
-    Check_Arg_NotNull(format, false);
+    check_thread();
 
     return s_logger->log_message(wait, severity, facility, format, nullptr);
 }
 
 bool logging::log_format_message(bool wait, int severity, int facility, const char* format, ...)
 {
+    Check_Arg_NotNull(format, false);
+
     if(s_logger == nullptr) return false;
 
-    Check_Arg_NotNull(format, false);
+    check_thread();
 
     std::va_list args;
     va_start(args, format);
@@ -155,11 +161,47 @@ bool logging::log_format_message(bool wait, int severity, int facility, const ch
 
 bool logging::log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args)
 {
-    if(s_logger == nullptr) return false;
-
     Check_Arg_NotNull(format, false);
 
+    if(s_logger == nullptr) return false;
+
+    check_thread();
+
     return s_logger->log_message(wait, severity, facility, format, args);
+}
+
+struct thread_name_t
+{
+    char buff[sys::max_thread_name_cch] = {0};
+    bool registered = false;
+
+    ~thread_name_t();
+};
+
+void logging::check_thread()
+{
+    static thread_local thread_name_t thread_name{};
+
+    if(thread_name.registered) return;
+
+    thread_name.registered = true;
+
+    if(sys::get_current_thread_name(thread_name.buff))
+    {
+        auto tid = misc::union_cast<logger::tid_t>(std::this_thread::get_id());
+
+        s_logger->set_thread_name(tid, thread_name.buff);
+}
+}
+
+thread_name_t::~thread_name_t()
+{
+    if(registered && (s_logger != nullptr))
+    {
+        auto tid = misc::union_cast<logger::tid_t>(std::this_thread::get_id());
+
+        s_logger->set_thread_name(tid, nullptr);
+    }
 }
 
 }

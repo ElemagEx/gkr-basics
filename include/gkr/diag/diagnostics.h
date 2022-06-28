@@ -184,7 +184,7 @@ for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_WARN(DIAG_ID_
 #define Check_ValidState(check,  ...)   if(!(check)      && DIAG_STOP(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_FailureMsg(msg,    ...)                       DIAG_STOP(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
 #define Check_Failure(           ...)                       DIAG_STOP(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Recovery(msg          )                       DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
+#define Check_Recovery(msg          )                    if(DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)) (void)0
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_STOP(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
@@ -238,6 +238,9 @@ noexcept(DIAG_NOEXCEPT)
     __debugbreak();
 #else
     *(int*)nullptr = 0;
+#endif
+#if !defined(__clang__)
+    return true;
 #endif
 }
 

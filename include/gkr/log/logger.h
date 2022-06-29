@@ -111,7 +111,7 @@ private:
         ACTION_SYNC_LOG_MESSAGE , 
     };
 
-    using lockfree_queue_t = lockfree_queue<void, true, true, impl::queue_simple_wait_support<1,1>>;
+    using lockfree_queue_t = lockfree_queue<void, true, impl::queue_simple_wait_support<1,1>>;
 
 private:
     lockfree_queue_t m_log_queue;

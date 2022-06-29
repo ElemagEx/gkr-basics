@@ -89,11 +89,11 @@ void logger::on_wait_success(size_t index)
 {
     Check_ValidState(index == 0, );
 
-    auto element = m_log_queue.start_pop<message_data>();
+    auto element = m_log_queue.start_pop();
 
     Check_ValidState(element.pop_in_progress(), );
 
-    message_data& msg = *element;
+    message_data& msg = element.value<message_data>();
 
     process_message(msg);
 }
@@ -112,16 +112,17 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    const size_t queue_capacity   = (max_queue_entries == size_t(-1))
-        ? lockfree_queue_t::npos
-        : max_queue_entries
-        ;
-    const size_t queue_entry_size = (max_message_chars == size_t(-1))
-        ? lockfree_queue_t::npos
-        : max_message_chars + sizeof(message)
-        ;
     if(!running())
     {
+        const size_t queue_capacity   = (max_queue_entries == size_t(-1))
+            ? lockfree_queue_t::npos
+            : max_queue_entries
+            ;
+        const size_t queue_entry_size = (max_message_chars == size_t(-1))
+            ? lockfree_queue_t::npos
+            : max_message_chars + sizeof(message)
+            ;
+
         m_log_queue.reset(queue_capacity, queue_entry_size, alignof(message));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
@@ -132,7 +133,21 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     }
     else
     {
-        return m_log_queue.resize(queue_capacity, queue_entry_size, alignof(message));
+        if(max_queue_entries != size_t(-1))
+        {
+            if(!m_log_queue.resize(max_queue_entries))
+            {
+                return false;
+            }
+        }
+        if(max_message_chars != size_t(-1))
+        {
+        //  if(!m_log_queue.expand(max_queue_entries))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
@@ -288,11 +303,11 @@ bool logger::log_message(bool wait, int severity, int facility, const char* form
 
     const size_t cch = size - sizeof(message);
 
-    auto element = m_log_queue.start_push<message_data>();
+    auto element = m_log_queue.start_push();
 
     Check_ValidState(element.push_in_progress(), false);
 
-    message_data& msg = *element;
+    message_data& msg = element.value<message_data>();
 
     if(!compose_message(msg, cch, severity, facility, format, args))
     {
@@ -405,11 +420,11 @@ void logger::process_pending_messages()
 {
     for( ; ; )
     {
-        auto element = m_log_queue.try_start_pop<message_data>();
+        auto element = m_log_queue.try_start_pop();
 
         if(!element.pop_in_progress()) break;
 
-        message_data& msg = *element;
+        message_data& msg = element.value<message_data>();
 
         process_message(msg);
     }

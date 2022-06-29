@@ -50,30 +50,10 @@ class queue_producer_element
 {
     queue_producer_element           (const queue_producer_element&) noexcept = delete;
     queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-private:
-    queue_producer_element           (queue_producer_element&&) noexcept = delete;
-    queue_producer_element& operator=(queue_producer_element&&) noexcept = delete;
-#else
+
 public:
     queue_producer_element           (queue_producer_element&&) noexcept = default;
     queue_producer_element& operator=(queue_producer_element&&) noexcept = default;
-#endif
-public:
-    void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
-    {
-        if(push_in_progress())
-        {
-            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
-    void finish_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->template release_producer_element<true>(std::exchange(m_element, nullptr));
-        }
-    }
 
 public:
     queue_producer_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element)
@@ -88,6 +68,22 @@ public:
     bool push_in_progress() const noexcept
     {
         return (m_element != nullptr);
+    }
+
+public:
+    void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
+    {
+        if(push_in_progress())
+        {
+            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
+        }
+    }
+    void finish_push() noexcept(DIAG_NOEXCEPT)
+    {
+        if(push_in_progress())
+        {
+            m_queue->template release_producer_element<true>(std::exchange(m_element, nullptr));
+        }
     }
 
 public:
@@ -147,30 +143,10 @@ class queue_producer_element<Queue, void>
 {
     queue_producer_element           (const queue_producer_element&) noexcept = delete;
     queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-private:
-    queue_producer_element           (queue_producer_element&&) noexcept = delete;
-    queue_producer_element& operator=(queue_producer_element&&) noexcept = delete;
-#else
+
 public:
     queue_producer_element           (queue_producer_element&&) noexcept = default;
     queue_producer_element& operator=(queue_producer_element&&) noexcept = default;
-#endif
-public:
-    void cancel_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
-    void finish_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->template release_producer_element<true>(std::exchange(m_element, nullptr));
-        }
-    }
 
 public:
     queue_producer_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element)
@@ -185,6 +161,22 @@ public:
     bool push_in_progress() const noexcept
     {
         return (m_element != nullptr);
+    }
+
+public:
+    void cancel_push() noexcept(DIAG_NOEXCEPT)
+    {
+        if(push_in_progress())
+        {
+            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
+        }
+    }
+    void finish_push() noexcept(DIAG_NOEXCEPT)
+    {
+        if(push_in_progress())
+        {
+            m_queue->template release_producer_element<true>(std::exchange(m_element, nullptr));
+        }
     }
 
 public:
@@ -249,30 +241,10 @@ class queue_consumer_element
 {
     queue_consumer_element           (const queue_consumer_element&) noexcept = delete;
     queue_consumer_element& operator=(const queue_consumer_element&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-private:
-    queue_consumer_element           (queue_consumer_element&&) noexcept = delete;
-    queue_consumer_element& operator=(queue_consumer_element&&) noexcept = delete;
-#else
+
 public:
     queue_consumer_element           (queue_consumer_element&&) noexcept = default;
     queue_consumer_element& operator=(queue_consumer_element&&) noexcept = default;
-#endif
-public:
-    void cancel_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
-    void finish_pop() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->template release_consumer_element<true>(std::exchange(m_element, nullptr));
-        }
-    }
 
 public:
     queue_consumer_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element)
@@ -287,6 +259,22 @@ public:
     bool pop_in_progress() const noexcept
     {
         return (m_element != nullptr);
+    }
+
+public:
+    void cancel_pop() noexcept(DIAG_NOEXCEPT)
+    {
+        if(pop_in_progress())
+        {
+            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
+        }
+    }
+    void finish_pop() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
+    {
+        if(pop_in_progress())
+        {
+            m_queue->template release_consumer_element<true>(std::exchange(m_element, nullptr));
+        }
     }
 
 public:
@@ -346,30 +334,10 @@ class queue_consumer_element<Queue, void>
 {
     queue_consumer_element           (const queue_consumer_element&) noexcept = delete;
     queue_consumer_element& operator=(const queue_consumer_element&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-private:
-    queue_consumer_element           (queue_consumer_element&&) noexcept = delete;
-    queue_consumer_element& operator=(queue_consumer_element&&) noexcept = delete;
-#else
+
 public:
     queue_consumer_element           (queue_consumer_element&&) noexcept = default;
     queue_consumer_element& operator=(queue_consumer_element&&) noexcept = default;
-#endif
-public:
-    void cancel_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
-    void finish_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->template release_consumer_element<true>(std::exchange(m_element, nullptr));
-        }
-    }
 
 public:
     queue_consumer_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element)
@@ -384,6 +352,22 @@ public:
     bool pop_in_progress() const noexcept
     {
         return (m_element != nullptr);
+    }
+
+public:
+    void cancel_pop() noexcept(DIAG_NOEXCEPT)
+    {
+        if(pop_in_progress())
+        {
+            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
+        }
+    }
+    void finish_pop() noexcept(DIAG_NOEXCEPT)
+    {
+        if(pop_in_progress())
+        {
+            m_queue->template release_consumer_element<true>(std::exchange(m_element, nullptr));
+        }
     }
 
 public:
@@ -538,6 +522,15 @@ protected:
     void reset(size_t) noexcept
     {
     }
+    void pause() noexcept
+    {
+    }
+    void resume() noexcept
+    {
+    }
+    void resize(size_t) noexcept
+    {
+    }
 
 protected:
     void notify_producer_overtake() noexcept
@@ -608,16 +601,18 @@ public:
 private:
     using base_t = WaitSupport;
 
+    using tid_owner_t = long long;
+
+    std::atomic<tid_owner_t> m_tid_pause {0};
+
     std::atomic<size_t> m_count {0};
 
     size_t m_capacity = 0;
     size_t m_tail_pos = 0;
     size_t m_head_pos = 0;
 
-    using thread_id_t = std::thread::id;
-
-    thread_id_t m_producer_tid_owner = thread_id_t();
-    thread_id_t m_consumer_tid_owner = thread_id_t();
+    tid_owner_t m_producer_tid_owner = 0;
+    tid_owner_t m_consumer_tid_owner = 0;
 
 protected:
     basic_lockfree_queue() noexcept = delete;
@@ -630,14 +625,15 @@ protected:
     }
 
     basic_lockfree_queue(basic_lockfree_queue&& other) noexcept
-        : base_t   (std::move(other))
-        , threading(std::move(other.threading))
-        , m_count  (other.m_count.exchange(0))
-        , m_capacity(std::exchange(other.m_capacity, 0))
-        , m_tail_pos(std::exchange(other.m_tail_pos, 0))
-        , m_head_pos(std::exchange(other.m_head_pos, 0))
-        , m_producer_tid_owner(std::exchange(other.m_producer_tid_owner, thread_id_t()))
-        , m_consumer_tid_owner(std::exchange(other.m_consumer_tid_owner, thread_id_t()))
+        : base_t     (std::move(other))
+        , threading  (std::move(other.threading))
+        , m_tid_pause(other.m_tid_pause.exchange(0))
+        , m_count    (other.m_count    .exchange(0))
+        , m_capacity (std::exchange(other.m_capacity, 0))
+        , m_tail_pos (std::exchange(other.m_tail_pos, 0))
+        , m_head_pos (std::exchange(other.m_head_pos, 0))
+        , m_producer_tid_owner(std::exchange(other.m_producer_tid_owner, 0))
+        , m_consumer_tid_owner(std::exchange(other.m_consumer_tid_owner, 0))
     {
     }
     basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept
@@ -646,14 +642,15 @@ protected:
 
         threading = std::move(other.threading);
 
-        m_count   = other.m_count.exchange(0);
+        m_tid_pause = other.m_tid_pause.exchange(0);
+        m_count     = other.m_count    .exchange(0);
 
         m_capacity = std::exchange(other.m_capacity, 0);
         m_tail_pos = std::exchange(other.m_tail_pos, 0);
         m_head_pos = std::exchange(other.m_head_pos, 0);
 
-        m_producer_tid_owner = std::exchange(other.m_producer_tid_owner, thread_id_t());
-        m_consumer_tid_owner = std::exchange(other.m_consumer_tid_owner, thread_id_t());
+        m_producer_tid_owner = std::exchange(other.m_producer_tid_owner, 0);
+        m_consumer_tid_owner = std::exchange(other.m_consumer_tid_owner, 0);
         return *this;
     }
     void swap(basic_lockfree_queue& other) noexcept
@@ -662,7 +659,8 @@ protected:
 
         threading.swap(other.threading);
 
-        m_count = other.m_count.exchange(m_count);
+        m_tid_pause = other.m_tid_pause.exchange(m_tid_pause);
+        m_count     = other.m_count    .exchange(m_count);
 
         std::swap(m_capacity, other.m_capacity);
         std::swap(m_tail_pos, other.m_tail_pos);
@@ -688,6 +686,14 @@ public:
     size_t capacity() const noexcept
     {
         return m_capacity;
+    }
+
+private:
+    static tid_owner_t get_current_tid()
+    {
+        union { tid_owner_t tid_owner; std::thread::id id; } values {};
+        values.id = std::this_thread::get_id();
+        return values.tid_owner;
     }
 
 protected:
@@ -722,18 +728,37 @@ protected:
         m_head_pos = 0;
         m_tail_pos = 0;
 
-        m_producer_tid_owner = thread_id_t();
-        m_consumer_tid_owner = thread_id_t();
+        m_producer_tid_owner = 0;
+        m_consumer_tid_owner = 0;
     }
+    bool pause()
+    {
+        tid_owner_t expected = 0;
 
-protected:
-    bool can_take_producer_element_ownership() const noexcept
-    {
-        return ((m_capacity > 0) && threading.this_thread_is_valid_producer() && (m_producer_tid_owner == thread_id_t()));
+        if(!m_tid_pause.compare_exchange_strong(expected, get_current_tid())) return false;
+
+        base_t::pause();
+
+        return true;
     }
-    bool can_take_consumer_element_ownership() const noexcept
+    void resume()
     {
-        return ((m_capacity > 0) && threading.this_thread_is_valid_consumer() && (m_consumer_tid_owner == thread_id_t()));
+        Check_ValidState(m_tid_pause == get_current_tid(), );
+
+        base_t::resume();
+
+        m_tid_pause = 0;
+    }
+    void resize(size_t capacity) noexcept(false)
+    {
+        Assert_Check(capacity > m_capacity);
+
+        base_t::resize(capacity);
+
+        m_capacity = capacity;
+
+        m_head_pos = 0;
+        m_tail_pos = m_count;
     }
 
 protected:
@@ -741,8 +766,12 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
-        Check_ValidState(m_producer_tid_owner == thread_id_t(), npos);
+        Check_ValidState(m_producer_tid_owner == 0, npos);
 
+        if(m_tid_pause != 0)
+        {
+            return npos;
+        }
         if(m_count == m_capacity)
         {
             base_t::notify_producer_overtake();
@@ -750,7 +779,7 @@ protected:
         }
         base_t::notify_producer_take();
 
-        m_producer_tid_owner = std::this_thread::get_id();
+        m_producer_tid_owner = get_current_tid();
 
         const size_t index = (m_tail_pos % m_capacity);
 
@@ -763,11 +792,11 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidState(m_producer_tid_owner == std::this_thread::get_id(), false);
+        Check_ValidState(m_producer_tid_owner == get_current_tid(), false);
 
         Check_Arg_IsValid(index == (m_tail_pos % m_capacity), false);
 
-        m_producer_tid_owner = thread_id_t();
+        m_producer_tid_owner = 0;
 
 #ifdef __cpp_if_constexpr
         if constexpr(push)
@@ -792,8 +821,12 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
-        Check_ValidState(m_consumer_tid_owner == thread_id_t(), npos);
+        Check_ValidState(m_consumer_tid_owner == 0, npos);
 
+        if(m_tid_pause != 0)
+        {
+            return npos;
+        }
         if(m_count == 0) 
         {
             base_t::notify_consumer_overtake();
@@ -801,7 +834,7 @@ protected:
         }
         base_t::notify_consumer_take();
 
-        m_consumer_tid_owner = std::this_thread::get_id();
+        m_consumer_tid_owner = get_current_tid();
 
         const size_t index = (m_head_pos % m_capacity);
 
@@ -814,11 +847,11 @@ protected:
 
         if(index == npos) return false;
 
-        Check_ValidState(m_consumer_tid_owner == std::this_thread::get_id(), false);
+        Check_ValidState(m_consumer_tid_owner == get_current_tid(), false);
 
         Check_ValidState(index == (m_head_pos % m_capacity), false);
 
-        m_consumer_tid_owner = thread_id_t();
+        m_consumer_tid_owner = 0;
 
 #ifdef __cpp_if_constexpr
         if constexpr(pop)
@@ -838,7 +871,29 @@ protected:
         return true;
     }
 
+protected:
+    bool this_thread_owns_element() const noexcept
+    {
+        const tid_owner_t id = get_current_tid();
+
+        return (m_producer_tid_owner == id) || (m_consumer_tid_owner == id);
+    }
+    bool some_thread_owns_element() const noexcept
+    {
+        return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
+    }
+
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
+protected:
+    bool can_take_producer_element_ownership() const noexcept
+    {
+        return ((m_capacity > 0) && threading.this_thread_is_valid_producer() && (m_producer_tid_owner == 0));
+    }
+    bool can_take_consumer_element_ownership() const noexcept
+    {
+        return ((m_capacity > 0) && threading.this_thread_is_valid_consumer() && (m_consumer_tid_owner == 0));
+    }
+
 protected:
     template<typename Rep, typename Period>
     size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout)
@@ -909,6 +964,8 @@ private:
 
     std::atomic<size_t> m_busy_tail {0};
     std::atomic<size_t> m_busy_head {0};
+
+    std::atomic<tid_owner_t> m_tid_pause {0};
 
 private:
     void clear() noexcept
@@ -1025,6 +1082,7 @@ protected:
         , m_free_head(other.m_free_head.exchange(0))
         , m_busy_tail(other.m_busy_tail.exchange(0))
         , m_busy_head(other.m_busy_head.exchange(0))
+        , m_tid_pause(other.m_tid_pause.exchange(0))
     {
     }
     basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
@@ -1042,6 +1100,7 @@ protected:
         m_free_head = other.m_free_head.exchange(0);
         m_busy_tail = other.m_busy_tail.exchange(0);
         m_busy_head = other.m_busy_head.exchange(0);
+        m_tid_pause = other.m_tid_pause.exchange(0);
 
         move_entries(std::move(other));
 
@@ -1061,6 +1120,7 @@ protected:
         m_free_head = other.m_free_head.exchange(m_free_head);
         m_busy_tail = other.m_busy_tail.exchange(m_busy_tail);
         m_busy_head = other.m_busy_head.exchange(m_busy_head);
+        m_tid_pause = other.m_tid_pause.exchange(m_tid_pause);
 
         swap_entries(std::move(other));
 
@@ -1083,6 +1143,14 @@ public:
     size_t capacity() const noexcept
     {
         return m_capacity;
+    }
+
+private:
+    static tid_owner_t get_current_tid()
+    {
+        union { tid_owner_t tid_owner; std::thread::id id; } values {};
+        values.id = std::this_thread::get_id();
+        return values.tid_owner;
     }
 
 protected:
@@ -1121,7 +1189,7 @@ protected:
         }
         for(size_t index = 0; index < m_capacity; ++index)
         {
-            m_entries[index] = dequeues_entry{index, 0, tid_owner_t()};
+            m_entries[index] = dequeues_entry{index, 0, 0};
         }
         m_count     = 0;
         m_occupied  = 0;
@@ -1133,23 +1201,47 @@ protected:
         m_free_head = 0;
         m_free_tail = m_capacity;
     }
+    bool pause()
+    {
+        tid_owner_t expected = 0;
 
-protected:
-    bool can_take_producer_element_ownership() const noexcept
-    {
-        return (m_capacity > 0) && threading.this_thread_is_valid_producer();
-    }
-    bool can_take_consumer_element_ownership() const noexcept
-    {
-        return (m_capacity > 0) && threading.this_thread_is_valid_consumer();
-    }
+        if(!m_tid_pause.compare_exchange_strong(expected, get_current_tid())) return false;
 
-private:
-    static tid_owner_t get_current_tid()
+        base_t::pause();
+
+        return true;
+    }
+    void resume()
     {
-        union { tid_owner_t tid_owner; std::thread::id id; } values {};
-        values.id = std::this_thread::get_id();
-        return values.tid_owner;
+        Check_ValidState(m_tid_pause == get_current_tid(), );
+
+        base_t::resume();
+
+        m_tid_pause = 0;
+    }
+    void resize(size_t capacity) noexcept(false)
+    {
+        Assert_Check(capacity > m_capacity);
+
+        base_t::resize(capacity);
+
+        clear();
+
+        dequeues_entry* entries = m_allocator.allocate(capacity);
+
+        const size_t count = m_count;
+
+        for(size_t index = 0; index < capacity; ++index)
+        {
+            entries[index] = dequeues_entry{index + count, index, 0};
+        }
+        m_busy_head = 0;
+        m_busy_tail = count;
+
+        m_free_head = 0;
+        m_free_tail = capacity - count;
+
+        m_capacity  = capacity;
     }
 
 protected:
@@ -1157,6 +1249,10 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
+        if(m_tid_pause != 0)
+        {
+            return npos;
+        }
         if(++m_occupied > m_capacity)
         {
             --m_occupied;
@@ -1213,6 +1309,10 @@ protected:
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
+        if(m_tid_pause != 0)
+        {
+            return npos;
+        }
         if(std::ptrdiff_t(--m_available) < 0)
         {
             ++m_available;
@@ -1264,7 +1364,40 @@ protected:
         return true;
     }
 
+protected:
+    bool this_thread_owns_element() const noexcept
+    {
+        const tid_owner_t current_tid = get_current_tid();
+
+        for(size_t index = 0; index < m_capacity; ++index)
+        {
+            if(m_entries[index].tid_owner == current_tid)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool some_thread_owns_element() const noexcept
+    {
+        const size_t busy_count = (m_busy_tail - m_busy_head);
+        const size_t free_count = (m_free_tail - m_free_head);
+
+        const size_t idle_count = busy_count + free_count;
+
+        return (idle_count < m_capacity);
+    }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
+protected:
+    bool can_take_producer_element_ownership() const noexcept
+    {
+        return (m_capacity > 0) && threading.this_thread_is_valid_producer();
+    }
+    bool can_take_consumer_element_ownership() const noexcept
+    {
+        return (m_capacity > 0) && threading.this_thread_is_valid_consumer();
+    }
+
 protected:
     template<typename Rep, typename Period>
     size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout)
@@ -1302,7 +1435,6 @@ protected:
 template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
-    bool ResizeSupport=false,
     typename WaitSupport  =impl::queue_no_wait_support,
     typename BaseAllocator=std::allocator<char>
     >
@@ -1313,8 +1445,8 @@ class lockfree_queue
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport,                WaitSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1329,54 +1461,6 @@ private:
 
     TypeAllocator m_allocator;
     element_t*    m_elements = nullptr;
-
-private:
-    void destroy_element(size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
-    {
-        m_elements[index].~element_t();
-    }
-    void clear(bool deallocate) noexcept(std::is_nothrow_destructible<element_t>::value)
-    {
-        if(m_elements != nullptr)
-        {
-            for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
-            {
-                if(base_t::element_has_value(index, pos))
-                {
-                    destroy_element(index);
-                }
-            }
-            if(deallocate)
-            {
-                m_allocator.deallocate(m_elements, base_t::capacity());
-            }
-        }
-    }
-
-public:
-    void reset(size_t capacity = npos) noexcept(false)
-    {
-        if(capacity == npos)
-        {
-            capacity = base_t::capacity();
-        }
-        const bool reallocate = (capacity != base_t::capacity());
-
-        clear(reallocate);
-        base_t::reset(capacity);
-
-        if(reallocate)
-        {
-            if(base_t::capacity() == 0)
-            {
-                m_elements = nullptr;
-            }
-            else
-            {
-                m_elements = m_allocator.allocate(base_t::capacity());
-            }
-        }
-    }
 
 public:
     lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(
@@ -1394,7 +1478,6 @@ public:
     {
         reset(capacity);
     }
-
     ~lockfree_queue() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
         clear(true);
@@ -1526,11 +1609,87 @@ public:
         return sizeof(element_t);
     }
 
+private:
+    void destroy_element(size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
+    {
+        m_elements[index].~element_t();
+    }
+    void clear(bool deallocate) noexcept(std::is_nothrow_destructible<element_t>::value)
+    {
+        if(m_elements != nullptr)
+        {
+            for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index, pos))
+                {
+                    destroy_element(index);
+                }
+            }
+            if(deallocate)
+            {
+                m_allocator.deallocate(m_elements, base_t::capacity());
+            }
+        }
+    }
+
+public:
+    void reset(size_t capacity = npos) noexcept(false)
+    {
+        if(capacity == npos)
+        {
+            capacity = base_t::capacity();
+        }
+        const bool reallocate = (capacity != base_t::capacity());
+
+        clear(reallocate);
+        base_t::reset(capacity);
+
+        if(reallocate)
+        {
+            if(base_t::capacity() == 0)
+            {
+                m_elements = nullptr;
+            }
+            else
+            {
+                m_elements = m_allocator.allocate(base_t::capacity());
+            }
+        }
+    }
+
 public:
     bool resize(size_t capacity) noexcept(false)
     {
-        static_assert(ResizeSupport, "Resize support is not active for this queue");
-        return false;
+        Check_ValidState(!base_t::this_thread_owns_element(), false);
+
+        Check_Arg_IsValid(capacity > base_t::capacity(), false);
+
+        if(!base_t::pause()) return false;
+
+        constexpr std::chrono::milliseconds timeout = std::chrono::milliseconds(1);
+
+        while(base_t::some_thread_owns_element())
+        {
+            std::this_thread::sleep_for(timeout);
+        }
+        element_t* elements = m_allocator.allocate(capacity);
+
+        for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        {
+            if(base_t::element_has_value(index, pos))
+            {
+                new (elements + pos) element_t(std::move(m_elements[index]));
+
+                destroy_element(index);
+            }
+        }
+        m_allocator.deallocate(m_elements, base_t::capacity());
+
+        m_elements = elements;
+
+        base_t::resize(capacity);
+        base_t::resume();
+        return true;
     }
 
 public:
@@ -2004,22 +2163,24 @@ public:
 };
 template<
     bool MultipleConsumersMultipleProducersSupport,
-    bool ResizeSupport,
     typename WaitSupport,
     typename BaseAllocator
     >
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport, BaseAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
     : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport,                WaitSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
+
+    using queue_producer_element_t = queue_producer_element<self_t, void>;
+    using queue_consumer_element_t = queue_consumer_element<self_t, void>;
 
 private:
     using alloc_value_t = std::max_align_t;
@@ -2032,128 +2193,6 @@ private:
     size_t        m_alignment = 0;
     size_t        m_padding   = 0;
     size_t        m_stride    = 0;
-
-private:
-    static bool is_power_of_2(size_t value) noexcept
-    {
-        return (value > 0) && ((value & (value - 1)) == 0);
-    }
-    static size_t calc_alignment(size_t size) noexcept
-    {
-        size_t alignment;
-
-        for(alignment = 1; (alignment < size) && (alignment < alignof(alloc_value_t)); alignment <<= 1);
-
-        return alignment;
-    }
-    static size_t calc_offset(char* elements, size_t alignment) noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(is_power_of_2(alignment));
-
-        const size_t displace = reinterpret_cast<size_t>(elements) & (alignment - 1);
-
-        const size_t offset = (displace == 0) ? 0 : (alignment - displace);
-
-        return offset;
-    }
-    static void calc_stride_and_padding(size_t size, size_t alignment, size_t& stride, size_t& padding) noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(is_power_of_2(alignment));
-
-        if(size <= alignment)
-        {
-            stride = alignment;
-        }
-        else if((size & (alignment - 1)) == 0)
-        {
-            stride = size;
-        }
-        else
-        {
-            stride = (size & ~(alignment - 1)) + alignment;
-        }
-        if(alignment <= alignof(alloc_value_t))
-        {
-            padding = 0;
-        }
-        else
-        {
-            padding = alignment - alignof(alloc_value_t);
-        }
-    }
-    size_t calc_count() const noexcept(DIAG_NOEXCEPT)
-    {
-        const size_t cb = (base_t::capacity() * m_stride + m_padding);
-
-        Assert_Check((cb % sizeof(alloc_value_t)) == 0);
-
-        const size_t count = (cb / sizeof(alloc_value_t));
-
-        return count;
-    }
-
-private:
-    void clear() noexcept
-    {
-        if(m_elements != nullptr)
-        {
-            const size_t count = calc_count();
-
-            m_elements -= m_offset;
-            m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
-        }
-    }
-
-public:
-    void reset(size_t capacity = npos, size_t size = npos, size_t alignment = npos) noexcept(false)
-    {
-        if(capacity == npos)
-        {
-            capacity = base_t::capacity();
-        }
-        if(size != npos)
-        {
-            m_size = size;
-        }
-        if(alignment != npos)
-        {
-            m_alignment = alignment;
-        }
-        if(m_alignment == 0)
-        {
-            m_alignment = calc_alignment(m_size);
-        }
-        size_t stride;
-        size_t padding;
-        calc_stride_and_padding(m_size, m_alignment, stride, padding);
-
-        if((capacity == base_t::capacity()) && (stride == m_stride) && (padding == m_padding))
-        {
-            base_t::reset(capacity);
-            return;
-        }
-
-        clear();
-        base_t::reset(capacity);
-
-        m_stride  = stride;
-        m_padding = padding;
-
-        if(base_t::capacity() == 0)
-        {
-            m_elements = nullptr;
-            m_offset   = 0;
-        }
-        else
-        {
-            const size_t count = calc_count();
-
-            m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
-            m_offset   = calc_offset(m_elements, m_alignment);
-
-            m_elements += m_offset;
-        }
-    }
 
 public:
     lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(
@@ -2322,10 +2361,131 @@ public:
         return m_size;
     }
 
-public:
-    bool resize(size_t capacity = npos, size_t size = npos, size_t alignment = npos) noexcept(false)
+private:
+    static bool is_power_of_2(size_t value) noexcept
     {
-        static_assert(ResizeSupport, "Resize support is not active for this queue");
+        return (value > 0) && ((value & (value - 1)) == 0);
+    }
+    static size_t calc_alignment(size_t size) noexcept
+    {
+        size_t alignment;
+
+        for(alignment = 1; (alignment < size) && (alignment < alignof(alloc_value_t)); alignment <<= 1);
+
+        return alignment;
+    }
+    static size_t calc_offset(char* elements, size_t alignment) noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(is_power_of_2(alignment));
+
+        const size_t displace = reinterpret_cast<size_t>(elements) & (alignment - 1);
+
+        const size_t offset = (displace == 0) ? 0 : (alignment - displace);
+
+        return offset;
+    }
+    static void calc_stride_and_padding(size_t size, size_t alignment, size_t& stride, size_t& padding) noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(is_power_of_2(alignment));
+
+        if(size <= alignment)
+        {
+            stride = alignment;
+        }
+        else if((size & (alignment - 1)) == 0)
+        {
+            stride = size;
+        }
+        else
+        {
+            stride = (size & ~(alignment - 1)) + alignment;
+        }
+        if(alignment <= alignof(alloc_value_t))
+        {
+            padding = 0;
+        }
+        else
+        {
+            padding = alignment - alignof(alloc_value_t);
+        }
+    }
+    size_t calc_count() const noexcept(DIAG_NOEXCEPT)
+    {
+        const size_t cb = (base_t::capacity() * m_stride + m_padding);
+
+        Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+        const size_t count = (cb / sizeof(alloc_value_t));
+
+        return count;
+    }
+
+private:
+    void clear() noexcept
+    {
+        if(m_elements != nullptr)
+        {
+            const size_t count = calc_count();
+
+            m_elements -= m_offset;
+            m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
+        }
+    }
+
+public:
+    void reset(size_t capacity = npos, size_t size = npos, size_t alignment = npos) noexcept(false)
+    {
+        if(capacity == npos)
+        {
+            capacity = base_t::capacity();
+        }
+        if(size != npos)
+        {
+            m_size = size;
+        }
+        if(alignment != npos)
+        {
+            m_alignment = alignment;
+        }
+        if(m_alignment == 0)
+        {
+            m_alignment = calc_alignment(m_size);
+        }
+        size_t stride;
+        size_t padding;
+        calc_stride_and_padding(m_size, m_alignment, stride, padding);
+
+        if((capacity == base_t::capacity()) && (stride == m_stride) && (padding == m_padding))
+        {
+            base_t::reset(capacity);
+            return;
+        }
+
+        clear();
+        base_t::reset(capacity);
+
+        m_stride  = stride;
+        m_padding = padding;
+
+        if(base_t::capacity() == 0)
+        {
+            m_elements = nullptr;
+            m_offset   = 0;
+        }
+        else
+        {
+            const size_t count = calc_count();
+
+            m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            m_offset   = calc_offset(m_elements, m_alignment);
+
+            m_elements += m_offset;
+        }
+    }
+
+public:
+    bool resize(size_t capacity) noexcept(false)
+    {
         return false;
     }
 
@@ -2406,38 +2566,17 @@ public:
     }
 
 public:
-    queue_producer_element<self_t, void> try_start_push() noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t try_start_push() noexcept(DIAG_NOEXCEPT)
     {
         void* element = try_acquire_producer_element();
 
-        return queue_producer_element<self_t, void>(*this, element);
+        return queue_producer_element_t(*this, element);
     }
-    template<typename Element>
-    queue_producer_element<self_t, Element> try_start_push() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(Element) <= m_alignment);
-        Assert_Check( sizeof(Element) <= m_size     );
-
-        Element* element = try_acquire_producer_element<Element>();
-
-        return queue_producer_element<self_t, Element>(*this, element);
-    }
-
-    queue_consumer_element<self_t, void> try_start_pop() noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element_t try_start_pop() noexcept(DIAG_NOEXCEPT)
     {
         void* element = try_acquire_consumer_element();
 
-        return queue_consumer_element<self_t, void>(*this, element);
-    }
-    template<typename Element>
-    queue_consumer_element<self_t, Element> try_start_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(Element) <= m_alignment);
-        Assert_Check( sizeof(Element) <= m_size     );
-
-        Element* element = try_acquire_consumer_element<Element>();
-
-        return queue_consumer_element<self_t, Element>(*this, element);
+        return queue_consumer_element_t(*this, element);
     }
 
 public:
@@ -2542,59 +2681,27 @@ public:
 
 public:
     template<typename Rep, typename Period>
-    queue_producer_element<self_t, void> start_push(std::chrono::duration<Rep, Period> timeout)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout)
     {
         void* element = acquire_producer_element(timeout);
 
-        return queue_producer_element<self_t, void>(*this, element);
+        return queue_producer_element_t(*this, element);
     }
-    queue_producer_element<self_t, void> start_push()
+    queue_producer_element_t start_push()
     {
         return start_push(std::chrono::nanoseconds::max());
     }
 
-    template<class Element, typename Rep, typename Period>
-    queue_producer_element<self_t, Element> start_push(std::chrono::duration<Rep, Period> timeout)
-    {
-        Assert_Check(alignof(Element) <= m_alignment);
-        Assert_Check( sizeof(Element) <= m_size     );
-
-        Element* element = acquire_producer_element<Element>(timeout);
-
-        return queue_producer_element<self_t, Element>(*this, element);
-    }
-    template<class Element>
-    queue_producer_element<self_t, Element> start_push()
-    {
-        return start_push<Element>(std::chrono::nanoseconds::max());
-    }
-
     template<typename Rep, typename Period>
-    queue_consumer_element<self_t, void> start_pop(std::chrono::duration<Rep, Period> timeout)
+    queue_consumer_element_t start_pop(std::chrono::duration<Rep, Period> timeout)
     {
         void* element = acquire_consumer_element(timeout);
 
-        return queue_consumer_element<self_t, void>(*this, element);
+        return queue_consumer_element_t(*this, element);
     }
-    queue_consumer_element<self_t, void> start_pop()
+    queue_consumer_element_t start_pop()
     {
         return start_pop(std::chrono::nanoseconds::max());
-    }
-
-    template<class Element, typename Rep, typename Period>
-    queue_consumer_element<self_t, Element> start_pop(std::chrono::duration<Rep, Period> timeout)
-    {
-        Assert_Check(alignof(Element) <= m_alignment);
-        Assert_Check( sizeof(Element) <= m_size     );
-
-        Element* element = acquire_consumer_element<Element>(timeout);
-
-        return queue_consumer_element<self_t, Element>(*this, element);
-    }
-    template<class Element>
-    queue_consumer_element<self_t, Element> start_pop()
-    {
-        return start_pop<Element>(std::chrono::nanoseconds::max());
     }
 
 public:
@@ -2651,16 +2758,15 @@ namespace std
 template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport,
-    bool ResizeSupport,
     typename WaitSupport,
     typename BaseAllocator
     >
 void swap(
-    ::gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport,BaseAllocator>& lhs,
-    ::gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport,BaseAllocator>& rhs
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>& lhs,
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>& rhs
     )
     noexcept(
-    ::gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, ResizeSupport, WaitSupport,BaseAllocator>::swap_is_noexcept
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>::swap_is_noexcept
     )
 {
     lhs.swap(rhs);

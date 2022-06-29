@@ -178,7 +178,7 @@ private:
         void*                  param;
         action_param_deleter_t deleter;
     };
-    using actions_queue_t = lockfree_queue<queued_action, true, true, gkr::impl::queue_simple_wait_support<1,1>>;
+    using actions_queue_t = lockfree_queue<queued_action, true, gkr::impl::queue_simple_wait_support<1,1>>;
 
     actions_queue_t m_actions_queue;
 

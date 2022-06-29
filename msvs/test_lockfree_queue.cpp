@@ -9,9 +9,9 @@ struct V
 
 int test_lockfree_queue()
 {
-    gkr::lockfree_queue<V, false, false> queue2(10);
+    gkr::lockfree_queue<V, false> queue2(10);
 
-    gkr::lockfree_queue<V, false, false> queue;
+    gkr::lockfree_queue<V, false> queue;
 
     //queue.acquire_consumer_element();// uncomment line for error
 
@@ -33,10 +33,10 @@ int test_lockfree_queue()
         }
     }
 
-    gkr::lockfree_queue<void, true, false> q1(10, 16);
+    gkr::lockfree_queue<void, true> q1(10, 16);
     q1.try_push();
     
-    gkr::lockfree_queue<void, true, false> q2(10, 16);
+    gkr::lockfree_queue<void, true> q2(10, 16);
     q2.try_push();
 
     q1 = std::move(q2);

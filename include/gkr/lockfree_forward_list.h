@@ -99,7 +99,7 @@ public:
     lockfree_forward_list(lockfree_forward_list&& other) noexcept(
         std::is_nothrow_move_constructible<allocator_type>::value
         )
-        : m_first    (other.m_first.exchange(nullptr))
+        : m_first    (other.m_first.exchange(nullptr, std::memory_order_relaxed))
         , m_allocator(std::move(other.m_allocator))
     {
     }
@@ -117,7 +117,10 @@ public:
             {
                 m_allocator = std::move(other.m_allocator);
             }
-            m_first.store(other.m_first.exchange(nullptr));
+            m_first.store(
+                other.m_first.exchange(nullptr, std::memory_order_relaxed),
+                std::memory_order_relaxed
+                );
         }
         return *this;
     }
@@ -133,14 +136,17 @@ public:
             {
                 std::swap(m_allocator, other.m_allocator);
             }
-            m_first.store(other.m_first.exchange(m_first.load()));
+            m_first.store(
+                other.m_first.exchange(m_first.load(std::memory_order_relaxed), std::memory_order_relaxed),
+                std::memory_order_relaxed
+                );
         }
     }
 
 public:
     bool empty() const noexcept
     {
-        return (m_first.load() == nullptr);
+        return (m_first.load(std::memory_order_consume) == nullptr);
     }
     const allocator_type get_allocator() const noexcept
     {
@@ -154,9 +160,9 @@ public:
 public:
     void clear() noexcept(clear_is_noexcept)
     {
-        for(node_t* node = m_first.exchange(nullptr); node != nullptr; )
+        for(node_t* node = m_first.exchange(nullptr, std::memory_order_relaxed); node != nullptr; )
         {
-            node_t* next = node->next.exchange(nullptr);
+            node_t* next = node->next.exchange(nullptr, std::memory_order_relaxed);
 
             node->~node_t();
 
@@ -194,7 +200,7 @@ public:
         Value& operator* () noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); return  node->value; }
         Value* operator->() noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); return &node->value; }
 
-        void increment() noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); node = node->next.load(); }
+        void increment() noexcept(DIAG_NOEXCEPT) { Assert_Check(has_normal_node()); node = node->next.load(std::memory_order_consume); }
 
         iterator_t& operator++()    noexcept(DIAG_NOEXCEPT) {                          increment(); return *this; }
         iterator_t  operator++(int) noexcept(DIAG_NOEXCEPT) { iterator_t prev = *this; increment(); return  prev; }
@@ -207,7 +213,7 @@ public:
 public:
     const_iterator begin() const noexcept
     {
-        return const_iterator(m_first.load());
+        return const_iterator(m_first.load(std::memory_order_consume));
     }
     const_iterator end() const noexcept
     {
@@ -215,7 +221,7 @@ public:
     }
     const_iterator cbegin() const noexcept
     {
-        return const_iterator(m_first.load());
+        return const_iterator(m_first.load(std::memory_order_consume));
     }
     const_iterator cend() const noexcept
     {
@@ -229,7 +235,7 @@ public:
     }
     iterator begin() noexcept
     {
-        return iterator(m_first.load());
+        return iterator(m_first.load(std::memory_order_consume));
     }
     iterator end() noexcept
     {
@@ -243,8 +249,10 @@ private:
 
         new (node) node_t();
 
-        node->next.store(next.exchange(node));
-
+        node->next.store(
+            next.exchange(node, std::memory_order_acquire),
+            std::memory_order_release
+            );
         return node;
     }
 
@@ -257,7 +265,7 @@ public:
             ? m_first
             : it.node->next
             ;
-        node_t* node = next.load();
+        node_t* node = next.load(std::memory_order_consume);
 
         if(node != nullptr)
         {
@@ -279,7 +287,7 @@ public:
                 : node->next
                 ;
 
-            node = next.load();
+            node = next.load(std::memory_order_consume);
 
             if(node == nullptr)
             {
@@ -289,4 +297,17 @@ public:
     }
 };
 
+}
+
+namespace std
+{
+template<typename T, typename Allocator>
+void swap(
+    gkr::lockfree_forward_list<T, Allocator>& lhs,
+    gkr::lockfree_forward_list<T, Allocator>& rhs
+    )
+    noexcept
+{
+    lhs.swap(rhs);
+}
 }

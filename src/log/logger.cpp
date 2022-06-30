@@ -112,41 +112,26 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    if(!running())
+    const size_t queue_capacity   = (max_queue_entries == size_t(-1))
+        ? lockfree_queue_t::npos
+        : max_queue_entries
+        ;
+    const size_t queue_entry_size = (max_message_chars == size_t(-1))
+        ? lockfree_queue_t::npos
+        : max_message_chars + sizeof(message)
+        ;
+    if(running())
     {
-        const size_t queue_capacity   = (max_queue_entries == size_t(-1))
-            ? lockfree_queue_t::npos
-            : max_queue_entries
-            ;
-        const size_t queue_entry_size = (max_message_chars == size_t(-1))
-            ? lockfree_queue_t::npos
-            : max_message_chars + sizeof(message)
-            ;
-
+        return m_log_queue.resize_ex(max_queue_entries, queue_entry_size);
+    }
+    else
+    {
         m_log_queue.reset(queue_capacity, queue_entry_size, alignof(message));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
 
         Check_ValidState(m_log_queue.element_size() > sizeof(message), false);
 
-        return true;
-    }
-    else
-    {
-        if(max_queue_entries != size_t(-1))
-        {
-            if(!m_log_queue.resize(max_queue_entries))
-            {
-                return false;
-            }
-        }
-        if(max_message_chars != size_t(-1))
-        {
-        //  if(!m_log_queue.expand(max_queue_entries))
-            {
-                return false;
-            }
-        }
         return true;
     }
 }

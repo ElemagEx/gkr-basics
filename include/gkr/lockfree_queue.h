@@ -231,6 +231,12 @@ public:
         return std::exchange(m_element, nullptr);
     }
 
+public:
+    bool resize(size_t size)
+    {
+        return m_queue->resize_ex(Queue::npos, size, &m_element);
+    }
+
 private:
     Queue* m_queue;
     void*  m_element;
@@ -420,6 +426,12 @@ public:
     void* detach() noexcept
     {
         return std::exchange(m_element, nullptr);
+    }
+
+public:
+    bool resize(size_t size)
+    {
+        return m_queue->resize_ex(Queue::npos, size, &m_element);
     }
 
 private:
@@ -872,17 +884,29 @@ protected:
     }
 
 protected:
-    bool this_thread_owns_element() const noexcept
+    bool this_thread_owns_elements(size_t count) const noexcept
     {
-        const tid_owner_t id = get_current_tid();
+        const tid_owner_t current_tid = get_current_tid();
 
-        return (m_producer_tid_owner == id) || (m_consumer_tid_owner == id);
+        if(m_producer_tid_owner == current_tid) --count;
+        if(m_consumer_tid_owner == current_tid) --count;
+
+        return (count == 0);
     }
     bool some_thread_owns_element() const noexcept
     {
         return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
     }
-
+    bool some_thread_owns_elements(size_t count) const noexcept
+    {
+        switch(count)
+        {
+            default:
+            case 0 : return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
+            case 1 : return (m_producer_tid_owner == 0) == (m_consumer_tid_owner == 0);
+            case 2 : return (m_producer_tid_owner == 0) && (m_consumer_tid_owner == 0);
+        }
+    }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
     bool can_take_producer_element_ownership() const noexcept
@@ -1365,7 +1389,7 @@ protected:
     }
 
 protected:
-    bool this_thread_owns_element() const noexcept
+    bool this_thread_owns_elements(size_t count) const noexcept
     {
         const tid_owner_t current_tid = get_current_tid();
 
@@ -1373,10 +1397,13 @@ protected:
         {
             if(m_entries[index].tid_owner == current_tid)
             {
-                return true;
+                if(std::ptrdiff_t(--count) < 0)
+                {
+                    return false;
+                }
             }
         }
-        return false;
+        return (count == 0);
     }
     bool some_thread_owns_element() const noexcept
     {
@@ -1385,7 +1412,16 @@ protected:
 
         const size_t idle_count = busy_count + free_count;
 
-        return (idle_count < m_capacity);
+        return ((m_capacity - idle_count) == 0);
+    }
+    bool some_thread_owns_elements(size_t count) const noexcept
+    {
+        const size_t busy_count = (m_busy_tail - m_busy_head);
+        const size_t free_count = (m_free_tail - m_free_head);
+
+        const size_t idle_count = busy_count + free_count;
+
+        return ((m_capacity - idle_count) == count);
     }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
@@ -1660,12 +1696,14 @@ public:
 public:
     bool resize(size_t capacity) noexcept(false)
     {
-        Check_ValidState(!base_t::this_thread_owns_element(), false);
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
         Check_Arg_IsValid(capacity > base_t::capacity(), false);
 
-        if(!base_t::pause()) return false;
-
+        if(!base_t::pause())
+        {
+            return false;
+        }
         constexpr std::chrono::milliseconds timeout = std::chrono::milliseconds(1);
 
         while(base_t::some_thread_owns_element())
@@ -2236,7 +2274,7 @@ private:
         }
         else
         {
-            const size_t count = calc_count();
+            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
 
             elements = reinterpret_cast<char*>(allocator.allocate(count));
             offset   = calc_offset(elements, m_alignment);
@@ -2409,9 +2447,9 @@ private:
             padding = alignment - alignof(alloc_value_t);
         }
     }
-    size_t calc_count() const noexcept(DIAG_NOEXCEPT)
+    static size_t calc_count(size_t capacity, size_t stride, size_t padding) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t cb = (base_t::capacity() * m_stride + m_padding);
+        const size_t cb = (capacity * stride + padding);
 
         Assert_Check((cb % sizeof(alloc_value_t)) == 0);
 
@@ -2425,7 +2463,7 @@ private:
     {
         if(m_elements != nullptr)
         {
-            const size_t count = calc_count();
+            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
 
             m_elements -= m_offset;
             m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
@@ -2474,7 +2512,7 @@ public:
         }
         else
         {
-            const size_t count = calc_count();
+            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
 
             m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
             m_offset   = calc_offset(m_elements, m_alignment);
@@ -2486,7 +2524,121 @@ public:
 public:
     bool resize(size_t capacity) noexcept(false)
     {
-        return false;
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
+
+        Check_Arg_IsValid(capacity > base_t::capacity(), false);
+
+        if(!base_t::pause())
+        {
+            return false;
+        }
+        constexpr std::chrono::milliseconds timeout = std::chrono::milliseconds(1);
+
+        while(base_t::some_thread_owns_element())
+        {
+            std::this_thread::sleep_for(timeout);
+        }
+        const size_t count = calc_count(capacity, m_stride, m_padding);
+
+        char*  elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+        size_t offset   = calc_offset(elements, m_alignment);
+
+        elements += offset;
+
+        for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        {
+            if(base_t::element_has_value(index, pos))
+            {
+                std::memcpy(elements + pos * m_stride, m_elements + index * m_stride, m_stride);
+            }
+        }
+        clear();
+
+        m_elements = elements;
+        m_offset   = offset;
+
+        base_t::resize(capacity);
+        base_t::resume();
+        return true;
+    }
+    bool resize_ex(size_t capacity = npos, size_t size = npos, void** owned_elements = nullptr, size_t count_elements = 1)
+    {
+        Check_Arg_IsValid((capacity == npos) || (capacity > base_t::capacity()), false);
+        Check_Arg_IsValid((size     == npos) || (size     > m_size)            , false);
+
+        if(owned_elements == nullptr)
+        {
+            count_elements = 0;
+        }
+        Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
+
+        size_t pos = npos;
+
+        Check_Arg_Array(index, count_elements, base_t::element_has_value(index_of_element(owned_elements[index]), pos), false);
+
+        if(capacity == npos) capacity = base_t::capacity();
+        if(size     == npos) size     = m_size;
+
+        const bool capacity_changed = (capacity != base_t::capacity());
+
+        size_t stride;
+        size_t padding;
+        calc_stride_and_padding(size, m_alignment, stride, padding);
+
+        if(!capacity_changed && (stride == m_stride) && (padding == m_padding))
+        {
+            m_size = size;
+            return true;
+        }
+        if(!base_t::pause())
+        {
+            return false;
+        }
+        constexpr std::chrono::milliseconds timeout = std::chrono::milliseconds(1);
+
+        while(base_t::some_thread_owns_elements(count_elements))
+        {
+            std::this_thread::sleep_for(timeout);
+        }
+        const size_t count = calc_count(capacity, stride, padding);
+
+        char*  elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+        size_t offset   = calc_offset(elements, m_alignment);
+
+        elements += offset;
+
+        Assert_Check(stride >= m_stride);
+
+        for(size_t index = 0; index < base_t::capacity(); ++index)
+        {
+            if(base_t::element_has_value(index, pos))
+            {
+                if(!capacity_changed) pos = index;
+
+                std::memcpy(elements + pos * stride, m_elements + index * m_stride, stride);
+            }
+        }
+        if(owned_elements != nullptr)
+        {
+            for( ; count_elements-- == 0; ++owned_elements)
+            {
+                const size_t index = index_of_element(*owned_elements);
+
+                *owned_elements = elements + index * stride;
+            }
+        }
+        clear();
+
+        m_elements = elements;
+        m_offset   = offset;
+        m_size     = size;
+
+        if(capacity_changed)
+        {
+            base_t::resize(capacity);
+        }
+        base_t::resume();
+        return true;
     }
 
 public:

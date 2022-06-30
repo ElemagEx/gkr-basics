@@ -71,18 +71,18 @@ public:
     }
 
 public:
-    void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
-    {
-        if(push_in_progress())
-        {
-            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
     void finish_push() noexcept(DIAG_NOEXCEPT)
     {
         if(push_in_progress())
         {
             m_queue->template release_producer_element<true>(std::exchange(m_element, nullptr));
+        }
+    }
+    void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
+    {
+        if(push_in_progress())
+        {
+            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
         }
     }
 
@@ -164,18 +164,18 @@ public:
     }
 
 public:
-    void cancel_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
     void finish_push() noexcept(DIAG_NOEXCEPT)
     {
         if(push_in_progress())
         {
             m_queue->template release_producer_element<true>(std::exchange(m_element, nullptr));
+        }
+    }
+    void cancel_push() noexcept(DIAG_NOEXCEPT)
+    {
+        if(push_in_progress())
+        {
+            m_queue->template release_producer_element<false>(std::exchange(m_element, nullptr));
         }
     }
 
@@ -226,15 +226,15 @@ public:
     }
 
 public:
-    void* detach() noexcept
-    {
-        return std::exchange(m_element, nullptr);
-    }
-
-public:
     bool resize(size_t size)
     {
         return m_queue->resize_ex(Queue::npos, size, &m_element);
+    }
+
+public:
+    void* detach() noexcept
+    {
+        return std::exchange(m_element, nullptr);
     }
 
 private:
@@ -268,18 +268,18 @@ public:
     }
 
 public:
-    void cancel_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
     void finish_pop() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
     {
         if(pop_in_progress())
         {
             m_queue->template release_consumer_element<true>(std::exchange(m_element, nullptr));
+        }
+    }
+    void cancel_pop() noexcept(DIAG_NOEXCEPT)
+    {
+        if(pop_in_progress())
+        {
+            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
         }
     }
 
@@ -361,18 +361,18 @@ public:
     }
 
 public:
-    void cancel_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
-        }
-    }
     void finish_pop() noexcept(DIAG_NOEXCEPT)
     {
         if(pop_in_progress())
         {
             m_queue->template release_consumer_element<true>(std::exchange(m_element, nullptr));
+        }
+    }
+    void cancel_pop() noexcept(DIAG_NOEXCEPT)
+    {
+        if(pop_in_progress())
+        {
+            m_queue->template release_consumer_element<false>(std::exchange(m_element, nullptr));
         }
     }
 
@@ -423,15 +423,15 @@ public:
     }
 
 public:
-    void* detach() noexcept
-    {
-        return std::exchange(m_element, nullptr);
-    }
-
-public:
     bool resize(size_t size)
     {
         return m_queue->resize_ex(Queue::npos, size, &m_element);
+    }
+
+public:
+    void* detach() noexcept
+    {
+        return std::exchange(m_element, nullptr);
     }
 
 private:
@@ -451,6 +451,8 @@ public:
     queue_threading() noexcept = default;
    ~queue_threading() noexcept = default;
 
+    using thread_id_t = std::thread::id;
+
     queue_threading(queue_threading&& other) noexcept
         : m_producer_tid(std::exchange(other.m_producer_tid, thread_id_t()))
         , m_consumer_tid(std::exchange(other.m_consumer_tid, thread_id_t()))
@@ -469,8 +471,6 @@ public:
     }
 
 public:
-    using thread_id_t = std::thread::id;
-
     void set_this_thread_as_exclusive_producer() noexcept
     {
         m_producer_tid = std::this_thread::get_id();
@@ -545,30 +545,30 @@ protected:
     }
 
 protected:
-    void notify_producer_overtake() noexcept
+    void notify_producer_ownership_fail() noexcept
     {
     }
-    void notify_producer_take() noexcept
+    void notify_producer_ownership_start() noexcept
     {
     }
-    void notify_producer_commit() noexcept
+    void notify_producer_ownership_finish() noexcept
     {
     }
-    void notify_producer_cancel() noexcept
+    void notify_producer_ownership_cancel() noexcept
     {
     }
 
 protected:
-    void notify_consumer_overtake() noexcept
+    void notify_consumer_ownership_fail() noexcept
     {
     }
-    void notify_consumer_take() noexcept
+    void notify_consumer_ownership_start() noexcept
     {
     }
-    void notify_consumer_commit() noexcept
+    void notify_consumer_ownership_finish() noexcept
     {
     }
-    void notify_consumer_cancel() noexcept
+    void notify_consumer_ownership_cancel() noexcept
     {
     }
 
@@ -743,7 +743,7 @@ protected:
         m_producer_tid_owner = 0;
         m_consumer_tid_owner = 0;
     }
-    bool pause()
+    bool pause() noexcept
     {
         tid_owner_t expected = 0;
 
@@ -753,7 +753,7 @@ protected:
 
         return true;
     }
-    void resume()
+    void resume() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(m_tid_pause == get_current_tid(), );
 
@@ -786,10 +786,10 @@ protected:
         }
         if(m_count == m_capacity)
         {
-            base_t::notify_producer_overtake();
+            base_t::notify_producer_ownership_fail();
             return npos;
         }
-        base_t::notify_producer_take();
+        base_t::notify_producer_ownership_start();
 
         m_producer_tid_owner = get_current_tid();
 
@@ -819,11 +819,11 @@ protected:
             ++m_tail_pos;
             ++m_count;
 
-            base_t::notify_producer_commit();
+            base_t::notify_producer_ownership_finish();
         }
         else
         {
-            base_t::notify_producer_cancel();
+            base_t::notify_producer_ownership_cancel();
         }
         return true;
     }
@@ -841,10 +841,10 @@ protected:
         }
         if(m_count == 0) 
         {
-            base_t::notify_consumer_overtake();
+            base_t::notify_consumer_ownership_fail();
             return npos;
         }
-        base_t::notify_consumer_take();
+        base_t::notify_consumer_ownership_start();
 
         m_consumer_tid_owner = get_current_tid();
 
@@ -874,11 +874,11 @@ protected:
             ++m_head_pos;
             --m_count;
 
-            base_t::notify_producer_commit();
+            base_t::notify_consumer_ownership_finish();
         }
         else
         {
-            base_t::notify_producer_cancel();
+            base_t::notify_consumer_ownership_cancel();
         }
         return true;
     }
@@ -991,15 +991,6 @@ private:
 
     std::atomic<tid_owner_t> m_tid_pause {0};
 
-private:
-    void clear() noexcept
-    {
-        if(m_entries != nullptr)
-        {
-            m_allocator.deallocate(m_entries, m_capacity);
-        }
-    }
-
 protected:
     basic_lockfree_queue() noexcept = delete;
 
@@ -1012,6 +1003,76 @@ protected:
     ~basic_lockfree_queue() noexcept
     {
         clear();
+    }
+
+protected:
+    basic_lockfree_queue(basic_lockfree_queue&& other) noexcept(
+        std::is_nothrow_move_constructible<TypeAllocator>::value
+        )
+        :   base_t   (std::move(other))
+        ,   threading(std::move(other.  threading))
+        , m_allocator(std::move(other.m_allocator))
+        , m_capacity (std::exchange(other.m_capacity, 0))
+        , m_entries  (std::exchange(other.m_entries , nullptr))
+        , m_count    (other.m_count    .exchange(0))
+        , m_occupied (other.m_occupied .exchange(0))
+        , m_available(other.m_available.exchange(0))
+        , m_free_tail(other.m_free_tail.exchange(0))
+        , m_free_head(other.m_free_head.exchange(0))
+        , m_busy_tail(other.m_busy_tail.exchange(0))
+        , m_busy_head(other.m_busy_head.exchange(0))
+        , m_tid_pause(other.m_tid_pause.exchange(0))
+    {
+    }
+    basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
+    {
+        clear();
+
+        base_t::operator=(std::move(other));
+
+        threading   = std::move(other.threading);
+
+        m_count     = other.m_count    .exchange(0);
+        m_occupied  = other.m_occupied .exchange(0);
+        m_available = other.m_available.exchange(0);
+        m_free_tail = other.m_free_tail.exchange(0);
+        m_free_head = other.m_free_head.exchange(0);
+        m_busy_tail = other.m_busy_tail.exchange(0);
+        m_busy_head = other.m_busy_head.exchange(0);
+        m_tid_pause = other.m_tid_pause.exchange(0);
+
+        move_entries(std::move(other));
+
+        m_capacity  = std::exchange(other.m_capacity, 0);
+        return *this;
+    }
+    void swap(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
+    {
+        base_t::swap(other);
+
+        threading.swap(other.threading);
+
+        m_count     = other.m_count    .exchange(m_count    );
+        m_occupied  = other.m_occupied .exchange(m_occupied );
+        m_available = other.m_available.exchange(m_available);
+        m_free_tail = other.m_free_tail.exchange(m_free_tail);
+        m_free_head = other.m_free_head.exchange(m_free_head);
+        m_busy_tail = other.m_busy_tail.exchange(m_busy_tail);
+        m_busy_head = other.m_busy_head.exchange(m_busy_head);
+        m_tid_pause = other.m_tid_pause.exchange(m_tid_pause);
+
+        swap_entries(std::move(other));
+
+        std::swap(m_capacity, other.m_capacity);
+    }
+
+private:
+    void clear() noexcept
+    {
+        if(m_entries != nullptr)
+        {
+            m_allocator.deallocate(m_entries, m_capacity);
+        }
     }
 
 private:
@@ -1090,67 +1151,6 @@ private:
         std::swap(m_entries, other.m_entries);
     }
 
-protected:
-    basic_lockfree_queue(basic_lockfree_queue&& other) noexcept(
-        std::is_nothrow_move_constructible<TypeAllocator>::value
-        )
-        :   base_t   (std::move(other))
-        ,   threading(std::move(other.  threading))
-        , m_allocator(std::move(other.m_allocator))
-        , m_capacity (std::exchange(other.m_capacity, 0))
-        , m_entries  (std::exchange(other.m_entries , nullptr))
-        , m_count    (other.m_count    .exchange(0))
-        , m_occupied (other.m_occupied .exchange(0))
-        , m_available(other.m_available.exchange(0))
-        , m_free_tail(other.m_free_tail.exchange(0))
-        , m_free_head(other.m_free_head.exchange(0))
-        , m_busy_tail(other.m_busy_tail.exchange(0))
-        , m_busy_head(other.m_busy_head.exchange(0))
-        , m_tid_pause(other.m_tid_pause.exchange(0))
-    {
-    }
-    basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
-    {
-        clear();
-
-        base_t::operator=(std::move(other));
-
-        threading   = std::move(other.threading);
-
-        m_count     = other.m_count    .exchange(0);
-        m_occupied  = other.m_occupied .exchange(0);
-        m_available = other.m_available.exchange(0);
-        m_free_tail = other.m_free_tail.exchange(0);
-        m_free_head = other.m_free_head.exchange(0);
-        m_busy_tail = other.m_busy_tail.exchange(0);
-        m_busy_head = other.m_busy_head.exchange(0);
-        m_tid_pause = other.m_tid_pause.exchange(0);
-
-        move_entries(std::move(other));
-
-        m_capacity  = std::exchange(other.m_capacity, 0);
-        return *this;
-    }
-    void swap(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
-    {
-        base_t::swap(other);
-
-        threading.swap(other.threading);
-
-        m_count     = other.m_count    .exchange(m_count    );
-        m_occupied  = other.m_occupied .exchange(m_occupied );
-        m_available = other.m_available.exchange(m_available);
-        m_free_tail = other.m_free_tail.exchange(m_free_tail);
-        m_free_head = other.m_free_head.exchange(m_free_head);
-        m_busy_tail = other.m_busy_tail.exchange(m_busy_tail);
-        m_busy_head = other.m_busy_head.exchange(m_busy_head);
-        m_tid_pause = other.m_tid_pause.exchange(m_tid_pause);
-
-        swap_entries(std::move(other));
-
-        std::swap(m_capacity, other.m_capacity);
-    }
-
 public:
     bool empty() const noexcept
     {
@@ -1225,7 +1225,7 @@ protected:
         m_free_head = 0;
         m_free_tail = m_capacity;
     }
-    bool pause()
+    bool pause() noexcept
     {
         tid_owner_t expected = 0;
 
@@ -1235,7 +1235,7 @@ protected:
 
         return true;
     }
-    void resume()
+    void resume() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(m_tid_pause == get_current_tid(), );
 
@@ -1280,10 +1280,10 @@ protected:
         if(++m_occupied > m_capacity)
         {
             --m_occupied;
-            base_t::notify_producer_overtake();
+            base_t::notify_producer_ownership_fail();
             return npos;
         }
-        base_t::notify_producer_take();
+        base_t::notify_producer_ownership_start();
 
         const size_t index = m_entries[m_free_head++ % m_capacity].free_index;
 
@@ -1315,7 +1315,7 @@ protected:
             ++m_available;
             ++m_count;
 
-            base_t::notify_producer_commit();
+            base_t::notify_producer_ownership_finish();
         }
         else
         {
@@ -1323,7 +1323,7 @@ protected:
 
             --m_occupied;
 
-            base_t::notify_producer_cancel();
+            base_t::notify_producer_ownership_cancel();
         }
         return true;
     }
@@ -1340,10 +1340,10 @@ protected:
         if(std::ptrdiff_t(--m_available) < 0)
         {
             ++m_available;
-            base_t::notify_consumer_overtake();
+            base_t::notify_consumer_ownership_fail();
             return npos;
         }
-        base_t::notify_consumer_take();
+        base_t::notify_consumer_ownership_start();
 
         const size_t index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
@@ -1375,7 +1375,7 @@ protected:
             --m_occupied;
             --m_count;
 
-            base_t::notify_consumer_commit();
+            base_t::notify_consumer_ownership_finish();
         }
         else
         {
@@ -1383,7 +1383,7 @@ protected:
 
             ++m_available;
 
-            base_t::notify_consumer_cancel();
+            base_t::notify_consumer_ownership_cancel();
         }
         return true;
     }
@@ -1506,9 +1506,7 @@ public:
         , m_allocator(allocator)
     {
     }
-    lockfree_queue(size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(
-        std::is_nothrow_constructible<TypeAllocator, BaseAllocator>::value
-        )
+    lockfree_queue(size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
         : base_t     (allocator)
         , m_allocator(allocator)
     {
@@ -1517,6 +1515,60 @@ public:
     ~lockfree_queue() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
         clear(true);
+    }
+
+public:
+    lockfree_queue(lockfree_queue&& other) noexcept(
+        std::is_nothrow_move_constructible<TypeAllocator>::value
+        )
+        : base_t     (std::move(other))
+        , m_allocator(std::move(other.m_allocator))
+        , m_elements (std::exchange(other.m_elements, nullptr))
+    {
+    }
+    lockfree_queue& operator=(lockfree_queue&& other) noexcept(
+        move_is_noexcept &&
+        std::is_nothrow_destructible<element_t>::value
+        )
+    {
+        if(this == &other) return *this;
+
+        clear(true);
+        move_elements(std::move(other));
+
+        base_t::operator=(std::move(other));
+        return *this;
+    }
+    void swap(lockfree_queue& other) noexcept(swap_is_noexcept)
+    {
+        if(this == &other) return;
+
+        swap_elements(other);
+
+        base_t::swap(other);
+    }
+
+private:
+    void destroy_element(size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
+    {
+        m_elements[index].~element_t();
+    }
+    void clear(bool deallocate) noexcept(std::is_nothrow_destructible<element_t>::value)
+    {
+        if(m_elements != nullptr)
+        {
+            for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+            {
+                if(base_t::element_has_value(index, pos))
+                {
+                    destroy_element(index);
+                }
+            }
+            if(deallocate)
+            {
+                m_allocator.deallocate(m_elements, base_t::capacity());
+            }
+        }
     }
 
 private:
@@ -1605,37 +1657,6 @@ private:
     }
 
 public:
-    lockfree_queue(lockfree_queue&& other) noexcept(
-        std::is_nothrow_move_constructible<TypeAllocator>::value
-        )
-        : base_t     (std::move(other))
-        , m_allocator(std::move(other.m_allocator))
-        , m_elements (std::exchange(other.m_elements, nullptr))
-    {
-    }
-    lockfree_queue& operator=(lockfree_queue&& other) noexcept(
-        move_is_noexcept &&
-        std::is_nothrow_destructible<element_t>::value
-        )
-    {
-        if(this == &other) return *this;
-
-        clear(true);
-        move_elements(std::move(other));
-
-        base_t::operator=(std::move(other));
-        return *this;
-    }
-    void swap(lockfree_queue& other) noexcept(swap_is_noexcept)
-    {
-        if(this == &other) return;
-
-        swap_elements(other);
-
-        base_t::swap(other);
-    }
-
-public:
     size_t element_alignment() const noexcept
     {
         return alignof(element_t);
@@ -1643,29 +1664,6 @@ public:
     size_t element_size() const noexcept
     {
         return sizeof(element_t);
-    }
-
-private:
-    void destroy_element(size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
-    {
-        m_elements[index].~element_t();
-    }
-    void clear(bool deallocate) noexcept(std::is_nothrow_destructible<element_t>::value)
-    {
-        if(m_elements != nullptr)
-        {
-            for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
-            {
-                if(base_t::element_has_value(index, pos))
-                {
-                    destroy_element(index);
-                }
-            }
-            if(deallocate)
-            {
-                m_allocator.deallocate(m_elements, base_t::capacity());
-            }
-        }
     }
 
 public:
@@ -2258,6 +2256,120 @@ public:
         clear();
     }
 
+public:
+    lockfree_queue(lockfree_queue&& other) noexcept(
+        std::is_nothrow_move_constructible<TypeAllocator>::value
+        )
+        : base_t     (std::move(other))
+        , m_allocator(std::move(other.m_allocator))
+        , m_elements (std::exchange(other.m_elements , nullptr))
+        , m_offset   (std::exchange(other.m_offset   , 0))
+        , m_size     (std::exchange(other.m_size     , 0))
+        , m_alignment(std::exchange(other.m_alignment, 0))
+        , m_padding  (std::exchange(other.m_padding  , 0))
+        , m_stride   (std::exchange(other.m_stride   , 0))
+    {
+    }
+    lockfree_queue& operator=(lockfree_queue&& other) noexcept(false)
+    {
+        if(this == &other) return *this;
+
+        clear();
+        move_elements(std::move(other));
+
+        m_size      = std::exchange(other.m_size     , 0);
+        m_alignment = std::exchange(other.m_alignment, 0);
+        m_padding   = std::exchange(other.m_padding  , 0);
+        m_stride    = std::exchange(other.m_stride   , 0);
+
+        base_t::operator=(std::move(other));
+        return *this;
+    }
+    void swap(lockfree_queue&& other) noexcept(swap_is_noexcept)
+    {
+        if(this == &other) return;
+
+        swap_elements(other);
+
+        std::swap(m_size     , other.m_size     );
+        std::swap(m_alignment, other.m_alignment);
+        std::swap(m_padding  , other.m_padding  );
+        std::swap(m_stride   , other.m_stride   );
+
+        base_t::swap(other);
+    }
+
+private:
+    static bool is_power_of_2(size_t value) noexcept
+    {
+        return (value > 0) && ((value & (value - 1)) == 0);
+    }
+    static size_t calc_alignment(size_t size) noexcept
+    {
+        size_t alignment;
+
+        for(alignment = 1; (alignment < size) && (alignment < alignof(alloc_value_t)); alignment <<= 1);
+
+        return alignment;
+    }
+    static size_t calc_offset(char* elements, size_t alignment) noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(is_power_of_2(alignment));
+
+        const size_t displace = reinterpret_cast<size_t>(elements) & (alignment - 1);
+
+        const size_t offset = (displace == 0) ? 0 : (alignment - displace);
+
+        return offset;
+    }
+    static void calc_stride_and_padding(size_t size, size_t alignment, size_t& stride, size_t& padding) noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(is_power_of_2(alignment));
+
+        if(size <= alignment)
+        {
+            stride = alignment;
+        }
+        else if((size & (alignment - 1)) == 0)
+        {
+            stride = size;
+        }
+        else
+        {
+            stride = (size & ~(alignment - 1)) + alignment;
+        }
+        if(alignment <= alignof(alloc_value_t))
+        {
+            padding = 0;
+        }
+        else
+        {
+            padding = alignment - alignof(alloc_value_t);
+        }
+    }
+    static size_t calc_count(size_t capacity, size_t stride, size_t padding) noexcept(DIAG_NOEXCEPT)
+    {
+        const size_t cb = (capacity * stride + padding);
+
+        Assert_Check((cb % sizeof(alloc_value_t)) == 0);
+
+        const size_t count = (cb / sizeof(alloc_value_t));
+
+        return count;
+    }
+
+private:
+    void clear() noexcept
+    {
+        if(m_elements != nullptr)
+        {
+            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
+
+            m_elements -= m_offset;
+            m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
+        }
+    }
+
 private:
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
@@ -2347,49 +2459,6 @@ private:
     }
 
 public:
-    lockfree_queue(lockfree_queue&& other) noexcept(
-        std::is_nothrow_move_constructible<TypeAllocator>::value
-        )
-        : base_t     (std::move(other))
-        , m_allocator(std::move(other.m_allocator))
-        , m_elements (std::exchange(other.m_elements , nullptr))
-        , m_offset   (std::exchange(other.m_offset   , 0))
-        , m_size     (std::exchange(other.m_size     , 0))
-        , m_alignment(std::exchange(other.m_alignment, 0))
-        , m_padding  (std::exchange(other.m_padding  , 0))
-        , m_stride   (std::exchange(other.m_stride   , 0))
-    {
-    }
-    lockfree_queue& operator=(lockfree_queue&& other) noexcept(false)
-    {
-        if(this == &other) return *this;
-
-        clear();
-        move_elements(std::move(other));
-
-        m_size      = std::exchange(other.m_size     , 0);
-        m_alignment = std::exchange(other.m_alignment, 0);
-        m_padding   = std::exchange(other.m_padding  , 0);
-        m_stride    = std::exchange(other.m_stride   , 0);
-
-        base_t::operator=(std::move(other));
-        return *this;
-    }
-    void swap(lockfree_queue&& other) noexcept(swap_is_noexcept)
-    {
-        if(this == &other) return;
-
-        swap_elements(other);
-
-        std::swap(m_size     , other.m_size     );
-        std::swap(m_alignment, other.m_alignment);
-        std::swap(m_padding  , other.m_padding  );
-        std::swap(m_stride   , other.m_stride   );
-
-        base_t::swap(other);
-    }
-
-public:
     size_t element_alignment() const noexcept
     {
         return m_alignment;
@@ -2397,77 +2466,6 @@ public:
     size_t element_size() const noexcept
     {
         return m_size;
-    }
-
-private:
-    static bool is_power_of_2(size_t value) noexcept
-    {
-        return (value > 0) && ((value & (value - 1)) == 0);
-    }
-    static size_t calc_alignment(size_t size) noexcept
-    {
-        size_t alignment;
-
-        for(alignment = 1; (alignment < size) && (alignment < alignof(alloc_value_t)); alignment <<= 1);
-
-        return alignment;
-    }
-    static size_t calc_offset(char* elements, size_t alignment) noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(is_power_of_2(alignment));
-
-        const size_t displace = reinterpret_cast<size_t>(elements) & (alignment - 1);
-
-        const size_t offset = (displace == 0) ? 0 : (alignment - displace);
-
-        return offset;
-    }
-    static void calc_stride_and_padding(size_t size, size_t alignment, size_t& stride, size_t& padding) noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(is_power_of_2(alignment));
-
-        if(size <= alignment)
-        {
-            stride = alignment;
-        }
-        else if((size & (alignment - 1)) == 0)
-        {
-            stride = size;
-        }
-        else
-        {
-            stride = (size & ~(alignment - 1)) + alignment;
-        }
-        if(alignment <= alignof(alloc_value_t))
-        {
-            padding = 0;
-        }
-        else
-        {
-            padding = alignment - alignof(alloc_value_t);
-        }
-    }
-    static size_t calc_count(size_t capacity, size_t stride, size_t padding) noexcept(DIAG_NOEXCEPT)
-    {
-        const size_t cb = (capacity * stride + padding);
-
-        Assert_Check((cb % sizeof(alloc_value_t)) == 0);
-
-        const size_t count = (cb / sizeof(alloc_value_t));
-
-        return count;
-    }
-
-private:
-    void clear() noexcept
-    {
-        if(m_elements != nullptr)
-        {
-            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
-
-            m_elements -= m_offset;
-            m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
-        }
     }
 
 public:

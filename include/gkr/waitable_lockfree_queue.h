@@ -90,11 +90,11 @@ protected:
     }
 
 protected:
-    void notify_producer_overtake() noexcept
+    void notify_producer_ownership_fail() noexcept
     {
         m_has_space_event.reset();
     }
-    void notify_producer_take() noexcept(DIAG_NOEXCEPT)
+    void notify_producer_ownership_start() noexcept(DIAG_NOEXCEPT)
     {
         const std::ptrdiff_t new_free_count = std::ptrdiff_t(--m_free_count);
 
@@ -105,7 +105,7 @@ protected:
             m_has_space_event.reset();
         }
     }
-    void notify_producer_commit() noexcept
+    void notify_producer_ownership_finish() noexcept
     {
         if(++m_busy_count == 1)
         {
@@ -115,7 +115,7 @@ protected:
             }
         }
     }
-    void notify_producer_cancel() noexcept
+    void notify_producer_ownership_cancel() noexcept
     {
         if(++m_free_count == 1)
         {
@@ -127,11 +127,11 @@ protected:
     }
 
 protected:
-    void notify_consumer_overtake() noexcept
+    void notify_consumer_ownership_fail() noexcept
     {
         m_has_items_event.reset();
     }
-    void notify_consumer_take() noexcept(DIAG_NOEXCEPT)
+    void notify_consumer_ownership_start() noexcept(DIAG_NOEXCEPT)
     {
         const std::ptrdiff_t new_busy_count = std::ptrdiff_t(--m_busy_count);
 
@@ -142,7 +142,7 @@ protected:
             m_has_items_event.reset();
         }
     }
-    void notify_consumer_commit() noexcept
+    void notify_consumer_ownership_finish() noexcept
     {
         if(++m_free_count == 1)
         {
@@ -152,7 +152,7 @@ protected:
             }
         }
     }
-    void notify_consumer_cancel() noexcept
+    void notify_consumer_ownership_cancel() noexcept
     {
         if(++m_busy_count == 1)
         {

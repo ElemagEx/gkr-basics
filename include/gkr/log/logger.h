@@ -70,7 +70,7 @@ public:
 public:
     using tid_t = decltype(message::tid);
 
-    void set_thread_name(tid_t tid, const char* name);
+    void set_thread_name(const char* name, tid_t tid = 0);
 
 public:
     bool log_message(bool wait, int severity, int facility, const char* format, std::va_list args);
@@ -95,6 +95,10 @@ private:
     void consume_message(const message_data& msg);
 
     void process_pending_messages();
+
+private:
+    static bool init_consumer(consumer& consumer);
+    static void done_consumer(consumer& consumer);
 
 private:
     enum : action_id_t

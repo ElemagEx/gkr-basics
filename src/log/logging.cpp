@@ -2,7 +2,6 @@
 
 #include <gkr/log/logger.h>
 #include <gkr/sys/thread_name.h>
-#include <gkr/misc/union_cast.h>
 
 namespace gkr
 {
@@ -188,19 +187,15 @@ void logging::check_thread()
 
     if(sys::get_current_thread_name(thread_name.buff))
     {
-        auto tid = misc::union_cast<logger::tid_t>(std::this_thread::get_id());
-
-        s_logger->set_thread_name(tid, thread_name.buff);
-}
+        s_logger->set_thread_name(thread_name.buff);
+    }
 }
 
 thread_name_t::~thread_name_t()
 {
     if(registered && (s_logger != nullptr))
     {
-        auto tid = misc::union_cast<logger::tid_t>(std::this_thread::get_id());
-
-        s_logger->set_thread_name(tid, nullptr);
+        s_logger->set_thread_name(nullptr);
     }
 }
 

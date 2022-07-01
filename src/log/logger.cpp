@@ -112,7 +112,7 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    const size_t queue_capacity   = (max_queue_entries == size_t(-1))
+    const size_t queue_capacity     = (max_queue_entries == size_t(-1))
         ? lockfree_queue_t::npos
         : max_queue_entries
         ;
@@ -122,7 +122,7 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
         ;
     if(running())
     {
-        return m_log_queue.resize_ex(max_queue_entries, queue_entry_size);
+        return m_log_queue.resize_ex(queue_capacity, queue_entry_size);
     }
     else
     {
@@ -215,7 +215,7 @@ bool logger::add_consumer(std::shared_ptr<consumer> consumer)
             Check_Arg_Invalid(consumer, false);
         }
     }
-    if(!consumer->init_logging())
+    if(!init_consumer(*consumer))
     {
         Check_Failure(false);
     }
@@ -237,7 +237,7 @@ bool logger::del_consumer(std::shared_ptr<consumer> consumer)
         if(*it == consumer)
         {
             m_consumers.erase(it);
-            consumer->done_logging();
+            done_consumer(**it);
             return true;
         }
     }
@@ -256,15 +256,19 @@ void logger::del_all_consumers()
 
         m_consumers.pop_back();
 
-        consumer->done_logging();
+        done_consumer(*consumer);
     }
 }
 
-void logger::set_thread_name(tid_t tid, const char* name)
+void logger::set_thread_name(const char* name, tid_t tid)
 {
     if(!in_worker_thread())
     {
-        return execute_action_method<void>(ACTION_SET_THREAD_NAME, tid, name);
+        if(tid == 0)
+        {
+            tid = misc::union_cast<std::int64_t>(std::this_thread::get_id());
+        }
+        return execute_action_method<void>(ACTION_SET_THREAD_NAME, name, tid);
     }
     if(name == nullptr)
     {
@@ -369,7 +373,12 @@ void logger::prepare_message(message_data& msg)
 
 void logger::consume_message(const message_data& msg)
 {
-#ifdef __cpp_exceptions
+#ifndef __cpp_exceptions
+    for(auto& consumer : m_consumers)
+    {
+        consumer->consume_log_message(msg);
+    }
+#else
     size_t count = m_consumers.size();
     size_t index = 0;
 
@@ -393,11 +402,6 @@ void logger::consume_message(const message_data& msg)
         }
     }
     while(index < count);
-#else
-    for(auto& consumer : m_consumers)
-    {
-        consumer->consume_log_message(msg);
-    }
 #endif
 }
 
@@ -413,6 +417,40 @@ void logger::process_pending_messages()
 
         process_message(msg);
     }
+}
+
+bool logger::init_consumer(consumer& consumer)
+{
+#ifndef __cpp_exceptions
+    return consumer.init_logging();
+#else
+    try
+    {
+        if(consumer.init_logging())
+        {
+            return true;
+        }
+    }
+    catch(...)
+    {
+    }
+    return false;
+#endif
+}
+
+void logger::done_consumer(consumer& consumer)
+{
+#ifndef __cpp_exceptions
+    consumer.done_logging();
+#else
+    try
+    {
+        consumer.done_logging();
+    }
+    catch(...)
+    {
+    }
+#endif
 }
 
 }

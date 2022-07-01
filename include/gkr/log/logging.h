@@ -30,8 +30,8 @@ public:
     GKR_LOG_API static bool init(
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
-        size_t max_queue_entries  = 16,
-        size_t max_message_chars  = (1024 - sizeof(message))
+        size_t max_queue_entries = 16,
+        size_t max_message_chars = (1024 - sizeof(message)) // 968 chars
         );
     GKR_LOG_API static void done();
 
@@ -63,8 +63,8 @@ public:
     logging(
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
-        size_t max_queue_entries  = 16,
-        size_t max_message_chars  = (1024 - sizeof(message))
+        size_t max_queue_entries = 16,
+        size_t max_message_chars = (1024 - sizeof(message)) // 968 chars
         )
     {
         m_initialized = init(severities, facilities, max_queue_entries, max_message_chars);

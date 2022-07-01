@@ -228,7 +228,14 @@ public:
 public:
     bool resize(size_t size)
     {
-        return m_queue->resize_ex(Queue::npos, size, &m_element);
+        if(push_in_progress())
+        {
+            return m_queue->resize_ex(Queue::npos, size, &m_element);
+        }
+        else
+        {
+            return false;
+        }
     }
 
 public:
@@ -425,7 +432,14 @@ public:
 public:
     bool resize(size_t size)
     {
-        return m_queue->resize_ex(Queue::npos, size, &m_element);
+        if(pop_in_progress())
+        {
+            return m_queue->resize_ex(Queue::npos, size, &m_element);
+        }
+        else
+        {
+            return false;
+        }
     }
 
 public:

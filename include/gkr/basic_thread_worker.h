@@ -87,7 +87,7 @@ public:
     GKR_BTW_API void perform_action(action_id_t action, void* param = nullptr, void* result = nullptr);
 
 private:
-    GKR_BTW_API void process_action(action_id_t action, void* param, void* result);
+    GKR_BTW_API void forward_action(action_id_t action, void* param, void* result);
 
     GKR_BTW_API bool can_reply();
     GKR_BTW_API bool reply_action();
@@ -235,7 +235,7 @@ protected:
 
         impl::result<R> result;
 
-        process_action(action, params, result.ptr());
+        forward_action(action, params, result.ptr());
 
         return result.val();
     }

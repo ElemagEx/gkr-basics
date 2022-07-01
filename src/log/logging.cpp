@@ -48,7 +48,6 @@ void logging::done()
 {
     if(s_logger == nullptr) return;
 
-    s_logger->join(true);
     s_logger->~logger();
 
     s_logger = nullptr;
@@ -59,7 +58,7 @@ bool logging::change_log_queue(
     size_t max_message_chars
     )
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
@@ -69,7 +68,7 @@ bool logging::change_log_queue(
 
 bool logging::set_severities(bool clear_existing, const name_id_pair* severities)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     s_logger->set_severities(clear_existing, severities);
 
@@ -78,7 +77,7 @@ bool logging::set_severities(bool clear_existing, const name_id_pair* severities
 
 bool logging::set_facilities(bool clear_existing, const name_id_pair* facilities)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     s_logger->set_facilities(clear_existing, facilities);
 
@@ -87,7 +86,7 @@ bool logging::set_facilities(bool clear_existing, const name_id_pair* facilities
 
 bool logging::set_severity(const name_id_pair& severity)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     s_logger->set_severity(severity);
 
@@ -96,7 +95,7 @@ bool logging::set_severity(const name_id_pair& severity)
 
 bool logging::set_facility(const name_id_pair& facility)
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     s_logger->set_facility(facility);
 
@@ -107,25 +106,34 @@ bool logging::add_consumer(std::shared_ptr<consumer> consumer)
 {
     Check_Arg_NotNull(consumer, false);
 
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     return s_logger->add_consumer(consumer);
 }
 
 bool logging::del_consumer(std::shared_ptr<consumer> consumer)
 {
-    Check_NotNullPtr(s_logger, false);
-
     Check_Arg_NotNull(consumer, false);
+
+    if(s_logger == nullptr) return false;
 
     return s_logger->del_consumer(consumer);
 }
 
 bool logging::del_all_consumers()
 {
-    Check_NotNullPtr(s_logger, false);
+    if(s_logger == nullptr) return false;
 
     s_logger->del_all_consumers();
+
+    return true;
+}
+
+bool logging::set_this_thread_name(const char* name)
+{
+    if(s_logger == nullptr) return false;
+
+    check_thread_name(name);
 
     return true;
 }
@@ -136,7 +144,7 @@ bool logging::log_simple_message(bool wait, int severity, int facility, const ch
 
     if(s_logger == nullptr) return false;
 
-    check_thread();
+    check_thread_name(nullptr);
 
     return s_logger->log_message(wait, severity, facility, format, nullptr);
 }
@@ -147,7 +155,7 @@ bool logging::log_format_message(bool wait, int severity, int facility, const ch
 
     if(s_logger == nullptr) return false;
 
-    check_thread();
+    check_thread_name(nullptr);
 
     std::va_list args;
     va_start(args, format);
@@ -164,7 +172,7 @@ bool logging::log_valist_message(bool wait, int severity, int facility, const ch
 
     if(s_logger == nullptr) return false;
 
-    check_thread();
+    check_thread_name(nullptr);
 
     return s_logger->log_message(wait, severity, facility, format, args);
 }
@@ -177,17 +185,27 @@ struct thread_name_t
     ~thread_name_t();
 };
 
-void logging::check_thread()
+void logging::check_thread_name(const char* name)
 {
     static thread_local thread_name_t thread_name{};
 
-    if(thread_name.registered) return;
+    if(name != nullptr)
+    {
+        thread_name.registered = true;
 
+        s_logger->set_thread_name(name, 0, false);
+
+        return;
+    }
+    if(thread_name.registered)
+    {
+        return;
+    }
     thread_name.registered = true;
 
     if(sys::get_current_thread_name(thread_name.buff))
     {
-        s_logger->set_thread_name(thread_name.buff);
+        s_logger->set_thread_name(thread_name.buff, 0, true);
     }
 }
 

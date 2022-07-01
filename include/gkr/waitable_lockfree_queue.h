@@ -21,8 +21,7 @@ protected:
    ~queue_basic_wait_support() noexcept = default;
 
     queue_basic_wait_support(queue_basic_wait_support&& other) noexcept
-        : m_paused    (other.m_paused    .exchange(false))
-        , m_busy_count(other.m_busy_count.exchange(0))
+        : m_busy_count(other.m_busy_count.exchange(0))
         , m_free_count(other.m_free_count.exchange(0))
         , m_has_space_event(std::move(other.m_has_space_event))
         , m_has_items_event(std::move(other.m_has_items_event))
@@ -30,7 +29,6 @@ protected:
     }
     queue_basic_wait_support& operator=(queue_basic_wait_support&& other) noexcept
     {
-        m_paused     = other.m_paused    .exchange(false);
         m_busy_count = other.m_busy_count.exchange(0);
         m_free_count = other.m_free_count.exchange(0);
 
@@ -41,7 +39,6 @@ protected:
 
     void swap(queue_basic_wait_support& other) noexcept
     {
-        m_paused     = other.m_paused    .exchange(m_paused);
         m_busy_count = other.m_busy_count.exchange(m_busy_count);
         m_free_count = other.m_free_count.exchange(m_free_count);
 
@@ -64,25 +61,6 @@ protected:
             m_has_space_event.reset();
         }
         m_has_items_event.reset();
-    }
-    void pause() noexcept
-    {
-        m_paused = true;
-
-        m_has_space_event.reset();
-        m_has_items_event.reset();
-    }
-    void resume() noexcept
-    {
-        if(m_busy_count > 0)
-        {
-            m_has_items_event.fire();
-        }
-        if(m_free_count > 0)
-        {
-            m_has_space_event.fire();
-        }
-        m_paused = true;
     }
     void resize(size_t capacity) noexcept
     {
@@ -109,20 +87,14 @@ protected:
     {
         if(++m_busy_count == 1)
         {
-            if(!m_paused)
-            {
-                m_has_items_event.fire();
-            }
+            m_has_items_event.fire();
         }
     }
     void notify_producer_ownership_cancel() noexcept
     {
         if(++m_free_count == 1)
         {
-            if(!m_paused)
-            {
-                m_has_space_event.fire();
-            }
+            m_has_space_event.fire();
         }
     }
 
@@ -146,20 +118,14 @@ protected:
     {
         if(++m_free_count == 1)
         {
-            if(!m_paused)
-            {
-                m_has_space_event.fire();
-            }
+            m_has_space_event.fire();
         }
     }
     void notify_consumer_ownership_cancel() noexcept
     {
         if(++m_busy_count == 1)
         {
-            if(!m_paused)
-            {
-                m_has_items_event.fire();
-            }
+            m_has_items_event.fire();
         }
     }
 
@@ -197,7 +163,6 @@ public:
     }
 
 private:
-    std::atomic<bool>   m_paused     {false};
     std::atomic<size_t> m_busy_count {0}; 
     std::atomic<size_t> m_free_count {0};
 

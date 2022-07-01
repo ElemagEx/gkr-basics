@@ -112,7 +112,7 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    const size_t queue_capacity     = (max_queue_entries == size_t(-1))
+    const size_t queue_capacity   = (max_queue_entries == size_t(-1))
         ? lockfree_queue_t::npos
         : max_queue_entries
         ;
@@ -200,7 +200,7 @@ void logger::set_facility(const name_id_pair& facility)
     }
 }
 
-bool logger::add_consumer(std::shared_ptr<consumer> consumer)
+bool logger::add_consumer(consumer_ptr_t consumer)
 {
     if(!in_worker_thread())
     {
@@ -224,7 +224,7 @@ bool logger::add_consumer(std::shared_ptr<consumer> consumer)
     return true;
 }
 
-bool logger::del_consumer(std::shared_ptr<consumer> consumer)
+bool logger::del_consumer(consumer_ptr_t consumer)
 {
     if(!in_worker_thread())
     {
@@ -252,7 +252,7 @@ void logger::del_all_consumers()
     }
     while(!m_consumers.empty())
     {
-        std::shared_ptr<consumer> consumer = m_consumers.back();
+        consumer_ptr_t consumer = m_consumers.back();
 
         m_consumers.pop_back();
 
@@ -260,7 +260,7 @@ void logger::del_all_consumers()
     }
 }
 
-void logger::set_thread_name(const char* name, tid_t tid)
+void logger::set_thread_name(const char* name, tid_t tid, bool only_if_missing)
 {
     if(!in_worker_thread())
     {
@@ -268,15 +268,24 @@ void logger::set_thread_name(const char* name, tid_t tid)
         {
             tid = misc::union_cast<std::int64_t>(std::this_thread::get_id());
         }
-        return execute_action_method<void>(ACTION_SET_THREAD_NAME, name, tid);
+        return execute_action_method<void>(ACTION_SET_THREAD_NAME, name, tid, only_if_missing);
     }
     if(name == nullptr)
     {
         m_thread_ids.erase(tid);
     }
-    else
+    else if(!only_if_missing)
     {
         m_thread_ids[tid] = name;
+    }
+    else
+    {
+        auto it = m_thread_ids.find(tid);
+
+        if(it == m_thread_ids.end())
+        {
+            m_thread_ids.insert(std::make_pair(tid, name));
+        }
     }
 }
 
@@ -345,7 +354,6 @@ bool logger::compose_message(message_data& msg, size_t cch, int severity, int fa
 
         msg.mesageLen = std::uint16_t(len);
     }
-
     return true;
 }
 
@@ -368,7 +376,6 @@ void logger::prepare_message(message_data& msg)
     msg.threadName   = (itThreadId == m_thread_ids.end()) ? s_empty_name : itThreadId->second;
     msg.severityName = (itSeverity == m_severities.end()) ? s_empty_name : itSeverity->second;
     msg.facilityName = (itFacility == m_facilities.end()) ? s_empty_name : itFacility->second;
-
 }
 
 void logger::consume_message(const message_data& msg)
@@ -394,7 +401,7 @@ void logger::consume_message(const message_data& msg)
         }
         catch(...)
         {
-            std::shared_ptr<consumer> consumer_that_throws = m_consumers[index];
+            consumer_ptr_t consumer_that_throws = m_consumers[index];
             del_consumer(consumer_that_throws);
             --count;
 
@@ -433,6 +440,7 @@ bool logger::init_consumer(consumer& consumer)
     }
     catch(...)
     {
+        Check_Recovery("Init consumer exception caught");
     }
     return false;
 #endif
@@ -449,6 +457,7 @@ void logger::done_consumer(consumer& consumer)
     }
     catch(...)
     {
+        Check_Recovery("Done consumer exception caught");
     }
 #endif
 }

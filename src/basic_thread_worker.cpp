@@ -10,7 +10,6 @@ basic_thread_worker::basic_thread_worker()
 {
     m_assist_waiter.set_always_broadcast(true);
 
-    m_actions_queue.threading.any_thread_can_be_producer();
     m_actions_queue.reset(initial_actions_queue_capacity);
 
     m_actions_queue.set_producer_waiter(m_assist_waiter);
@@ -85,6 +84,8 @@ bool basic_thread_worker::update_wait()
 
 bool basic_thread_worker::resize_actions_queue(size_t capacity)
 {
+    Check_ValidState(running(), false);
+
     return m_actions_queue.resize(capacity);
 }
 
@@ -103,11 +104,11 @@ void basic_thread_worker::perform_action(action_id_t action, void* param, void* 
     }
     else
     {
-        process_action(action, param, result);
+        forward_action(action, param, result);
     }
 }
 
-void basic_thread_worker::process_action(action_id_t action, void* param, void* result)
+void basic_thread_worker::forward_action(action_id_t action, void* param, void* result)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -167,6 +168,7 @@ void basic_thread_worker::thread_proc()
 
 bool basic_thread_worker::safe_start() noexcept
 {
+    m_actions_queue.threading.any_thread_can_be_producer();
     m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
 
 #ifndef __cpp_exceptions

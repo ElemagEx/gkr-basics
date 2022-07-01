@@ -31,7 +31,7 @@ public:
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
         size_t max_queue_entries = 16,
-        size_t max_message_chars = (1024 - sizeof(message)) // 968 chars
+        size_t max_message_chars = (1024 - sizeof(message)) // 1024-56 = 968 chars
         );
     GKR_LOG_API static void done();
 
@@ -55,6 +55,9 @@ public:
     GKR_LOG_API static bool del_all_consumers();
 
 public:
+    GKR_LOG_API static bool set_this_thread_name(const char* name = nullptr);
+
+public:
     GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* format);
     GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* format, ...);
     GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args);
@@ -64,7 +67,7 @@ public:
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
         size_t max_queue_entries = 16,
-        size_t max_message_chars = (1024 - sizeof(message)) // 968 chars
+        size_t max_message_chars = (1024 - sizeof(message)) // 1024-56 = 968 chars
         )
     {
         m_initialized = init(severities, facilities, max_queue_entries, max_message_chars);
@@ -85,7 +88,7 @@ private:
     logging& operator=(logging&&) noexcept = delete;
 
 private:
-    static void check_thread();
+    static void check_thread_name(const char* name);
 };
 
 }

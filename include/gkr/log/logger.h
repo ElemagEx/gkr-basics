@@ -62,15 +62,17 @@ public:
     void set_facility(const name_id_pair& facility);
 
 public:
-    bool add_consumer(std::shared_ptr<consumer> consumer);
-    bool del_consumer(std::shared_ptr<consumer> consumer);
+    using consumer_ptr_t = std::shared_ptr<consumer>;
+
+    bool add_consumer(consumer_ptr_t consumer);
+    bool del_consumer(consumer_ptr_t consumer);
 
     void del_all_consumers();
 
 public:
     using tid_t = decltype(message::tid);
 
-    void set_thread_name(const char* name, tid_t tid = 0);
+    void set_thread_name(const char* name, tid_t tid = 0, bool only_if_missing = false);
 
 public:
     bool log_message(bool wait, int severity, int facility, const char* format, std::va_list args);
@@ -120,7 +122,7 @@ private:
 private:
     lockfree_queue_t m_log_queue;
 
-    std::vector<std::shared_ptr<consumer>> m_consumers;
+    std::vector<consumer_ptr_t> m_consumers;
 
     std::unordered_map<unsigned short, const char*> m_severities;
     std::unordered_map<unsigned short, const char*> m_facilities;

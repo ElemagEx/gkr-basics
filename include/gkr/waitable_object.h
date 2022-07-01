@@ -74,9 +74,9 @@ protected:
     waitable_object() noexcept = default;
    ~waitable_object() noexcept = default;
 
-   void swap(waitable_object&)
-   {
-   }
+    void swap(waitable_object&)
+    {
+    }
 
 private:
     friend class objects_waiter;
@@ -97,23 +97,27 @@ protected:
         std::atomic<impl::basic_objects_waiter*> m_objects_waiter {nullptr};
 
     public:
-        waiter_t() noexcept = default;
-       ~waiter_t() noexcept = default;
-
+        waiter_t() noexcept
+        {
+        }
+        ~waiter_t() noexcept(DIAG_NOEXCEPT)
+        {
+            Assert_Check(      m_objects_waiter.load() == nullptr);
+        }
         waiter_t([[maybe_unused]] waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
             Assert_Check(other.m_objects_waiter.load() == nullptr);
         }
         waiter_t& operator=([[maybe_unused]] waiter_t&& other) noexcept(DIAG_NOEXCEPT)
         {
-            Assert_Check(other.m_objects_waiter.load() == nullptr);
             Assert_Check(      m_objects_waiter.load() == nullptr);
+            Assert_Check(other.m_objects_waiter.load() == nullptr);
             return *this;
         }
         void swap([[maybe_unused]] waiter_t& other) noexcept(DIAG_NOEXCEPT)
         {
-            Assert_Check(other.m_objects_waiter.load() == nullptr);
             Assert_Check(      m_objects_waiter.load() == nullptr);
+            Assert_Check(other.m_objects_waiter.load() == nullptr);
         }
 
         bool try_set(impl::basic_objects_waiter& objects_waiter) noexcept

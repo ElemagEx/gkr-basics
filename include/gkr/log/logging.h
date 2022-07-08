@@ -31,7 +31,7 @@ public:
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
         size_t max_queue_entries = 16,
-        size_t max_message_chars = (1024 - sizeof(message)) // 1024-56 = 968 chars
+        size_t max_message_chars = (1024 - sizeof(message)) // = 968 chars (64bit) or 984 (32bit)
         );
     GKR_LOG_API static void done();
 
@@ -67,7 +67,7 @@ public:
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
         size_t max_queue_entries = 16,
-        size_t max_message_chars = (1024 - sizeof(message)) // 1024-56 = 968 chars
+        size_t max_message_chars = (1024 - sizeof(message))
         )
     {
         m_initialized = init(severities, facilities, max_queue_entries, max_message_chars);

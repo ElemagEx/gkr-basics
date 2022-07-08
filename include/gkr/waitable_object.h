@@ -47,7 +47,7 @@ private:
     }
 
 public:
-    void set_always_broadcast(bool always_broadcast)
+    void set_always_broadcast(bool always_broadcast) noexcept
     {
         m_always_broadcast = always_broadcast;
     }

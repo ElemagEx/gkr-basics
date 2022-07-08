@@ -182,7 +182,13 @@ struct thread_name_t
     char buff[sys::max_thread_name_cch] = {0};
     bool registered = false;
 
-    ~thread_name_t();
+    ~thread_name_t()
+    {
+        if(registered && (s_logger != nullptr))
+        {
+            s_logger->set_thread_name(nullptr);
+        }
+    }
 };
 
 void logging::check_thread_name(const char* name)
@@ -193,7 +199,7 @@ void logging::check_thread_name(const char* name)
     {
         thread_name.registered = true;
 
-        s_logger->set_thread_name(name, 0, false);
+        s_logger->set_thread_name(name);
 
         return;
     }
@@ -205,15 +211,7 @@ void logging::check_thread_name(const char* name)
 
     if(sys::get_current_thread_name(thread_name.buff))
     {
-        s_logger->set_thread_name(thread_name.buff, 0, true);
-    }
-}
-
-thread_name_t::~thread_name_t()
-{
-    if(registered && (s_logger != nullptr))
-    {
-        s_logger->set_thread_name(nullptr);
+        s_logger->set_thread_name(thread_name.buff);
     }
 }
 

@@ -6,7 +6,7 @@
 namespace gkr
 {
 
-basic_thread_worker::basic_thread_worker()
+basic_thread_worker::basic_thread_worker() noexcept(false)
 {
     m_assist_waiter.set_always_broadcast(true);
 
@@ -89,47 +89,44 @@ bool basic_thread_worker::resize_actions_queue(size_t capacity)
     return m_actions_queue.resize(capacity);
 }
 
-bool basic_thread_worker::enqueue_action(action_id_t action, void* param, action_param_deleter_t deleter)
+bool basic_thread_worker::enqueue_action(action_id_t id, void* param, action_param_deleter_t deleter)
 {
     Check_ValidState(running(), false);
 
-    return m_actions_queue.push({action, param, deleter});
+    return m_actions_queue.push({id, param, deleter});
 }
 
-void basic_thread_worker::perform_action(action_id_t action, void* param, void* result)
+void basic_thread_worker::perform_action(action_id_t id, void* param, void* result)
 {
     if(in_worker_thread())
     {
-        safe_do_action(action, param, result, false);
+        safe_do_action(id, param, result, false);
     }
     else
     {
-        forward_action(action, param, result);
+        forward_action(id, param, result);
     }
 }
 
-void basic_thread_worker::forward_action(action_id_t action, void* param, void* result)
+void basic_thread_worker::forward_action(action_id_t id, void* param, void* result)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     Check_ValidState(running(),);
 
-    m_func = func_t{action, param, result};
+    m_func = func_t{id, param, result};
 
     m_work_event.fire();
 
     m_assist_waiter.wait(m_done_event);
 }
 
-bool basic_thread_worker::can_reply()
+bool basic_thread_worker::can_reply() noexcept
 {
-    Check_ValidState(in_worker_thread(), false);
-    Check_ValidState(m_reentrancy.count > 0, false);
-
     return ((m_reentrancy.count == 1) && (m_reentrancy.result != nullptr));
 }
 
-bool basic_thread_worker::reply_action()
+bool basic_thread_worker::reply_action() noexcept
 {
     if(!can_reply()) return false;
 
@@ -154,15 +151,17 @@ void basic_thread_worker::thread_proc()
 
     m_done_event.fire();
 
-    do
+    if(running())
     {
-        m_updating = false;
-        m_count    = OWN_EVENTS_TO_WAIT + get_wait_objects_count();
+        do
+        {
+            m_updating = false;
+            m_count    = OWN_EVENTS_TO_WAIT + get_wait_objects_count();
+        }
+        while(main_loop());
+
+        dequeue_actions(true);
     }
-    while(main_loop());
-
-    dequeue_actions(true);
-
     safe_finish();
 }
 
@@ -286,7 +285,7 @@ bool basic_thread_worker::main_loop()
             }
             if(waitable_object_wait_is_completed(wait_result, OWN_EVENT_HAS_SYNC_ACTION))
             {
-                safe_do_action(m_func.action, m_func.param, m_func.result, true);
+                safe_do_action(m_func.id, m_func.param, m_func.result, true);
             }
         }
     }
@@ -313,7 +312,7 @@ void basic_thread_worker::dequeue_actions(bool all)
     while(all);
 }
 
-void basic_thread_worker::safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller)
+void basic_thread_worker::safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller)
 {
     Assert_Check(!cross_thread_caller || (m_reentrancy.count == 0));
 
@@ -323,17 +322,17 @@ void basic_thread_worker::safe_do_action(action_id_t action, void* param, void* 
     {
         m_reentrancy.result = &result;
     }
-    switch(action)
+    switch(id)
     {
         case ACTION_UPDATE: m_updating = true ; break;
         case ACTION_QUIT  : m_running  = false; break;
         default:
 #ifndef __cpp_exceptions
-            on_action(action, param, result);
+            on_action(id, param, result);
 #else
             try
             {
-                on_action(action, param, result);
+                on_action(id, param, result);
             }
             catch(const std::exception& e)
             {
@@ -348,9 +347,7 @@ void basic_thread_worker::safe_do_action(action_id_t action, void* param, void* 
     }
     if(cross_thread_caller)
     {
-        m_reentrancy.result = nullptr;
-
-        m_done_event.fire();
+        reply_action();
     }
 
     --m_reentrancy.count;

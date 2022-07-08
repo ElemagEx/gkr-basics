@@ -52,8 +52,17 @@ class queue_producer_element
     queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
 
 public:
-    queue_producer_element           (queue_producer_element&&) noexcept = default;
-    queue_producer_element& operator=(queue_producer_element&&) noexcept = default;
+    queue_producer_element(queue_producer_element&& other) noexcept
+        : m_queue  (std::exchange(other.m_queue  , nullptr))
+        , m_element(std::exchange(other.m_element, nullptr))
+    {
+    }
+    queue_producer_element& operator=(queue_producer_element&& other) noexcept
+    {
+        m_queue   = std::exchange(other.m_queue  , nullptr);
+        m_element = std::exchange(other.m_element, nullptr);
+        return *this;
+    }
 
 public:
     queue_producer_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element)
@@ -145,8 +154,17 @@ class queue_producer_element<Queue, void>
     queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
 
 public:
-    queue_producer_element           (queue_producer_element&&) noexcept = default;
-    queue_producer_element& operator=(queue_producer_element&&) noexcept = default;
+    queue_producer_element(queue_producer_element&& other) noexcept
+        : m_queue  (std::exchange(other.m_queue  , nullptr))
+        , m_element(std::exchange(other.m_element, nullptr))
+    {
+    }
+    queue_producer_element& operator=(queue_producer_element&& other) noexcept
+    {
+        m_queue   = std::exchange(other.m_queue  , nullptr);
+        m_element = std::exchange(other.m_element, nullptr);
+        return *this;
+    }
 
 public:
     queue_producer_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element)
@@ -187,16 +205,16 @@ public:
     template<typename T>
     const T* data() const noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         return static_cast<const T*>(m_element);
     }
     template<typename T>
     const T& value() const noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         Assert_NotNullPtr(m_element);
         return *static_cast<const T*>(m_element);
@@ -210,16 +228,16 @@ public:
     template<typename T>
     T* data() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         return static_cast<T*>(m_element);
     }
     template<typename T>
     T& value() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         Assert_NotNullPtr(m_element);
         return *static_cast<T*>(m_element);
@@ -256,8 +274,17 @@ class queue_consumer_element
     queue_consumer_element& operator=(const queue_consumer_element&) noexcept = delete;
 
 public:
-    queue_consumer_element           (queue_consumer_element&&) noexcept = default;
-    queue_consumer_element& operator=(queue_consumer_element&&) noexcept = default;
+    queue_consumer_element(queue_consumer_element&& other) noexcept
+        : m_queue  (std::exchange(other.m_queue  , nullptr))
+        , m_element(std::exchange(other.m_element, nullptr))
+    {
+    }
+    queue_consumer_element& operator=(queue_consumer_element&& other) noexcept
+    {
+        m_queue   = std::exchange(other.m_queue  , nullptr);
+        m_element = std::exchange(other.m_element, nullptr);
+        return *this;
+    }
 
 public:
     queue_consumer_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element)
@@ -349,8 +376,17 @@ class queue_consumer_element<Queue, void>
     queue_consumer_element& operator=(const queue_consumer_element&) noexcept = delete;
 
 public:
-    queue_consumer_element           (queue_consumer_element&&) noexcept = default;
-    queue_consumer_element& operator=(queue_consumer_element&&) noexcept = default;
+    queue_consumer_element(queue_consumer_element&& other) noexcept
+        : m_queue  (std::exchange(other.m_queue  , nullptr))
+        , m_element(std::exchange(other.m_element, nullptr))
+    {
+    }
+    queue_consumer_element& operator=(queue_consumer_element&& other) noexcept
+    {
+        m_queue   = std::exchange(other.m_queue  , nullptr);
+        m_element = std::exchange(other.m_element, nullptr);
+        return *this;
+    }
 
 public:
     queue_consumer_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element)
@@ -391,16 +427,16 @@ public:
     template<typename T>
     const T* data() const noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         return static_cast<T*>(m_element);
     }
     template<typename T>
     const T& value() const noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         Assert_NotNullPtr(m_element);
         return *static_cast<T*>(m_element);
@@ -414,16 +450,16 @@ public:
     template<typename T>
     T* data() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         return static_cast<T*>(m_element);
     }
     template<typename T>
     T& value() noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+        Assert_Check(!m_queue || (alignof(T) <= m_queue->element_alignment()));
+        Assert_Check(!m_queue || ( sizeof(T) <= m_queue->element_size     ()));
 
         Assert_NotNullPtr(m_element);
         return *static_cast<T*>(m_element);
@@ -615,9 +651,11 @@ class queue_pausing : public WaitSupport
 protected:
     using tid_owner_t = long long;
 
+    static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
+
 private:
     std::atomic<tid_owner_t> m_tid_paused {0};
-    long long                m_ns_to_wait = 1000000U; // 1 millisec
+    long long                m_ns_to_wait = initial_ns_to_wait;
 
 protected:
     queue_pausing() noexcept = default;
@@ -626,7 +664,7 @@ protected:
     queue_pausing(queue_pausing&& other) noexcept
         : base_t(other)
         , m_tid_paused(other.m_tid_paused.exchange(0))
-        , m_ns_to_wait(std::exchange(other.m_ns_to_wait, 0))
+        , m_ns_to_wait(std::exchange(other.m_ns_to_wait, initial_ns_to_wait))
     {
     }
     queue_pausing& operator=(queue_pausing&& other) noexcept
@@ -635,7 +673,7 @@ protected:
 
         m_tid_paused = other.m_tid_paused.exchange(0);
 
-        m_ns_to_wait = std::exchange(other.m_ns_to_wait, 0);
+        m_ns_to_wait = std::exchange(other.m_ns_to_wait, initial_ns_to_wait);
         return *this;
     }
 
@@ -800,7 +838,7 @@ protected:
         const size_t tail_index = (m_tail_pos % m_capacity);
         const size_t head_index = (m_head_pos % m_capacity);
 
-        if(head_index < tail_index)
+        if(head_index <= tail_index)
         {
             pos = (index - head_index);
 

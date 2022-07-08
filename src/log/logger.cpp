@@ -138,6 +138,8 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
 
 void logger::set_severities(bool clear_existing, const name_id_pair* severities)
 {
+    Check_ValidState(running(), );
+
     if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_SEVERITIES, clear_existing, severities);
@@ -154,6 +156,8 @@ void logger::set_severities(bool clear_existing, const name_id_pair* severities)
 
 void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
 {
+    Check_ValidState(running(), );
+
     if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_FACILITIES, clear_existing, facilities);
@@ -170,6 +174,8 @@ void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
 
 void logger::set_severity(const name_id_pair& severity)
 {
+    Check_ValidState(running(), );
+
     if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_SEVERITY, severity);
@@ -186,6 +192,8 @@ void logger::set_severity(const name_id_pair& severity)
 
 void logger::set_facility(const name_id_pair& facility)
 {
+    Check_ValidState(running(), );
+
     if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_FACILITY, facility);
@@ -202,6 +210,8 @@ void logger::set_facility(const name_id_pair& facility)
 
 bool logger::add_consumer(consumer_ptr_t consumer)
 {
+    Check_ValidState(running(), false);
+
     if(!in_worker_thread())
     {
         return execute_action_method<bool>(ACTION_ADD_CONSUMER, consumer);
@@ -226,6 +236,8 @@ bool logger::add_consumer(consumer_ptr_t consumer)
 
 bool logger::del_consumer(consumer_ptr_t consumer)
 {
+    Check_ValidState(running(), false);
+
     if(!in_worker_thread())
     {
         return execute_action_method<bool>(ACTION_DEL_CONSUMER, consumer);
@@ -246,6 +258,8 @@ bool logger::del_consumer(consumer_ptr_t consumer)
 
 void logger::del_all_consumers()
 {
+    Check_ValidState(running(), );
+
     if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_DEL_ALL_CONSUMERS);
@@ -260,32 +274,25 @@ void logger::del_all_consumers()
     }
 }
 
-void logger::set_thread_name(const char* name, tid_t tid, bool only_if_missing)
+void logger::set_thread_name(const char* name, tid_t tid)
 {
+    Check_ValidState(running(), );
+
     if(!in_worker_thread())
     {
         if(tid == 0)
         {
-            tid = misc::union_cast<std::int64_t>(std::this_thread::get_id());
+            tid = misc::union_cast<tid_t>(std::this_thread::get_id());
         }
-        return execute_action_method<void>(ACTION_SET_THREAD_NAME, name, tid, only_if_missing);
+        return execute_action_method<void>(ACTION_SET_THREAD_NAME, name, tid);
     }
     if(name == nullptr)
     {
         m_thread_ids.erase(tid);
     }
-    else if(!only_if_missing)
-    {
-        m_thread_ids[tid] = name;
-    }
     else
     {
-        auto it = m_thread_ids.find(tid);
-
-        if(it == m_thread_ids.end())
-        {
-            m_thread_ids.insert(std::make_pair(tid, name));
-        }
+        m_thread_ids[tid] = name;
     }
 }
 

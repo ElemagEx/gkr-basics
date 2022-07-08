@@ -49,7 +49,7 @@ public:
     using action_param_deleter_t = std::function<void(void*)>;
 
 protected:
-    GKR_BTW_API          basic_thread_worker();
+    GKR_BTW_API          basic_thread_worker() noexcept(false);
     GKR_BTW_API virtual ~basic_thread_worker() noexcept(DIAG_NOEXCEPT);
 
 protected:
@@ -83,17 +83,17 @@ public:
     GKR_BTW_API bool resize_actions_queue(size_t capacity);
 
 public:
-    GKR_BTW_API bool enqueue_action(action_id_t action, void* param = nullptr, action_param_deleter_t deleter = nullptr);
-    GKR_BTW_API void perform_action(action_id_t action, void* param = nullptr, void* result = nullptr);
+    GKR_BTW_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr);
+    GKR_BTW_API void perform_action(action_id_t id, void* param = nullptr, void* result = nullptr);
 
 private:
-    GKR_BTW_API void forward_action(action_id_t action, void* param, void* result);
+    GKR_BTW_API void forward_action(action_id_t id, void* param, void* result);
 
-    GKR_BTW_API bool can_reply();
-    GKR_BTW_API bool reply_action();
+    GKR_BTW_API bool can_reply() noexcept;
+    GKR_BTW_API bool reply_action() noexcept;
 
 public:
-    std::thread::id get_thread_id()
+    std::thread::id get_thread_id() const
     {
         return m_thread.get_id();
     }
@@ -122,7 +122,7 @@ private:
 
     void dequeue_actions(bool all);
 
-    void safe_do_action(action_id_t action, void* param, void* result, bool cross_thread_caller);
+    void safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller);
 
     void safe_notify_timeout();
     void safe_notify_complete(size_t index);
@@ -141,7 +141,7 @@ private:
     };
     struct func_t
     {
-        action_id_t action;
+        action_id_t id;
         void*       param;
         void*       result;
     };
@@ -178,7 +178,7 @@ private:
         void*                  param;
         action_param_deleter_t deleter;
     };
-    using actions_queue_t = lockfree_queue<queued_action, true, gkr::impl::queue_simple_wait_support<1,1>>;
+    using actions_queue_t = lockfree_queue<queued_action, true, impl::queue_simple_wait_support<1,1>>;
 
     actions_queue_t m_actions_queue;
 
@@ -199,6 +199,8 @@ protected:
     template<typename T>
     bool reply_action(T&& value)
     {
+        Check_ValidState(in_worker_thread(), false);
+
         if(!can_reply())
         {
             return false;
@@ -212,13 +214,15 @@ protected:
     template<typename T>
     bool reply_action(const T& value)
     {
+        Check_ValidState(in_worker_thread(), false);
+
         if(!can_reply())
         {
             return false;
         }
-        if(m_reentrancy.result != nullptr)
+        if(*m_reentrancy.result != nullptr)
         {
-            *static_cast<T*>(m_reentrancy.result) = value;
+            *static_cast<T*>(*m_reentrancy.result) = value;
         }
         return reply_action();
     }
@@ -277,13 +281,13 @@ protected:
 
         params += count;
 
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+        R ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
 #else
-        auto ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
+        R ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
 #endif
         if(result != nullptr)
         {
-            *static_cast<decltype(ret)*>(result) = ret;
+            *static_cast<R*>(result) = ret;
         }
     }
     template<class C, typename... Args>

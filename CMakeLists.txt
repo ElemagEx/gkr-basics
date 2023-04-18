@@ -4,7 +4,7 @@ project(gkr-basics)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -24,20 +24,18 @@ include(warnings) #includes ./cmake/warnings.cmake - sets variable ${CMAKE_CXX_F
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_WARNINGS}")
 
-option(GKR_INTRUSIVE_DIAGNOSITCS "Intrusive Diagnostics in DEBUG builds" ON)
-if(GKR_INTRUSIVE_DIAGNOSITCS)
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DDIAG_MODE=4")
-    else()
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDIAG_MODE=4")
-    endif()
-endif()
+#option(GKR_INTRUSIVE_DIAGNOSITCS "Intrusive Diagnostics in DEBUG builds" ON)
+#if(GKR_INTRUSIVE_DIAGNOSITCS)
+#    if(MSVC)
+#        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DDIAG_MODE=4")
+#    else()
+#        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDIAG_MODE=4")
+#    endif()
+#endif()
 
-message(STATUS "CMAKE_CXX_FLAGS         = ${CMAKE_CXX_FLAGS}")
-message(STATUS "CMAKE_CXX_FLAGS_DEBUG   = ${CMAKE_CXX_FLAGS_DEBUG}")
-message(STATUS "CMAKE_CXX_FLAGS_RELEASE = ${CMAKE_CXX_FLAGS_RELEASE}")
-
-option(GKR_BASIC_DEVELOPMENT "gkr-basics: Current Development" ON)
+#message(STATUS "CMAKE_CXX_FLAGS         = ${CMAKE_CXX_FLAGS}")
+#message(STATUS "CMAKE_CXX_FLAGS_DEBUG   = ${CMAKE_CXX_FLAGS_DEBUG}")
+#message(STATUS "CMAKE_CXX_FLAGS_RELEASE = ${CMAKE_CXX_FLAGS_RELEASE}")
 
 set(gkr_basics_include "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -88,21 +86,9 @@ target_sources(
 
 target_include_directories(gkr-basics PUBLIC ${gkr_basics_include})
 
-if(GKR_BASIC_DEVELOPMENT)
-    set(gkr_main_src_path "${CMAKE_CURRENT_SOURCE_DIR}/msvs")
+include(CTest)
 
-    add_executable(
-        main
-        "${gkr_main_src_path}/main.cpp"
-    )
-    target_sources(
-        main
-        PRIVATE
-        "${gkr_main_src_path}/test_lockfree_grow_only_bag.cpp"
-        "${gkr_main_src_path}/test_lockfree_queue.cpp"
-        "${gkr_main_src_path}/test_thread_worker.cpp"
-        "${gkr_main_src_path}/test_waiters.cpp"
-        "${gkr_main_src_path}/test_logging.cpp"
-        )
-    target_link_libraries(main gkr-basics)
+if(BUILD_TESTING)
+find_package(doctest REQUIRED)
+add_subdirectory(tests)
 endif()

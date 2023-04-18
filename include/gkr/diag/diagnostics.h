@@ -42,7 +42,7 @@
 //
 #ifndef DIAG_SRC_INFO
 #if defined(__has_include)
-#if __has_include(<stacktrace>)
+#if __has_include(<stacktrace>) && defined(__cpp_lib_stacktrace)
 #include <stacktrace>
 #endif
 #if __has_include(<source_location>) && defined(__cpp_consteval) && !defined(__cpp_lib_stacktrace)

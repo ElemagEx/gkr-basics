@@ -14,7 +14,7 @@ struct message_head
 
 	std::uint16_t severity;
 	std::uint16_t facility;
-	std::uint16_t mesageLen;
+	std::uint16_t messageLen;
 	std::uint16_t _reserved;
 };
 struct message : public message_head

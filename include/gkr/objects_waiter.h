@@ -24,7 +24,7 @@ inline constexpr bool waitable_object_wait_is_completed(wait_result_t wait_resul
 constexpr std::chrono::nanoseconds timeout_infinite = std::chrono::nanoseconds::max ();
 constexpr std::chrono::nanoseconds timeout_ignore   = std::chrono::nanoseconds::zero();
 
-class objects_waiter : public impl::basic_objects_waiter
+class objects_waiter : public impl::base_objects_waiter
 {
     objects_waiter           (const objects_waiter&) noexcept = delete;
     objects_waiter& operator=(const objects_waiter&) noexcept = delete;

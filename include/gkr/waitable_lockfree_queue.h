@@ -163,7 +163,7 @@ public:
     }
 
 private:
-    std::atomic<size_t> m_busy_count {0}; 
+    std::atomic<size_t> m_busy_count {0};
     std::atomic<size_t> m_free_count {0};
 
     waitable_event<true, ProducerMaxWaiters> m_has_space_event;

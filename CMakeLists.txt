@@ -4,7 +4,7 @@ project(gkr-basics)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -54,7 +54,7 @@ target_sources(
     gkr-basics
     PRIVATE
     "${gkr_basics_inc_path}/diag/diagnostics.h"
-    "${gkr_basics_inc_path}/lockfree_forward_list.h"
+    "${gkr_basics_inc_path}/lockfree_grow_only_bag.h"
     "${gkr_basics_inc_path}/lockfree_queue.h"
     "${gkr_basics_inc_path}/objects_waiter.h"
     "${gkr_basics_inc_path}/waitable_object.h"
@@ -98,6 +98,7 @@ if(GKR_BASIC_DEVELOPMENT)
     target_sources(
         main
         PRIVATE
+        "${gkr_main_src_path}/test_lockfree_grow_only_bag.cpp"
         "${gkr_main_src_path}/test_lockfree_queue.cpp"
         "${gkr_main_src_path}/test_thread_worker.cpp"
         "${gkr_main_src_path}/test_waiters.cpp"

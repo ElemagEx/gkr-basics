@@ -939,7 +939,7 @@ protected:
 
         base_t::ensure_not_paused();
 
-        if(m_count == 0) 
+        if(m_count == 0)
         {
             base_t::notify_consumer_ownership_fail();
             return npos;
@@ -1002,9 +1002,9 @@ protected:
         switch(count)
         {
             default:
-            case 0 : return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
-            case 1 : return (m_producer_tid_owner == 0) == (m_consumer_tid_owner == 0);
-            case 2 : return (m_producer_tid_owner == 0) && (m_consumer_tid_owner == 0);
+            case 0 : return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);//???
+            case 1 : return (m_producer_tid_owner == 0) == (m_consumer_tid_owner == 0);//???
+            case 2 : return (m_producer_tid_owner == 0) && (m_consumer_tid_owner == 0);//???
         }
     }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING

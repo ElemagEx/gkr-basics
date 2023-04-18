@@ -10,7 +10,7 @@ namespace gkr
 {
 
 template<std::ptrdiff_t LeastMaxValue = std::counting_semaphore<>::max(), unsigned MaxWaiters = 1>
-class waitable_semaphore final : public impl::waitable_registrator<MaxWaiters>
+class waitable_semaphore final : public waitable_registrator<MaxWaiters>
 {
     waitable_semaphore           (const waitable_semaphore&) noexcept = delete;
     waitable_semaphore& operator=(const waitable_semaphore&) noexcept = delete;
@@ -27,7 +27,7 @@ public:
     }
 
 private:
-    using base_t = impl::waitable_registrator<MaxWaiters>;
+    using base_t = waitable_registrator<MaxWaiters>;
 
     using semaphore_t = std::counting_semaphore<LeastMaxValue>;
 

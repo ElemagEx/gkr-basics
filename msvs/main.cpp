@@ -8,6 +8,7 @@ int main()
 
     int n = 0;
 
+    test_lockfree_grow_only_bag();
 //  test_logging();
 //  test_lockfree_queue();
 //  test_waiters();

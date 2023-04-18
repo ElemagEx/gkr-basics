@@ -351,7 +351,7 @@ bool logger::compose_message(message_data& msg, size_t cch, int severity, int fa
 
         const size_t len = std::strlen(msg.buffer);
 
-        msg.mesageLen = std::uint16_t(len);
+        msg.messageLen = std::uint16_t(len);
     }
     else
     {
@@ -359,7 +359,7 @@ bool logger::compose_message(message_data& msg, size_t cch, int severity, int fa
 
         Check_ValidState(len >= 0, false);
 
-        msg.mesageLen = std::uint16_t(len);
+        msg.messageLen = std::uint16_t(len);
     }
     return true;
 }

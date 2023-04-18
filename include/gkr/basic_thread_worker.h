@@ -16,8 +16,6 @@
 
 namespace gkr
 {
-using std::size_t;
-
 namespace impl
 {
 template<class T>
@@ -44,7 +42,7 @@ class basic_thread_worker
     basic_thread_worker& operator=(basic_thread_worker&&) noexcept = delete;
 
 public:
-    using action_id_t = size_t;
+    using action_id_t = std::size_t;
 
     using action_param_deleter_t = std::function<void(void*)>;
 
@@ -57,9 +55,9 @@ protected:
 
     virtual std::chrono::nanoseconds get_wait_timeout() noexcept = 0;
 
-    virtual size_t get_wait_objects_count() noexcept = 0;
+    virtual std::size_t get_wait_objects_count() noexcept = 0;
 
-    virtual waitable_object* get_wait_object(size_t index) = 0;
+    virtual waitable_object* get_wait_object(std::size_t index) = 0;
 
     virtual bool start() = 0;
     virtual void finish() = 0;
@@ -67,7 +65,7 @@ protected:
     virtual void on_action(action_id_t action, void* param, void* result) = 0;
 
     virtual void on_wait_timeout() = 0;
-    virtual void on_wait_success(size_t index) = 0;
+    virtual void on_wait_success(std::size_t index) = 0;
 
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept = 0;
 
@@ -80,7 +78,7 @@ public:
 
     GKR_BTW_API bool update_wait();
 
-    GKR_BTW_API bool resize_actions_queue(size_t capacity);
+    GKR_BTW_API bool resize_actions_queue(std::size_t capacity);
 
 public:
     GKR_BTW_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr);
@@ -125,10 +123,10 @@ private:
     void safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller);
 
     void safe_notify_timeout();
-    void safe_notify_complete(size_t index);
+    void safe_notify_complete(std::size_t index);
 
 private:
-    enum : size_t
+    enum : std::size_t
     {
         OWN_EVENT_HAS_ASYNC_ACTION,
         OWN_EVENT_HAS_SYNC_ACTION,
@@ -147,8 +145,8 @@ private:
     };
     struct reentrancy_t
     {
-        size_t count;
-        void** result;
+        std::size_t count;
+        void**      result;
     };
 
     reentrancy_t m_reentrancy = {};
@@ -157,8 +155,8 @@ private:
 
     waitable_object** m_objects = nullptr;
 
-    size_t m_count  = 0;
-    func_t m_func   = {};
+    std::size_t m_count  = 0;
+    func_t      m_func   = {};
 
     bool m_running  = false;
     bool m_updating = false;
@@ -183,7 +181,7 @@ private:
     actions_queue_t m_actions_queue;
 
 protected:
-    static constexpr size_t initial_actions_queue_capacity = 8;
+    static constexpr std::size_t initial_actions_queue_capacity = 8;
 
 protected:
     objects_waiter& get_thread_waiter() noexcept

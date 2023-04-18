@@ -114,7 +114,7 @@ private:
         ACTION_DEL_CONSUMER     ,
         ACTION_DEL_ALL_CONSUMERS,
         ACTION_SET_THREAD_NAME  ,
-        ACTION_SYNC_LOG_MESSAGE , 
+        ACTION_SYNC_LOG_MESSAGE ,
     };
 
     using lockfree_queue_t = lockfree_queue<void, true, impl::queue_simple_wait_support<1,1>>;

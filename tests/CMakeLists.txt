@@ -1,3 +1,3 @@
 add_executable(test_lockfree_grow_only_bag test_lockfree_grow_only_bag.cpp)
-target_link_libraries(test_lockfree_grow_only_bag PRIVATE gkr-basics doctest::doctest)
-add_test(NAME test_lockfree_grow_only_bag COMMAND test_lockfree_grow_only_bag)
+target_link_libraries(test_lockfree_grow_only_bag PRIVATE gkr-basics Catch2::Catch2WithMain)
+catch_discover_tests(test_lockfree_grow_only_bag)

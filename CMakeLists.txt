@@ -4,7 +4,7 @@ project(gkr-basics)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -87,8 +87,8 @@ target_sources(
 target_include_directories(gkr-basics PUBLIC ${gkr_basics_include})
 
 include(CTest)
-
-if(BUILD_TESTING)
-find_package(doctest REQUIRED)
+#if(BUILD_TESTING)
+find_package(Catch2 3 REQUIRED)
+include(Catch)
 add_subdirectory(tests)
-endif()
+#endif()

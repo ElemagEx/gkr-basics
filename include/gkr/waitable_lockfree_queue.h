@@ -6,8 +6,6 @@
 
 namespace gkr
 {
-using std::size_t;
-
 namespace impl
 {
 template<unsigned ProducerMaxWaiters, unsigned ConsumerMaxWaiters>
@@ -47,7 +45,7 @@ protected:
     }
 
 protected:
-    void reset(size_t capacity) noexcept
+    void reset(std::size_t capacity) noexcept
     {
         m_busy_count = 0;
         m_free_count = capacity;
@@ -62,7 +60,7 @@ protected:
         }
         m_has_items_event.reset();
     }
-    void resize(size_t capacity) noexcept
+    void resize(std::size_t capacity) noexcept
     {
         m_free_count = capacity - m_busy_count;
     }
@@ -163,8 +161,8 @@ public:
     }
 
 private:
-    std::atomic<size_t> m_busy_count {0};
-    std::atomic<size_t> m_free_count {0};
+    std::atomic<std::size_t> m_busy_count {0};
+    std::atomic<std::size_t> m_free_count {0};
 
     waitable_event<true, ProducerMaxWaiters> m_has_space_event;
     waitable_event<true, ConsumerMaxWaiters> m_has_items_event;
@@ -198,6 +196,7 @@ protected:
 
     void swap(queue_simple_wait_support& other) noexcept
     {
+        base_t::swap(other);
         std::swap(m_producer_waiter, other.m_producer_waiter);
         std::swap(m_consumer_waiter, other.m_consumer_waiter);
     }
@@ -261,6 +260,7 @@ protected:
 
     void swap(queue_default_wait_support& other) noexcept
     {
+        base_t::swap(other);
         std::swap(m_producer_waiter, other.m_producer_waiter);
         std::swap(m_consumer_waiter, other.m_consumer_waiter);
     }
@@ -325,4 +325,13 @@ private:
 };
 
 }
+
+template<
+    typename T,
+    bool MultipleConsumersMultipleProducersSupport=false,
+    typename WaitSupport  =impl::queue_default_wait_support<1,1>,
+    typename BaseAllocator=std::allocator<char>
+    >
+using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
+
 }

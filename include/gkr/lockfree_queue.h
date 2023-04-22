@@ -554,8 +554,6 @@ public:
     }
     bool this_thread_is_valid_consumer() const noexcept
     {
-        const thread_id_t no_thread_id;
-
         return (m_consumer_tid == thread_id_t()) || (m_consumer_tid == std::this_thread::get_id());
     }
 

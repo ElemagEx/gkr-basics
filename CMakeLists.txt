@@ -54,8 +54,6 @@ target_sources(
     "${gkr_basics_inc_path}/diag/diagnostics.h"
     "${gkr_basics_inc_path}/lockfree_grow_only_bag.h"
     "${gkr_basics_inc_path}/lockfree_queue.h"
-    "${gkr_basics_inc_path}/objects_waiter.h"
-    "${gkr_basics_inc_path}/waitable_object.h"
     "${gkr_basics_inc_path}/waitable_event.h"
     "${gkr_basics_inc_path}/waitable_mutex.h"
     "${gkr_basics_inc_path}/waitable_semaphore.h"
@@ -75,13 +73,13 @@ target_sources(
     gkr-basics
     PRIVATE
     "${gkr_basics_inc_path}/basic_thread_worker.h"
-    "${gkr_basics_src_path}/basic_thread_worker.cpp"
+#   "${gkr_basics_src_path}/basic_thread_worker.cpp"
     "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_src_path}/sys/thread_name.cpp"
     "${gkr_basics_inc_path}/log/logger.h"
-    "${gkr_basics_src_path}/log/logger.cpp"
+#   "${gkr_basics_src_path}/log/logger.cpp"
     "${gkr_basics_inc_path}/log/logging.h"
-    "${gkr_basics_src_path}/log/logging.cpp"
+#   "${gkr_basics_src_path}/log/logging.cpp"
     )
 
 target_include_directories(gkr-basics PUBLIC ${gkr_basics_include})

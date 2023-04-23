@@ -83,7 +83,7 @@ public:
         : m_allocator(allocator)
     {
     }
-    ~lockfree_grow_only_bag() noexcept(false)
+    ~lockfree_grow_only_bag()
     {
         clear();
     }
@@ -95,7 +95,7 @@ public:
         , m_allocator(std::move(other.m_allocator))
     {
     }
-    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept(false)
+    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) //noexcept(false)
     {
         if(this != &other)
         {
@@ -134,11 +134,11 @@ public:
     {
         return (m_first == nullptr);
     }
-    const allocator_type get_allocator() const noexcept
+    const allocator_type& get_allocator() const noexcept
     {
         return m_allocator;
     }
-    allocator_type get_allocator() noexcept
+    allocator_type& get_allocator() noexcept
     {
         return m_allocator;
     }

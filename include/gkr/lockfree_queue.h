@@ -663,7 +663,7 @@ class queue_pausing : public WaitSupport
 protected:
     using tid_owner_t = long long;
 
-    static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
+    inline static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
 
 private:
     std::atomic<tid_owner_t> m_tid_paused {0};

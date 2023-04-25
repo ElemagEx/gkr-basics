@@ -31,7 +31,9 @@ inline void decompose_stamp(bool local, long long stamp, std::tm& tm, unsigned& 
 
     std::time_t time = std::chrono::system_clock::to_time_t(now);
 
-    ns = unsigned(stamp - (long long)(time) * 1000000000LL);
+    using longlong = long long;
+
+    ns = unsigned(stamp - longlong(time) * 1000000000LL);
 
 #ifdef _MSC_VER
     if(local)

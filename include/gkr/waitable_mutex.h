@@ -6,6 +6,12 @@
 
 namespace gkr
 {
+namespace impl
+{
+template<bool> struct std_mutex;
+template<> struct std_mutex<false> { using type = std::mutex; };
+template<> struct std_mutex<true > { using type = std::recursive_mutex; };
+}
 
 template<bool Recursive=false, unsigned MaxWaiters = 1>
 class waitable_mutex final : public waitable_registrator<MaxWaiters>
@@ -22,11 +28,7 @@ public:
     waitable_mutex() noexcept          = default;
 
 private:
-    template<bool> struct std_mutex;
-    template<> struct std_mutex<false> { using type = std::mutex; };
-    template<> struct std_mutex<true > { using type = std::recursive_mutex; };
-
-    using mutex_t = typename std_mutex<Recursive>::type;
+    using mutex_t = typename impl::std_mutex<Recursive>::type;
 
     using base_t = waitable_registrator<MaxWaiters>;
 

@@ -16,6 +16,22 @@
 
 namespace gkr
 {
+namespace impl
+{
+template<class T>
+struct result_t
+{
+    T value;
+    T* ptr() { return &value; }
+    T& val() { return  value; }
+};
+template<>
+struct result_t<void>
+{
+    void* ptr() { return nullptr; }
+    void  val() { return; }
+};
+}
 
 class thread_worker
 {
@@ -161,21 +177,6 @@ private:
 
     actions_queue_t m_actions_queue;
 
-private:
-    template<class T>
-    struct result_t
-    {
-        T value;
-        T* ptr() { return &value; }
-        T& val() { return  value; }
-    };
-    template<>
-    struct result_t<void>
-    {
-        void* ptr() { return nullptr; }
-        void  val() { return; }
-    };
-
 protected:
     template<typename T>
     bool reply_action(T&& value)
@@ -218,7 +219,7 @@ protected:
 
         const void* params[count + 1] = {reinterpret_cast<const void*>(count), static_cast<const void*>(std::addressof(args))...};
 
-        result_t<R> result;
+        impl::result_t<R> result;
 
         forward_action(action, params, result.ptr());
 

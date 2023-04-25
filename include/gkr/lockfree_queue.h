@@ -244,7 +244,15 @@ public:
     }
 
 public:
-    bool resize(size_t size) noexcept(false)
+    size_t get_element_alignment() const noexcept
+    {
+        return m_queue->element_alignment();
+    }
+    size_t get_element_size() const noexcept
+    {
+        return m_queue->element_size();
+    }
+    bool set_element_size(size_t size) noexcept(false)
     {
         if(push_in_progress())
         {
@@ -466,11 +474,19 @@ public:
     }
 
 public:
-    bool resize(size_t size) noexcept(false)
+    size_t get_element_alignment() const noexcept
+    {
+        return m_queue->element_alignment();
+    }
+    size_t get_element_size() const noexcept
+    {
+        return m_queue->element_size();
+    }
+    bool set_element_size(size_t size) noexcept(false)
     {
         if(pop_in_progress())
         {
-            return m_queue->resize_ex(Queue::npos, size, &m_element);
+            return m_queue->change_element_size(size, &m_element);
         }
         else
         {
@@ -1757,7 +1773,7 @@ public:
 public:
     bool resize(size_t capacity) noexcept(false)
     {
-        if(capacity <= base_t::capacity()) return true;
+        if(capacity <= base_t::capacity()) return false;
 
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
@@ -2585,7 +2601,7 @@ public:
 public:
     bool resize(size_t capacity) noexcept(false)
     {
-        if(capacity <= base_t::capacity()) return true;
+        if(capacity <= base_t::capacity()) return false;
 
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
@@ -2622,7 +2638,7 @@ public:
     }
     bool change_element_size(size_t size, void** owned_elements = nullptr, size_t count_elements = 1) noexcept(false)
     {
-        if(size <= m_size) return true;
+        if(size <= m_size) return false;
 
         if(owned_elements == nullptr)
         {
@@ -2679,88 +2695,6 @@ public:
             m_stride   = stride;
         }
         m_size = size;
-        base_t::resume();
-        return true;
-    }
-    bool resize_ex(size_t capacity = npos, size_t size = npos, void** owned_elements = nullptr, size_t count_elements = 1) noexcept(false)
-    {
-        //
-        // BUG:Both MPMC version of base class resize(...) does not preserve tid_owner_t value of owned elements
-        //
-        Check_Arg_IsValid((capacity == npos) || (capacity > base_t::capacity()), false);
-        Check_Arg_IsValid((size     == npos) || (size     > m_size)            , false);
-
-        if(owned_elements == nullptr)
-        {
-            count_elements = 0;
-        }
-        Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
-
-        //TODO:begin - move this begin/end section after next while statement
-        size_t pos = npos;
-
-        Check_Arg_Array(index, count_elements, base_t::element_has_value(index_of_element(owned_elements[index]), pos), false);
-
-        if(capacity == npos) capacity = base_t::capacity();
-        if(size     == npos) size     = m_size;
-
-        const bool capacity_changed = (capacity != base_t::capacity());
-
-        size_t stride;
-        size_t padding;
-        calc_stride_and_padding(size, m_alignment, stride, padding);
-
-        if(!capacity_changed && (stride == m_stride) && (padding == m_padding))
-        {
-            m_size = size;
-            return true;
-        }
-        //TODO:end - move this begin/end section after next while statement
-        if(!base_t::pause())
-        {
-            return false;
-        }
-        while(base_t::some_thread_owns_elements(count_elements))
-        {
-            base_t::wait_a_while();
-        }
-        const size_t count = calc_count(capacity, stride, padding);
-
-        char*  elements = reinterpret_cast<char*>(m_allocator.allocate(count));
-        size_t offset   = calc_offset(elements, m_alignment);
-
-        elements += offset;
-
-        Assert_Check(stride >= m_stride);
-
-        for(size_t index = 0; index < base_t::capacity(); ++index)
-        {
-            if(base_t::element_has_value(index, pos))
-            {
-                if(!capacity_changed) pos = index;
-
-                std::memcpy(elements + pos * stride, m_elements + index * m_stride, stride);
-            }
-        }
-        if(owned_elements != nullptr)
-        {
-            for( ; count_elements-- == 0; ++owned_elements)
-            {
-                const size_t index = index_of_element(*owned_elements);
-
-                *owned_elements = elements + index * stride;
-            }
-        }
-        clear();
-
-        m_elements = elements;
-        m_offset   = offset;
-        m_size     = size;
-
-        if(capacity_changed)
-        {
-            base_t::resize(capacity);
-        }
         base_t::resume();
         return true;
     }

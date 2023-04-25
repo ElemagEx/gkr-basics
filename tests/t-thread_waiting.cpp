@@ -13,13 +13,11 @@ TEST_CASE("thread.waiting. main")
     waitable_event<> e1;
 
     auto t1 = std::thread([&e1] () {
-        objects_waiter& waiter = get_this_thread_objects_waiter();
+        objects_waiter& waiter = this_thread_objects_waiter();
 
         auto result = waiter.wait(e1);
 
-        if(auto check = check_wait_result(result, 0, e1))
-        {
-        }
+        CHECK(waitable_object_wait_is_completed(result, 0));
     });
 
     std::this_thread::sleep_for(1s);

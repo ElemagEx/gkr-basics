@@ -1,8 +1,8 @@
 #include <gkr/diag/diagnostics.h>
 
-#include <gkr/basic_thread_worker.h>
+#include <gkr/thread_worker.h>
 
-class MyThreadWorker : public gkr::basic_thread_worker
+class MyThreadWorker : public gkr::thread_worker
 {
     MyThreadWorker           (const MyThreadWorker&) noexcept = delete;
     MyThreadWorker& operator=(const MyThreadWorker&) noexcept = delete;

@@ -33,7 +33,7 @@ private:
     objects_waiter() noexcept = default;
    ~objects_waiter() noexcept = default;
 
-    friend objects_waiter& get_this_thread_objects_waiter() noexcept;
+    friend objects_waiter& this_thread_objects_waiter() noexcept;
 
 private:
     std::mutex m_mutex;
@@ -508,71 +508,15 @@ protected:
     }
 };
 
-template<typename WaitableObject>
-class wait_result_checker
-{
-    wait_result_checker           (const wait_result_checker&) noexcept = delete;
-    wait_result_checker& operator=(const wait_result_checker&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-private:
-    wait_result_checker           (wait_result_checker&&) noexcept = delete;
-    wait_result_checker& operator=(wait_result_checker&&) noexcept = delete;
-#else
-public:
-    wait_result_checker           (wait_result_checker&&) noexcept = default;
-    wait_result_checker& operator=(wait_result_checker&&) noexcept = default;
-#endif
-
-public:
-    wait_result_checker(wait_result_t result, std::size_t index, WaitableObject& object) noexcept
-        : m_object(resolve(result, index, object))
-    {
-    }
-    ~wait_result_checker() noexcept(false)
-    {
-        if(m_object != nullptr)
-        {
-            m_object->unlock();
-        }
-    }
-
-public:
-    bool wait_is_completed() const noexcept
-    {
-        return (m_object != nullptr);
-    }
-    explicit operator bool() const noexcept
-    {
-        return (m_object != nullptr);
-    }
-
-private:
-    static WaitableObject* resolve(wait_result_t result, std::size_t index, WaitableObject& object) noexcept
-    {
-        if((result & wait_result_t(1U << index)) != 0)
-        {
-            return &object;
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-
-private:
-    WaitableObject* m_object;
-};
-
-inline objects_waiter& get_this_thread_objects_waiter() noexcept
+inline objects_waiter& this_thread_objects_waiter() noexcept
 {
     static thread_local objects_waiter tl_objects_waiter;
     return tl_objects_waiter;
 }
 
-template<typename WaitableObject>
-inline wait_result_checker<WaitableObject> check_wait_result(wait_result_t result, std::size_t index, WaitableObject& object) noexcept
+inline bool waitable_object_wait_is_completed(wait_result_t result, std::size_t index)
 {
-    return wait_result_checker<WaitableObject>(result, index, object);
+    return ((result & wait_result_t(1U << index)) != 0);
 }
 
 inline bool objects_waiter::collect_result(wait_result_t& result, std::size_t count, waitable_object** objects) noexcept

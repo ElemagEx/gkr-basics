@@ -1,4 +1,4 @@
-#include <gkr/basic_thread_worker.h>
+#include <gkr/thread_worker.h>
 
 #include <gkr/sys/stack_alloc.h>
 #include <gkr/sys/thread_name.h>
@@ -6,17 +6,12 @@
 namespace gkr
 {
 
-basic_thread_worker::basic_thread_worker() noexcept(false)
+thread_worker::thread_worker(std::size_t initial_action_queue_capacity) noexcept(false)
 {
-    m_assist_waiter.set_always_broadcast(true);
-
-    m_actions_queue.reset(initial_actions_queue_capacity);
-
-    m_actions_queue.set_producer_waiter(m_assist_waiter);
-    m_actions_queue.set_consumer_waiter(m_thread_waiter);
+    m_actions_queue.reset(initial_action_queue_capacity);
 }
 
-basic_thread_worker::~basic_thread_worker() noexcept(DIAG_NOEXCEPT)
+thread_worker::~thread_worker() noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(
         !joinable(),
@@ -24,7 +19,7 @@ basic_thread_worker::~basic_thread_worker() noexcept(DIAG_NOEXCEPT)
         );
 }
 
-bool basic_thread_worker::run()
+bool thread_worker::run() noexcept(DIAG_NOEXCEPT)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -34,12 +29,12 @@ bool basic_thread_worker::run()
 
     m_work_event.fire();
 
-    m_assist_waiter.wait(m_done_event);
+    this_thread_objects_waiter().wait(m_done_event);
 
     return running();
 }
 
-bool basic_thread_worker::join(bool send_quit_signal)
+bool thread_worker::join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT)
 {
     if(!m_thread.joinable()) return false;
 
@@ -52,7 +47,7 @@ bool basic_thread_worker::join(bool send_quit_signal)
     return true;
 }
 
-bool basic_thread_worker::quit()
+bool thread_worker::quit() noexcept(DIAG_NOEXCEPT)
 {
     Check_ValidState(running(), false);
 
@@ -67,7 +62,7 @@ bool basic_thread_worker::quit()
     }
 }
 
-bool basic_thread_worker::update_wait()
+bool thread_worker::update_wait() noexcept(DIAG_NOEXCEPT)
 {
     Check_ValidState(running(), false);
 
@@ -82,21 +77,22 @@ bool basic_thread_worker::update_wait()
     }
 }
 
-bool basic_thread_worker::resize_actions_queue(size_t capacity)
+bool thread_worker::resize_actions_queue(size_t capacity) noexcept(false)
 {
     Check_ValidState(running(), false);
+    Check_ValidState(!in_worker_thread(), false);
 
     return m_actions_queue.resize(capacity);
 }
 
-bool basic_thread_worker::enqueue_action(action_id_t id, void* param, action_param_deleter_t deleter)
+bool thread_worker::enqueue_action(action_id_t id, void* param, action_param_deleter_t deleter) noexcept(DIAG_NOEXCEPT)
 {
     Check_ValidState(running(), false);
 
     return m_actions_queue.push({id, param, deleter});
 }
 
-void basic_thread_worker::perform_action(action_id_t id, void* param, void* result)
+void thread_worker::perform_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
 {
     if(in_worker_thread())
     {
@@ -108,7 +104,7 @@ void basic_thread_worker::perform_action(action_id_t id, void* param, void* resu
     }
 }
 
-void basic_thread_worker::forward_action(action_id_t id, void* param, void* result)
+void thread_worker::forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -118,15 +114,15 @@ void basic_thread_worker::forward_action(action_id_t id, void* param, void* resu
 
     m_work_event.fire();
 
-    m_assist_waiter.wait(m_done_event);
+    this_thread_objects_waiter().wait(m_done_event);
 }
 
-bool basic_thread_worker::can_reply() noexcept
+bool thread_worker::can_reply() noexcept
 {
     return ((m_reentrancy.count == 1) && (m_reentrancy.result != nullptr));
 }
 
-bool basic_thread_worker::reply_action() noexcept
+bool thread_worker::reply_action() noexcept
 {
     if(!can_reply()) return false;
 
@@ -137,9 +133,9 @@ bool basic_thread_worker::reply_action() noexcept
     return true;
 }
 
-void basic_thread_worker::thread_proc()
+void thread_worker::thread_proc() noexcept(DIAG_NOEXCEPT)
 {
-    m_thread_waiter.wait(m_work_event);
+    this_thread_objects_waiter().wait(m_work_event);
 
     m_reentrancy = {0, nullptr};
 
@@ -165,7 +161,7 @@ void basic_thread_worker::thread_proc()
     safe_finish();
 }
 
-bool basic_thread_worker::safe_start() noexcept
+bool thread_worker::safe_start() noexcept
 {
     m_actions_queue.threading.any_thread_can_be_producer();
     m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
@@ -189,7 +185,7 @@ bool basic_thread_worker::safe_start() noexcept
 #endif
 }
 
-void basic_thread_worker::safe_finish() noexcept
+void thread_worker::safe_finish() noexcept
 {
 #ifndef __cpp_exceptions
     finish();
@@ -209,7 +205,7 @@ void basic_thread_worker::safe_finish() noexcept
 #endif
 }
 
-bool basic_thread_worker::safe_acquire_events() noexcept
+bool thread_worker::acquire_events() noexcept(DIAG_NOEXCEPT)
 {
     m_objects[OWN_EVENT_HAS_ASYNC_ACTION] =  m_actions_queue.queue_has_items_waitable_object();
     m_objects[OWN_EVENT_HAS_SYNC_ACTION ] = &m_work_event;
@@ -219,42 +215,34 @@ bool basic_thread_worker::safe_acquire_events() noexcept
 #ifndef __cpp_exceptions
         m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
 
-        if(m_objects[index] == nullptr)
-        {
-            m_count = index;
-            Check_Failure(true);
-        }
+        Check_NotNullPtr(m_objects[index], false);
 #else
         try
         {
             m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
 
-            if(m_objects[index] == nullptr)
-            {
-                m_count = index;
-                Check_Failure(true);
-            }
+            Check_NotNullPtr(m_objects[index], false);
         }
         catch(const std::exception& e)
         {
-            m_count = index;
-            return on_exception(true, &e);
+            on_exception(true, &e);
+            return false;
         }
         catch(...)
         {
-            m_count = index;
-            return on_exception(true, nullptr);
+            on_exception(true, nullptr);
+            return false;
         }
 #endif
     }
     return true;
 }
 
-bool basic_thread_worker::main_loop()
+bool thread_worker::main_loop() noexcept(DIAG_NOEXCEPT)
 {
     m_objects = static_cast<waitable_object**>(stack_alloc(m_count * sizeof(waitable_object*)));
 
-    if(!safe_acquire_events()) return false;
+    if(!acquire_events()) return false;
 
     const auto timeout = get_wait_timeout();
 
@@ -262,11 +250,11 @@ bool basic_thread_worker::main_loop()
     {
         if(m_updating) return true;
 
-        const wait_result_t wait_result = m_thread_waiter.wait(timeout, m_count, m_objects);
+        const wait_result_t wait_result = this_thread_objects_waiter().wait(timeout, m_count, m_objects);
 
-        Check_ValidState(wait_result != wait_result_error, false);
+        Check_ValidState(wait_result != WAIT_RESULT_ERROR, false);
 
-        if(wait_result == wait_result_timeout)
+        if(wait_result == WAIT_RESULT_TIMEOUT)
         {
             safe_notify_timeout();
         }
@@ -292,7 +280,7 @@ bool basic_thread_worker::main_loop()
     return false;
 }
 
-void basic_thread_worker::dequeue_actions(bool all)
+void thread_worker::dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
 {
     do
     {
@@ -312,7 +300,7 @@ void basic_thread_worker::dequeue_actions(bool all)
     while(all);
 }
 
-void basic_thread_worker::safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller)
+void thread_worker::safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(!cross_thread_caller || (m_reentrancy.count == 0));
 
@@ -353,7 +341,7 @@ void basic_thread_worker::safe_do_action(action_id_t id, void* param, void* resu
     --m_reentrancy.count;
 }
 
-void basic_thread_worker::safe_notify_timeout()
+void thread_worker::safe_notify_timeout() noexcept
 {
 #ifndef __cpp_exceptions
     on_wait_timeout();
@@ -373,7 +361,7 @@ void basic_thread_worker::safe_notify_timeout()
 #endif
 }
 
-void basic_thread_worker::safe_notify_complete(size_t index)
+void thread_worker::safe_notify_complete(size_t index) noexcept
 {
 #ifndef __cpp_exceptions
     on_wait_success(index);

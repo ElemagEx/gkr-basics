@@ -85,12 +85,6 @@ public:
             return m_signaled.compare_exchange_strong(expected, false);
         }
     }
-
-private:
-    void unlock() noexcept
-    {
-    }
-    friend class wait_result_checker<self_t>;
 };
 
 }

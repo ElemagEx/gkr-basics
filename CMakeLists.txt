@@ -72,8 +72,8 @@ target_sources(
 target_sources(
     gkr-basics
     PRIVATE
-    "${gkr_basics_inc_path}/basic_thread_worker.h"
-#   "${gkr_basics_src_path}/basic_thread_worker.cpp"
+    "${gkr_basics_inc_path}/thread_worker.h"
+    "${gkr_basics_src_path}/thread_worker.cpp"
     "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_src_path}/sys/thread_name.cpp"
     "${gkr_basics_inc_path}/log/logger.h"

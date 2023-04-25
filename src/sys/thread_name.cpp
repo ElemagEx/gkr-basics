@@ -1,4 +1,3 @@
-#include <gkr/diag/diagnostics.h>
 #include <gkr/sys/thread_name.h>
 
 #ifdef _WIN32
@@ -10,21 +9,21 @@ namespace gkr
 {
 namespace sys
 {
-bool set_current_thread_name(const char name[max_thread_name_cch])
+bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
 {
 	Check_Arg_NotNull(name, false);
 
-	wchar_t buff[max_thread_name_cch];
+	wchar_t buff[MAX_THREAD_NAME_CCH];
 
-	MultiByteToWideChar(CP_UTF8, 0, name, -1, buff, max_thread_name_cch);
+	MultiByteToWideChar(CP_UTF8, 0, name, -1, buff, MAX_THREAD_NAME_CCH);
 
-	buff[max_thread_name_cch - 1] = 0;
+	buff[MAX_THREAD_NAME_CCH - 1] = 0;
 
 	HRESULT hr = SetThreadDescription(GetCurrentThread(), buff);
 
 	return SUCCEEDED(hr);
 }
-bool get_current_thread_name(char name[max_thread_name_cch])
+bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
 {
 	Check_Arg_NotNull(name, false);
 
@@ -34,9 +33,9 @@ bool get_current_thread_name(char name[max_thread_name_cch])
 
 	if(!SUCCEEDED(hr)) return false;
 
-	WideCharToMultiByte(CP_UTF8, 0, buff, -1, name, max_thread_name_cch, nullptr, nullptr);
+	WideCharToMultiByte(CP_UTF8, 0, buff, -1, name, MAX_THREAD_NAME_CCH, nullptr, nullptr);
 
-	name[max_thread_name_cch - 1] = 0;
+	name[MAX_THREAD_NAME_CCH - 1] = 0;
 
 	LocalFree(buff);
 
@@ -53,15 +52,15 @@ namespace gkr
 {
 namespace sys
 {
-bool set_current_thread_name(const char name[max_thread_name_cch])
+bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
 {
-	Check_Arg_IsValid(name != nullptr, false);
+	if(name == nullptr) return false;
 
 	return (0 == prctl(PR_SET_NAME, long(name), 0, 0, 0));
 }
-bool get_current_thread_name(char name[max_thread_name_cch])
+bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
 {
-	Check_Arg_IsValid(name != nullptr, false);
+	if(name == nullptr) return false;
 
 	return (0 == prctl(PR_GET_NAME, long(name), 0, 0, 0));
 }

@@ -4,7 +4,7 @@
 #include <thread>
 #include <functional>
 
-#include "objects_waiter.h"
+#include "thread_waiting.h"
 #include "waitable_event.h"
 #include "waitable_lockfree_queue.h"
 
@@ -16,30 +16,14 @@
 
 namespace gkr
 {
-namespace impl
-{
-template<class T>
-struct result
-{
-    T value;
-    T* ptr() { return &value; }
-    T& val() { return  value; }
-};
-template<>
-struct result<void>
-{
-    void* ptr() { return nullptr; }
-    void  val() { return; }
-};
-}
 
-class basic_thread_worker
+class thread_worker
 {
-    basic_thread_worker           (const basic_thread_worker&) noexcept = delete;
-    basic_thread_worker& operator=(const basic_thread_worker&) noexcept = delete;
+    thread_worker           (const thread_worker&) noexcept = delete;
+    thread_worker& operator=(const thread_worker&) noexcept = delete;
 
-    basic_thread_worker           (basic_thread_worker&&) noexcept = delete;
-    basic_thread_worker& operator=(basic_thread_worker&&) noexcept = delete;
+    thread_worker           (thread_worker&&) noexcept = delete;
+    thread_worker& operator=(thread_worker&&) noexcept = delete;
 
 public:
     using action_id_t = std::size_t;
@@ -47,8 +31,8 @@ public:
     using action_param_deleter_t = std::function<void(void*)>;
 
 protected:
-    GKR_BTW_API          basic_thread_worker() noexcept(false);
-    GKR_BTW_API virtual ~basic_thread_worker() noexcept(DIAG_NOEXCEPT);
+    GKR_BTW_API          thread_worker(std::size_t initial_action_queue_capacity = 8) noexcept(false);
+    GKR_BTW_API virtual ~thread_worker() noexcept(DIAG_NOEXCEPT);
 
 protected:
     virtual const char* get_name() noexcept = 0;
@@ -70,60 +54,60 @@ protected:
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept = 0;
 
 public:
-    GKR_BTW_API bool run();
-    GKR_BTW_API bool join(bool send_quit_signal);
+    GKR_BTW_API bool run() noexcept(DIAG_NOEXCEPT);
+    GKR_BTW_API bool join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT);
 
 public:
-    GKR_BTW_API bool quit();
+    GKR_BTW_API bool quit() noexcept(DIAG_NOEXCEPT);
 
-    GKR_BTW_API bool update_wait();
+    GKR_BTW_API bool update_wait() noexcept(DIAG_NOEXCEPT);
 
-    GKR_BTW_API bool resize_actions_queue(std::size_t capacity);
+    GKR_BTW_API bool resize_actions_queue(std::size_t capacity) noexcept(false);
 
 public:
-    GKR_BTW_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr);
-    GKR_BTW_API void perform_action(action_id_t id, void* param = nullptr, void* result = nullptr);
+    GKR_BTW_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr) noexcept(DIAG_NOEXCEPT);
+    GKR_BTW_API void perform_action(action_id_t id, void* param = nullptr, void* result = nullptr) noexcept(DIAG_NOEXCEPT);
 
 private:
-    GKR_BTW_API void forward_action(action_id_t id, void* param, void* result);
+    GKR_BTW_API void forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT);
 
     GKR_BTW_API bool can_reply() noexcept;
     GKR_BTW_API bool reply_action() noexcept;
 
 public:
-    std::thread::id get_thread_id() const
+    std::thread::id get_thread_id() const noexcept
     {
         return m_thread.get_id();
     }
-    bool joinable() const
+    bool joinable() const noexcept
     {
         return m_thread.joinable();
     }
-    bool running() const
+    bool running() const noexcept
     {
         return m_running;
     }
-    bool in_worker_thread() const
+    bool in_worker_thread() const noexcept
     {
         return (std::this_thread::get_id() == m_thread.get_id());
     }
 
 private:
-    void thread_proc();
+    void thread_proc() noexcept(DIAG_NOEXCEPT);
 
     bool safe_start () noexcept;
     void safe_finish() noexcept;
 
-    bool safe_acquire_events() noexcept;
+    bool acquire_events() noexcept(DIAG_NOEXCEPT);
 
-    bool main_loop();
+    bool main_loop() noexcept(DIAG_NOEXCEPT);
 
-    void dequeue_actions(bool all);
+    void dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT);
 
-    void safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller);
+    void safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller) noexcept(DIAG_NOEXCEPT);
 
-    void safe_notify_timeout();
-    void safe_notify_complete(std::size_t index);
+    void safe_notify_timeout() noexcept;
+    void safe_notify_complete(std::size_t index) noexcept;
 
 private:
     enum : std::size_t
@@ -150,6 +134,7 @@ private:
     };
 
     reentrancy_t m_reentrancy = {};
+
     std::thread  m_thread;
     std::mutex   m_mutex;
 
@@ -160,9 +145,6 @@ private:
 
     bool m_running  = false;
     bool m_updating = false;
-
-    objects_waiter m_thread_waiter;
-    objects_waiter m_assist_waiter;
 
     using waitable_event_t = waitable_event<false, 1>;
 
@@ -176,22 +158,24 @@ private:
         void*                  param;
         action_param_deleter_t deleter;
     };
-    using actions_queue_t = lockfree_queue<queued_action, true, impl::queue_simple_wait_support<1,1>>;
+    using actions_queue_t = lockfree_queue<queued_action, true, impl::queue_wait_support<0,1>>;
 
     actions_queue_t m_actions_queue;
 
-protected:
-    static constexpr std::size_t initial_actions_queue_capacity = 8;
-
-protected:
-    objects_waiter& get_thread_waiter() noexcept
+private:
+    template<class T>
+    struct result_t
     {
-        return m_thread_waiter;
-    }
-    objects_waiter& get_assist_waiter() noexcept
+        T value;
+        T* ptr() { return &value; }
+        T& val() { return  value; }
+    };
+    template<>
+    struct result_t<void>
     {
-        return m_assist_waiter;
-    }
+        void* ptr() { return nullptr; }
+        void  val() { return; }
+    };
 
 protected:
     template<typename T>
@@ -227,7 +211,7 @@ protected:
 
 protected:
     template<typename R, typename... Args>
-    R execute_action_method(action_id_t action, Args&&... args)
+    R execute_action_method(action_id_t action, Args&&... args) noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(!in_worker_thread());
 
@@ -235,7 +219,7 @@ protected:
 
         const void* params[count + 1] = {reinterpret_cast<const void*>(count), static_cast<const void*>(std::addressof(args))...};
 
-        impl::result<R> result;
+        result_t<R> result;
 
         forward_action(action, params, result.ptr());
 
@@ -311,6 +295,7 @@ protected:
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
+
 };
 
 }

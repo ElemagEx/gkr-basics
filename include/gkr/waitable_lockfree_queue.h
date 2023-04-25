@@ -1,7 +1,7 @@
 #pragma once
 
-#include "lockfree_queue.h"
-#include "waitable_event.h"
+#include <gkr/lockfree_queue.h>
+#include <gkr/waitable_event.h>
 
 namespace gkr
 {

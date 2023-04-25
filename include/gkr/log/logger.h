@@ -1,8 +1,8 @@
 #pragma once
 
-#include "message.h"
+#include <gkr/log/message.h>
 
-#include <gkr/basic_thread_worker.h>
+#include <gkr/thread_worker.h>
 #include <gkr/waitable_lockfree_queue.h>
 
 #include <memory>
@@ -18,7 +18,7 @@ namespace log
 struct name_id_pair;
 class consumer;
 
-class logger final : public basic_thread_worker
+class logger final : public thread_worker
 {
     logger           (const logger&) noexcept = delete;
     logger& operator=(const logger&) noexcept = delete;
@@ -37,17 +37,17 @@ private:
 
     virtual std::size_t get_wait_objects_count() noexcept override;
 
-    virtual waitable_object* get_wait_object(std::size_t index) override;
+    virtual waitable_object* get_wait_object(std::size_t index) noexcept override;
 
-    virtual bool start() override;
-    virtual void finish() override;
+    virtual bool on_start() override;
+    virtual void on_finish() override;
 
     virtual void on_action(action_id_t action, void* param, void* result) override;
 
     virtual void on_wait_timeout() override;
     virtual void on_wait_success(std::size_t index) override;
 
-    virtual bool on_exception(bool can_continue, const std::exception* e) noexcept override;
+    virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override;
 
 public:
     bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
@@ -115,7 +115,7 @@ private:
         ACTION_SYNC_LOG_MESSAGE ,
     };
 
-    using lockfree_queue_t = lockfree_queue<void, true, impl::queue_simple_wait_support<1,1>>;
+    using lockfree_queue_t = lockfree_queue<void, true, impl::queue_wait_support<0,1>>;
 
 private:
     lockfree_queue_t m_log_queue;

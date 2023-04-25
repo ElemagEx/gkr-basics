@@ -7,10 +7,10 @@
 
 #ifndef GKR_LOCKFREE_GROW_ONLY_BAG_SINGLE_HEADER
 
-#include "diag/diagnostics.h"
+#include <gkr/diag/diagnostics.h>
 
 #ifndef __cpp_lib_exchange_function
-#include "cpp/lib_exchange_function.h"
+#include <gkr/cpp/lib_exchange_function.h>
 #endif
 
 #else

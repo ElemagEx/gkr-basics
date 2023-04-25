@@ -11,11 +11,11 @@
 
 #ifndef GKR_LOCKFREE_QUEUE_SINGLE_HEADER
 
-#ifndef __cpp_lib_exchange_function
-#include "cpp/lib_exchange_function.h"
-#endif
+#include <gkr/diag/diagnostics.h>
 
-#include "diag/diagnostics.h"
+#ifndef __cpp_lib_exchange_function
+#include <gkr/cpp/lib_exchange_function.h>
+#endif
 
 #else
 

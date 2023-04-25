@@ -1,10 +1,14 @@
-#include "main.h"
-
 #include <gkr/log/consumer.h>
 #include <gkr/log/message.h>
 #include <gkr/log/stamp.h>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include <cstdio>
-class console_consumer : public gkr::log::consumer
+
+using namespace gkr;
+
+class console_consumer : public log::consumer
 {
     virtual bool init_logging() override
     {
@@ -68,18 +72,9 @@ static name_id_pair g_facilities[] = {
     {nullptr  , 0               }
 };
 
-//static logging s_logging(g_severities, g_facilities);
-
 #include <thread>
-#include <gkr/sys/thread_name.h>
 
-static void bar()
-{
-    gkr::sys::set_current_thread_name("gkr-bar");
-    logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
-}
-
-int test_logging()
+TEST_CASE("logging.logger. main")
 {
     logging::init(g_severities, g_facilities);
 
@@ -87,12 +82,13 @@ int test_logging()
 
     logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
-    std::thread t([] () { bar(); });
+    std::thread t([] () {
+        logging::set_this_thread_name("gkr-bar");
+        logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
+    });
     t.join();
 
     logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
     logging::done();
-
-    return 0;
 }

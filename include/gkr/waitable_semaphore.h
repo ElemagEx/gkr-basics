@@ -2,7 +2,7 @@
 
 #ifdef __cpp_lib_semaphore
 
-#include "waitable_object.h"
+#include <gkr/waitable_object.h>
 
 #include <semaphore>
 

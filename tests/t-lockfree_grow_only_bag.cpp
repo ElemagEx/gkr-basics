@@ -10,7 +10,7 @@ struct Data
     bool b;
 };
 
-TEST_CASE("lockfree.bag. Instantiation")
+TEST_CASE("container.lockfree_bag. Instantiation")
 {
     gkr::lockfree_grow_only_bag<int>         bag1;
     gkr::lockfree_grow_only_bag<Data>        bag2;
@@ -21,7 +21,7 @@ TEST_CASE("lockfree.bag. Instantiation")
     CHECK(bag3.empty());
 }
 
-TEST_CASE("lockfree.bag. Clear")
+TEST_CASE("container.lockfree_bag. Clear")
 {
     gkr::lockfree_grow_only_bag<int>         bag1;
     gkr::lockfree_grow_only_bag<Data>        bag2;

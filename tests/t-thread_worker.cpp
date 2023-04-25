@@ -1,8 +1,10 @@
-#include <gkr/diag/diagnostics.h>
-
 #include <gkr/thread_worker.h>
 
-class MyThreadWorker : public gkr::thread_worker
+#include <catch2/catch_test_macros.hpp>
+
+using namespace gkr;
+
+class MyThreadWorker : public thread_worker
 {
     MyThreadWorker           (const MyThreadWorker&) noexcept = delete;
     MyThreadWorker& operator=(const MyThreadWorker&) noexcept = delete;
@@ -10,16 +12,11 @@ class MyThreadWorker : public gkr::thread_worker
 public:
     MyThreadWorker()
     {
+        check_args_order();
     }
     virtual ~MyThreadWorker() override
     {
         join(true);
-    }
-
-private:
-    int sum(int x, int y, int z)
-    {
-        return (x + y + z);
     }
 
 protected:
@@ -35,23 +32,26 @@ protected:
     {
         return 0;
     }
-    virtual gkr::waitable_object* get_wait_object(size_t) override
+    virtual waitable_object* get_wait_object(size_t) noexcept override
     {
         return nullptr;
     }
-    virtual bool start() override
+    virtual bool on_start() override
     {
         return true;
     }
-    virtual void finish() override
+    virtual void on_finish() override
     {
     }
+
+    enum : action_id_t { Action_ID_SumInThread };
+
     virtual void on_action(action_id_t action, void* param, void* result) override
     {
         switch(action)
         {
-            case 1:
-                call_action_method<int>(&MyThreadWorker::sum, param, result);
+            case Action_ID_SumInThread:
+                call_action_method<int>(&MyThreadWorker::sum_in_thread, param, result);
                 break;
         }
     }
@@ -61,7 +61,7 @@ protected:
     virtual void on_wait_success(size_t) override
     {
     }
-    virtual bool on_exception(bool, const std::exception*) noexcept override
+    virtual bool on_exception(except_method_t, const std::exception*) noexcept override
     {
         return true;
     }
@@ -69,20 +69,26 @@ protected:
 public:
     int sum_in_thread(int x, int y, int z)
     {
-        return execute_action_method<int>(action_id_t(1), x, y, z);
+        if(in_worker_thread())
+        {
+            return (x + y + z);
+        }
+        else
+        {
+            return execute_action_method<int>(Action_ID_SumInThread, x, y, z);
+        }
     }
 };
 
-int test_thread_worker()
+TEST_CASE("thread.worker. main")
 {
     MyThreadWorker myThread;
 
-    int result = 0;
+    REQUIRE(myThread.run());
 
-    if(myThread.run())
-    {
-        result = myThread.sum_in_thread(1, 2, 3);
-    }
+    int x = 1, y = 2, z = 3;
 
-    return result;
+    int result = myThread.sum_in_thread(x, y, z);
+
+    CHECK(result == (x + y + z));
 }

@@ -179,7 +179,7 @@ bool logging::log_valist_message(bool wait, int severity, int facility, const ch
 
 struct thread_name_t
 {
-    char buff[sys::max_thread_name_cch] = {0};
+    char buff[sys::MAX_THREAD_NAME_CCH] = {0};
     bool registered = false;
 
     ~thread_name_t()

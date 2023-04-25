@@ -155,12 +155,14 @@ void thread_worker::thread_proc() noexcept(DIAG_NOEXCEPT)
 
     if(running())
     {
-        do
+        for( ; ; )
         {
             m_updating = false;
             m_count    = OWN_EVENTS_TO_WAIT + get_wait_objects_count();
+            m_objects  = static_cast<waitable_object**>(stack_alloc(m_count * sizeof(waitable_object*)));
+
+            if(!main_loop()) break;
         }
-        while(main_loop());
 
         dequeue_actions(true);
     }
@@ -177,17 +179,16 @@ bool thread_worker::safe_start() noexcept
 #else
     try
     {
-        return start();
+        return on_start();
     }
     catch(const std::exception& e)
     {
-        on_exception(false, &e);
+        return on_exception(except_method_t::on_start, &e);
     }
     catch(...)
     {
-        on_exception(false, nullptr);
+        return on_exception(except_method_t::on_start, nullptr);
     }
-    return false;
 #endif
 }
 
@@ -198,60 +199,36 @@ void thread_worker::safe_finish() noexcept
 #else
     try
     {
-        finish();
+        on_finish();
     }
     catch(const std::exception& e)
     {
-        on_exception(false, &e);
+        on_exception(except_method_t::on_finish, &e);
     }
     catch(...)
     {
-        on_exception(false, nullptr);
+        on_exception(except_method_t::on_finish, nullptr);
     }
 #endif
 }
 
-bool thread_worker::acquire_events() noexcept(DIAG_NOEXCEPT)
+bool thread_worker::main_loop() noexcept(DIAG_NOEXCEPT)
 {
+    const std::chrono::nanoseconds timeout = get_wait_timeout();
+
     m_objects[OWN_EVENT_HAS_ASYNC_ACTION] =  m_actions_queue.queue_has_items_waitable_object();
     m_objects[OWN_EVENT_HAS_SYNC_ACTION ] = &m_work_event;
 
     for(size_t index = OWN_EVENTS_TO_WAIT; index < m_count; ++index)
     {
-#ifndef __cpp_exceptions
         m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
 
-        Check_NotNullPtr(m_objects[index], false);
-#else
-        try
+        if(m_objects[index] == nullptr)
         {
-            m_objects[index] = get_wait_object(index - OWN_EVENTS_TO_WAIT);
-
-            Check_NotNullPtr(m_objects[index], false);
+            m_count = index;
+            break;
         }
-        catch(const std::exception& e)
-        {
-            on_exception(true, &e);
-            return false;
-        }
-        catch(...)
-        {
-            on_exception(true, nullptr);
-            return false;
-        }
-#endif
     }
-    return true;
-}
-
-bool thread_worker::main_loop() noexcept(DIAG_NOEXCEPT)
-{
-    m_objects = static_cast<waitable_object**>(stack_alloc(m_count * sizeof(waitable_object*)));
-
-    if(!acquire_events()) return false;
-
-    const auto timeout = get_wait_timeout();
-
     while(running())
     {
         if(m_updating) return true;
@@ -330,11 +307,11 @@ void thread_worker::safe_do_action(action_id_t id, void* param, void* result, bo
             }
             catch(const std::exception& e)
             {
-                m_running = on_exception(true, &e);
+                m_running = on_exception(except_method_t::on_action, &e);
             }
             catch(...)
             {
-                m_running = on_exception(true, nullptr);
+                m_running = on_exception(except_method_t::on_action, nullptr);
             }
 #endif
             break;
@@ -358,11 +335,11 @@ void thread_worker::safe_notify_timeout() noexcept
     }
     catch(const std::exception& e)
     {
-        m_running = on_exception(true, &e);
+        m_running = on_exception(except_method_t::on_wait_timeout, &e);
     }
     catch(...)
     {
-        m_running = on_exception(true, nullptr);
+        m_running = on_exception(except_method_t::on_wait_timeout, nullptr);
     }
 #endif
 }
@@ -378,11 +355,11 @@ void thread_worker::safe_notify_complete(size_t index) noexcept
     }
     catch(const std::exception& e)
     {
-        m_running = on_exception(true, &e);
+        m_running = on_exception(except_method_t::on_wait_success, &e);
     }
     catch(...)
     {
-        m_running = on_exception(true, nullptr);
+        m_running = on_exception(except_method_t::on_wait_success, nullptr);
     }
 #endif
 }

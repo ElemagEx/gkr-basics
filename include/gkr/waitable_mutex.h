@@ -1,17 +1,11 @@
 #pragma once
 
-#include "waitable_object.h"
+#include <gkr/thread_waiting.h>
 
 #include <mutex>
 
 namespace gkr
 {
-namespace impl
-{
-template<bool> struct std_mutex;
-template<> struct std_mutex<false> { using type = std::mutex; };
-template<> struct std_mutex<true > { using type = std::recursive_mutex; };
-}
 
 template<bool Recursive=false, unsigned MaxWaiters = 1>
 class waitable_mutex final : public waitable_registrator<MaxWaiters>
@@ -27,7 +21,11 @@ public:
    ~waitable_mutex() noexcept = default;
 
 private:
-    using mutex_t = typename impl::std_mutex<Recursive>::type;
+    template<bool> struct std_mutex;
+    template<> struct std_mutex<false> { using type = std::mutex; };
+    template<> struct std_mutex<true > { using type = std::recursive_mutex; };
+
+    using mutex_t = typename std_mutex<Recursive>::type;
 
     using base_t = waitable_registrator<MaxWaiters>;
 
@@ -40,8 +38,7 @@ public:
     {
         m_mutex.unlock();
 
-        //Check for recursivity???
-        base_t::notify_all_waiters(false);
+        base_t::notify_all_registered_waiters();
     }
     [[nodiscard]]
     bool try_lock()
@@ -51,7 +48,7 @@ public:
 
 private:
     [[nodiscard]]
-    virtual bool try_consume() override
+    virtual bool try_consume() noexcept override
     {
         return m_mutex.try_lock();
     }

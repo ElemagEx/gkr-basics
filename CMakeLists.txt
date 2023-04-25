@@ -77,9 +77,9 @@ target_sources(
     "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_src_path}/sys/thread_name.cpp"
     "${gkr_basics_inc_path}/log/logger.h"
-#   "${gkr_basics_src_path}/log/logger.cpp"
+    "${gkr_basics_src_path}/log/logger.cpp"
     "${gkr_basics_inc_path}/log/logging.h"
-#   "${gkr_basics_src_path}/log/logging.cpp"
+    "${gkr_basics_src_path}/log/logging.cpp"
     )
 
 target_include_directories(gkr-basics PUBLIC ${gkr_basics_include})

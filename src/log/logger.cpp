@@ -17,9 +17,6 @@ namespace log
 logger::logger()
 {
     check_args_order();
-
-    m_log_queue.set_producer_waiter(get_assist_waiter());
-    m_log_queue.set_consumer_waiter(get_thread_waiter());
 }
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
@@ -34,7 +31,7 @@ const char* logger::get_name() noexcept
 
 std::chrono::nanoseconds logger::get_wait_timeout() noexcept
 {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(timeout_infinite);
+    return std::chrono::nanoseconds::max();
 }
 
 std::size_t logger::get_wait_objects_count() noexcept
@@ -42,21 +39,21 @@ std::size_t logger::get_wait_objects_count() noexcept
     return 1;
 }
 
-waitable_object* logger::get_wait_object(std::size_t index)
+waitable_object* logger::get_wait_object(std::size_t index) noexcept
 {
     Check_ValidState(index == 0, nullptr);
 
     return m_log_queue.queue_has_items_waitable_object();
 }
 
-bool logger::start()
+bool logger::on_start()
 {
     m_log_queue.threading.any_thread_can_be_producer();
     m_log_queue.threading.set_this_thread_as_exclusive_consumer();
     return true;
 }
 
-void logger::finish()
+void logger::on_finish()
 {
     process_pending_messages();
 
@@ -98,7 +95,7 @@ void logger::on_wait_success(std::size_t index)
     process_message(msg);
 }
 
-bool logger::on_exception(bool, const std::exception*) noexcept
+bool logger::on_exception(except_method_t method, const std::exception* e) noexcept
 {
     return true;
 }
@@ -112,20 +109,26 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
-        ? lockfree_queue_t::npos
-        : max_queue_entries
-        ;
-    const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
-        ? lockfree_queue_t::npos
-        : max_message_chars + sizeof(message)
-        ;
     if(running())
     {
-        return m_log_queue.resize_ex(queue_capacity, queue_entry_size);
+        bool result = true;
+
+        if(max_queue_entries != std::size_t(-1)) result = m_log_queue.resize             (max_queue_entries                  ) && result;
+        if(max_message_chars != std::size_t(-1)) result = m_log_queue.change_element_size(max_message_chars + sizeof(message)) && result;
+
+        return result;
     }
     else
     {
+        const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
+            ? lockfree_queue_t::npos
+            : max_queue_entries
+            ;
+        const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
+            ? lockfree_queue_t::npos
+            : max_message_chars + sizeof(message)
+            ;
+
         m_log_queue.reset(queue_capacity, queue_entry_size, alignof(message));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);

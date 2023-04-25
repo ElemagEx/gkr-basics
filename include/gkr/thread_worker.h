@@ -4,11 +4,11 @@
 #include <thread>
 #include <functional>
 
-#include "thread_waiting.h"
-#include "waitable_event.h"
-#include "waitable_lockfree_queue.h"
+#include <gkr/thread_waiting.h>
+#include <gkr/waitable_event.h>
+#include <gkr/waitable_lockfree_queue.h>
 
-#include "misc/stack_args_order.h"
+#include <gkr/misc/stack_args_order.h>
 
 #ifndef GKR_BTW_API
 #define GKR_BTW_API
@@ -41,17 +41,18 @@ protected:
 
     virtual std::size_t get_wait_objects_count() noexcept = 0;
 
-    virtual waitable_object* get_wait_object(std::size_t index) = 0;
+    virtual waitable_object* get_wait_object(std::size_t index) noexcept = 0;
 
-    virtual bool start() = 0;
-    virtual void finish() = 0;
+    virtual bool on_start() = 0;
+    virtual void on_finish() = 0;
 
     virtual void on_action(action_id_t action, void* param, void* result) = 0;
 
     virtual void on_wait_timeout() = 0;
     virtual void on_wait_success(std::size_t index) = 0;
 
-    virtual bool on_exception(bool can_continue, const std::exception* e) noexcept = 0;
+    enum class except_method_t {on_start, on_finish, on_action, on_wait_timeout, on_wait_success};
+    virtual bool on_exception(except_method_t method, const std::exception* e) noexcept = 0;
 
 public:
     GKR_BTW_API bool run() noexcept(DIAG_NOEXCEPT);
@@ -97,8 +98,6 @@ private:
 
     bool safe_start () noexcept;
     void safe_finish() noexcept;
-
-    bool acquire_events() noexcept(DIAG_NOEXCEPT);
 
     bool main_loop() noexcept(DIAG_NOEXCEPT);
 

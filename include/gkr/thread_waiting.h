@@ -6,9 +6,9 @@
 #include <climits>
 #include <condition_variable>
 
-#include "diag/diagnostics.h"
+#include <gkr/diag/diagnostics.h>
 
-#include "lockfree_grow_only_bag.h"
+#include <gkr/lockfree_grow_only_bag.h>
 
 namespace gkr
 {

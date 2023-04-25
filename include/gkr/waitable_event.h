@@ -1,10 +1,10 @@
 #pragma once
 
-#include "thread_waiting.h"
+#include <gkr/thread_waiting.h>
 
-//#ifndef __cpp_lib_exchange_function
-//#include "cpp/lib_exchange_function.h"
-//#endif
+#ifndef __cpp_lib_exchange_function
+#include <gkr/cpp/lib_exchange_function.h>
+#endif
 
 namespace gkr
 {
@@ -27,6 +27,7 @@ private:
     using self_t = waitable_event<ManualReset, MaxWaiters>;
     using base_t = waitable_registrator<MaxWaiters>;
 
+public:
     waitable_event(self_t&& other) noexcept(DIAG_NOEXCEPT) : base_t(std::move(other))
     {
         m_signaled.store(other.m_signaled.exchange(false));

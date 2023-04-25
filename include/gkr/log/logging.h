@@ -1,6 +1,6 @@
 #pragma once
 
-#include "message.h"
+#include <gkr/log/message.h>
 
 #include <memory>
 #include <cstdarg>

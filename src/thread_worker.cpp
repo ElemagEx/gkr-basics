@@ -79,10 +79,16 @@ bool thread_worker::update_wait() noexcept(DIAG_NOEXCEPT)
 
 bool thread_worker::resize_actions_queue(size_t capacity) noexcept(false)
 {
-    Check_ValidState(running(), false);
-    Check_ValidState(!in_worker_thread(), false);
-
-    return m_actions_queue.resize(capacity);
+    if(running())
+    {
+        Check_ValidState(!in_worker_thread(), false);
+        return m_actions_queue.resize(capacity);
+    }
+    else
+    {
+        m_actions_queue.reset(capacity);
+        return true;
+    }
 }
 
 bool thread_worker::enqueue_action(action_id_t id, void* param, action_param_deleter_t deleter) noexcept(DIAG_NOEXCEPT)

@@ -1598,7 +1598,7 @@ public:
     }
     ~lockfree_queue() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
-        clear(true);
+        clear();
     }
 
 public:
@@ -1617,7 +1617,7 @@ public:
     {
         if(this != &other)
         {
-            clear(true);
+            clear();
             move_elements(std::move(other));
 
             base_t::operator=(std::move(other));
@@ -1639,7 +1639,7 @@ private:
     {
         m_elements[index].~element_t();
     }
-    void clear(bool deallocate) noexcept(std::is_nothrow_destructible<element_t>::value)
+    void clear() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
         if(m_elements != nullptr)
         {
@@ -1650,10 +1650,7 @@ private:
                     destroy_element(index);
                 }
             }
-            if(deallocate)
-            {
-                m_allocator.deallocate(m_elements, base_t::capacity());
-            }
+            m_allocator.deallocate(m_elements, base_t::capacity());
         }
     }
 
@@ -1746,27 +1743,18 @@ public:
     }
 
 public:
-    void reset(size_t capacity = npos) noexcept(false)
+    void reset(size_t capacity) noexcept(false)
     {
-        if(capacity == npos)
-        {
-            capacity = base_t::capacity();
-        }
-        const bool reallocate = (capacity != base_t::capacity());
-
-        clear(reallocate);
+        clear();
         base_t::reset(capacity);
 
-        if(reallocate)
+        if(base_t::capacity() == 0)
         {
-            if(base_t::capacity() == 0)
-            {
-                m_elements = nullptr;
-            }
-            else
-            {
-                m_elements = m_allocator.allocate(base_t::capacity());
-            }
+            m_elements = nullptr;
+        }
+        else
+        {
+            m_elements = m_allocator.allocate(base_t::capacity());
         }
     }
 

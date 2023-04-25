@@ -17,8 +17,9 @@ class waitable_mutex final : public waitable_registrator<MaxWaiters>
     waitable_mutex& operator=(waitable_mutex&& other) noexcept = delete;
 
 public:
-    waitable_mutex() noexcept = default;
-   ~waitable_mutex() noexcept = default;
+    virtual
+   ~waitable_mutex() noexcept override = default;
+    waitable_mutex() noexcept          = default;
 
 private:
     template<bool> struct std_mutex;

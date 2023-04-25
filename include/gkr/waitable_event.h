@@ -27,7 +27,6 @@ private:
     using self_t = waitable_event<ManualReset, MaxWaiters>;
     using base_t = waitable_registrator<MaxWaiters>;
 
-public:
     waitable_event(self_t&& other) noexcept(DIAG_NOEXCEPT) : base_t(std::move(other))
     {
         m_signaled.store(other.m_signaled.exchange(false));

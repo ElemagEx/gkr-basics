@@ -94,7 +94,7 @@ public:
         , m_allocator(std::move(other.m_allocator))
     {
     }
-    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) //noexcept(false)
+    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept
     {
         if(this != &other)
         {

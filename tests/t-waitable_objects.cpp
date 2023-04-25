@@ -10,15 +10,9 @@
 using namespace gkr;
 using namespace std::chrono_literals;
 
-
-static waitable_event<> e1;
-static waitable_event<> e2;
-
-//waitable_semaphore<> s1(50);
-
 TEST_CASE("thread.waitable_objects. main")
 {
-    int n = 0;
+//  int n = 0;
 
     waitable_mutex<> m1;
 
@@ -32,12 +26,13 @@ TEST_CASE("thread.waitable_objects. main")
     this_thread_objects_waiter().wait(m1);
 
     {
-        std::lock_guard<waitable_mutex<>> lock(m1, std::adopt_lock_t{} );
-        ++n;
+        std::lock_guard<waitable_mutex<>> lock(m1, std::adopt_lock);
     }
 
     std::this_thread::sleep_for(100ms);
 
+    static waitable_event<> e1;
+    static waitable_event<> e2;
     e1.fire();
     e2.fire();
 
@@ -45,16 +40,20 @@ TEST_CASE("thread.waitable_objects. main")
 
     waitable_mutex<> mutex;
     waitable_event<> event1, event2;
-//  waitable_semaphore<> semaphore(1);
 
     event1.fire();
     event2.fire();
 
-    auto wait_result = this_thread_objects_waiter().wait(mutex, event1, event2/*, semaphore*/);
+#ifdef __cpp_lib_semaphore
+    waitable_semaphore<> semaphore(1);
+    auto wait_result = this_thread_objects_waiter().wait(mutex, event1, event2, semaphore);
+#else
+    auto wait_result = this_thread_objects_waiter().wait(mutex, event1, event2);
+#endif
 
     if(waitable_object_wait_is_completed(wait_result, 0))
     {
-        std::lock_guard<waitable_mutex<>> lock(mutex, std::adopt_lock_t{} );
+        std::lock_guard<waitable_mutex<>> lock(mutex, std::adopt_lock);
     }
     if(waitable_object_wait_is_completed(wait_result, 1))
     {
@@ -62,7 +61,7 @@ TEST_CASE("thread.waitable_objects. main")
     if(waitable_object_wait_is_completed(wait_result, 2))
     {
     }
-//  if(auto guard = guard_waitable_object(wait_result, 3, semaphore))
-//  {
-//  }
+    if(waitable_object_wait_is_completed(wait_result, 3))
+    {
+    }
 }

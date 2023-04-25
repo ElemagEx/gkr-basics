@@ -43,8 +43,6 @@
 
 namespace gkr
 {
-using std::size_t;
-
 template<typename Queue, typename Element>
 class queue_producer_element
 {
@@ -244,15 +242,15 @@ public:
     }
 
 public:
-    size_t get_element_alignment() const noexcept
+    std::size_t get_element_alignment() const noexcept
     {
         return m_queue->element_alignment();
     }
-    size_t get_element_size() const noexcept
+    std::size_t get_element_size() const noexcept
     {
         return m_queue->element_size();
     }
-    bool set_element_size(size_t size) noexcept(false)
+    bool set_element_size(std::size_t size) noexcept(false)
     {
         if(push_in_progress())
         {
@@ -474,15 +472,15 @@ public:
     }
 
 public:
-    size_t get_element_alignment() const noexcept
+    std::size_t get_element_alignment() const noexcept
     {
         return m_queue->element_alignment();
     }
-    size_t get_element_size() const noexcept
+    std::size_t get_element_size() const noexcept
     {
         return m_queue->element_size();
     }
-    bool set_element_size(size_t size) noexcept(false)
+    bool set_element_size(std::size_t size) noexcept(false)
     {
         if(pop_in_progress())
         {
@@ -595,10 +593,10 @@ protected:
     }
 
 protected:
-    void reset(size_t) noexcept
+    void reset(std::size_t) noexcept
     {
     }
-    void resize(size_t) noexcept
+    void resize(std::size_t) noexcept
     {
     }
 
@@ -755,7 +753,7 @@ class basic_lockfree_queue<false, WaitSupport, BaseAllocator> : public queue_pau
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
 
 public:
-    static constexpr size_t npos = size_t(-1);
+    static constexpr std::size_t npos = std::size_t(-1);
 
     queue_threading threading;
 
@@ -764,11 +762,11 @@ private:
 
     using tid_owner_t = typename base_t::tid_owner_t;
 
-    std::atomic<size_t> m_count {0};
+    std::atomic<std::size_t> m_count {0};
 
-    size_t m_capacity = 0;
-    size_t m_tail_pos = 0;
-    size_t m_head_pos = 0;
+    std::size_t m_capacity = 0;
+    std::size_t m_tail_pos = 0;
+    std::size_t m_head_pos = 0;
 
     tid_owner_t m_producer_tid_owner = 0;
     tid_owner_t m_consumer_tid_owner = 0;
@@ -835,22 +833,22 @@ public:
     {
         return (m_count == m_capacity);
     }
-    size_t count() const noexcept
+    std::size_t count() const noexcept
     {
         return m_count;
     }
-    size_t capacity() const noexcept
+    std::size_t capacity() const noexcept
     {
         return m_capacity;
     }
 
 protected:
-    bool element_has_value(size_t index, size_t& pos) const noexcept
+    bool element_has_value(std::size_t index, std::size_t& pos) const noexcept
     {
         if(index >= m_capacity) return false;
 
-        const size_t tail_index = (m_tail_pos % m_capacity);
-        const size_t head_index = (m_head_pos % m_capacity);
+        const std::size_t tail_index = (m_tail_pos % m_capacity);
+        const std::size_t head_index = (m_head_pos % m_capacity);
 
         if(head_index <= tail_index)
         {
@@ -867,7 +865,7 @@ protected:
             return ((head_index <= index) || (index < tail_index));
         }
     }
-    void reset(size_t capacity) noexcept
+    void reset(std::size_t capacity) noexcept
     {
         base_t::reset(capacity);
 
@@ -879,7 +877,7 @@ protected:
         m_producer_tid_owner = 0;
         m_consumer_tid_owner = 0;
     }
-    void resize(size_t capacity) noexcept(DIAG_NOEXCEPT)
+    void resize(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(capacity > m_capacity);
 
@@ -892,7 +890,7 @@ protected:
     }
 
 protected:
-    size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
@@ -909,12 +907,12 @@ protected:
 
         m_producer_tid_owner = base_t::get_current_tid();
 
-        const size_t index = (m_tail_pos % m_capacity);
+        const std::size_t index = (m_tail_pos % m_capacity);
 
         return index;
     }
     template<bool push>
-    bool drop_producer_element_ownership(size_t index) noexcept(DIAG_NOEXCEPT)
+    bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
@@ -945,7 +943,7 @@ protected:
     }
 
 protected:
-    size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
@@ -962,12 +960,12 @@ protected:
 
         m_consumer_tid_owner = base_t::get_current_tid();
 
-        const size_t index = (m_head_pos % m_capacity);
+        const std::size_t index = (m_head_pos % m_capacity);
 
         return index;
     }
     template<bool pop>
-    bool drop_consumer_element_ownership(size_t index) noexcept(DIAG_NOEXCEPT)
+    bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
@@ -998,7 +996,7 @@ protected:
     }
 
 protected:
-    bool this_thread_owns_elements(size_t count) const noexcept
+    bool this_thread_owns_elements(std::size_t count) const noexcept
     {
         const tid_owner_t current_tid = base_t::get_current_tid();
 
@@ -1011,7 +1009,7 @@ protected:
     {
         return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
     }
-    bool some_thread_owns_elements(size_t count) const noexcept
+    bool some_thread_owns_elements(std::size_t count) const noexcept
     {
         switch(count)
         {
@@ -1034,11 +1032,11 @@ protected:
 
 protected:
     template<typename Rep, typename Period>
-    size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
-            const size_t index = try_take_producer_element_ownership();
+            const std::size_t index = try_take_producer_element_ownership();
 
             if(index != npos) return index;
 
@@ -1048,11 +1046,11 @@ protected:
         }
     }
     template<typename Rep, typename Period>
-    size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
-            const size_t index = try_take_consumer_element_ownership();
+            const std::size_t index = try_take_consumer_element_ownership();
 
             if(index != npos) return index;
 
@@ -1070,7 +1068,7 @@ class basic_lockfree_queue<true, WaitSupport, BaseAllocator> : public queue_paus
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
 
 public:
-    static constexpr size_t npos = size_t(-1);
+    static constexpr std::size_t npos = std::size_t(-1);
 
     queue_threading threading;
 
@@ -1081,8 +1079,8 @@ private:
 
     struct dequeues_entry
     {
-        size_t      free_index;
-        size_t      busy_index;
+        std::size_t free_index;
+        std::size_t busy_index;
         tid_owner_t  tid_owner;
     };
     static_assert(std::is_trivial<dequeues_entry>::value, "Must be trivial");
@@ -1095,18 +1093,18 @@ private:
     static constexpr bool swap_is_noexcept = AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap::value;
 
     TypeAllocator   m_allocator;
-    size_t          m_capacity = 0;
+    std::size_t     m_capacity = 0;
     dequeues_entry* m_entries  = nullptr;
 
-    std::atomic<size_t> m_count     {0};
-    std::atomic<size_t> m_occupied  {0};
-    std::atomic<size_t> m_available {0};
+    std::atomic<std::size_t> m_count     {0};
+    std::atomic<std::size_t> m_occupied  {0};
+    std::atomic<std::size_t> m_available {0};
 
-    std::atomic<size_t> m_free_tail {0};
-    std::atomic<size_t> m_free_head {0};
+    std::atomic<std::size_t> m_free_tail {0};
+    std::atomic<std::size_t> m_free_head {0};
 
-    std::atomic<size_t> m_busy_tail {0};
-    std::atomic<size_t> m_busy_head {0};
+    std::atomic<std::size_t> m_busy_tail {0};
+    std::atomic<std::size_t> m_busy_head {0};
 
 protected:
     basic_lockfree_queue() noexcept = delete;
@@ -1269,21 +1267,21 @@ public:
     {
         return (m_count == m_capacity);
     }
-    size_t count() const noexcept
+    std::size_t count() const noexcept
     {
         return m_count;
     }
-    size_t capacity() const noexcept
+    std::size_t capacity() const noexcept
     {
         return m_capacity;
     }
 
 protected:
-    bool element_has_value(size_t index, size_t& pos) const noexcept
+    bool element_has_value(std::size_t index, std::size_t& pos) const noexcept
     {
         if(index >= m_capacity) return false;
 
-        for(size_t busy_pos = m_busy_head; busy_pos < m_busy_tail; ++busy_pos)
+        for(std::size_t busy_pos = m_busy_head; busy_pos < m_busy_tail; ++busy_pos)
         {
             if(index == m_entries[busy_pos % m_capacity].busy_index)
             {
@@ -1293,7 +1291,7 @@ protected:
         }
         return false;
     }
-    void reset(size_t capacity) noexcept(false)
+    void reset(std::size_t capacity) noexcept(false)
     {
         base_t::reset(capacity);
 
@@ -1312,7 +1310,7 @@ protected:
                 m_entries = m_allocator.allocate(m_capacity);
             }
         }
-        for(size_t index = 0; index < m_capacity; ++index)
+        for(std::size_t index = 0; index < m_capacity; ++index)
         {
             m_entries[index] = dequeues_entry{index, 0, 0};
         }
@@ -1326,7 +1324,7 @@ protected:
         m_free_head = 0;
         m_free_tail = m_capacity;
     }
-    void resize(size_t capacity) noexcept(false)
+    void resize(std::size_t capacity) noexcept(false)
     {
         Assert_Check(capacity > m_capacity);
 
@@ -1336,9 +1334,9 @@ protected:
 
         dequeues_entry* entries = m_allocator.allocate(capacity);
 
-        const size_t count = m_count;
+        const std::size_t count = m_count;
 
-        for(size_t index = 0; index < capacity; ++index)
+        for(std::size_t index = 0; index < capacity; ++index)
         {
             entries[index] = dequeues_entry{index + count, index, 0};
         }
@@ -1352,7 +1350,7 @@ protected:
     }
 
 protected:
-    size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), npos);
 
@@ -1366,14 +1364,14 @@ protected:
         }
         base_t::notify_producer_ownership_start();
 
-        const size_t index = m_entries[m_free_head++ % m_capacity].free_index;
+        const std::size_t index = m_entries[m_free_head++ % m_capacity].free_index;
 
         m_entries[index].tid_owner = base_t::get_current_tid();
 
         return index;
     }
     template<bool push>
-    bool drop_producer_element_ownership(size_t index) noexcept(DIAG_NOEXCEPT)
+    bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
@@ -1410,7 +1408,7 @@ protected:
     }
 
 protected:
-    size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), npos);
 
@@ -1424,14 +1422,14 @@ protected:
         }
         base_t::notify_consumer_ownership_start();
 
-        const size_t index = m_entries[m_busy_head++ % m_capacity].busy_index;
+        const std::size_t index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
         m_entries[index].tid_owner = base_t::get_current_tid();
 
         return index;
     }
     template<bool pop>
-    bool drop_consumer_element_ownership(size_t index) noexcept(DIAG_NOEXCEPT)
+    bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
@@ -1468,11 +1466,11 @@ protected:
     }
 
 protected:
-    bool this_thread_owns_elements(size_t count) const noexcept
+    bool this_thread_owns_elements(std::size_t count) const noexcept
     {
         const tid_owner_t current_tid = base_t::get_current_tid();
 
-        for(size_t index = 0; index < m_capacity; ++index)
+        for(std::size_t index = 0; index < m_capacity; ++index)
         {
             if(m_entries[index].tid_owner == current_tid)
             {
@@ -1486,19 +1484,19 @@ protected:
     }
     bool some_thread_owns_element() const noexcept
     {
-        const size_t busy_count = (m_busy_tail - m_busy_head);
-        const size_t free_count = (m_free_tail - m_free_head);
+        const std::size_t busy_count = (m_busy_tail - m_busy_head);
+        const std::size_t free_count = (m_free_tail - m_free_head);
 
-        const size_t idle_count = busy_count + free_count;
+        const std::size_t idle_count = busy_count + free_count;
 
         return ((m_capacity - idle_count) == 0);
     }
-    bool some_thread_owns_elements(size_t count) const noexcept
+    bool some_thread_owns_elements(std::size_t count) const noexcept
     {
-        const size_t busy_count = (m_busy_tail - m_busy_head);
-        const size_t free_count = (m_free_tail - m_free_head);
+        const std::size_t busy_count = (m_busy_tail - m_busy_head);
+        const std::size_t free_count = (m_free_tail - m_free_head);
 
-        const size_t idle_count = busy_count + free_count;
+        const std::size_t idle_count = busy_count + free_count;
 
         return ((m_capacity - idle_count) == count);
     }
@@ -1515,11 +1513,11 @@ protected:
 
 protected:
     template<typename Rep, typename Period>
-    size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
-            const size_t index = try_take_producer_element_ownership();
+            const std::size_t index = try_take_producer_element_ownership();
 
             if(index != npos) return index;
 
@@ -1529,11 +1527,11 @@ protected:
         }
     }
     template<typename Rep, typename Period>
-    size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
-            const size_t index = try_take_consumer_element_ownership();
+            const std::size_t index = try_take_consumer_element_ownership();
 
             if(index != npos) return index;
 
@@ -1590,7 +1588,7 @@ public:
         , m_allocator(allocator)
     {
     }
-    lockfree_queue(size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+    lockfree_queue(std::size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
         : base_t     (allocator)
         , m_allocator(allocator)
     {
@@ -1635,7 +1633,7 @@ public:
     }
 
 private:
-    void destroy_element(size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
+    void destroy_element(std::size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
     {
         m_elements[index].~element_t();
     }
@@ -1643,7 +1641,7 @@ private:
     {
         if(m_elements != nullptr)
         {
-            for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+            for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -1665,7 +1663,7 @@ private:
         {
             elements = allocator.allocate(base_t::capacity());
 
-            for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+            for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -1733,17 +1731,17 @@ private:
     }
 
 public:
-    size_t element_alignment() const noexcept
+    std::size_t element_alignment() const noexcept
     {
         return alignof(element_t);
     }
-    size_t element_size() const noexcept
+    std::size_t element_size() const noexcept
     {
         return sizeof(element_t);
     }
 
 public:
-    void reset(size_t capacity) noexcept(false)
+    void reset(std::size_t capacity) noexcept(false)
     {
         clear();
         base_t::reset(capacity);
@@ -1759,7 +1757,7 @@ public:
     }
 
 public:
-    bool resize(size_t capacity) noexcept(false)
+    bool resize(std::size_t capacity) noexcept(false)
     {
         if(capacity <= base_t::capacity()) return false;
 
@@ -1775,7 +1773,7 @@ public:
         }
         element_t* elements = m_allocator.allocate(capacity);
 
-        for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
         {
             if(base_t::element_has_value(index, pos))
             {
@@ -1800,7 +1798,7 @@ public:
         std::is_nothrow_constructible<element_t, Args...>::value
         )
     {
-        const size_t index = base_t::try_take_producer_element_ownership();
+        const std::size_t index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1813,7 +1811,7 @@ public:
         std::is_nothrow_default_constructible<element_t>::value
         )
     {
-        const size_t index = base_t::try_take_producer_element_ownership();
+        const std::size_t index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1826,7 +1824,7 @@ public:
         std::is_nothrow_move_constructible<element_t>::value
         )
     {
-        const size_t index = base_t::try_take_producer_element_ownership();
+        const std::size_t index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1839,7 +1837,7 @@ public:
         std::is_nothrow_copy_constructible<element_t>::value
         )
     {
-        const size_t index = base_t::try_take_producer_element_ownership();
+        const std::size_t index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1849,7 +1847,7 @@ public:
     }
     element_t* try_acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        const size_t index = base_t::try_take_consumer_element_ownership();
+        const std::size_t index = base_t::try_take_consumer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -1859,11 +1857,11 @@ public:
     }
 
 private:
-    size_t index_of_element(element_t* element) const noexcept(DIAG_NOEXCEPT)
+    std::size_t index_of_element(element_t* element) const noexcept(DIAG_NOEXCEPT)
     {
         if(element == nullptr) return npos;
 
-        const size_t index = size_t(element - m_elements);
+        const std::size_t index = std::size_t(element - m_elements);
 
         Check_ValidState(index < base_t::capacity(), npos);
 
@@ -1877,7 +1875,7 @@ public:
         (push || std::is_nothrow_destructible<element_t>::value)
         )
     {
-        const size_t index = index_of_element(element);
+        const std::size_t index = index_of_element(element);
 
 #ifdef __cpp_if_constexpr
         if constexpr(!push)
@@ -1898,7 +1896,7 @@ public:
         (!pop || std::is_nothrow_destructible<element_t>::value)
         )
     {
-        const size_t index = index_of_element(element);
+        const std::size_t index = index_of_element(element);
 
 #ifdef __cpp_if_constexpr
         if constexpr(pop)
@@ -2036,7 +2034,7 @@ public:
     template<typename Rep, typename Period, typename... Args>
     element_t* acquire_producer_element_ownership_ex(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2053,7 +2051,7 @@ public:
     template<typename Rep, typename Period>
     element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2069,7 +2067,7 @@ public:
     template<typename Rep, typename Period>
     element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2085,7 +2083,7 @@ public:
     template<typename Rep, typename Period>
     element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2101,7 +2099,7 @@ public:
     template<typename Rep, typename Period>
     element_t* acquire_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t index = base_t::take_consumer_element_ownership(timeout);
+        const std::size_t index = base_t::take_consumer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2294,11 +2292,11 @@ private:
 
     TypeAllocator m_allocator;
     char*         m_elements  = nullptr;
-    size_t        m_offset    = 0;
-    size_t        m_size      = 0;
-    size_t        m_alignment = 0;
-    size_t        m_padding   = 0;
-    size_t        m_stride    = 0;
+    std::size_t   m_offset    = 0;
+    std::size_t   m_size      = 0;
+    std::size_t   m_alignment = 0;
+    std::size_t   m_padding   = 0;
+    std::size_t   m_stride    = 0;
 
 public:
     lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(
@@ -2308,13 +2306,13 @@ public:
         , m_allocator(allocator)
     {
     }
-    lockfree_queue(size_t capacity, size_t size, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+    lockfree_queue(std::size_t capacity, std::size_t size, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
         : base_t     (allocator)
         , m_allocator(allocator)
     {
         reset(capacity, size, 0);
     }
-    lockfree_queue(size_t capacity, size_t size, size_t alignment, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+    lockfree_queue(std::size_t capacity, std::size_t size, std::size_t alignment, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
         : base_t     (allocator)
         , m_allocator(allocator)
     {
@@ -2372,29 +2370,29 @@ public:
     }
 
 private:
-    static bool is_power_of_2(size_t value) noexcept
+    static bool is_power_of_2(std::size_t value) noexcept
     {
         return (value > 0) && ((value & (value - 1)) == 0);
     }
-    static size_t calc_alignment(size_t size) noexcept
+    static std::size_t calc_alignment(std::size_t size) noexcept
     {
-        size_t alignment;
+        std::size_t alignment;
 
         for(alignment = 1; (alignment < size) && (alignment < alignof(alloc_value_t)); alignment <<= 1);
 
         return alignment;
     }
-    static size_t calc_offset(char* elements, size_t alignment) noexcept(DIAG_NOEXCEPT)
+    static std::size_t calc_offset(char* elements, std::size_t alignment) noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(is_power_of_2(alignment));
 
-        const size_t displace = reinterpret_cast<size_t>(elements) & (alignment - 1);
+        const std::size_t displace = reinterpret_cast<std::size_t>(elements) & (alignment - 1);
 
-        const size_t offset = (displace == 0) ? 0 : (alignment - displace);
+        const std::size_t offset = (displace == 0) ? 0 : (alignment - displace);
 
         return offset;
     }
-    static void calc_stride_and_padding(size_t size, size_t alignment, size_t& stride, size_t& padding) noexcept(DIAG_NOEXCEPT)
+    static void calc_stride_and_padding(std::size_t size, std::size_t alignment, std::size_t& stride, std::size_t& padding) noexcept(DIAG_NOEXCEPT)
     {
         Assert_Check(is_power_of_2(alignment));
 
@@ -2419,13 +2417,13 @@ private:
             padding = alignment - alignof(alloc_value_t);
         }
     }
-    static size_t calc_count(size_t capacity, size_t stride, size_t padding) noexcept(DIAG_NOEXCEPT)
+    static std::size_t calc_count(std::size_t capacity, std::size_t stride, std::size_t padding) noexcept(DIAG_NOEXCEPT)
     {
-        const size_t cb = (capacity * stride + padding);
+        const std::size_t cb = (capacity * stride + padding);
 
         Assert_Check((cb % sizeof(alloc_value_t)) == 0);
 
-        const size_t count = (cb / sizeof(alloc_value_t));
+        const std::size_t count = (cb / sizeof(alloc_value_t));
 
         return count;
     }
@@ -2435,7 +2433,7 @@ private:
     {
         if(m_elements != nullptr)
         {
-            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
+            const std::size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
 
             m_elements -= m_offset;
             m_allocator.deallocate(reinterpret_cast<alloc_value_t*>(m_elements), count);
@@ -2443,7 +2441,7 @@ private:
     }
 
 private:
-    void relocate_elements(size_t& offset, char*& elements, TypeAllocator& allocator) noexcept(false)
+    void relocate_elements(std::size_t& offset, char*& elements, TypeAllocator& allocator) noexcept(false)
     {
         if(base_t::capacity() == 0)
         {
@@ -2451,7 +2449,7 @@ private:
         }
         else
         {
-            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
+            const std::size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
 
             elements = reinterpret_cast<char*>(allocator.allocate(count));
             offset   = calc_offset(elements, m_alignment);
@@ -2501,8 +2499,8 @@ private:
         {
             if(m_allocator != other.m_allocator)
             {
-                size_t offset   = 0;
-                char*  elements = nullptr;
+                std::size_t offset = 0;
+                char*     elements = nullptr;
 
                 this->relocate_elements(  offset,   elements, other.m_allocator);
                 other.relocate_elements(m_offset, m_elements,       m_allocator);
@@ -2524,17 +2522,17 @@ private:
     }
 
 public:
-    size_t element_alignment() const noexcept
+    std::size_t element_alignment() const noexcept
     {
         return m_alignment;
     }
-    size_t element_size() const noexcept
+    std::size_t element_size() const noexcept
     {
         return m_size;
     }
 
 public:
-    void reset(size_t capacity = npos, size_t size = npos, size_t alignment = npos) noexcept(false)
+    void reset(std::size_t capacity = npos, std::size_t size = npos, std::size_t alignment = npos) noexcept(false)
     {
         Check_Arg_IsValid((alignment == npos) || (alignment == 0) || is_power_of_2(alignment), );
 
@@ -2554,8 +2552,8 @@ public:
         {
             m_alignment = calc_alignment(m_size);
         }
-        size_t stride;
-        size_t padding;
+        std::size_t stride;
+        std::size_t padding;
         calc_stride_and_padding(m_size, m_alignment, stride, padding);
 
         if((capacity == base_t::capacity()) && (stride == m_stride) && (padding == m_padding))
@@ -2577,7 +2575,7 @@ public:
         }
         else
         {
-            const size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
+            const std::size_t count = calc_count(base_t::capacity(), m_stride, m_padding);
 
             m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
             m_offset   = calc_offset(m_elements, m_alignment);
@@ -2587,7 +2585,7 @@ public:
     }
 
 public:
-    bool resize(size_t capacity) noexcept(false)
+    bool resize(std::size_t capacity) noexcept(false)
     {
         if(capacity <= base_t::capacity()) return false;
 
@@ -2601,14 +2599,14 @@ public:
         {
             base_t::wait_a_while();
         }
-        const size_t count = calc_count(capacity, m_stride, m_padding);
+        const std::size_t count = calc_count(capacity, m_stride, m_padding);
 
-        char*  elements = reinterpret_cast<char*>(m_allocator.allocate(count));
-        size_t offset   = calc_offset(elements, m_alignment);
+        char*     elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+        std::size_t offset = calc_offset(elements, m_alignment);
 
         elements += offset;
 
-        for(size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
         {
             if(base_t::element_has_value(index, pos))
             {
@@ -2624,7 +2622,7 @@ public:
         base_t::resume();
         return true;
     }
-    bool change_element_size(size_t size, void** owned_elements = nullptr, size_t count_elements = 1) noexcept(false)
+    bool change_element_size(std::size_t size, void** owned_elements = nullptr, std::size_t count_elements = 1) noexcept(false)
     {
         if(size <= m_size) return false;
 
@@ -2634,7 +2632,7 @@ public:
         }
         Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
 
-        size_t pos = npos;
+        std::size_t pos = npos;
         Check_Arg_Array(index, count_elements, base_t::element_has_value(index_of_element(owned_elements[index]), pos), false);
 
         if(!base_t::pause())
@@ -2646,24 +2644,24 @@ public:
             base_t::wait_a_while();
         }
 
-        size_t stride;
-        size_t padding;
+        std::size_t stride;
+        std::size_t padding;
         calc_stride_and_padding(size, m_alignment, stride, padding);
 
         Assert_Check(padding == m_padding);
 
         if(stride != m_stride)
         {
-            const size_t count = calc_count(base_t::capacity(), stride, padding);
+            const std::size_t count = calc_count(base_t::capacity(), stride, padding);
 
-            char*  elements = reinterpret_cast<char*>(m_allocator.allocate(count));
-            size_t offset   = calc_offset(elements, m_alignment);
+            char*     elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            std::size_t offset = calc_offset(elements, m_alignment);
 
             elements += offset;
 
             Assert_Check(stride >= m_stride);
 
-            for(size_t index = 0; index < base_t::capacity(); ++index)
+            for(std::size_t index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -2672,7 +2670,7 @@ public:
             }
             for( ; count_elements-- > 0; ++owned_elements)
             {
-                const size_t index = index_of_element(*owned_elements);
+                const std::size_t index = index_of_element(*owned_elements);
 
                 *owned_elements = elements + index * stride;
             }
@@ -2692,7 +2690,7 @@ public:
     {
         if(m_stride == 0) return nullptr;
 
-        const size_t index = base_t::try_take_producer_element_ownership();
+        const std::size_t index = base_t::try_take_producer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -2714,7 +2712,7 @@ public:
     {
         if(m_stride == 0) return nullptr;
 
-        const size_t index = base_t::try_take_consumer_element_ownership();
+        const std::size_t index = base_t::try_take_consumer_element_ownership();
 
         if(index == npos) return nullptr;
 
@@ -2732,11 +2730,11 @@ public:
     }
 
 private:
-    size_t index_of_element(void* element) const noexcept(DIAG_NOEXCEPT)
+    std::size_t index_of_element(void* element) const noexcept(DIAG_NOEXCEPT)
     {
         if(element == nullptr) return npos;
 
-        const size_t index = size_t(static_cast<char*>(element) - m_elements) / m_stride;
+        const std::size_t index = std::size_t(static_cast<char*>(element) - m_elements) / m_stride;
 
         Check_ValidState(index < base_t::capacity(), npos);
 
@@ -2749,7 +2747,7 @@ public:
     {
         if(m_stride == 0) return false;
 
-        const size_t index = index_of_element(element);
+        const std::size_t index = index_of_element(element);
 
         return base_t::template drop_producer_element_ownership<push>(index);
     }
@@ -2758,7 +2756,7 @@ public:
     {
         if(m_stride == 0) return false;
 
-        const size_t index = index_of_element(element);
+        const std::size_t index = index_of_element(element);
 
         return base_t::template drop_consumer_element_ownership<pop>(index);
     }
@@ -2778,7 +2776,7 @@ public:
     }
 
 public:
-    bool try_push(const void* data = nullptr, size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool try_push(const void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = try_start_push();
 
@@ -2794,7 +2792,7 @@ public:
         }
         return true;
     }
-    bool try_pop(void* data = nullptr, size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool try_pop(void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = try_start_pop();
 
@@ -2817,7 +2815,7 @@ public:
     {
         if(m_stride == 0) return nullptr;
 
-        const size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2850,7 +2848,7 @@ public:
     {
         if(m_stride == 0) return nullptr;
 
-        const size_t index = base_t::take_consumer_element_ownership(timeout);
+        const std::size_t index = base_t::take_consumer_element_ownership(timeout);
 
         if(index == npos) return nullptr;
 
@@ -2904,7 +2902,7 @@ public:
 
 public:
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, size_t size = npos)  noexcept(DIAG_NOEXCEPT)
+    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, std::size_t size = npos)  noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = start_push(timeout);
 
@@ -2920,13 +2918,13 @@ public:
         }
         return true;
     }
-    bool push(const void* data = nullptr, size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool push(const void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
     {
         return push(std::chrono::nanoseconds::max(), data, size);
     }
 
     template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = start_pop(timeout);
 
@@ -2942,7 +2940,7 @@ public:
         }
         return true;
     }
-    bool pop(void* data = nullptr, size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool pop(void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
     {
         return pop(std::chrono::nanoseconds::max(), data, size);
     }

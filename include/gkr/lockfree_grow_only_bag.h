@@ -30,7 +30,6 @@
 
 namespace gkr
 {
-using std::size_t;
 
 template<typename T, typename Allocator=std::allocator<T>>
 class lockfree_grow_only_bag

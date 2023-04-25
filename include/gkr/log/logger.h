@@ -12,8 +12,6 @@
 
 namespace gkr
 {
-using std::size_t;
-
 namespace log
 {
 
@@ -37,9 +35,9 @@ private:
 
     virtual std::chrono::nanoseconds get_wait_timeout() noexcept override;
 
-    virtual size_t get_wait_objects_count() noexcept override;
+    virtual std::size_t get_wait_objects_count() noexcept override;
 
-    virtual waitable_object* get_wait_object(size_t index) override;
+    virtual waitable_object* get_wait_object(std::size_t index) override;
 
     virtual bool start() override;
     virtual void finish() override;
@@ -47,12 +45,12 @@ private:
     virtual void on_action(action_id_t action, void* param, void* result) override;
 
     virtual void on_wait_timeout() override;
-    virtual void on_wait_success(size_t index) override;
+    virtual void on_wait_success(std::size_t index) override;
 
     virtual bool on_exception(bool can_continue, const std::exception* e) noexcept override;
 
 public:
-    bool change_log_queue(size_t max_queue_entries, size_t max_message_chars);
+    bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
 public:
     void set_severities(bool clear_existing, const name_id_pair* severities);
@@ -89,7 +87,7 @@ private:
 private:
     void sync_log_message(message_data& entry);
 
-    bool compose_message(message_data& msg, size_t cch, int severity, int facility, const char* format, std::va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args);
 
     void process_message(message_data& msg);
     void prepare_message(message_data& msg);

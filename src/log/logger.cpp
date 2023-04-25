@@ -37,12 +37,12 @@ std::chrono::nanoseconds logger::get_wait_timeout() noexcept
     return std::chrono::duration_cast<std::chrono::nanoseconds>(timeout_infinite);
 }
 
-size_t logger::get_wait_objects_count() noexcept
+std::size_t logger::get_wait_objects_count() noexcept
 {
     return 1;
 }
 
-waitable_object* logger::get_wait_object(size_t index)
+waitable_object* logger::get_wait_object(std::size_t index)
 {
     Check_ValidState(index == 0, nullptr);
 
@@ -85,7 +85,7 @@ void logger::on_wait_timeout()
     Check_Failure();
 }
 
-void logger::on_wait_success(size_t index)
+void logger::on_wait_success(std::size_t index)
 {
     Check_ValidState(index == 0, );
 
@@ -103,7 +103,7 @@ bool logger::on_exception(bool, const std::exception*) noexcept
     return true;
 }
 
-bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars)
+bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars)
 {
     if(running() && !in_worker_thread())
     {
@@ -112,11 +112,11 @@ bool logger::change_log_queue(size_t max_queue_entries, size_t max_message_chars
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    const size_t queue_capacity   = (max_queue_entries == size_t(-1))
+    const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
         ? lockfree_queue_t::npos
         : max_queue_entries
         ;
-    const size_t queue_entry_size = (max_message_chars == size_t(-1))
+    const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
         ? lockfree_queue_t::npos
         : max_message_chars + sizeof(message)
         ;
@@ -302,11 +302,11 @@ bool logger::log_message(bool wait, int severity, int facility, const char* form
 
     Check_ValidState(running(), false);
 
-    const size_t size = m_log_queue.element_size();
+    const std::size_t size = m_log_queue.element_size();
 
     Assert_Check(size > sizeof(message));
 
-    const size_t cch = size - sizeof(message);
+    const std::size_t cch = size - sizeof(message);
 
     auto element = m_log_queue.start_push();
 
@@ -336,7 +336,7 @@ void logger::sync_log_message(message_data& msg)
     process_message(msg);
 }
 
-bool logger::compose_message(message_data& msg, size_t cch, int severity, int facility, const char* format, std::va_list args)
+bool logger::compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args)
 {
     msg.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
     msg.stamp    = calc_stamp();
@@ -349,7 +349,7 @@ bool logger::compose_message(message_data& msg, size_t cch, int severity, int fa
 
         msg.buffer[cch - 1] = 0;
 
-        const size_t len = std::strlen(msg.buffer);
+        const std::size_t len = std::strlen(msg.buffer);
 
         msg.messageLen = std::uint16_t(len);
     }
@@ -393,8 +393,8 @@ void logger::consume_message(const message_data& msg)
         consumer->consume_log_message(msg);
     }
 #else
-    size_t count = m_consumers.size();
-    size_t index = 0;
+    std::size_t count = m_consumers.size();
+    std::size_t index = 0;
 
     do
     {

@@ -11,8 +11,6 @@
 
 namespace gkr
 {
-using std::size_t;
-
 namespace log
 {
 
@@ -30,15 +28,15 @@ public:
     GKR_LOG_API static bool init(
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
-        size_t max_queue_entries = 16,
-        size_t max_message_chars = (1024 - sizeof(message)) // = 968 chars (64bit) or 984 (32bit)
+        std::size_t max_queue_entries = 16,
+        std::size_t max_message_chars = (1024 - sizeof(message)) // = 968 chars (64bit) or 984 (32bit)
         );
     GKR_LOG_API static void done();
 
 public:
     GKR_LOG_API static bool change_log_queue(
-        size_t max_queue_entries = size_t(-1),
-        size_t max_message_chars = size_t(-1)
+        std::size_t max_queue_entries = std::size_t(-1),
+        std::size_t max_message_chars = std::size_t(-1)
         );
 
 public:
@@ -66,8 +64,8 @@ public:
     logging(
         const name_id_pair* severities = nullptr,
         const name_id_pair* facilities = nullptr,
-        size_t max_queue_entries = 16,
-        size_t max_message_chars = (1024 - sizeof(message))
+        std::size_t max_queue_entries = 16,
+        std::size_t max_message_chars = (1024 - sizeof(message))
         )
     {
         m_initialized = init(severities, facilities, max_queue_entries, max_message_chars);

@@ -16,8 +16,8 @@ static char s_storage_for_logger[sizeof(logger)] {0};
 bool logging::init(
     const name_id_pair* severities,
     const name_id_pair* facilities,
-    size_t max_queue_entries,
-    size_t max_message_chars
+    std::size_t max_queue_entries,
+    std::size_t max_message_chars
     )
 {
     Check_ValidState(s_logger == nullptr, false);
@@ -54,8 +54,8 @@ void logging::done()
 }
 
 bool logging::change_log_queue(
-    size_t max_queue_entries,
-    size_t max_message_chars
+    std::size_t max_queue_entries,
+    std::size_t max_message_chars
     )
 {
     if(s_logger == nullptr) return false;

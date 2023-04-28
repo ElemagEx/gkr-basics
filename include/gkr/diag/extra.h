@@ -8,7 +8,7 @@ inline const char* DIAG_GET_PREFIX(int id)
     {
         return "Unknown diagnostic id";
     }
-    static const char* s_prefixes[] =
+    constexpr const char* s_prefixes[] =
     {
         "NULL Pointer Assertion fail: ",
         "Assertion fail: ",

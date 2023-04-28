@@ -61,16 +61,6 @@ private:
     }
 
 private:
-    using self_t = waitable_semaphore<LeastMaxValue, MaxWaiters>;
-
-    friend class waitable_object_guard<self_t>;
-
-    void unlock()
-    {
-        release();
-    }
-
-private:
     semaphore_t m_semaphore;
 };
 

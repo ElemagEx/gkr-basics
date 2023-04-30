@@ -67,6 +67,7 @@ target_sources(
     "${gkr_basics_inc_path}/log/consumer.h"
     "${gkr_basics_inc_path}/log/message.h"
     "${gkr_basics_inc_path}/log/stamp.h"
+    "${gkr_basics_inc_path}/testing/allocator.h"
     )
 # Headers + Implementations
 target_sources(

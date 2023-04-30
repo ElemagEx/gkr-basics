@@ -6,7 +6,7 @@ void foo() noexcept
 {
 }
 
-TEST_CASE("A")
+TEST_CASE("general.diagnostics. main")
 {
     CHECK_NOTHROW(foo());
 }

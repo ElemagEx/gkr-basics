@@ -70,8 +70,8 @@ private:
         node_type           (const node_type&) noexcept = delete;
         node_type& operator=(const node_type&) noexcept = delete;
 
-        node_type(const value_type&  v) noexcept(std::is_trivially_copy_constructible<value_type>::value) : value(          v ) {}
-        node_type(      value_type&& v) noexcept(std::is_trivially_move_constructible<value_type>::value) : value(std::move(v)) {}
+        node_type(const value_type&  v) noexcept(std::is_nothrow_copy_constructible<value_type>::value) : value(          v ) {}
+        node_type(      value_type&& v) noexcept(std::is_nothrow_move_constructible<value_type>::value) : value(std::move(v)) {}
 
         template<typename... Args>
         node_type(Args&&... args) noexcept(std::is_nothrow_constructible<Args...>::value) : value(std::forward<Args>(args)...) {}
@@ -81,6 +81,9 @@ private:
     using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<node_type>;
 
     using allocator_traits = std::allocator_traits<allocator_type>;
+
+public:
+    using allocator_value_type = typename allocator_type::value_type;
 
 private:
     std::atomic<node_type*> m_first {nullptr};
@@ -109,7 +112,7 @@ private:
     {
         node_type* new_first = nullptr;
 
-        for(const node_type* src_node = other_first; src_node != nullptr; src_node = src_node->next)
+        for(node_type* src_node = other_first; src_node != nullptr; src_node = src_node->next)
         {
             node_type* new_node = m_allocator.allocate(1);
 
@@ -144,13 +147,13 @@ public:
     }
     lockfree_grow_only_bag& operator=(const lockfree_grow_only_bag& other) noexcept(false)
     {
-        if(this != std::addressof(other))
+        if(this != &other)
         {
             clear();
 
             if_constexpr(allocator_traits::propagate_on_container_copy_assignment::value)
             {
-                m_allocator = allocator_traits::select_on_container_copy_construction(other.m_allocator);
+                m_allocator = other.m_allocator;
             }
 
             m_first = copy_elements(other.m_first);
@@ -173,7 +176,7 @@ public:
             std::is_nothrow_move_constructible<allocator_type>::value))
         )
     {
-        if(this != std::addressof(other))
+        if(this != &other)
         {
             clear();
 
@@ -200,6 +203,7 @@ public:
         }
         return *this;
     }
+
 public:
     static constexpr bool swap_is_noexcept = (
         allocator_traits::is_always_equal::value
@@ -208,10 +212,9 @@ public:
         std::is_nothrow_move_constructible<allocator_type>::value &&
         std::is_nothrow_move_assignable   <allocator_type>::value )
         );
-
     void swap(lockfree_grow_only_bag& other) noexcept(swap_is_noexcept)
     {
-        if(this != std::addressof(other))
+        if(this != &other)
         {
             if_constexpr(allocator_traits::propagate_on_container_swap::value)
             {
@@ -235,18 +238,18 @@ public:
                     " this case is undefined behaviour."
                     " Uneffective code follows"
                     );
-                auto    first = this->move_elements(other.m_first);
-                other.m_first = other.move_elements(this->m_first);
+                auto    first = this->move_elements(other.m_first); other.clear();
+                other.m_first = other.move_elements(this->m_first); this->clear();
 
-                clear();
                 m_first = first;
             }
         }
     }
 
 public:
-    static size_type max_size() noexcept {
-        return static_cast<size_type>(-1) / sizeof(value_type);
+    static size_type max_size() noexcept
+    {
+        return allocator_traits::max_size(m_allocator);
     }
     size_type size() const noexcept
     {
@@ -260,9 +263,11 @@ public:
     {
         return (m_first == nullptr);
     }
-    allocator_type get_allocator() const noexcept(std::is_nothrow_copy_constructible<allocator_type>::value)
+    Allocator get_allocator() const noexcept(
+        std::is_nothrow_constructible<Allocator, const allocator_type&>::value
+        )
     {
-        return allocator_traits::select_on_container_copy_construction(m_allocator);
+        return Allocator(m_allocator);
     }
 
 public:
@@ -273,6 +278,8 @@ public:
             node_type* next = node->next;
 
             node->~node_type();
+
+            m_allocator.deallocate(node, 1);
 
             node = next;
         }
@@ -290,7 +297,7 @@ private:
     }
 
 public:
-    T& add() noexcept(false)
+    value_type& add() noexcept(false)
     {
         node_type* node = m_allocator.allocate(1);
 
@@ -300,7 +307,7 @@ public:
 
         return node->value;
     }
-    T& add(T&& value) noexcept(false)
+    value_type& add(value_type&& value) noexcept(false)
     {
         node_type* node = m_allocator.allocate(1);
 
@@ -310,7 +317,7 @@ public:
 
         return node->value;
     }
-    T& add(const T& value) noexcept(false)
+    value_type& add(const value_type& value) noexcept(false)
     {
         node_type* node = m_allocator.allocate(1);
 
@@ -321,7 +328,7 @@ public:
         return node->value;
     }
     template<typename... Args>
-    T& emplace(Args&&... args) noexcept(false)
+    value_type& emplace(Args&&... args) noexcept(false)
     {
         node_type* node = m_allocator.allocate(1);
 
@@ -366,6 +373,7 @@ public:
 public:
     using       iterator = iterator_t<      node_type,       value_type>;
     using const_iterator = iterator_t<const node_type, const value_type>;
+
 public:
     const_iterator begin() const noexcept
     {

@@ -1,245 +1,10 @@
+#include <catch2/catch_template_test_macros.hpp>
+
 #include <gkr/lockfree_grow_only_bag.h>
 
+#include <gkr/testing/allocator.h>
 #include <string>
-#include <atomic>
-#include <utility>
-
-#include <catch2/catch_test_macros.hpp>
-
-#ifndef if_constexpr
-#ifdef __cpp_if_constexpr
-#define if_constexpr if constexpr
-#else
-#define if_constexpr if
-#endif
-#endif
-
-using namespace gkr;
-
-template<typename T>
-class PreAllocatedStorage
-{
-    PreAllocatedStorage           (PreAllocatedStorage&&) noexcept = delete;
-    PreAllocatedStorage& operator=(PreAllocatedStorage&&) noexcept = delete;
-
-    PreAllocatedStorage           (const PreAllocatedStorage&) noexcept = delete;
-    PreAllocatedStorage& operator=(const PreAllocatedStorage&) noexcept = delete;
-
-private:
-    std::size_t m_count = 0;
-    T*          m_data  = nullptr;
-    T**         m_ptrs  = nullptr;
-
-    int m_total_allocations = 0;
-    int m_total_elements    = 0;
-
-private:
-    void make_checks()
-    {
-        CHECK(m_total_allocations == 0);
-        CHECK(m_total_elements    == 0);
-    }
-
-public:
-    PreAllocatedStorage()
-    {
-    }
-    ~PreAllocatedStorage()
-    {
-        make_checks();
-        if(m_ptrs != nullptr) delete [] m_ptrs;
-        if(m_data != nullptr) delete [] m_data;
-    }
-
-public:
-    void reset(std::size_t count = 0)
-    {
-        make_checks();
-
-        m_total_allocations = 0;
-        m_total_elements    = 0;
-
-        if(count > m_count)
-        {
-            if(m_ptrs != nullptr) delete [] m_ptrs;
-            if(m_data != nullptr) delete [] m_data;
-
-            m_data = new T [count];
-            m_ptrs = new T*[count];
-
-            m_count = count;
-        }
-    }
-
-public:
-    T* allocate(std::size_t n)
-    {
-        REQUIRE(n > 0);
-
-        for(std::size_t pos, index = 0; index < m_count; ++index)
-        {
-            for(pos = 0; pos < n; ++pos)
-            {
-                if(m_ptrs[index + pos] != nullptr) break;
-            }
-            if(pos == n)
-            {
-                m_total_allocations += 1;
-                m_total_elements    += int(n);
-
-                for( ; n-- > 0; ++index)
-                {
-                    m_ptrs[index] = m_data + index;
-                }
-                return m_data + pos;
-            }
-        }
-        throw std::bad_alloc();
-    }
-    void deallocate(T* ptr, std::size_t n)
-    {
-        std::size_t index = std::size_t(m_data - ptr);
-
-        REQUIRE((index + 0) <  m_count);
-        REQUIRE((index + n) <= m_count);
-
-        m_total_allocations -= 1;
-        m_total_elements    -= n;
-
-        for( ; n-- > 0; ++index)
-        {
-            m_ptrs[index] = nullptr;
-        }
-    }
-};
-
-template<typename T>
-PreAllocatedStorage<T>& get_preallocated_storage()
-{
-    static thread_local PreAllocatedStorage<T> storage;
-
-    return storage;
-}
-
-enum
-{
-    EqualsNever   = 0,
-    EqualsAlways  = 16,
-    EqualsByValue = 32,
-
-    PropagatesNever            = 0,
-    PropagatesOnCopyAssignment = 1,
-    PropagatesOnMoveAssignment = 2,
-    PropagatesOnSwap           = 4,
-};
-template<typename T, int FLAGS>
-class unit_test_allocator
-{
-public:
-    using      value_type = T;
-    using       size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-
-public:
-    using is_always_equal = std::bool_constant<(FLAGS & EqualsAlways) != 0>;
-
-    using propagate_on_container_copy_assignment = std::bool_constant<(FLAGS & PropagatesOnCopyAssignment) != 0>;
-    using propagate_on_container_move_assignment = std::bool_constant<(FLAGS & PropagatesOnMoveAssignment) != 0>;
-    using propagate_on_container_swap            = std::bool_constant<(FLAGS & PropagatesOnSwap          ) != 0>;
-
-private:
-    int m_self_allocations = 0;
-    int m_self_elements    = 0;
-
-protected:
-    void reset()
-    {
-        if_constexpr(propagate_on_container_copy_assignment::value)
-        {
-            CHECK(m_self_allocations == 0);
-            CHECK(m_self_elements    == 0);
-        }
-        m_self_allocations = 0;
-        m_self_elements    = 0;
-    }
-    void swap(int&)
-    {
-    }
-
-protected:
-    unit_test_allocator() noexcept
-    {
-    }
-    ~unit_test_allocator()
-    {
-        reset();
-    }
-
-    template<typename U>
-    unit_test_allocator(const unit_test_allocator<U, FLAGS>&) noexcept
-    {
-    }
-    unit_test_allocator(const unit_test_allocator&) noexcept
-    {
-    }
-    unit_test_allocator& operator=(const unit_test_allocator&) noexcept
-    {
-        reset();
-        return *this;
-    }
-
-    unit_test_allocator(unit_test_allocator&& other) noexcept
-        : m_self_allocations(std::exchange(other.m_self_allocations, 0))
-        , m_self_elements   (std::exchange(other.m_self_elements   , 0))
-    {
-    }
-    unit_test_allocator& operator=(unit_test_allocator&& other) noexcept
-    {
-        m_self_allocations = std::exchange(other.m_self_allocations, 0);
-        m_self_elements    = std::exchange(other.m_self_elements   , 0);
-        return *this;
-    }
-
-    void swap(unit_test_allocator& other) noexcept
-    {
-        std::swap(m_self_allocations, other.m_self_allocations);
-        std::swap(m_self_elements   , other.m_self_elements);
-    }
-
-protected:
-    bool equals_by_value() const noexcept
-    {
-        return ((FLAGS & (EqualsAlways | EqualsByValue)) != 0);
-    }
-
-public:
-    [[nodiscard]]
-    T* allocate(std::size_t n)
-    {
-        return get_preallocated_storage<T>().allocate(n);
-    }
-    void deallocate(T* ptr, std::size_t n)
-    {
-        get_preallocated_storage<T>().deallocate(ptr, n);
-    }
-};
-
-#define DEFINE_ALLOCATOR(NAME, FLAGS) \
-template<class T>                                                                                       \
-class NAME : public unit_test_allocator<T, FLAGS>                                                       \
-{                                                                                                       \
-public:                                                                                                 \
-    using base_t = unit_test_allocator<T, FLAGS>;                                                       \
-   ~NAME() noexcept {}                                                                                  \
-    NAME() noexcept : base_t() {}                                                                       \
-    NAME(const NAME&  other) noexcept : base_t(          other ) {}                                     \
-    NAME(      NAME&& other) noexcept : base_t(std::move(other)) {}                                     \
-    NAME& operator=(const NAME&  other) noexcept { base_t::operator=(          other ); return *this; } \
-    NAME& operator=(      NAME&& other) noexcept { base_t::operator=(std::move(other)); return *this; } \
-    bool operator==(const NAME&) const noexcept { return  base_t::equals_by_value(); }                  \
-    bool operator!=(const NAME&) const noexcept { return !base_t::equals_by_value(); }                  \
-    template<typename U> NAME(const NAME<U>& other) : base_t(other) {}                                  \
-}
+#include <thread>
 
 struct Data
 {
@@ -254,6 +19,12 @@ struct Data
     }
     Data(Data&& other) noexcept : a(std::exchange(other.a, 0)), b(std::exchange(other.b, false))
     {
+    }
+    template<typename... Args>
+    Data(Args&&... args)
+    {
+        int values[sizeof...(args)] = {args...};
+        for(int value : values) a += value;
     }
     Data& operator=(Data&& other) noexcept
     {
@@ -274,8 +45,10 @@ struct Data
     bool b = false;
 };
 
+using flag = gkr::testing::allocator_flag;
+
 template<typename T, typename Allocator>
-int sum(const lockfree_grow_only_bag<T, Allocator>& bag)
+int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
 {
     T total {0};
 
@@ -286,122 +59,233 @@ int sum(const lockfree_grow_only_bag<T, Allocator>& bag)
     return int(total);
 }
 
-DEFINE_ALLOCATOR(allocator1, (EqualsAlways | PropagatesNever));
+DEFINE_TEST_ALLOCATOR(allocator1, (flag::EqualsAlways  | flag::PropagatesNever ));
+DEFINE_TEST_ALLOCATOR(allocator2, (flag::EqualsAlways  | flag::PropagatesAlways));
+DEFINE_TEST_ALLOCATOR(allocator3, (flag::EqualsByValue | flag::PropagatesNever ));
+DEFINE_TEST_ALLOCATOR(allocator4, (flag::EqualsNever   | flag::PropagatesNever ));
 
-TEST_CASE("container.lockfree_bag. Lifecycle")
+template<typename T>
+using allocator0 = std::allocator<T>;
+
+using std_string = std::string;
+
+#ifdef _MSC_VER
+#pragma warning(disable:4868)
+#endif
+
+TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0, allocator1, allocator2, allocator3, allocator4), (int, Data))
 {
-    using bag_t = lockfree_grow_only_bag<Data, allocator1<Data>>;
+    using allocator_t = TestType;
+    using value_t     = typename allocator_t::value_type;
 
-    bag_t bag1;
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using slot_t = typename bag_t::allocator_value_type;
 
-    CHECK(bag1.empty());
-
-    bag1.add(Data(1));
-    bag1.add(Data(2));
-    bag1.add(Data(3));
-
-    CHECK(!bag1.empty());
-    CHECK(sum(bag1) == 6);
-
-    SECTION("copy construction")
+    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset(16);
     {
-        bag_t bag2(bag1);
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 6);
-
-        CHECK(!bag1.empty());
-        CHECK(sum(bag1) == 6);
-    }
-    SECTION("copy assignment")
-    {
-        bag_t bag2;
-
-        bag2.add(Data(10));
-        bag2.add(Data(30));
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 30);
-
-        bag2 = bag1;
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 6);
-
-        CHECK(!bag1.empty());
-        CHECK(sum(bag1) == 6);
-    }
-    SECTION("move construction")
-    {
-        bag_t bag2(std::move(bag1));
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 6);
+        bag_t bag1;
 
         CHECK(bag1.empty());
-        CHECK(sum(bag1) == 0);
-    }
-    SECTION("move assignment")
-    {
-        bag_t bag2;
 
-        bag2.add(Data(10));
-        bag2.add(Data(30));
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 30);
-
-        bag2 = std::move(bag1);
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 6);
-
-        CHECK(bag1.empty());
-        CHECK(sum(bag1) == 0);
-    }
-    SECTION("swap")
-    {
-        bag_t bag2;
-
-        bag2.add(Data(10));
-        bag2.add(Data(30));
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 30);
-
-        std::swap(bag1, bag2);
-
-        CHECK(!bag2.empty());
-        CHECK(sum(bag2) == 6);
+        bag1.add(value_t(1));
+        bag1.add(value_t(2));
+        bag1.add(value_t(3));
 
         CHECK(!bag1.empty());
-        CHECK(sum(bag1) == 30);
+        CHECK(bag1.size() == 3);
+        CHECK(sum(bag1) == 6);
+
+        SECTION("copy construction")
+        {
+            bag_t bag2(bag1);
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 3);
+            CHECK(sum(bag2) == 6);
+
+            CHECK(!bag1.empty());
+            CHECK(bag1.size() == 3);
+            CHECK(sum(bag1) == 6);
+        }
+        SECTION("copy assignment")
+        {
+            bag_t bag2;
+
+            bag2.add(value_t(10));
+            bag2.add(value_t(20));
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 2);
+            CHECK(sum(bag2) == 30);
+
+            bag2 = bag1;
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 3);
+            CHECK(sum(bag2) == 6);
+
+            CHECK(!bag1.empty());
+            CHECK(bag1.size() == 3);
+            CHECK(sum(bag1) == 6);
+        }
+        SECTION("move construction")
+        {
+            bag_t bag2(std::move(bag1));
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 3);
+            CHECK(sum(bag2) == 6);
+
+            CHECK(bag1.empty());
+            CHECK(bag1.size() == 0);
+            CHECK(sum(bag1) == 0);
+        }
+        SECTION("move assignment")
+        {
+            bag_t bag2;
+
+            bag2.add(value_t(10));
+            bag2.add(value_t(20));
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 2);
+            CHECK(sum(bag2) == 30);
+
+            bag2 = std::move(bag1);
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 3);
+            CHECK(sum(bag2) == 6);
+
+            CHECK(bag1.empty());
+            CHECK(bag1.size() == 0);
+            CHECK(sum(bag1) == 0);
+        }
+        SECTION("swap")
+        {
+            bag_t bag2;
+
+            bag2.add(value_t(10));
+            bag2.add(value_t(20));
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 2);
+            CHECK(sum(bag2) == 30);
+
+            std::swap(bag1, bag2);
+
+            CHECK(!bag2.empty());
+            CHECK(bag2.size() == 3);
+            CHECK(sum(bag2) == 6);
+
+            CHECK(!bag1.empty());
+            CHECK(bag1.size() == 2);
+            CHECK(sum(bag1) == 30);
+        }
     }
+    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_bag. Clear")
+TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Clear", "", (allocator0, allocator1), (int, Data, std_string))
 {
-    lockfree_grow_only_bag<int>         bag1;
-    lockfree_grow_only_bag<Data>        bag2;
-    lockfree_grow_only_bag<std::string> bag3;
+    using value_t = TestType;
 
-    CHECK(bag1.empty());
-    CHECK(bag2.empty());
-    CHECK(bag3.empty());
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator1<value_t>>;
+    using slot_t = typename bag_t::allocator_value_type;
 
-    bag1.add();
-    bag2.add();
-    bag3.add();
+    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset(8);
+    {
+        bag_t bag;
 
-    CHECK(!bag1.empty());
-    CHECK(!bag2.empty());
-    CHECK(!bag3.empty());
+        CHECK(bag.empty());
 
-    bag1.clear();
-    bag2.clear();
-    bag3.clear();
+        bag.add();
+        bag.add();
+        bag.add();
 
-    CHECK(bag1.empty());
-    CHECK(bag2.empty());
-    CHECK(bag3.empty());
+        CHECK(!bag.empty());
+        CHECK(bag.size() == 3);
+
+        bag.clear();
+
+        CHECK(bag.empty());
+        CHECK(bag.size() == 0);
+    }
+    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset();
+}
+
+TEST_CASE("container.lockfree_bag. Add")
+{
+    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator1<Data>>;
+    using slot_t = typename bag_t::allocator_value_type;
+
+    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset(8);
+    {
+        bag_t bag;
+
+        CHECK(bag.empty());
+        CHECK(bag.size() == 0);
+
+        SECTION("default construct")
+        {
+            bag.add().a = 1;
+            bag.add().a = 2;
+            bag.add().a = 3;
+        }
+        SECTION("move construct")
+        {
+            bag.add({1});
+            bag.add({2});
+            bag.add({3});
+        }
+        SECTION("copy construct")
+        {
+            Data d;
+            bag.add(d).a = 1;
+            bag.add(d).a = 2;
+            bag.add(d).a = 3;
+        }
+        SECTION("emplace")
+        {
+            bag.add(Data(-10, 1, 5, 5));
+            bag.add(Data(-20, 2, 3, 7, 4, 6));
+            bag.add(Data(-30, 3, 1, 9, 2, 8, 0, 10));
+        }
+
+        CHECK(!bag.empty());
+        CHECK(bag.size() == 3);
+        CHECK(sum(bag) == 6);
+    }
+    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset();
+}
+
+TEST_CASE("container.lockfree_bag. Multithreading")
+{
+    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator0<Data>>;
+    using slot_t = typename bag_t::allocator_value_type;
+
+    constexpr std::size_t threads_count = 20;
+    constexpr std::size_t nodes_to_add  = 500;
+
+    {
+        bag_t bag;
+
+        std::thread threads[threads_count];
+
+        for(std::thread& thread : threads)
+        {
+            thread = std::move(std::thread([&bag] () {
+                for(std::size_t index = 0; index < nodes_to_add; ++index)
+                {
+                    bag.add();
+                }
+            }));
+        }
+        for(std::thread& thread : threads)
+        {
+            thread.join();
+        }
+
+        CHECK(bag.size() == (threads_count * nodes_to_add));
+    }
 }

@@ -44,6 +44,10 @@
 namespace gkr
 {
 
+//
+// Conform C++11 named requirement: AllocatorAwareContainer
+//  https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer
+//
 template<typename T, typename Allocator=std::allocator<T>>
 class lockfree_grow_only_bag
 {
@@ -52,8 +56,8 @@ public:
     using reference       = T&;
     using const_reference = const T&;
 
-    using difference_type = std::ptrdiff_t;
     using size_type       = std::size_t;
+    using difference_type = std::ptrdiff_t;
 
 private:
     struct node_type
@@ -145,6 +149,11 @@ public:
     {
         m_first = copy_elements(other.m_first);
     }
+    lockfree_grow_only_bag(const lockfree_grow_only_bag& other, const Allocator& allocator) noexcept(false)
+        : m_allocator(allocator)
+    {
+        m_first = copy_elements(other.m_first);
+    }
     lockfree_grow_only_bag& operator=(const lockfree_grow_only_bag& other) noexcept(false)
     {
         if(this != &other)
@@ -167,6 +176,27 @@ public:
         : m_first    (other.m_first.exchange(nullptr))
         , m_allocator(std::move(other.m_allocator))
     {
+    }
+    lockfree_grow_only_bag(lockfree_grow_only_bag&& other, const Allocator& allocator) noexcept(
+        std::is_nothrow_constructible<allocator_type, const Allocator&>::value &&
+        allocator_traits::is_always_equal::value
+        )
+        : m_allocator(allocator)
+    {
+        if_constexpr(allocator_traits::is_always_equal::value)
+        {
+            m_first = other.m_first.exchange(nullptr);
+        }
+        else if(m_allocator == other.m_allocator)
+        {
+            m_first = other.m_first.exchange(nullptr);
+        }
+        else
+        {
+            m_first = move_elements(other.m_first);
+
+            other.clear();
+        }
     }
     lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept(
         std::is_nothrow_destructible<node_type>::value && (
@@ -247,7 +277,7 @@ public:
     }
 
 public:
-    size_type max_size() noexcept
+    size_type max_size() const noexcept
     {
         return allocator_traits::max_size(m_allocator);
     }
@@ -400,6 +430,62 @@ public:
     iterator end() noexcept
     {
         return iterator(nullptr);
+    }
+
+public:
+    bool operator==(const lockfree_grow_only_bag& other) const
+    {
+        if(this == &other) return true;
+
+        const_iterator  this_begin = this->begin(),  this_end = this->end();
+        const_iterator other_begin = other.begin(), other_end = other.end();
+
+        for(const_iterator outer_it = this_begin; outer_it != this_end; ++outer_it)
+        {
+            const_iterator inner_it = this_begin;
+
+            for( ; inner_it != outer_it; ++inner_it)
+            {
+                if(*outer_it == *inner_it)
+                {
+                    inner_it = this_end;
+                    break;
+                }
+            }
+            if(inner_it == this_end)
+            {
+                continue;
+            }
+
+            size_type this_count = 1, other_count = 0;
+
+            for(++inner_it; inner_it != this_end; ++inner_it)
+            {
+                if(*outer_it == *inner_it)
+                {
+                    ++this_count;
+                }
+            }
+            for(const_iterator other_it = other_begin; other_it != other_end; ++other_it)
+            {
+                if(*outer_it == *other_it)
+                {
+                    if(this_count == other_count++)
+                    {
+                        return false;
+                    }
+                }
+            }
+            if(this_count != other_count)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool operator!=(const lockfree_grow_only_bag& other) const
+    {
+        return !operator==(other);
     }
 };
 

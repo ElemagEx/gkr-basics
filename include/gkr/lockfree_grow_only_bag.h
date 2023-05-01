@@ -247,7 +247,7 @@ public:
     }
 
 public:
-    static size_type max_size() noexcept
+    size_type max_size() noexcept
     {
         return allocator_traits::max_size(m_allocator);
     }

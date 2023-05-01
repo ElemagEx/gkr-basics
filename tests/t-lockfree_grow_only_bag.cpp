@@ -5,6 +5,7 @@
 #include <gkr/testing/allocator.h>
 #include <string>
 #include <thread>
+#include <atomic>
 
 struct Data
 {
@@ -59,15 +60,17 @@ int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
     return int(total);
 }
 
-DEFINE_TEST_ALLOCATOR(allocator1, (flag::EqualsAlways  | flag::PropagatesNever ));
-DEFINE_TEST_ALLOCATOR(allocator2, (flag::EqualsAlways  | flag::PropagatesAlways));
-DEFINE_TEST_ALLOCATOR(allocator3, (flag::EqualsByValue | flag::PropagatesNever ));
-DEFINE_TEST_ALLOCATOR(allocator4, (flag::EqualsNever   | flag::PropagatesNever ));
+using std_string = std::string;
 
 template<typename T>
 using allocator0 = std::allocator<T>;
 
-using std_string = std::string;
+DEFINE_TEST_ALLOCATOR(allocator1, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesNever ));
+DEFINE_TEST_ALLOCATOR(allocator2, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesAlways));
+DEFINE_TEST_ALLOCATOR(allocator3, (flag::SingleThreaded | flag::EqualsByValue | flag::PropagatesNever ));
+DEFINE_TEST_ALLOCATOR(allocator4, (flag::SingleThreaded | flag::EqualsNever   | flag::PropagatesNever ));
+
+DEFINE_TEST_ALLOCATOR(allocatorM, (flag::MultiThreaded  | flag::EqualsAlways  | flag::PropagatesNever ));
 
 #ifdef _MSC_VER
 #pragma warning(disable:4868)
@@ -81,7 +84,7 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
     using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
     using slot_t = typename bag_t::allocator_value_type;
 
-    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset(16);
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(16);
     {
         bag_t bag1;
 
@@ -183,7 +186,7 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
             CHECK(sum(bag1) == 30);
         }
     }
-    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset();
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
 TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Clear", "", (allocator0, allocator1), (int, Data, std_string))
@@ -193,7 +196,7 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Clear", "", (allocator0, all
     using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator1<value_t>>;
     using slot_t = typename bag_t::allocator_value_type;
 
-    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset(8);
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
     {
         bag_t bag;
 
@@ -211,7 +214,7 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Clear", "", (allocator0, all
         CHECK(bag.empty());
         CHECK(bag.size() == 0);
     }
-    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset();
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
 TEST_CASE("container.lockfree_bag. Add")
@@ -219,7 +222,7 @@ TEST_CASE("container.lockfree_bag. Add")
     using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator1<Data>>;
     using slot_t = typename bag_t::allocator_value_type;
 
-    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset(8);
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
     {
         bag_t bag;
 
@@ -256,36 +259,43 @@ TEST_CASE("container.lockfree_bag. Add")
         CHECK(bag.size() == 3);
         CHECK(sum(bag) == 6);
     }
-    gkr::testing::get_this_thread_preallocated_storage<slot_t>().reset();
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
 TEST_CASE("container.lockfree_bag. Multithreading")
 {
-    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator0<Data>>;
-    using slot_t = typename bag_t::allocator_value_type;
+    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocatorM<Data>>;
+
+    using slot_t = bag_t::allocator_value_type;
 
     constexpr std::size_t threads_count = 20;
     constexpr std::size_t nodes_to_add  = 500;
+    constexpr std::size_t total_nodes   = threads_count * nodes_to_add;
 
+    gkr::testing::get_multithreaded_pre_allocated_storage<slot_t>().reset(total_nodes);
     {
         bag_t bag;
+
+        std::atomic<int> n = 0;
 
         std::thread threads[threads_count];
 
         for(std::thread& thread : threads)
         {
-            thread = std::move(std::thread([&bag] () {
+            thread = std::thread([&bag, &n] () {
                 for(std::size_t index = 0; index < nodes_to_add; ++index)
                 {
-                    bag.add();
+                    bag.add().a = ++n;
                 }
-            }));
+            });
         }
         for(std::thread& thread : threads)
         {
             thread.join();
         }
 
-        CHECK(bag.size() == (threads_count * nodes_to_add));
+        CHECK(bag.size() == total_nodes);
+        CHECK(sum(bag) == (total_nodes*(total_nodes+1)/2));
     }
+    gkr::testing::get_multithreaded_pre_allocated_storage<slot_t>().reset();
 }

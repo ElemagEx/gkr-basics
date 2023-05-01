@@ -1,15 +1,12 @@
 #pragma once
 
 #include <new>
+#include <mutex>
+#include <stdexcept>
 
-#if !defined(CHECK) || !defined(REQUIRE)
-#include <cassert>
-#endif
 #ifndef CHECK
+#include <cassert>
 #define CHECK assert
-#endif
-#ifndef REQUIRE
-#define REQUIRE assert
 #endif
 
 #ifndef if_constexpr
@@ -24,11 +21,23 @@ namespace gkr
 {
 namespace testing
 {
+namespace impl
+{
+struct fake_mutex
+{
+    void lock  () {}
+    void unlock() {}
+    [[nodiscard]] bool try_lock() { return true; }
+};
+template<bool> struct actual_mutex;
+template<> struct actual_mutex<false> { using type = fake_mutex; };
+template<> struct actual_mutex<true > { using type = std::mutex; };
+}
 
-template<typename T>
+template<typename T, bool MULTITHREADED>
 class pre_allocated_storage
 {
-    static_assert(alignof(T) <= alignof(std::max_align_t), "Only supports types that have align not greater than align of std::max_align_t");
+    static_assert(alignof(T) <= alignof(std::max_align_t), "Only supports types that have alignment not greater than alignment of std::max_align_t");
 
     pre_allocated_storage           (pre_allocated_storage&&) noexcept = delete;
     pre_allocated_storage& operator=(pre_allocated_storage&&) noexcept = delete;
@@ -44,26 +53,43 @@ private:
     int m_total_allocations = 0;
     int m_total_elements    = 0;
 
+    using mutex_t = typename impl::actual_mutex<MULTITHREADED>::type;
+
+    mutex_t m_mutex;
+
 private:
     void make_checks()
     {
         CHECK(m_total_allocations == 0);
         CHECK(m_total_elements    == 0);
     }
-
-public:
-    pre_allocated_storage()
-    {
-    }
-    ~pre_allocated_storage()
+    void free_storage()
     {
         if(m_ptrs != nullptr) std::free(m_ptrs);
         if(m_data != nullptr) std::free(m_data);
     }
 
+private:
+    pre_allocated_storage()
+    {
+    }
+    ~pre_allocated_storage()
+    {
+        free_storage();
+    }
+
+public:
+    static pre_allocated_storage& get_pre_allocated_storage()
+    {
+        static thread_local pre_allocated_storage storage;
+        return storage;
+    }
+
 public:
     void reset(std::size_t count = 0)
     {
+        std::lock_guard<mutex_t> guard(m_mutex);
+
         make_checks();
 
         m_total_allocations = 0;
@@ -71,14 +97,18 @@ public:
 
         if(count > m_count)
         {
-            if(m_ptrs != nullptr) std::free(m_ptrs);
-            if(m_data != nullptr) std::free(m_data);
+            free_storage();
 
             constexpr std::size_t size1 = (alignof(T) >= sizeof(T)) ? alignof(T) : sizeof(T);
             constexpr std::size_t size2 =  sizeof(T*);
 
             m_data = static_cast<T* >(std::malloc(count * size1));
             m_ptrs = static_cast<T**>(std::malloc(count * size2));
+
+            if((m_data == nullptr) || (m_ptrs == nullptr))
+            {
+                throw std::bad_alloc();
+            }
 
             std::memset(m_ptrs, 0, count * size2);
 
@@ -89,8 +119,12 @@ public:
 public:
     T* allocate(std::size_t n)
     {
-        REQUIRE(n > 0);
+        std::lock_guard<mutex_t> guard(m_mutex);
 
+        if((n < 1) || (n > m_count))
+        {
+            throw std::invalid_argument("n is invalid");
+        }
         for(std::size_t pos, index = 0; index < m_count; ++index)
         {
             for(pos = 0; pos < n; ++pos)
@@ -113,11 +147,15 @@ public:
     }
     void deallocate(T* ptr, std::size_t n)
     {
+        std::lock_guard<mutex_t> guard(m_mutex);
+
         std::size_t index = std::size_t(ptr - m_data);
 
-        REQUIRE((index + 0) <  m_count);
-        REQUIRE((index + n) <= m_count);
-
+        if( !((index + 0) <  m_count) ||
+            !((index + n) <= m_count))
+        {
+            throw std::invalid_argument("ptr or n is invalid (or both)");
+        }
         m_total_allocations -= 1;
         m_total_elements    -= int(n);
 
@@ -129,19 +167,25 @@ public:
 };
 
 template<typename T>
-pre_allocated_storage<T>& get_this_thread_preallocated_storage()
+pre_allocated_storage<T, false>& get_singlethreaded_pre_allocated_storage()
 {
-    static thread_local pre_allocated_storage<T> storage;
-
-    return storage;
+    return pre_allocated_storage<T, false>::get_pre_allocated_storage();
+}
+template<typename T>
+pre_allocated_storage<T, true>& get_multithreaded_pre_allocated_storage()
+{
+    return pre_allocated_storage<T, true>::get_pre_allocated_storage();
 }
 
 enum allocator_flag
 {
+    SingleThreaded = 0x00,
+    MultiThreaded  = 0x01,
+
     PropagatesNever            = 0x00,
-    PropagatesOnCopyAssignment = 0x01,
-    PropagatesOnMoveAssignment = 0x02,
-    PropagatesOnSwap           = 0x04,
+    PropagatesOnCopyAssignment = 0x02,
+    PropagatesOnMoveAssignment = 0x04,
+    PropagatesOnSwap           = 0x08,
     PropagatesAlways           = (PropagatesOnCopyAssignment | PropagatesOnMoveAssignment | PropagatesOnSwap),
 
     EqualsNever   = 0x00,
@@ -165,6 +209,12 @@ public:
     using propagate_on_container_swap            = std::bool_constant<(FLAGS & PropagatesOnSwap          ) != 0>;
 
 private:
+    static constexpr bool MULTITHREADED = ((FLAGS & MultiThreaded) != 0);
+
+    using pre_allocated_storage_t = pre_allocated_storage<T, MULTITHREADED>;
+
+    pre_allocated_storage_t& m_pre_allocated_storage;
+
     int m_self_allocations = 0;
     int m_self_elements    = 0;
 
@@ -186,6 +236,7 @@ protected:
 
 protected:
     allocator() noexcept
+        : m_pre_allocated_storage(pre_allocated_storage_t::get_pre_allocated_storage())
     {
     }
     ~allocator()
@@ -195,19 +246,22 @@ protected:
 
     template<typename U>
     allocator(const allocator<U, FLAGS>&) noexcept
+        : m_pre_allocated_storage(pre_allocated_storage_t::get_pre_allocated_storage())
     {
     }
-    allocator(const allocator&) noexcept
+    allocator(const allocator& other) noexcept
+        : m_pre_allocated_storage(other.m_pre_allocated_storage)
     {
     }
-    allocator& operator=(const allocator&) noexcept
+    allocator& operator=(const allocator& other) noexcept
     {
         reset();
         return *this;
     }
 
     allocator(allocator&& other) noexcept
-        : m_self_allocations(std::exchange(other.m_self_allocations, 0))
+        : m_pre_allocated_storage(other.m_pre_allocated_storage)
+        , m_self_allocations(std::exchange(other.m_self_allocations, 0))
         , m_self_elements   (std::exchange(other.m_self_elements   , 0))
     {
     }
@@ -234,11 +288,11 @@ public:
     [[nodiscard]]
     T* allocate(std::size_t n)
     {
-        return get_this_thread_preallocated_storage<T>().allocate(n);
+        return m_pre_allocated_storage.allocate(n);
     }
     void deallocate(T* ptr, std::size_t n)
     {
-        get_this_thread_preallocated_storage<T>().deallocate(ptr, n);
+        m_pre_allocated_storage.deallocate(ptr, n);
     }
 };
 

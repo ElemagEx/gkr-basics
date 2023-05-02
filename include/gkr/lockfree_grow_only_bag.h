@@ -509,29 +509,28 @@ public:
     {
         size_type count = 0;
 
-        for( ; ; )
+        node_type* prev = nullptr;
+        node_type* node = m_first;
+
+        while(node != nullptr)
         {
-            if(m_first == nullptr)
+            if(node->value != value)
             {
-                return count;
-            }
-            if(m_first.load()->value != value)
-            {
-                break;
-            }
-            ++count;
-            m_first = remove(m_first);
-        }
-        for(node_type* prev = m_first; prev->next != nullptr; )
-        {
-            if(prev->next->value != value)
-            {
-                prev = prev->next;
+                prev = node;
+                node = node->next;
             }
             else
             {
                 ++count;
-                prev->next = remove(prev->next);
+                node = remove(node);
+                if(prev == nullptr)
+                {
+                    m_first = node;
+                }
+                else
+                {
+                    prev->next = node;
+                }
             }
         }
         return count;
@@ -541,25 +540,33 @@ public:
         std::is_nothrow_destructible<node_type>::value
         )
     {
-        const node_type* node = pos.node;
+        Assert_NotNullPtr(pos.node);
 
-        Assert_NotNullPtr(node);
+        node_type* prev = nullptr;
+        node_type* node = m_first;
 
-        if(m_first == node)
+        for( ; ; )
         {
-            m_first = remove(m_first);
-            return begin();
-        }
-        for(node_type* prev = m_first; ; prev = prev->next)
-        {
-            Assert_NotNullPtr(prev);
-
-            if(prev->next == node)
+            if(node != pos.node)
             {
-                prev->next = remove(prev->next);
-                return iterator(prev->next);
+                Assert_NotNullPtr(node);
+                prev = node;
+                node = node->next;
+                continue;
             }
+            Assert_NotNullPtr(node);
+            node = remove(node);
+            break;
         }
+        if(prev == nullptr)
+        {
+            m_first = node;
+        }
+        else
+        {
+            prev->next = node;
+        }
+        return iterator(node);
     }
     iterator erase(iterator pos) noexcept(
         DIAG_NOEXCEPT &&
@@ -573,7 +580,36 @@ public:
         std::is_nothrow_destructible<node_type>::value
         )
     {
-        return end();
+        Assert_NotNullPtr(first.node);
+
+        node_type* prev = nullptr;
+        node_type* node = m_first;
+
+        for( ; ; )
+        {
+            if(node != first.node)
+            {
+                Assert_NotNullPtr(node);
+                prev = node;
+                node = node->next;
+                continue;
+            }
+            while(node != last.node)
+            {
+                Assert_NotNullPtr(node);
+                node = remove(node);
+            }
+            break;
+        }
+        if(prev == nullptr)
+        {
+            m_first = node;
+        }
+        else
+        {
+            prev->next = node;
+        }
+        return iterator(node);
     }
     iterator erase(iterator first, iterator last) noexcept(
         DIAG_NOEXCEPT &&
@@ -583,6 +619,48 @@ public:
         return erase(const_iterator(first.node), const_iterator(last.node));
     }
 
+public:
+    iterator find(const value_type& value)
+    {
+        for(iterator it = begin(); it != end(); ++it)
+        {
+            if(*it == value)
+            {
+                return it;
+            }
+        }
+        return end();
+    }
+    const_iterator find(const value_type& value) const
+    {
+        for(const_iterator it = begin(); it != end(); ++it)
+        {
+            if(*it == value)
+            {
+                return it;
+            }
+        }
+        return end();
+    }
+
+    bool contains(const value_type& value) const
+    {
+        return (find(value) != end());
+    }
+
+    size_type count(const value_type& value) const
+    {
+        size_type count = 0;
+
+        for(const_iterator it = begin(); it != end(); ++it)
+        {
+            if(*it == value)
+            {
+                ++count;
+            }
+        }
+        return count;
+    }
 };
 
 }

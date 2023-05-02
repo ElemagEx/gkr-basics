@@ -37,6 +37,10 @@ struct Data
     {
         return (a == other.a) && (b == other.b);
     }
+    bool operator!=(const Data& other) const noexcept
+    {
+        return (a != other.a) || (b != other.b);
+    }
     Data& operator+=(const Data& other) noexcept
     {
         a += other.a;
@@ -100,9 +104,9 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
 
         CHECK(bag1.empty());
 
-        bag1.add(value_t(1));
-        bag1.add(value_t(2));
-        bag1.add(value_t(3));
+        bag1.insert(value_t(1));
+        bag1.insert(value_t(2));
+        bag1.insert(value_t(3));
 
         CHECK(!bag1.empty());
         CHECK(bag1.size() == 3);
@@ -136,8 +140,8 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
         {
             bag_t bag2;
 
-            bag2.add(value_t(10));
-            bag2.add(value_t(20));
+            bag2.insert(value_t(10));
+            bag2.insert(value_t(20));
 
             CHECK(!bag2.empty());
             CHECK(bag2.size() == 2);
@@ -181,8 +185,8 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
         {
             bag_t bag2;
 
-            bag2.add(value_t(10));
-            bag2.add(value_t(20));
+            bag2.insert(value_t(10));
+            bag2.insert(value_t(20));
 
             CHECK(!bag2.empty());
             CHECK(bag2.size() == 2);
@@ -202,8 +206,8 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
         {
             bag_t bag2;
 
-            bag2.add(value_t(10));
-            bag2.add(value_t(20));
+            bag2.insert(value_t(10));
+            bag2.insert(value_t(20));
 
             CHECK(!bag2.empty());
             CHECK(bag2.size() == 2);
@@ -237,11 +241,11 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
 
         CHECK(bag1.empty());
 
-        bag1.add(value_t(1));
-        bag1.add(value_t(2));
-        bag1.add(value_t(3));
-        bag1.add(value_t(1));
-        bag1.add(value_t(3));
+        bag1.insert(value_t(1));
+        bag1.insert(value_t(2));
+        bag1.insert(value_t(3));
+        bag1.insert(value_t(1));
+        bag1.insert(value_t(3));
 
         CHECK(!bag1.empty());
         CHECK(bag1.size() == 5);
@@ -262,11 +266,11 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
 
             bag_t bag3;
 
-            bag3.add(value_t(3));
-            bag3.add(value_t(3));
-            bag3.add(value_t(1));
-            bag3.add(value_t(1));
-            bag3.add(value_t(2));
+            bag3.insert(value_t(3));
+            bag3.insert(value_t(3));
+            bag3.insert(value_t(1));
+            bag3.insert(value_t(1));
+            bag3.insert(value_t(2));
 
             CHECK(!bag3.empty());
             CHECK(bag3.size() == 5);
@@ -279,7 +283,7 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
         {
             bag_t bag2(bag1);
 
-            bag2.add(value_t(2));
+            bag2.insert(value_t(2));
 
             CHECK(!bag2.empty());
             CHECK(bag2.size() == 6);
@@ -289,9 +293,9 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
             CHECK(bag2 != bag1);
 
             bag_t bag3;
-            bag3.add(value_t(1));
-            bag3.add(value_t(2));
-            bag3.add(value_t(3));
+            bag3.insert(value_t(1));
+            bag3.insert(value_t(2));
+            bag3.insert(value_t(3));
 
             CHECK(!bag3.empty());
             CHECK(bag3.size() == 3);
@@ -319,9 +323,9 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Clear", "", int, Data, std_string)
         CHECK(bag.empty());
         CHECK(bag.size() == 0);
 
-        bag.add();
-        bag.add();
-        bag.add();
+        bag.insert();
+        bag.insert();
+        bag.insert();
 
         CHECK(!bag.empty());
         CHECK(bag.size() == 3);
@@ -334,7 +338,7 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Clear", "", int, Data, std_string)
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_bag. Add")
+TEST_CASE("container.lockfree_bag. Insert")
 {
     using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator1<Data>>;
 
@@ -349,22 +353,22 @@ TEST_CASE("container.lockfree_bag. Add")
 
         SECTION("default construct")
         {
-            bag.add().a = 1;
-            bag.add().a = 2;
-            bag.add().a = 3;
+            bag.insert()->a = 1;
+            bag.insert()->a = 2;
+            bag.insert()->a = 3;
         }
         SECTION("move construct")
         {
-            bag.add({1});
-            bag.add({2});
-            bag.add({3});
+            bag.insert({1});
+            bag.insert({2});
+            bag.insert({3});
         }
         SECTION("copy construct")
         {
             Data d;
-            bag.add(d).a = 1;
-            bag.add(d).a = 2;
-            bag.add(d).a = 3;
+            bag.insert(d)->a = 1;
+            bag.insert(d)->a = 2;
+            bag.insert(d)->a = 3;
         }
         SECTION("emplace")
         {
@@ -376,6 +380,30 @@ TEST_CASE("container.lockfree_bag. Add")
         CHECK(!bag.empty());
         CHECK(bag.size() == 3);
         CHECK(sum(bag) == 6);
+    }
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
+}
+
+TEST_CASE("container.lockfree_bag. Erase")
+{
+    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator1<Data>>;
+
+    using slot_t = typename bag_t::allocator_value_type;
+
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
+    {
+        bag_t bag;
+
+        CHECK(bag.empty());
+        CHECK(bag.size() == 0);
+
+        auto pos =
+        bag.insert({1});
+        bag.insert({2});
+        bag.insert({3});
+
+        bag.erase(pos);
+        bag.erase(Data{2});
     }
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
@@ -395,9 +423,9 @@ TEST_CASE("container.lockfree_bag. Iterators")
         CHECK(bag.empty());
         CHECK(bag.size() == 0);
 
-        bag.add();
-        bag.add();
-        bag.add();
+        bag.insert();
+        bag.insert();
+        bag.insert();
 
         CHECK(!bag.empty());
         CHECK(bag.size() == 3);
@@ -430,7 +458,7 @@ TEST_CASE("container.lockfree_bag. Multithreading")
             thread = std::thread([&bag, &n] () {
                 for(std::size_t index = 0; index < nodes_to_add; ++index)
                 {
-                    bag.add().a = ++n;
+                    bag.insert()->a = ++n;
                 }
             });
         }

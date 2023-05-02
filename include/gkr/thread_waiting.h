@@ -479,7 +479,7 @@ private:
                     case waiter_registration_t::Duplicated: Check_Failure(false);
                 }
             }
-            switch(m_registrations.add().try_register(waiter))
+            switch(m_registrations.insert()->try_register(waiter))
             {
                 case waiter_registration_t::Registered: return true;
                 case waiter_registration_t::Duplicated: Check_Failure(false);

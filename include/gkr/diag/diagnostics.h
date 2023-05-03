@@ -2,6 +2,39 @@
 #pragma once
 #endif
 
+#ifndef DIAG_ONE_TIME_DEFS
+#define DIAG_ONE_TIME_DEFS
+
+//
+// Diagnostics IDs for Assert_xxx macros
+//
+#define DIAG_ID_ASSERT_NULL_PTR 0
+#define DIAG_ID_ASSERT_CHECK    1
+#define DIAG_ID_ASSERT_COND_MSG 2
+#define DIAG_ID_ASSERT_FAILURE  3
+#define DIAG_ID_ASSERT_FAIL_MSG 4
+//
+// Diagnostics IDs for Check_xxx macros
+//
+#define DIAG_ID_CHECK_NULL_PTR  5
+#define DIAG_ID_CHECK_STATE     6
+#define DIAG_ID_CHECK_FAIL_MSG  7
+#define DIAG_ID_CHECK_FAILURE   8
+#define DIAG_ID_CHECK_RECOVERY  9
+#define DIAG_ID_ARG_NOT_VALID   10
+#define DIAG_ID_ARG_IS_NULL     11
+#define DIAG_ID_ARG_FAILURE     12
+#define DIAG_ID_ARG_BAD_ARRAY   13
+#define DIAG_ID_COUNT           14
+
+//
+// Diagnostic source location information type
+//
+#define DIAG_SRC_INFO_DISABLED        0 /* Disabled information for source location - C and C++ */
+#define DIAG_SRC_INFO_PREPROCESSOR    1 /* Preprocessor information for source location - only file and line - C and C++ */
+#define DIAG_SRC_INFO_SOURCE_LOCATION 2 /* std::source_location information for source location - C++ 20 and later */
+#define DIAG_SRC_INFO_STACKTRACE      3 /* std::stacktrace information for source location - C++ 23 and later */
+
 //
 // Diagnostic mode
 //
@@ -10,6 +43,81 @@
 #define DIAG_MODE_STEADY    2 /* Asserts are disabled and checks warns on fail */
 #define DIAG_MODE_NOISY     3 /* Asserts are enabled and checks warns on fail - default for DEBUG builds */
 #define DIAG_MODE_INTRUSIVE 4 /* All diagnostics halts/stops execution */
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+//
+// diag_trap - immediately breaks program execution
+//
+inline void diag_trap()
+{
+#if defined(__clang__) || defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_MSC_VER)
+    __debugbreak();
+#else
+    *(int*)0 = 0;
+#endif
+}
+
+//
+// diag_c_halt - used from all Assert_xxx macros when they are enabled
+//
+inline void diag_c_halt(int, const char*, ...)
+{
+    diag_trap();
+}
+//
+// diag_c_stop - used from all Check_xxx macros in intrusive diagnostic mode
+//
+inline int diag_c_stop(int, const char*, ...)
+{
+    diag_trap();
+    return 1;
+}
+//
+// diag_cpp_warn - used from all Check_xxx macros for warns fails
+//
+inline int diag_c_warn(int, const char*, ...)
+{
+    return 1;
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+
+//
+// diag_cpp_halt - used from all Assert_xxx macros when they are enabled
+//
+inline void diag_cpp_halt(int, const char*, ...) noexcept
+{
+    diag_trap();
+}
+//
+// diag_cpp_stop - used from all Check_xxx macros in intrusive diagnostic mode
+//
+inline int diag_cpp_stop(int, const char*, ...) noexcept
+{
+    diag_trap();
+    return 1;
+}
+//
+// diag_cpp_warn - used from all Check_xxx macros for warns fails
+//
+inline int diag_cpp_warn(int, const char*, ...) noexcept
+{
+    return 1;
+}
+
+#endif
+
+#endif
 
 //
 // If DIAG_MODE is not defined in advance tries to determine the right value
@@ -23,14 +131,6 @@
 #define DIAG_MODE DIAG_MODE_STEADY
 #endif
 #endif
-
-//
-// Diagnostic source location information type
-//
-#define DIAG_SRC_INFO_DISABLED        0 /* Disabled information for source location - C and C++ */
-#define DIAG_SRC_INFO_PREPROCESSOR    1 /* Preprocessor information for source location - only file and line - C and C++ */
-#define DIAG_SRC_INFO_SOURCE_LOCATION 2 /* std::source_location information for source location - C++ 20 and later */
-#define DIAG_SRC_INFO_STACKTRACE      3 /* std::stacktrace information for source location - C++ 23 and later */
 
 //
 // If DIAG_SRC_INFO is not defined in advance tries to determine the right value
@@ -69,26 +169,39 @@
 #endif
 
 //
-// Diagnostics IDs for Assert_xxx macros
+// DIAG_xxx functions - define DIAG_EXTERNAL_API if you want to implement your own versions of them
 //
-#define DIAG_ID_ASSERT_NULL_PTR 0
-#define DIAG_ID_ASSERT_CHECK    1
-#define DIAG_ID_ASSERT_COND_MSG 2
-#define DIAG_ID_ASSERT_FAILURE  3
-#define DIAG_ID_ASSERT_FAIL_MSG 4
+#ifdef DIAG_EXTERNAL_API
+
+#ifdef __cplusplus
 //
-// Diagnostics IDs for Check_xxx macros
+// You must define DIAG_NOEXCEPT to true or false when you implement own versions of them
 //
-#define DIAG_ID_CHECK_NULL_PTR  5
-#define DIAG_ID_CHECK_STATE     6
-#define DIAG_ID_CHECK_FAIL_MSG  7
-#define DIAG_ID_CHECK_FAILURE   8
-#define DIAG_ID_CHECK_RECOVERY  9
-#define DIAG_ID_ARG_NOT_VALID   10
-#define DIAG_ID_ARG_NOT_NULL    11
-#define DIAG_ID_ARG_INVALID     12
-#define DIAG_ID_ARG_BAD_ARRAY   13
-#define DIAG_ID_COUNT           14
+#ifndef DIAG_NOEXCEPT
+#error  DIAG_NOEXCEPT must be defined
+#endif
+#endif
+
+#else
+
+//
+// Indicates whether DIAG_HALT and DIAG_STOP functions are noexcept - DIAG_WARN always must be noexcept
+//
+#ifndef DIAG_NOEXCEPT
+#define DIAG_NOEXCEPT true
+#endif
+
+#ifdef __cplusplus
+#define DIAG_HALT diag_cpp_halt
+#define DIAG_STOP diag_cpp_stop
+#define DIAG_WARN diag_cpp_warn
+#else
+#define DIAG_HALT diag_c_halt
+#define DIAG_STOP diag_c_stop
+#define DIAG_WARN diag_c_warn
+#endif
+
+#endif
 
 //
 // Assert_xxx
@@ -117,6 +230,9 @@
 //
 #endif
 
+//
+// Check_xxx
+//
 #if (DIAG_MODE == DIAG_MODE_DISABLED)
 //
 // Checks are disabled
@@ -166,8 +282,8 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)) return __VA_ARGS__
 #define Check_Recovery(msg          )                       DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                       DIAG_WARN(DIAG_ID_ARG_INVALID    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_WARN(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                       DIAG_WARN(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
@@ -188,8 +304,8 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_
 #define Check_Recovery(msg          )                    if(DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)) (void)0
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)      && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_STOP(DIAG_ID_ARG_NOT_NULL   , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                       DIAG_STOP(DIAG_ID_ARG_INVALID    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==NULL) && DIAG_STOP(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                       DIAG_STOP(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
@@ -203,88 +319,4 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_
 //
 // Checks are user-defined
 //
-#endif
-
-//
-// DIAG_xxx functions - define DIAG_EXTERNAL_API if you want to implement your own versions of them
-//
-#ifdef DIAG_EXTERNAL_API
-
-//
-// You must define DIAG_NOEXCEPT to true or false when you implement own versions of them
-//
-#ifndef DIAG_NOEXCEPT
-#error  DIAG_NOEXCEPT must be defined
-#endif
-
-#else
-
-//
-// Indicates whether DIAG_HALT and DIAG_STOP functions are noexcept - DIAG_WARN always must be noexcept
-//
-#ifndef DIAG_NOEXCEPT
-#define DIAG_NOEXCEPT true
-#endif
-
-#define DIAG_HALT diag_halt
-#define DIAG_STOP diag_stop
-#define DIAG_WARN diag_warn
-
-#endif
-
-#ifndef DIAG_PROTOTYPES
-#define DIAG_PROTOTYPES
-
-//
-// DIAG_HALT - used from all Assert_xxx macros when they are enabled
-//
-[[noreturn]]
-inline void diag_halt(int, const char* DIAG_SRC_PROTOTYPE)
-#ifdef __cplusplus
-noexcept(DIAG_NOEXCEPT)
-#endif
-{
-#if defined(__clang__) || defined(__GNUC__)
-    __builtin_trap();
-#elif defined(_MSC_VER)
-    __debugbreak();
-#else
-    *(int*)0 = 0;
-#endif
-}
-
-//
-// DIAG_STOP - used from all Check_xxx macros in intrusive diagnostic mode
-//
-#if defined(__clang__)
-[[noreturn]]
-#endif
-inline int DIAG_STOP(int, const char* DIAG_SRC_PROTOTYPE)
-#ifdef __cplusplus
-noexcept(DIAG_NOEXCEPT)
-#endif
-{
-#if defined(__clang__) || defined(__GNUC__)
-    __builtin_trap();
-#elif defined(_MSC_VER)
-    __debugbreak();
-#else
-    *(int*)0 = 0;
-#endif
-#if !defined(__clang__)
-    return 1;
-#endif
-}
-
-//
-// DIAG_WARN - used from all Check_xxx macros for warns fails
-//
-inline int DIAG_WARN(int, const char* DIAG_SRC_PROTOTYPE)
-#ifdef __cplusplus
-noexcept
-#endif
-{
-    return 1;
-}
-
 #endif

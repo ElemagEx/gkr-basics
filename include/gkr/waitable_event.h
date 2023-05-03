@@ -6,6 +6,14 @@
 #include <gkr/cpp/lib_exchange_function.h>
 #endif
 
+#ifndef if_constexpr
+#ifdef __cpp_if_constexpr
+#define if_constexpr if constexpr
+#else
+#define if_constexpr if
+#endif
+#endif
+
 namespace gkr
 {
 
@@ -70,11 +78,7 @@ public:
     [[nodiscard]]
     virtual bool try_consume() noexcept override
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(ManualReset)
-#else
-        if          (ManualReset)
-#endif
+        if_constexpr(ManualReset)
         {
             return m_signaled.load();
         }

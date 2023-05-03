@@ -41,6 +41,14 @@
 
 #endif
 
+#ifndef if_constexpr
+#ifdef __cpp_if_constexpr
+#define if_constexpr if constexpr
+#else
+#define if_constexpr if
+#endif
+#endif
+
 namespace gkr
 {
 template<typename Queue, typename Element>
@@ -924,11 +932,7 @@ protected:
 
         m_producer_tid_owner = 0;
 
-#ifdef __cpp_if_constexpr
-        if constexpr(push)
-#else
-        if          (push)
-#endif
+        if_constexpr(push)
         {
             ++m_tail_pos;
             ++m_count;
@@ -977,11 +981,7 @@ protected:
 
         m_consumer_tid_owner = 0;
 
-#ifdef __cpp_if_constexpr
-        if constexpr(pop)
-#else
-        if          (pop)
-#endif
+        if_constexpr(pop)
         {
             ++m_head_pos;
             --m_count;
@@ -1206,11 +1206,7 @@ private:
     }
     void move_entries(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(!move_is_noexcept)
-#else
-        if          (!move_is_noexcept)
-#endif
+        if_constexpr(!move_is_noexcept)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1218,11 +1214,7 @@ private:
                 return;
             }
         }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
-#endif
+        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
         {
             m_allocator = std::move(other.m_allocator);
         }
@@ -1230,11 +1222,7 @@ private:
     }
     void swap_entries(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(!swap_is_noexcept)
-#else
-        if          (!swap_is_noexcept)
-#endif
+        if_constexpr(!swap_is_noexcept)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1247,11 +1235,7 @@ private:
                 return;
             }
         }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_swap::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_swap::value)
-#endif
+        if_constexpr(AllocatorTraits::propagate_on_container_swap::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }
@@ -1383,11 +1367,7 @@ protected:
 
         m_entries[index].tid_owner = 0;
 
-#ifdef __cpp_if_constexpr
-        if constexpr(push)
-#else
-        if          (push)
-#endif
+        if_constexpr(push)
         {
             m_entries[m_busy_tail++ % m_capacity].busy_index = index;
 
@@ -1441,11 +1421,7 @@ protected:
 
         m_entries[index].tid_owner = 0;
 
-#ifdef __cpp_if_constexpr
-        if constexpr(pop)
-#else
-        if          (pop)
-#endif
+        if_constexpr(pop)
         {
             m_entries[m_free_tail++ % m_capacity].free_index = index;
 
@@ -1678,11 +1654,7 @@ private:
     }
     void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(!move_is_noexcept)
-#else
-        if          (!move_is_noexcept)
-#endif
+        if_constexpr(!move_is_noexcept)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1690,11 +1662,7 @@ private:
                 return;
             }
         }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
-#endif
+        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
         {
             m_allocator = std::move(other.m_allocator);
         }
@@ -1702,11 +1670,7 @@ private:
     }
     void swap_elements(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(!swap_is_noexcept)
-#else
-        if          (!swap_is_noexcept)
-#endif
+        if_constexpr(!swap_is_noexcept)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1719,11 +1683,7 @@ private:
                 return;
             }
         }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
-#endif
+        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }
@@ -1877,11 +1837,7 @@ public:
     {
         const std::size_t index = index_of_element(element);
 
-#ifdef __cpp_if_constexpr
-        if constexpr(!push)
-#else
-        if          (!push)
-#endif
+        if_constexpr(!push)
         {
             if(index != npos)
             {
@@ -1898,11 +1854,7 @@ public:
     {
         const std::size_t index = index_of_element(element);
 
-#ifdef __cpp_if_constexpr
-        if constexpr(pop)
-#else
-        if          (pop)
-#endif
+        if_constexpr(pop)
         {
             if(index != npos)
             {
@@ -2466,11 +2418,7 @@ private:
     }
     void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(!move_is_noexcept)
-#else
-        if          (!move_is_noexcept)
-#endif
+        if_constexpr(!move_is_noexcept)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -2478,11 +2426,7 @@ private:
                 return;
             }
         }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
-#endif
+        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
         {
             m_allocator = std::move(other.m_allocator);
         }
@@ -2491,11 +2435,7 @@ private:
     }
     void swap_elements(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-#ifdef __cpp_if_constexpr
-        if constexpr(!swap_is_noexcept)
-#else
-        if          (!swap_is_noexcept)
-#endif
+        if_constexpr(!swap_is_noexcept)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -2510,11 +2450,7 @@ private:
                 return;
             }
         }
-#ifdef __cpp_if_constexpr
-        if constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
-#else
-        if          (AllocatorTraits::propagate_on_container_move_assignment::value)
-#endif
+        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }

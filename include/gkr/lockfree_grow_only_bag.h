@@ -319,13 +319,13 @@ public:
     template<typename Node, typename Value>
     class iterator_t
     {
-        Node* node;
+        Node* node {nullptr};
 
         friend class lockfree_grow_only_bag;
         iterator_t(Node* n) noexcept : node(n) {}
 
     public:
-        iterator_t() noexcept = delete;
+        iterator_t() noexcept = default;
        ~iterator_t() noexcept = default;
 
         iterator_t(      iterator_t&& other) noexcept : node(std::exchange(other.node, nullptr)) {}
@@ -491,7 +491,9 @@ public:
     }
 
 private:
-    node_type* remove(node_type* node) noexcept
+    node_type* remove(node_type* node) noexcept(
+        std::is_nothrow_destructible<node_type>::value
+        )
     {
         node_type* next = node->next;
 
@@ -503,38 +505,6 @@ private:
     }
 
 public:
-    size_type erase(const value_type& value) noexcept(
-        std::is_nothrow_destructible<node_type>::value
-        )
-    {
-        size_type count = 0;
-
-        node_type* prev = nullptr;
-        node_type* node = m_first;
-
-        while(node != nullptr)
-        {
-            if(node->value != value)
-            {
-                prev = node;
-                node = node->next;
-            }
-            else
-            {
-                ++count;
-                node = remove(node);
-                if(prev == nullptr)
-                {
-                    m_first = node;
-                }
-                else
-                {
-                    prev->next = node;
-                }
-            }
-        }
-        return count;
-    }
     iterator erase(const_iterator pos) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_destructible<node_type>::value
@@ -547,14 +517,14 @@ public:
 
         for( ; ; )
         {
+            Assert_NotNullPtr(node);
+
             if(node != pos.node)
             {
-                Assert_NotNullPtr(node);
                 prev = node;
                 node = node->next;
                 continue;
             }
-            Assert_NotNullPtr(node);
             node = remove(node);
             break;
         }
@@ -619,8 +589,42 @@ public:
         return erase(const_iterator(first.node), const_iterator(last.node));
     }
 
+    size_type erase(const value_type& value) noexcept(
+        noexcept(value==value) &&
+        std::is_nothrow_destructible<node_type>::value
+        )
+    {
+        size_type count = 0;
+
+        node_type* prev = nullptr;
+        node_type* node = m_first;
+
+        while(node != nullptr)
+        {
+            if(!(node->value == value))
+            {
+                prev = node;
+                node = node->next;
+            }
+            else
+            {
+                ++count;
+                node = remove(node);
+                if(prev == nullptr)
+                {
+                    m_first = node;
+                }
+                else
+                {
+                    prev->next = node;
+                }
+            }
+        }
+        return count;
+    }
+
 public:
-    iterator find(const value_type& value)
+    iterator find(const value_type& value) noexcept(noexcept(value==value))
     {
         for(iterator it = begin(); it != end(); ++it)
         {
@@ -631,7 +635,7 @@ public:
         }
         return end();
     }
-    const_iterator find(const value_type& value) const
+    const_iterator find(const value_type& value) const noexcept(noexcept(value==value))
     {
         for(const_iterator it = begin(); it != end(); ++it)
         {
@@ -643,12 +647,13 @@ public:
         return end();
     }
 
-    bool contains(const value_type& value) const
+public:
+    bool contains(const value_type& value) const noexcept(noexcept(value==value))
     {
         return (find(value) != end());
     }
 
-    size_type count(const value_type& value) const
+    size_type count(const value_type& value) const noexcept(noexcept(value==value))
     {
         size_type count = 0;
 

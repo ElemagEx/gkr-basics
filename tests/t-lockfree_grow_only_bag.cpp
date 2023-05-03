@@ -60,7 +60,19 @@ struct Data
 //    return os;
 //}
 
+using std_string = std::string;
+
+template<typename T>
+using std_allocator = std::allocator<T>;
+
 using flag = gkr::testing::allocator_flag;
+
+DEFINE_TEST_ALLOCATOR(allocator1, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesNever ));
+DEFINE_TEST_ALLOCATOR(allocator2, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesAlways));
+DEFINE_TEST_ALLOCATOR(allocator3, (flag::SingleThreaded | flag::EqualsByValue | flag::PropagatesNever ));
+DEFINE_TEST_ALLOCATOR(allocator4, (flag::SingleThreaded | flag::EqualsNever   | flag::PropagatesNever ));
+
+DEFINE_TEST_ALLOCATOR(allocatorM, (flag::MultiThreaded  | flag::EqualsAlways  | flag::PropagatesNever ));
 
 template<typename T, typename Allocator>
 int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
@@ -74,23 +86,11 @@ int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
     return int(total);
 }
 
-using std_string = std::string;
-
-template<typename T>
-using allocator0 = std::allocator<T>;
-
-DEFINE_TEST_ALLOCATOR(allocator1, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesNever ));
-DEFINE_TEST_ALLOCATOR(allocator2, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesAlways));
-DEFINE_TEST_ALLOCATOR(allocator3, (flag::SingleThreaded | flag::EqualsByValue | flag::PropagatesNever ));
-DEFINE_TEST_ALLOCATOR(allocator4, (flag::SingleThreaded | flag::EqualsNever   | flag::PropagatesNever ));
-
-DEFINE_TEST_ALLOCATOR(allocatorM, (flag::MultiThreaded  | flag::EqualsAlways  | flag::PropagatesNever ));
-
 #ifdef _MSC_VER
 #pragma warning(disable:4868)
 #endif
 
-TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0, allocator1, allocator2, allocator3, allocator4), (int, Data))
+TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_grow_only_bag. Lifecycle", "", (std_allocator, allocator1, allocator2, allocator3, allocator4), (int, Data))
 {
     using allocator_t = TestType;
     using value_t     = typename allocator_t::value_type;
@@ -111,6 +111,17 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
         CHECK(!bag1.empty());
         CHECK(bag1.size() == 3);
         CHECK(sum(bag1) == 6);
+
+        SECTION("construction with allocator")
+        {
+            allocator_t allocator = bag1.get_allocator();
+
+            bag_t bag2(allocator);
+
+            CHECK(bag2.empty());
+            CHECK(bag2.size() == 0);
+            CHECK(sum(bag2) == 0);
+        }
 
         SECTION("copy construction")
         {
@@ -227,7 +238,126 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. Lifecycle", "", (allocator0,
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
+TEST_CASE("container.lockfree_grow_only_bag. Getters", "")
+{
+    using allocator_t = allocator1<Data>;
+    using value_t     = typename allocator_t::value_type;
+
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using slot_t = typename bag_t::allocator_value_type;
+
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
+    {
+        bag_t bag_src;
+
+        const bag_t& bag = bag_src;
+
+        SECTION("max_size")
+        {
+            const bag_t::size_type max_size = bag.max_size();
+
+            CHECK(max_size > 0);
+        }
+        SECTION("size")
+        {
+            CHECK(bag.size() == 0);
+            bag_src.insert();
+            CHECK(bag.size() == 1);
+            bag_src.insert();
+            CHECK(bag.size() == 2);
+            bag_src.insert();
+            CHECK(bag.size() == 3);
+        }
+        SECTION("empty")
+        {
+            CHECK(bag.empty());
+            bag_src.insert();
+            CHECK(!bag.empty());
+            bag_src.insert();
+            CHECK(!bag.empty());
+        }
+        SECTION("get_allocator")
+        {
+            allocator_t a1 = bag.get_allocator();
+            allocator_t a2 = bag.get_allocator();
+
+            CHECK(a1 == a2);
+        }
+    }
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
+}
+
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Clear", "", int, Data, std_string)
+{
+    using allocator_t = allocator1<TestType>;
+    using value_t     = typename allocator_t::value_type;
+
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using slot_t = typename bag_t::allocator_value_type;
+
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
+    {
+        bag_t bag;
+
+        CHECK(bag.empty());
+        CHECK(bag.size() == 0);
+
+        bag.insert();
+        bag.insert();
+        bag.insert();
+
+        CHECK(!bag.empty());
+        CHECK(bag.size() == 3);
+
+        bag.clear();
+
+        CHECK(bag.empty());
+        CHECK(bag.size() == 0);
+    }
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
+}
+
+TEST_CASE("container.lockfree_grow_only_bag. Iterators")
+{
+    using allocator_t = allocator1<Data>;
+    using value_t     = typename allocator_t::value_type;
+
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using slot_t = typename bag_t::allocator_value_type;
+
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
+    {
+        bag_t bag;
+
+        CHECK(bag.empty());
+        CHECK(bag.size() == 0);
+        CHECK(sum(bag) == 0);
+
+        SECTION("regular")
+        {
+            CHECK(bag.begin() == bag.end());
+
+            bag.insert();
+
+            CHECK(  bag.begin()   != bag.end());
+            CHECK(++bag.begin()   == bag.end());
+            CHECK(  bag.begin()++ != bag.end());
+        }
+        SECTION("c prefixed")
+        {
+            CHECK(bag.cbegin() == bag.cend());
+
+            bag.insert();
+
+            CHECK(  bag.cbegin()   != bag.cend());
+            CHECK(++bag.cbegin()   == bag.cend());
+            CHECK(  bag.cbegin()++ != bag.cend());
+        }
+    }
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
+}
+
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Comparison", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
@@ -279,7 +409,7 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
             CHECK(bag1 == bag3);
             CHECK(bag3 == bag1);
         }
-        SECTION("Unequality")
+        SECTION("Inequality")
         {
             bag_t bag2(bag1);
 
@@ -308,40 +438,12 @@ TEMPLATE_TEST_CASE("container.lockfree_bag. Comparison", "", int, Data)
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_bag. Clear", "", int, Data, std_string)
+TEST_CASE("container.lockfree_grow_only_bag. Insert")
 {
-    using allocator_t = allocator1<TestType>;
+    using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
 
     using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
-    using slot_t = typename bag_t::allocator_value_type;
-
-    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
-    {
-        bag_t bag;
-
-        CHECK(bag.empty());
-        CHECK(bag.size() == 0);
-
-        bag.insert();
-        bag.insert();
-        bag.insert();
-
-        CHECK(!bag.empty());
-        CHECK(bag.size() == 3);
-
-        bag.clear();
-
-        CHECK(bag.empty());
-        CHECK(bag.size() == 0);
-    }
-    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
-}
-
-TEST_CASE("container.lockfree_bag. Insert")
-{
-    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator1<Data>>;
-
     using slot_t = typename bag_t::allocator_value_type;
 
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
@@ -384,33 +486,96 @@ TEST_CASE("container.lockfree_bag. Insert")
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_bag. Erase")
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Erase", "", int, Data)
 {
-    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocator1<Data>>;
+    using allocator_t = allocator1<TestType>;
+    using value_t     = typename allocator_t::value_type;
 
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
     using slot_t = typename bag_t::allocator_value_type;
 
-    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
+    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(16);
     {
-        bag_t bag;
+        bag_t bag1;
 
-        CHECK(bag.empty());
-        CHECK(bag.size() == 0);
+        CHECK(bag1.empty());
+        CHECK(bag1.size() == 0);
+        CHECK(sum(bag1) == 0);
 
-        auto pos =
-        bag.insert({1});
-        bag.insert({2});
-        bag.insert({3});
+        bag1.insert(value_t(1));
+        bag1.insert(value_t(2));
+        bag1.insert(value_t(1));
+        bag1.insert(value_t(0));
+        bag1.insert(value_t(3));
+        bag1.insert(value_t(1));
+        bag1.insert(value_t(3));
 
-        bag.erase(pos);
-        bag.erase(Data{2});
+        CHECK(!bag1.empty());
+        CHECK(bag1.size() == 7);
+        CHECK(sum(bag1) == 11);
+
+        SECTION("by iterator")
+        {
+            bag_t bag2(bag1);
+            while(!bag2.empty())
+            {
+                bag2.erase(bag2.begin());
+            }
+            bag_t bag3(bag1);
+            while(!bag3.empty())
+            {
+                typename bag_t::iterator it;
+                for(auto i = bag3.begin(); i != bag3.end(); ) it = i++;
+                bag3.erase(it);
+            }
+            for(int v: {4, 3, 2, 1, 0})
+            {
+                while(bag1.contains(value_t(v))) bag1.erase(bag1.find(value_t(v)));
+            }
+            CHECK(bag2 == bag1);
+            CHECK(bag3 == bag1);
+        }
+        SECTION("by range")
+        {
+            bag_t bag2(bag1);
+            while(bag2.size() > 1)
+            {
+                bag2.erase(++bag2.begin(), ++(++(++bag2.begin())));
+            }
+            CHECK(bag2.size() == 1);
+            bag2.erase(bag2.begin(), bag2.end());
+
+            bag_t bag3(bag1);
+            while(bag3.size() > 1)
+            {
+                bag3.erase(++bag3.begin(), ++(++(++(++bag3.begin()))));
+            }
+            CHECK(bag3.size() == 1);
+            bag3.erase(bag3.begin(), bag3.end());
+
+            bag1.erase(bag1.begin(), bag1.end());
+            CHECK(bag2 == bag1);
+            CHECK(bag3 == bag1);
+        }
+        SECTION("by value")
+        {
+            CHECK(bag1.erase(value_t(4)) == 0);
+            CHECK(bag1.erase(value_t(3)) == 2);
+            CHECK(bag1.erase(value_t(2)) == 1);
+            CHECK(bag1.erase(value_t(1)) == 3);
+            CHECK(bag1.erase(value_t(0)) == 1);
+        }
+
+        CHECK(bag1.empty());
+        CHECK(bag1.size() == 0);
+        CHECK(sum(bag1) == 0);
     }
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_bag. Iterators")
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Lookup", "", int, Data)
 {
-    using allocator_t = allocator1<Data>;
+    using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
 
     using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
@@ -418,28 +583,68 @@ TEST_CASE("container.lockfree_bag. Iterators")
 
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
     {
-        bag_t bag;
+        bag_t bag_src;
 
-        CHECK(bag.empty());
-        CHECK(bag.size() == 0);
+        CHECK(bag_src.empty());
+        CHECK(bag_src.size() == 0);
+        CHECK(sum(bag_src) == 0);
 
-        bag.insert();
-        bag.insert();
-        bag.insert();
+        bag_src.insert(value_t(1));
+        bag_src.insert(value_t(2));
+        bag_src.insert(value_t(1));
+        bag_src.insert(value_t(3));
+        bag_src.insert(value_t(1));
+        bag_src.insert(value_t(3));
 
-        CHECK(!bag.empty());
-        CHECK(bag.size() == 3);
+        CHECK(!bag_src.empty());
+        CHECK(bag_src.size() == 6);
+        CHECK(sum(bag_src) == 11);
 
-        //TODO:Finished this test
+        const bag_t& bag = bag_src;
+
+        SECTION("find")
+        {
+            CHECK(bag_src.find(0) == bag_src.end());
+            CHECK(bag_src.find(1) != bag_src.end());
+            CHECK(bag_src.find(2) != bag_src.end());
+            CHECK(bag_src.find(3) != bag_src.end());
+            CHECK(bag_src.find(4) == bag_src.end());
+        }
+        SECTION("const find")
+        {
+            CHECK(bag.find(0) == bag.end());
+            CHECK(bag.find(1) != bag.end());
+            CHECK(bag.find(2) != bag.end());
+            CHECK(bag.find(3) != bag.end());
+            CHECK(bag.find(4) == bag.end());
+        }
+        SECTION("contains")
+        {
+            CHECK(!bag.contains(0));
+            CHECK( bag.contains(1));
+            CHECK( bag.contains(2));
+            CHECK( bag.contains(3));
+            CHECK(!bag.contains(4));
+        }
+        SECTION("count")
+        {
+            CHECK(bag.count(0) == 0);
+            CHECK(bag.count(1) == 3);
+            CHECK(bag.count(2) == 1);
+            CHECK(bag.count(3) == 2);
+            CHECK(bag.count(4) == 0);
+        }
     }
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_bag. Multithreading")
+TEST_CASE("container.lockfree_grow_only_bag. Multithreading")
 {
-    using bag_t  = gkr::lockfree_grow_only_bag<Data, allocatorM<Data>>;
+    using allocator_t = allocatorM<Data>;
+    using value_t     = typename allocator_t::value_type;
 
-    using slot_t = bag_t::allocator_value_type;
+    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using slot_t = typename bag_t::allocator_value_type;
 
     constexpr std::size_t threads_count = 20;
     constexpr std::size_t nodes_to_add  = 500;
@@ -449,16 +654,18 @@ TEST_CASE("container.lockfree_bag. Multithreading")
     {
         bag_t bag;
 
-        std::atomic<int> n = 0;
+        std::atomic<int> n = threads_count;
+        std::atomic<int> m = 0;
 
         std::thread threads[threads_count];
 
         for(std::thread& thread : threads)
         {
-            thread = std::thread([&bag, &n] () {
+            thread = std::thread([&bag, &n, &m] () {
+                for(--n; n > 0; );
                 for(std::size_t index = 0; index < nodes_to_add; ++index)
                 {
-                    bag.insert()->a = ++n;
+                    bag.insert()->a = ++m;
                 }
             });
         }
@@ -471,33 +678,4 @@ TEST_CASE("container.lockfree_bag. Multithreading")
         CHECK(sum(bag) == (total_nodes*(total_nodes+1)/2));
     }
     gkr::testing::get_multithreaded_pre_allocated_storage<slot_t>().reset();
-}
-
-TEST_CASE("container.lockfree_bag. Misc")
-{
-    using allocator_t = allocator1<Data>;
-    using value_t     = typename allocator_t::value_type;
-
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
-    using slot_t = typename bag_t::allocator_value_type;
-
-    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset(8);
-    {
-        bag_t bag;
-
-        SECTION("max_size")
-        {
-            const bag_t::size_type max_size = bag.max_size();
-
-            CHECK(max_size > 0);
-        }
-        SECTION("get_allocator")
-        {
-            allocator_t a1 = bag.get_allocator();
-            allocator_t a2 = bag.get_allocator();
-
-            CHECK(a1 == a2);
-        }
-    }
-    gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }

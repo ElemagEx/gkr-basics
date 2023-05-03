@@ -47,6 +47,11 @@ add_library(
     STATIC
     "${gkr_basics_src_path}/libmain.cpp"
 )
+
+if(MSVC)
+target_sources(gkr-basics PUBLIC gkr.natvis)
+endif()
+
 # Headers only
 target_sources(
     gkr-basics

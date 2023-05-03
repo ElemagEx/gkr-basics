@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+<Type Name="gkr::lockfree_grow_only_bag&lt;*&gt;">
+    <!-- VS 2019 16.0 or earlier -->
+    <!--<Intrinsic Optional="true" Name="head" Expression="m_first._My_val"/>-->
+    <!-- VS 2019 16.1 or later -->
+    <Intrinsic Optional="true" Name="head" Expression="m_first._Storage._Value"/>
+    <DisplayString Condition="head() == 0">empty</DisplayString>
+    <DisplayString Condition="head() != 0">not-empty</DisplayString>
+    <Expand>
+        <Item Name="[allocator]" ExcludeView="simple">m_allocator</Item>
+        <LinkedListItems>
+            <HeadPointer>head()</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>value</ValueNode>
+        </LinkedListItems>
+    </Expand>
+</Type>
+</AutoVisualizer>

@@ -54,11 +54,11 @@ struct Data
     bool b = false;
 };
 
-//std::ostream& operator<<(std::ostream& os, const Data& value)
-//{
-//    os << "Data{" << value.a << "," << value.b << "}";
-//    return os;
-//}
+std::ostream& operator<<(std::ostream& os, const Data& value)
+{
+    os << "Data(" << value.a << "," << std::boolalpha << value.b << ")";
+    return os;
+}
 
 using std_string = std::string;
 

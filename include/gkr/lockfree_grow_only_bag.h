@@ -60,29 +60,29 @@ public:
     using difference_type = std::ptrdiff_t;
 
 private:
-    struct node_type
+    struct node_data
     {
         value_type value {};
-        node_type* next  {nullptr};
+        node_data* next  {nullptr};
 
-        node_type() noexcept(std::is_nothrow_default_constructible<value_type>::value) = default;
-       ~node_type() noexcept(std::is_nothrow_destructible         <value_type>::value) = default;
+        node_data() noexcept(std::is_nothrow_default_constructible<value_type>::value) = default;
+       ~node_data() noexcept(std::is_nothrow_destructible         <value_type>::value) = default;
 
-        node_type           (node_type&&) noexcept = delete;
-        node_type& operator=(node_type&&) noexcept = delete;
+        node_data           (node_data&&) noexcept = delete;
+        node_data& operator=(node_data&&) noexcept = delete;
 
-        node_type           (const node_type&) noexcept = delete;
-        node_type& operator=(const node_type&) noexcept = delete;
+        node_data           (const node_data&) noexcept = delete;
+        node_data& operator=(const node_data&) noexcept = delete;
 
-        node_type(const value_type&  v) noexcept(std::is_nothrow_copy_constructible<value_type>::value) : value(          v ) {}
-        node_type(      value_type&& v) noexcept(std::is_nothrow_move_constructible<value_type>::value) : value(std::move(v)) {}
+        node_data(const value_type&  v) noexcept(std::is_nothrow_copy_constructible<value_type>::value) : value(          v ) {}
+        node_data(      value_type&& v) noexcept(std::is_nothrow_move_constructible<value_type>::value) : value(std::move(v)) {}
 
         template<typename... Args>
-        node_type(Args&&... args) noexcept(std::is_nothrow_constructible<Args...>::value) : value(std::forward<Args>(args)...) {}
+        node_data(Args&&... args) noexcept(std::is_nothrow_constructible<Args...>::value) : value(std::forward<Args>(args)...) {}
     };
 
 private:
-    using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<node_type>;
+    using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<node_data>;
 
     using allocator_traits = std::allocator_traits<allocator_type>;
 
@@ -90,21 +90,21 @@ public:
     using allocator_value_type = typename allocator_type::value_type;
 
 private:
-    std::atomic<node_type*> m_first {nullptr};
+    std::atomic<node_data*> m_first {nullptr};
 
     [[no_unique_address]]
     allocator_type m_allocator;
 
 private:
-    node_type* copy_elements(const node_type* other_first) noexcept(false)
+    node_data* copy_elements(const node_data* other_first) noexcept(false)
     {
-        node_type* new_first = nullptr;
+        node_data* new_first = nullptr;
 
-        for(const node_type* src_node = other_first; src_node != nullptr; src_node = src_node->next)
+        for(const node_data* src_node = other_first; src_node != nullptr; src_node = src_node->next)
         {
-            node_type* new_node = m_allocator.allocate(1);
+            node_data* new_node = m_allocator.allocate(1);
 
-            new (new_node) node_type(src_node->value);
+            new (new_node) node_data(src_node->value);
 
             new_node->next = new_first;
 
@@ -112,15 +112,15 @@ private:
         }
         return new_first;
     }
-    node_type* move_elements(node_type* other_first) noexcept(false)
+    node_data* move_elements(node_data* other_first) noexcept(false)
     {
-        node_type* new_first = nullptr;
+        node_data* new_first = nullptr;
 
-        for(node_type* src_node = other_first; src_node != nullptr; src_node = src_node->next)
+        for(node_data* src_node = other_first; src_node != nullptr; src_node = src_node->next)
         {
-            node_type* new_node = m_allocator.allocate(1);
+            node_data* new_node = m_allocator.allocate(1);
 
-            new (new_node) node_type(std::move(src_node->value));
+            new (new_node) node_data(std::move(src_node->value));
 
             new_node->next = new_first;
 
@@ -138,7 +138,7 @@ public:
     }
     ~lockfree_grow_only_bag() noexcept(
         std::is_nothrow_destructible<allocator_type>::value &&
-        std::is_nothrow_destructible<     node_type>::value
+        std::is_nothrow_destructible<     node_data>::value
         )
     {
         clear();
@@ -199,7 +199,7 @@ public:
         }
     }
     lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept(
-        std::is_nothrow_destructible<node_type>::value && (
+        std::is_nothrow_destructible<node_data>::value && (
             allocator_traits::is_always_equal::value
             ||
             (allocator_traits::propagate_on_container_move_assignment::value &&
@@ -285,7 +285,7 @@ public:
     {
         size_type size = 0;
 
-        for(node_type* node = m_first; node != nullptr; node = node->next) ++size;
+        for(node_data* node = m_first; node != nullptr; node = node->next) ++size;
 
         return size;
     }
@@ -301,13 +301,13 @@ public:
     }
 
 public:
-    void clear() noexcept(std::is_nothrow_destructible<node_type>::value)
+    void clear() noexcept(std::is_nothrow_destructible<node_data>::value)
     {
-        for(node_type* node = m_first.exchange(nullptr); node != nullptr; )
+        for(node_data* node = m_first.exchange(nullptr); node != nullptr; )
         {
-            node_type* next = node->next;
+            node_data* next = node->next;
 
-            node->~node_type();
+            node->~node_data();
 
             m_allocator.deallocate(node, 1);
 
@@ -349,8 +349,8 @@ public:
     };
 
 public:
-    using       iterator = iterator_t<      node_type,       value_type>;
-    using const_iterator = iterator_t<const node_type, const value_type>;
+    using       iterator = iterator_t<      node_data,       value_type>;
+    using const_iterator = iterator_t<const node_data, const value_type>;
 
 public:
     const_iterator begin() const noexcept
@@ -380,10 +380,16 @@ public:
         return iterator(nullptr);
     }
 
-public:
-    static constexpr bool value_type_op_eq_is_noexcept = true; //TODO:Figure out how to define preperly
+private:
+    const value_type& sample() const noexcept
+    {
+        return m_first.load()->value;
+    }
 
-    bool operator==(const lockfree_grow_only_bag& other) const noexcept(value_type_op_eq_is_noexcept)
+public:
+    bool operator==(const lockfree_grow_only_bag& other) const noexcept(
+        noexcept(sample() == sample())
+        )
     {
         if(this == &other) return true;
 
@@ -433,15 +439,17 @@ public:
         }
         return true;
     }
-    bool operator!=(const lockfree_grow_only_bag& other) const noexcept(value_type_op_eq_is_noexcept)
+    bool operator!=(const lockfree_grow_only_bag& other) const noexcept(
+        noexcept(sample() == sample())
+        )
     {
         return !operator==(other);
     }
 
 private:
-    void add(node_type* node) noexcept
+    void add(node_data* node) noexcept
     {
-        node_type* first = m_first;
+        node_data* first = m_first;
         do
         {
             node->next = first;
@@ -452,9 +460,9 @@ private:
 public:
     iterator insert() noexcept(false)
     {
-        node_type* node = m_allocator.allocate(1);
+        node_data* node = m_allocator.allocate(1);
 
-        new (node) node_type();
+        new (node) node_data();
 
         add(node);
 
@@ -462,9 +470,9 @@ public:
     }
     iterator insert(value_type&& value) noexcept(false)
     {
-        node_type* node = m_allocator.allocate(1);
+        node_data* node = m_allocator.allocate(1);
 
-        new (node) node_type(std::move(value));
+        new (node) node_data(std::move(value));
 
         add(node);
 
@@ -472,9 +480,9 @@ public:
     }
     iterator insert(const value_type& value) noexcept(false)
     {
-        node_type* node = m_allocator.allocate(1);
+        node_data* node = m_allocator.allocate(1);
 
-        new (node) node_type(value);
+        new (node) node_data(value);
 
         add(node);
 
@@ -483,9 +491,9 @@ public:
     template<typename... Args>
     iterator emplace(Args&&... args) noexcept(false)
     {
-        node_type* node = m_allocator.allocate(1);
+        node_data* node = m_allocator.allocate(1);
 
-        new (node) node_type(std::forward<Args>(args)...);
+        new (node) node_data(std::forward<Args>(args)...);
 
         add(node);
 
@@ -493,13 +501,13 @@ public:
     }
 
 private:
-    node_type* remove(node_type* node) noexcept(
-        std::is_nothrow_destructible<node_type>::value
+    node_data* remove(node_data* node) noexcept(
+        std::is_nothrow_destructible<node_data>::value
         )
     {
-        node_type* next = node->next;
+        node_data* next = node->next;
 
-        node->~node_type();
+        node->~node_data();
 
         m_allocator.deallocate(node, 1);
 
@@ -509,13 +517,13 @@ private:
 public:
     iterator erase(const_iterator pos) noexcept(
         DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<node_type>::value
+        std::is_nothrow_destructible<node_data>::value
         )
     {
         Assert_NotNullPtr(pos.node);
 
-        node_type* prev = nullptr;
-        node_type* node = m_first;
+        node_data* prev = nullptr;
+        node_data* node = m_first;
 
         for( ; ; )
         {
@@ -542,20 +550,20 @@ public:
     }
     iterator erase(iterator pos) noexcept(
         DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<node_type>::value
+        std::is_nothrow_destructible<node_data>::value
         )
     {
         return erase(const_iterator(pos.node));
     }
     iterator erase(const_iterator first, const_iterator last) noexcept(
         DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<node_type>::value
+        std::is_nothrow_destructible<node_data>::value
         )
     {
         Assert_NotNullPtr(first.node);
 
-        node_type* prev = nullptr;
-        node_type* node = m_first;
+        node_data* prev = nullptr;
+        node_data* node = m_first;
 
         for( ; ; )
         {
@@ -585,21 +593,21 @@ public:
     }
     iterator erase(iterator first, iterator last) noexcept(
         DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<node_type>::value
+        std::is_nothrow_destructible<node_data>::value
         )
     {
         return erase(const_iterator(first.node), const_iterator(last.node));
     }
 
     size_type erase(const value_type& value) noexcept(
-        noexcept(value==value) &&
-        std::is_nothrow_destructible<node_type>::value
+        noexcept(sample() == value) &&
+        std::is_nothrow_destructible<node_data>::value
         )
     {
         size_type count = 0;
 
-        node_type* prev = nullptr;
-        node_type* node = m_first;
+        node_data* prev = nullptr;
+        node_data* node = m_first;
 
         while(node != nullptr)
         {
@@ -626,7 +634,9 @@ public:
     }
 
 public:
-    iterator find(const value_type& value) noexcept(noexcept(value==value))
+    iterator find(const value_type& value) noexcept(
+        noexcept(sample() == value)
+        )
     {
         for(iterator it = begin(); it != end(); ++it)
         {
@@ -637,7 +647,9 @@ public:
         }
         return end();
     }
-    const_iterator find(const value_type& value) const noexcept(noexcept(value==value))
+    const_iterator find(const value_type& value) const noexcept(
+        noexcept(sample() == value)
+        )
     {
         for(const_iterator it = begin(); it != end(); ++it)
         {
@@ -650,12 +662,16 @@ public:
     }
 
 public:
-    bool contains(const value_type& value) const noexcept(noexcept(value==value))
+    bool contains(const value_type& value) const noexcept(
+        noexcept(sample() == value)
+        )
     {
         return (find(value) != end());
     }
 
-    size_type count(const value_type& value) const noexcept(noexcept(value==value))
+    size_type count(const value_type& value) const noexcept(
+        noexcept(sample() == value)
+        )
     {
         size_type count = 0;
 

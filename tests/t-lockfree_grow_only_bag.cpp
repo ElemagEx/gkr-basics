@@ -15,7 +15,7 @@ struct Data
     Data           (const Data&) noexcept = default;
     Data& operator=(const Data&) noexcept = default;
 
-    Data(int a_, bool b_ = false) noexcept : a(a_), b(b_)
+    explicit Data(int a_, bool b_ = false) noexcept : a(a_), b(b_)
     {
     }
     Data(Data&& other) noexcept : a(std::exchange(other.a, 0)), b(std::exchange(other.b, false))
@@ -28,7 +28,7 @@ struct Data
         return *this;
     }
     template<typename... Args>
-    Data(Args&&... args) noexcept
+    explicit Data(Args&&... args) noexcept
     {
         int values[sizeof...(args)] = {args...};
         for(int value : values) a += value;
@@ -461,9 +461,9 @@ TEST_CASE("container.lockfree_grow_only_bag. Insert")
         }
         SECTION("move construct")
         {
-            bag.insert({1});
-            bag.insert({2});
-            bag.insert({3});
+            bag.insert(Data{1});
+            bag.insert(Data{2});
+            bag.insert(Data{3});
         }
         SECTION("copy construct")
         {
@@ -604,35 +604,35 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Lookup", "", int, Data)
 
         SECTION("find")
         {
-            CHECK(bag_src.find(0) == bag_src.end());
-            CHECK(bag_src.find(1) != bag_src.end());
-            CHECK(bag_src.find(2) != bag_src.end());
-            CHECK(bag_src.find(3) != bag_src.end());
-            CHECK(bag_src.find(4) == bag_src.end());
+            CHECK(bag_src.find(value_t(0)) == bag_src.end());
+            CHECK(bag_src.find(value_t(1)) != bag_src.end());
+            CHECK(bag_src.find(value_t(2)) != bag_src.end());
+            CHECK(bag_src.find(value_t(3)) != bag_src.end());
+            CHECK(bag_src.find(value_t(4)) == bag_src.end());
         }
         SECTION("const find")
         {
-            CHECK(bag.find(0) == bag.end());
-            CHECK(bag.find(1) != bag.end());
-            CHECK(bag.find(2) != bag.end());
-            CHECK(bag.find(3) != bag.end());
-            CHECK(bag.find(4) == bag.end());
+            CHECK(bag.find(value_t(0)) == bag.end());
+            CHECK(bag.find(value_t(1)) != bag.end());
+            CHECK(bag.find(value_t(2)) != bag.end());
+            CHECK(bag.find(value_t(3)) != bag.end());
+            CHECK(bag.find(value_t(4)) == bag.end());
         }
         SECTION("contains")
         {
-            CHECK(!bag.contains(0));
-            CHECK( bag.contains(1));
-            CHECK( bag.contains(2));
-            CHECK( bag.contains(3));
-            CHECK(!bag.contains(4));
+            CHECK(!bag.contains(value_t(0)));
+            CHECK( bag.contains(value_t(1)));
+            CHECK( bag.contains(value_t(2)));
+            CHECK( bag.contains(value_t(3)));
+            CHECK(!bag.contains(value_t(4)));
         }
         SECTION("count")
         {
-            CHECK(bag.count(0) == 0);
-            CHECK(bag.count(1) == 3);
-            CHECK(bag.count(2) == 1);
-            CHECK(bag.count(3) == 2);
-            CHECK(bag.count(4) == 0);
+            CHECK(bag.count(value_t(0)) == 0);
+            CHECK(bag.count(value_t(1)) == 3);
+            CHECK(bag.count(value_t(2)) == 1);
+            CHECK(bag.count(value_t(3)) == 2);
+            CHECK(bag.count(value_t(4)) == 0);
         }
     }
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();

@@ -2,7 +2,7 @@
 
 #ifdef __cpp_lib_semaphore
 
-#include <gkr/waitable_object.h>
+#include <gkr/thread_waiting.h>
 
 #include <semaphore>
 
@@ -55,7 +55,7 @@ public:
 
 private:
     [[nodiscard]]
-    virtual bool try_consume() override
+    virtual bool try_consume() noexcept override
     {
         return m_semaphore.try_acquire();
     }

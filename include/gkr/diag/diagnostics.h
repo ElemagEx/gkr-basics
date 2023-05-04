@@ -30,7 +30,7 @@
 //
 // Diagnostic source location information type
 //
-#define DIAG_SRC_INFO_DISABLED        0 /* Disabled information for source location - C and C++ */
+#define DIAG_SRC_INFO_NONE            0 /* None information for source location - C and C++ */
 #define DIAG_SRC_INFO_PREPROCESSOR    1 /* Preprocessor information for source location - only file and line - C and C++ */
 #define DIAG_SRC_INFO_SOURCE_LOCATION 2 /* std::source_location information for source location - C++ 20 and later */
 #define DIAG_SRC_INFO_STACKTRACE      3 /* std::stacktrace information for source location - C++ 23 and later */
@@ -41,7 +41,7 @@
 #define DIAG_MODE_DISABLED  0 /* Disables all diagnostics */
 #define DIAG_MODE_SILENT    1 /* Asserts are disabled and checks are silient - default for RELASE builds */
 #define DIAG_MODE_STEADY    2 /* Asserts are disabled and checks warns on fail */
-#define DIAG_MODE_NOISY     3 /* Asserts are enabled and checks warns on fail - default for DEBUG builds */
+#define DIAG_MODE_NOISY     3 /* Asserts halts execution and checks warns on fail - default for DEBUG builds */
 #define DIAG_MODE_INTRUSIVE 4 /* All diagnostics halts/stops execution */
 
 #ifdef __cplusplus
@@ -91,30 +91,73 @@ inline int diag_c_warn(int, const char*, ...)
 #endif
 
 #ifdef __cplusplus
-
 //
-// diag_cpp_halt - used from all Assert_xxx macros when they are enabled
+// none source arguments
 //
-inline void diag_cpp_halt(int, const char*, ...) noexcept
+inline void diag_cpp_halt(int, const char*) noexcept
 {
     diag_trap();
 }
-//
-// diag_cpp_stop - used from all Check_xxx macros in intrusive diagnostic mode
-//
-inline int diag_cpp_stop(int, const char*, ...) noexcept
+inline int diag_cpp_stop(int, const char*) noexcept
 {
     diag_trap();
     return 1;
 }
-//
-// diag_cpp_warn - used from all Check_xxx macros for warns fails
-//
-inline int diag_cpp_warn(int, const char*, ...) noexcept
+inline int diag_cpp_warn(int, const char*) noexcept
 {
     return 1;
 }
-
+//
+// preprocessor source arguments
+//
+inline void diag_cpp_halt(int, const char*, const char*, int) noexcept
+{
+    diag_trap();
+}
+inline int diag_cpp_stop(int, const char*, const char*, int) noexcept
+{
+    diag_trap();
+    return 1;
+}
+inline int diag_cpp_warn(int, const char*, const char*, int) noexcept
+{
+    return 1;
+}
+//
+// std::source_location source arguments
+//
+#ifdef __cpp_lib_source_location
+#include <source_location>
+inline void diag_cpp_halt(int, const char*, const std::source_location&) noexcept
+{
+    diag_trap();
+}
+inline int diag_cpp_stop(int, const char*, const std::source_location&) noexcept
+{
+    diag_trap();
+    return 1;
+}
+inline int diag_cpp_warn(int, const char*, const std::source_location&) noexcept
+{
+    return 1;
+}
+#endif
+#ifdef __cpp_lib_stacktrace
+#include <stacktrace>
+inline void diag_cpp_halt(int, const char*, const std::stacktrace&) noexcept
+{
+    diag_trap();
+}
+inline int diag_cpp_stop(int, const char*, const std::stacktrace&) noexcept
+{
+    diag_trap();
+    return 1;
+}
+inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
+{
+    return 1;
+}
+#endif
 #endif
 
 #endif
@@ -148,7 +191,7 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 //
 // Set appropriate DIAG_SRC_LOCATION and DIAG_SRC_PROTOTYPE used for DIAG_xxx functions
 //
-#if   (DIAG_SRC_INFO == DIAG_SRC_INFO_DISABLED)
+#if   (DIAG_SRC_INFO == DIAG_SRC_INFO_NONE)
 #define DIAG_SRC_LOCATION
 #define DIAG_SRC_PROTOTYPE
 #elif (DIAG_SRC_INFO == DIAG_SRC_INFO_PREPROCESSOR)
@@ -160,7 +203,6 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 #elif !defined(__cpp_lib_source_location)
 #error You must use at least C++20
 #else
-#include <source_location>
 #define  DIAG_SRC_LOCATION  ,       std::source_location::current()
 #define  DIAG_SRC_PROTOTYPE , const std::source_location& location
 #endif
@@ -170,7 +212,6 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 #elif !defined(__cpp_lib_source_location)
 #error You must use at least C++23
 #else
-#include <stacktrace>
 #define  DIAG_SRC_LOCATION  ,       std::stacktrace::current()
 #define  DIAG_SRC_PROTOTYPE , const std::stacktrace& stacktrace
 #endif
@@ -225,7 +266,7 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 //
 // Assert_xxx
 //
-#if (DIAG_MODE <= DIAG_MODE_STEADY)
+#if (DIAG_MODE == DIAG_MODE_DISABLED) || (DIAG_MODE == DIAG_MODE_SILENT) || (DIAG_MODE == DIAG_MODE_STEADY)
 //
 // Asserts are disabled
 //
@@ -234,7 +275,7 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 #define Assert_CheckMsg(check, msg)
 #define Assert_Failure()
 #define Assert_FailureMsg(msg)
-#elif (DIAG_MODE <= DIAG_MODE_INTRUSIVE)
+#elif (DIAG_MODE == DIAG_MODE_NOISY) || (DIAG_MODE == DIAG_MODE_INTRUSIVE)
 //
 // Asserts are enabled
 //

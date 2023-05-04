@@ -266,7 +266,7 @@ public:
                     "According to the standard"
                     " (see AllocatorAwareContainer at https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer)"
                     " this case is undefined behaviour."
-                    " Uneffective code follows"
+                    " Recovery code follows"
                     );
                 auto    first = this->move_elements(other.m_first); other.clear();
                 other.m_first = other.move_elements(this->m_first); this->clear();

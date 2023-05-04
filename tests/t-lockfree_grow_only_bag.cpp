@@ -665,7 +665,9 @@ TEST_CASE("container.lockfree_grow_only_bag. Multithreading")
                 for(--n; n > 0; );
                 for(std::size_t index = 0; index < nodes_to_add; ++index)
                 {
-                    bag.insert()->a = ++m;
+                    int a = ++m;
+                    std::this_thread::yield();
+                    bag.insert()->a = a;
                 }
             });
         }

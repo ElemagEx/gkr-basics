@@ -155,13 +155,25 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 #define DIAG_SRC_LOCATION  , __FILE__, __LINE__
 #define DIAG_SRC_PROTOTYPE , const char* file, int line
 #elif (DIAG_SRC_INFO == DIAG_SRC_INFO_SOURCE_LOCATION)
+#if !defined(__cplusplus)
+#error Not available for C language
+#elif !defined(__cpp_lib_source_location)
+#error You must use at least C++20
+#else
 #include <source_location>
 #define  DIAG_SRC_LOCATION  ,       std::source_location::current()
 #define  DIAG_SRC_PROTOTYPE , const std::source_location& location
+#endif
 #elif (DIAG_SRC_INFO == DIAG_SRC_INFO_STACKTRACE)
+#if !defined(__cplusplus)
+#error Not available for C language
+#elif !defined(__cpp_lib_source_location)
+#error You must use at least C++23
+#else
 #include <stacktrace>
 #define  DIAG_SRC_LOCATION  ,       std::stacktrace::current()
 #define  DIAG_SRC_PROTOTYPE , const std::stacktrace& stacktrace
+#endif
 #else
 //
 // DIAG_SRC_LOCATION and DIAG_SRC_PROTOTYPE are user-defined
@@ -184,18 +196,25 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 
 #else
 
+#ifdef __cplusplus
 //
 // Indicates whether DIAG_HALT and DIAG_STOP functions are noexcept - DIAG_WARN always must be noexcept
 //
-#ifndef DIAG_NOEXCEPT
 #define DIAG_NOEXCEPT true
-#endif
-
-#ifdef __cplusplus
+//
+// APIs
+//
 #define DIAG_HALT diag_cpp_halt
 #define DIAG_STOP diag_cpp_stop
 #define DIAG_WARN diag_cpp_warn
 #else
+//
+// Must be defined anyway
+//
+#define DIAG_NOEXCEPT
+//
+// APIs
+//
 #define DIAG_HALT diag_c_halt
 #define DIAG_STOP diag_c_stop
 #define DIAG_WARN diag_c_warn
@@ -214,7 +233,7 @@ inline int diag_cpp_warn(int, const char*, ...) noexcept
 #define Assert_Check(check)
 #define Assert_CheckMsg(check, msg)
 #define Assert_Failure()
-#define Assert_FailureMsg()
+#define Assert_FailureMsg(msg)
 #elif (DIAG_MODE <= DIAG_MODE_INTRUSIVE)
 //
 // Asserts are enabled

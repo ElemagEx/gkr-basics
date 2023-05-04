@@ -381,7 +381,9 @@ public:
     }
 
 public:
-    bool operator==(const lockfree_grow_only_bag& other) const
+    static constexpr bool value_type_op_eq_is_noexcept = true; //TODO:Figure out how to define preperly
+
+    bool operator==(const lockfree_grow_only_bag& other) const noexcept(value_type_op_eq_is_noexcept)
     {
         if(this == &other) return true;
 
@@ -431,7 +433,7 @@ public:
         }
         return true;
     }
-    bool operator!=(const lockfree_grow_only_bag& other) const
+    bool operator!=(const lockfree_grow_only_bag& other) const noexcept(value_type_op_eq_is_noexcept)
     {
         return !operator==(other);
     }

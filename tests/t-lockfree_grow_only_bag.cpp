@@ -54,6 +54,7 @@ struct Data
     bool b = false;
 };
 
+std::ostream& operator<<(std::ostream& os, const Data& value);
 std::ostream& operator<<(std::ostream& os, const Data& value)
 {
     os << "Data(" << value.a << "," << std::boolalpha << value.b << ")";

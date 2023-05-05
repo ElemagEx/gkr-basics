@@ -52,6 +52,7 @@ TEST_CASE("container.lockfree_queue. main")
             s += element->z;
         }
     }
+    INFO(s);
 
     gkr::lockfree_queue<void> q3;
 

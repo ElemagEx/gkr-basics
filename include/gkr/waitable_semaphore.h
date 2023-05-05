@@ -19,8 +19,9 @@ class waitable_semaphore final : public waitable_registrator<MaxWaiters>
     waitable_semaphore& operator=(waitable_semaphore&& other) noexcept = delete;
 
 public:
-    waitable_semaphore() noexcept = delete;
-   ~waitable_semaphore() noexcept = default;
+    virtual
+   ~waitable_semaphore() noexcept override = default;
+    waitable_semaphore() noexcept          = delete;
 
     waitable_semaphore(std::ptrdiff_t desired) : m_semaphore(desired)
     {

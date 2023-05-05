@@ -42,7 +42,7 @@
 #define DIAG_MODE_SILENT    1 /* Asserts are disabled and checks are silient - default for RELASE builds */
 #define DIAG_MODE_STEADY    2 /* Asserts are disabled and checks warns on fail */
 #define DIAG_MODE_NOISY     3 /* Asserts halts execution and checks warns on fail - default for DEBUG builds */
-#define DIAG_MODE_INTRUSIVE 4 /* All diagnostics halts/stops execution */
+#define DIAG_MODE_INTRUSIVE 4 /* All diagnostics halts execution */
 
 //
 // Null pointer
@@ -53,6 +53,12 @@
 #define DIAG_NULL ((void*)0)
 #endif
 
+#ifdef _MSC_VER
+#define DIAG_NOOP __noop
+#else
+#define DIAG_NOOP ((void)0)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -61,6 +67,7 @@ extern "C"
 //
 // diag_trap - immediately breaks program execution
 //
+[[noreturn]]
 inline void diag_trap()
 {
 #if defined(__clang__) || defined(__GNUC__)
@@ -71,21 +78,18 @@ inline void diag_trap()
     *(int*)0 = 0;
 #endif
 }
+inline int diag_true()
+{
+    return 1;
+}
 
 //
 // diag_c_halt - used from all Assert_xxx macros when they are enabled
 //
+[[noreturn]]
 inline void diag_c_halt(int, const char*, ...)
 {
     diag_trap();
-}
-//
-// diag_c_stop - used from all Check_xxx macros in intrusive diagnostic mode
-//
-inline int diag_c_stop(int, const char*, ...)
-{
-    diag_trap();
-    return 1;
 }
 //
 // diag_cpp_warn - used from all Check_xxx macros for warns fails
@@ -103,14 +107,10 @@ inline int diag_c_warn(int, const char*, ...)
 //
 // none source arguments
 //
+[[noreturn]]
 inline void diag_cpp_halt(int, const char*) noexcept
 {
     diag_trap();
-}
-inline int diag_cpp_stop(int, const char*) noexcept
-{
-    diag_trap();
-    return 1;
 }
 inline int diag_cpp_warn(int, const char*) noexcept
 {
@@ -119,14 +119,10 @@ inline int diag_cpp_warn(int, const char*) noexcept
 //
 // preprocessor source arguments
 //
+[[noreturn]]
 inline void diag_cpp_halt(int, const char*, const char*, int) noexcept
 {
     diag_trap();
-}
-inline int diag_cpp_stop(int, const char*, const char*, int) noexcept
-{
-    diag_trap();
-    return 1;
 }
 inline int diag_cpp_warn(int, const char*, const char*, int) noexcept
 {
@@ -137,14 +133,10 @@ inline int diag_cpp_warn(int, const char*, const char*, int) noexcept
 //
 // std::source_location source arguments
 //
+[[noreturn]]
 inline void diag_cpp_halt(int, const char*, const std::source_location&) noexcept
 {
     diag_trap();
-}
-inline int diag_cpp_stop(int, const char*, const std::source_location&) noexcept
-{
-    diag_trap();
-    return 1;
 }
 inline int diag_cpp_warn(int, const char*, const std::source_location&) noexcept
 {
@@ -156,14 +148,10 @@ inline int diag_cpp_warn(int, const char*, const std::source_location&) noexcept
 //
 // std::stacktrace source arguments
 //
+[[noreturn]]
 inline void diag_cpp_halt(int, const char*, const std::stacktrace&) noexcept
 {
     diag_trap();
-}
-inline int diag_cpp_stop(int, const char*, const std::stacktrace&) noexcept
-{
-    diag_trap();
-    return 1;
 }
 inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 {
@@ -220,7 +208,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 #elif (DIAG_SRC_INFO == DIAG_SRC_INFO_STACKTRACE)
 #if !defined(__cplusplus)
 #error Not available for C language
-#elif !defined(__cpp_lib_source_location)
+#elif !defined(__cpp_lib_stacktrace)
 #error You must use at least C++23
 #else
 #define  DIAG_SRC_LOCATION  ,       std::stacktrace::current()
@@ -250,21 +238,19 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 
 #ifdef __cplusplus
 //
-// Indicates whether DIAG_HALT and DIAG_STOP functions are noexcept - DIAG_WARN always must be noexcept
+// Indicates whether DIAG_HALT function is noexcept - DIAG_WARN always must be noexcept
 //
 #define DIAG_NOEXCEPT true
 //
 // APIs
 //
 #define DIAG_HALT diag_cpp_halt
-#define DIAG_STOP diag_cpp_stop
 #define DIAG_WARN diag_cpp_warn
 #else
 //
 // APIs
 //
 #define DIAG_HALT diag_c_halt
-#define DIAG_STOP diag_c_stop
 #define DIAG_WARN diag_c_warn
 #endif
 
@@ -277,11 +263,11 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 //
 // Asserts are disabled
 //
-#define Assert_NotNullPtr(ptr)
-#define Assert_Check(check)
-#define Assert_CheckMsg(check, msg)
-#define Assert_Failure()
-#define Assert_FailureMsg(msg)
+#define Assert_NotNullPtr(ptr)      DIAG_NOOP
+#define Assert_Check(check)         DIAG_NOOP
+#define Assert_CheckMsg(check, msg) DIAG_NOOP
+#define Assert_Failure()            DIAG_NOOP
+#define Assert_FailureMsg(msg)      DIAG_NOOP
 #elif (DIAG_MODE == DIAG_MODE_NOISY) || (DIAG_MODE == DIAG_MODE_INTRUSIVE)
 //
 // Asserts are enabled
@@ -289,8 +275,8 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 #define Assert_NotNullPtr(ptr)      if((ptr)==DIAG_NULL) DIAG_HALT(DIAG_ID_ASSERT_NULL_PTR, #ptr   DIAG_SRC_LOCATION)
 #define Assert_Check(check)         if(!(check))         DIAG_HALT(DIAG_ID_ASSERT_CHECK   , #check DIAG_SRC_LOCATION)
 #define Assert_CheckMsg(check, msg) if(!(check))         DIAG_HALT(DIAG_ID_ASSERT_COND_MSG, msg    DIAG_SRC_LOCATION)
-#define Assert_Failure()                                 DIAG_HALT(DIAG_ID_ASSERT_FAILURE , NULL   DIAG_SRC_LOCATION)
-#define Assert_FailureMsg(msg)                           DIAG_HALT(DIAG_ID_ASSERT_FAIL_MSG, msg    DIAG_SRC_LOCATION)
+#define Assert_Failure()            if(diag_true())      DIAG_HALT(DIAG_ID_ASSERT_FAILURE , NULL   DIAG_SRC_LOCATION)
+#define Assert_FailureMsg(msg)      if(diag_true())      DIAG_HALT(DIAG_ID_ASSERT_FAIL_MSG, msg    DIAG_SRC_LOCATION)
 #else
 //
 // Asserts are user-defined
@@ -304,14 +290,14 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 //
 // Checks are disabled
 //
-#define Check_NotNullPtr(ptr,    ...)
-#define Check_ValidState(check,  ...)
+#define Check_NotNullPtr(ptr,    ...)   DIAG_NOOP
+#define Check_ValidState(check,  ...)   DIAG_NOOP
 #define Check_FailureMsg(msg,    ...)   return __VA_ARGS__
 #define Check_Failure(           ...)   return __VA_ARGS__
-#define Check_Recovery(msg          )
+#define Check_Recovery(msg          )   DIAG_NOOP
 
-#define Check_Arg_IsValid(check, ...)
-#define Check_Arg_NotNull(ptr,   ...)
+#define Check_Arg_IsValid(check, ...)   DIAG_NOOP
+#define Check_Arg_NotNull(ptr,   ...)   DIAG_NOOP
 #define Check_Arg_Invalid(arg,   ...)   return __VA_ARGS__
 
 #define Check_Arg_Array(ndx, cnt, check, ...)
@@ -324,7 +310,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 #define Check_ValidState(check,  ...)   if(!(check))         return __VA_ARGS__
 #define Check_FailureMsg(msg,    ...)                        return __VA_ARGS__
 #define Check_Failure(           ...)                        return __VA_ARGS__
-#define Check_Recovery(msg          )
+#define Check_Recovery(msg          )   DIAG_NOOP
 
 #define Check_Arg_IsValid(check, ...)   if(!(check))         return __VA_ARGS__
 #define Check_Arg_NotNull(ptr,   ...)   if((ptr)==DIAG_NULL) return __VA_ARGS__
@@ -346,7 +332,7 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)) return __VA_ARGS__
 #define Check_ValidState(check,  ...)   if(!(check)           && DIAG_WARN(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_FailureMsg(msg,    ...)                            DIAG_WARN(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
 #define Check_Failure(           ...)                            DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Recovery(msg          )                            DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
+#define Check_Recovery(msg          )                         if(DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)) DIAG_NOOP
 
 #define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_WARN(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
@@ -362,24 +348,24 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_
 
 #elif (DIAG_MODE == DIAG_MODE_INTRUSIVE)
 //
-// Checks stops execution
+// Checks halts execution
 //
-#define Check_NotNullPtr(ptr,    ...)   if(((ptr)==DIAG_NULL) && DIAG_STOP(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_ValidState(check,  ...)   if(!(check)           && DIAG_STOP(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_FailureMsg(msg,    ...)                            DIAG_STOP(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Failure(           ...)                            DIAG_STOP(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Recovery(msg          )                            DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
+#define Check_NotNullPtr(ptr,    ...)   if((ptr)==DIAG_NULL) DIAG_HALT(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)
+#define Check_ValidState(check,  ...)   if(!(check))         DIAG_HALT(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)
+#define Check_FailureMsg(msg,    ...)   if(diag_true())      DIAG_HALT(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Failure(           ...)   if(diag_true())      DIAG_HALT(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Recovery(msg          )   if(diag_true())      DIAG_HALT(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
 
-#define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_STOP(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                            DIAG_STOP(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check))         DIAG_HALT(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)
+#define Check_Arg_NotNull(ptr,   ...)   if((ptr)==DIAG_NULL) DIAG_HALT(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)
+#define Check_Arg_Invalid(arg,   ...)   if(diag_true())      DIAG_HALT(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
-for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_STOP(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check)) DIAG_HALT(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)
 #else
 #define Check_Arg_Array(ndx, cnt, check, ...) \
-for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_STOP(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)) DIAG_HALT(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)
 #endif
 
 #else

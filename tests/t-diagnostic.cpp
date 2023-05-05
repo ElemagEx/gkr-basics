@@ -15,11 +15,8 @@
 //
 // C++ procs - no args
 //
+[[noreturn]]
 static void my_cpp_halt_proc_no_args(int id, const char* msg) noexcept(false)
-{
-    throw std::exception();
-}
-static int my_cpp_stop_proc_no_args(int id, const char* msg) noexcept(false)
 {
     throw std::exception();
 }
@@ -30,11 +27,8 @@ static int my_cpp_warn_proc_no_args(int id, const char* msg) noexcept
 //
 // C++ procs - preprocessor args
 //
+[[noreturn]]
 static void my_cpp_halt_proc_pp_args(int id, const char* msg, const char* file, int line) noexcept(false)
-{
-    throw std::exception();
-}
-static int my_cpp_stop_proc_pp_args(int id, const char* msg, const char* file, int line) noexcept(false)
 {
     throw std::exception();
 }
@@ -51,10 +45,6 @@ static void my_cpp_halt_proc_sl_args(int id, const char* msg, const std::source_
 {
     throw std::exception();
 }
-static int my_cpp_stop_proc_sl_args(int id, const char* msg, const std::source_location& location) noexcept(false)
-{
-    throw std::exception();
-}
 static int my_cpp_warn_proc_sl_args(int id, const char* msg, const std::source_location& location) noexcept
 {
     return 1;
@@ -65,11 +55,8 @@ static int my_cpp_warn_proc_sl_args(int id, const char* msg, const std::source_l
 //
 #ifdef __cpp_lib_stacktrace
 #include <stacktrace>
+[[noreturn]]
 static void my_cpp_halt_proc_st_args(int id, const char* msg, const std::stacktrace& stacktrace) noexcept(false)
-{
-    throw std::exception();
-}
-static int my_cpp_stop_proc_st_args(int id, const char* msg, const std::stacktrace& stacktrace) noexcept(false)
 {
     throw std::exception();
 }
@@ -81,16 +68,13 @@ static int my_cpp_warn_proc_st_args(int id, const char* msg, const std::stacktra
 
 extern "C" {
 
-thread_local jmp_buf my_jmp_buffer;
+static thread_local jmp_buf my_jmp_buffer;
 
 //
 // C procs - no args
 //
+[[noreturn]]
 static void my_c_halt_proc_no_args(int id, const char* msg)
-{
-    longjmp(my_jmp_buffer, -1);
-}
-static int my_c_stop_proc_no_args(int id, const char* msg)
 {
     longjmp(my_jmp_buffer, -1);
 }
@@ -101,11 +85,8 @@ static int my_c_warn_proc_no_args(int id, const char* msg)
 //
 // C procs - no args
 //
+[[noreturn]]
 static void my_c_halt_proc_pp_args(int id, const char* msg, const char* file, int line)
-{
-    longjmp(my_jmp_buffer, -1);
-}
-static int my_c_stop_proc_pp_args(int id, const char* msg, const char* file, int line)
 {
     longjmp(my_jmp_buffer, -1);
 }
@@ -168,9 +149,8 @@ Ret call(Ret (*proc)()) noexcept(false)
 extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
-#define DIAG_WARN
+//      DIAG_HALT
+//      DIAG_WARN
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_DISABLED
@@ -293,9 +273,8 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=disabled, src=undefined")
 //
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
-#define DIAG_WARN
+//      DIAG_HALT
+//      DIAG_WARN
 #define DIAG_NOEXCEPT       true
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_DISABLED
@@ -418,9 +397,8 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=disabled, src=undefined")
 extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
-#define DIAG_WARN
+//      DIAG_HALT
+//      DIAG_WARN
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_SILENT
@@ -543,9 +521,8 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=silent, src=undefined")
 //
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
-#define DIAG_WARN
+//      DIAG_HALT
+//      DIAG_WARN
 #define DIAG_NOEXCEPT       true
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_SILENT
@@ -668,8 +645,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=silent, src=undefined")
 extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
+//      DIAG_HALT
 #define DIAG_WARN           my_c_warn_proc_no_args
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
@@ -794,8 +770,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=none")
 extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
+//      DIAG_HALT
 #define DIAG_WARN           my_c_warn_proc_pp_args
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
@@ -919,8 +894,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=preprocessor")
 //
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
+//      DIAG_HALT
 #define DIAG_WARN           my_cpp_warn_proc_no_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
@@ -1043,8 +1017,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=none")
 //
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
+//      DIAG_HALT
 #define DIAG_WARN           my_cpp_warn_proc_pp_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
@@ -1168,8 +1141,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=preprocessor")
 #ifdef __cpp_lib_source_location
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
+//      DIAG_HALT
 #define DIAG_WARN           my_cpp_warn_proc_sl_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
@@ -1301,8 +1273,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=std_source_loca
 #ifdef __cpp_lib_stacktrace
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
-#define DIAG_HALT
-#define DIAG_STOP
+//      DIAG_HALT
 #define DIAG_WARN           my_cpp_warn_proc_st_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
@@ -1434,7 +1405,6 @@ extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_c_halt_proc_no_args
-#define DIAG_STOP
 #define DIAG_WARN           my_c_warn_proc_no_args
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
@@ -1560,7 +1530,6 @@ extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_c_halt_proc_pp_args
-#define DIAG_STOP
 #define DIAG_WARN           my_c_warn_proc_pp_args
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
@@ -1685,7 +1654,6 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=noisy, src=preprocessor")
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_no_args
-#define DIAG_STOP
 #define DIAG_WARN           my_cpp_warn_proc_no_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
@@ -1809,7 +1777,6 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=none")
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_pp_args
-#define DIAG_STOP
 #define DIAG_WARN           my_cpp_warn_proc_pp_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
@@ -1934,7 +1901,6 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=preprocessor")
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_sl_args
-#define DIAG_STOP
 #define DIAG_WARN           my_cpp_warn_proc_sl_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
@@ -2067,7 +2033,6 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=std_source_locat
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_st_args
-#define DIAG_STOP
 #define DIAG_WARN           my_cpp_warn_proc_st_args
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
@@ -2199,8 +2164,7 @@ extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_c_halt_proc_no_args
-#define DIAG_STOP           my_c_stop_proc_no_args
-#define DIAG_WARN
+//      DIAG_WARN
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
@@ -2325,8 +2289,7 @@ extern "C" {
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_c_halt_proc_pp_args
-#define DIAG_STOP           my_c_stop_proc_pp_args
-#define DIAG_WARN
+//      DIAG_WARN
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
@@ -2450,8 +2413,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=intrusive, src=preprocessor")
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_no_args
-#define DIAG_STOP           my_cpp_stop_proc_no_args
-#define DIAG_WARN
+//      DIAG_WARN
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
@@ -2574,8 +2536,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=none")
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_pp_args
-#define DIAG_STOP           my_cpp_stop_proc_pp_args
-#define DIAG_WARN
+//      DIAG_WARN
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
@@ -2699,8 +2660,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=preprocessor
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_sl_args
-#define DIAG_STOP           my_cpp_stop_proc_sl_args
-#define DIAG_WARN
+//      DIAG_WARN
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
@@ -2832,8 +2792,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=std_source_l
 #include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_cpp_halt_proc_st_args
-#define DIAG_STOP           my_cpp_stop_proc_st_args
-#define DIAG_WARN
+//      DIAG_WARN
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE

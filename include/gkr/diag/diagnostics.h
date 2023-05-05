@@ -44,6 +44,15 @@
 #define DIAG_MODE_NOISY     3 /* Asserts halts execution and checks warns on fail - default for DEBUG builds */
 #define DIAG_MODE_INTRUSIVE 4 /* All diagnostics halts/stops execution */
 
+//
+// Null pointer
+//
+#ifdef __cplusplus
+#define DIAG_NULL nullptr
+#else
+#define DIAG_NULL ((void*)0)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -87,7 +96,7 @@ inline int diag_c_warn(int, const char*, ...)
 }
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #ifdef __cplusplus
@@ -123,11 +132,11 @@ inline int diag_cpp_warn(int, const char*, const char*, int) noexcept
 {
     return 1;
 }
+#ifdef __cpp_lib_source_location
+#include <source_location>
 //
 // std::source_location source arguments
 //
-#ifdef __cpp_lib_source_location
-#include <source_location>
 inline void diag_cpp_halt(int, const char*, const std::source_location&) noexcept
 {
     diag_trap();
@@ -141,9 +150,12 @@ inline int diag_cpp_warn(int, const char*, const std::source_location&) noexcept
 {
     return 1;
 }
-#endif
+#endif /* __cpp_lib_source_location */
 #ifdef __cpp_lib_stacktrace
 #include <stacktrace>
+//
+// std::stacktrace source arguments
+//
 inline void diag_cpp_halt(int, const char*, const std::stacktrace&) noexcept
 {
     diag_trap();
@@ -157,10 +169,9 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 {
     return 1;
 }
-#endif
-#endif
-
-#endif
+#endif /* __cpp_lib_stacktrace */
+#endif /* __cplusplus */
+#endif /*!DIAG_ONE_TIME_DEFS */
 
 //
 // If DIAG_MODE is not defined in advance tries to determine the right value
@@ -250,10 +261,6 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 #define DIAG_WARN diag_cpp_warn
 #else
 //
-// Must be defined anyway
-//
-#define DIAG_NOEXCEPT
-//
 // APIs
 //
 #define DIAG_HALT diag_c_halt
@@ -261,7 +268,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 #define DIAG_WARN diag_c_warn
 #endif
 
-#endif
+#endif /* DIAG_EXTERNAL_API */
 
 //
 // Assert_xxx
@@ -279,11 +286,11 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 //
 // Asserts are enabled
 //
-#define Assert_NotNullPtr(ptr)      if(!( ptr )) DIAG_HALT(DIAG_ID_ASSERT_NULL_PTR, #ptr   DIAG_SRC_LOCATION)
-#define Assert_Check(check)         if(!(check)) DIAG_HALT(DIAG_ID_ASSERT_CHECK   , #check DIAG_SRC_LOCATION)
-#define Assert_CheckMsg(check, msg) if(!(check)) DIAG_HALT(DIAG_ID_ASSERT_COND_MSG, msg    DIAG_SRC_LOCATION)
-#define Assert_Failure()                         DIAG_HALT(DIAG_ID_ASSERT_FAILURE , NULL   DIAG_SRC_LOCATION)
-#define Assert_FailureMsg(msg)                   DIAG_HALT(DIAG_ID_ASSERT_FAIL_MSG, msg    DIAG_SRC_LOCATION)
+#define Assert_NotNullPtr(ptr)      if((ptr)==DIAG_NULL) DIAG_HALT(DIAG_ID_ASSERT_NULL_PTR, #ptr   DIAG_SRC_LOCATION)
+#define Assert_Check(check)         if(!(check))         DIAG_HALT(DIAG_ID_ASSERT_CHECK   , #check DIAG_SRC_LOCATION)
+#define Assert_CheckMsg(check, msg) if(!(check))         DIAG_HALT(DIAG_ID_ASSERT_COND_MSG, msg    DIAG_SRC_LOCATION)
+#define Assert_Failure()                                 DIAG_HALT(DIAG_ID_ASSERT_FAILURE , NULL   DIAG_SRC_LOCATION)
+#define Assert_FailureMsg(msg)                           DIAG_HALT(DIAG_ID_ASSERT_FAIL_MSG, msg    DIAG_SRC_LOCATION)
 #else
 //
 // Asserts are user-defined
@@ -313,15 +320,15 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 //
 // Checks are silint
 //
-#define Check_NotNullPtr(ptr,    ...)   if(!( ptr )) return __VA_ARGS__
-#define Check_ValidState(check,  ...)   if(!(check)) return __VA_ARGS__
-#define Check_FailureMsg(msg,    ...)                return __VA_ARGS__
-#define Check_Failure(           ...)                return __VA_ARGS__
+#define Check_NotNullPtr(ptr,    ...)   if((ptr)==DIAG_NULL) return __VA_ARGS__
+#define Check_ValidState(check,  ...)   if(!(check))         return __VA_ARGS__
+#define Check_FailureMsg(msg,    ...)                        return __VA_ARGS__
+#define Check_Failure(           ...)                        return __VA_ARGS__
 #define Check_Recovery(msg          )
 
-#define Check_Arg_IsValid(check, ...)   if(!(check)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(!( ptr )) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check))         return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if((ptr)==DIAG_NULL) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                        return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
@@ -335,15 +342,15 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)) return __VA_ARGS__
 //
 // Checks makes warns fails
 //
-#define Check_NotNullPtr(ptr,    ...)   if(!( ptr ) && DIAG_WARN(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_ValidState(check,  ...)   if(!(check) && DIAG_WARN(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_FailureMsg(msg,    ...)                  DIAG_WARN(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Failure(           ...)                  DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Recovery(msg          )                  DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
+#define Check_NotNullPtr(ptr,    ...)   if(((ptr)==DIAG_NULL) && DIAG_WARN(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_ValidState(check,  ...)   if(!(check)           && DIAG_WARN(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_FailureMsg(msg,    ...)                            DIAG_WARN(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Failure(           ...)                            DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Recovery(msg          )                            DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
 
-#define Check_Arg_IsValid(check, ...)   if(!(check) && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(!( ptr ) && DIAG_WARN(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                  DIAG_WARN(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_WARN(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                            DIAG_WARN(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
@@ -357,15 +364,15 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_
 //
 // Checks stops execution
 //
-#define Check_NotNullPtr(ptr,    ...)   if(!( ptr ) && DIAG_STOP(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_ValidState(check,  ...)   if(!(check) && DIAG_STOP(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_FailureMsg(msg,    ...)                  DIAG_STOP(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Failure(           ...)                  DIAG_STOP(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
-#define Check_Recovery(msg          )                  DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
+#define Check_NotNullPtr(ptr,    ...)   if(((ptr)==DIAG_NULL) && DIAG_STOP(DIAG_ID_CHECK_NULL_PTR , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_ValidState(check,  ...)   if(!(check)           && DIAG_STOP(DIAG_ID_CHECK_STATE    , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_FailureMsg(msg,    ...)                            DIAG_STOP(DIAG_ID_CHECK_FAIL_MSG , msg    DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Failure(           ...)                            DIAG_STOP(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Recovery(msg          )                            DIAG_STOP(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)
 
-#define Check_Arg_IsValid(check, ...)   if(!(check) && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(!( ptr ) && DIAG_STOP(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                  DIAG_STOP(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_STOP(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_STOP(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                            DIAG_STOP(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \

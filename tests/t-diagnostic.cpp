@@ -5,6 +5,8 @@
 
 #include <exception>
 
+#include <setjmp.h>
+
 #define TEST_ASSERT_CHECK_MESSAGE   "Test Assert Check Message"
 #define TEST_ASSERT_FAILURE_MESSAGE "Test Assert Failure Message"
 #define TEST_CHECK_FAILURE_MESSAGE  "Test Check Failure Message"
@@ -78,15 +80,19 @@
 #endif
 
 extern "C" {
+
+thread_local jmp_buf my_jmp_buffer;
+
 //
 // C procs - no args
 //
 /*static*/ void my_c_halt_proc_no_args(int id, const char* msg)
 {
+    longjmp(my_jmp_buffer, -1);
 }
 /*static*/ int my_c_stop_proc_no_args(int id, const char* msg)
 {
-    return 0;
+    longjmp(my_jmp_buffer, -1);
 }
 /*static*/ int my_c_warn_proc_no_args(int id, const char* msg)
 {
@@ -97,16 +103,55 @@ extern "C" {
 //
 /*static*/ void my_c_halt_proc_pp_args(int id, const char* msg, const char* file, int line)
 {
+    longjmp(my_jmp_buffer, -1);
 }
 /*static*/ int my_c_stop_proc_pp_args(int id, const char* msg, const char* file, int line)
 {
-    return 0;
+    longjmp(my_jmp_buffer, -1);
 }
 /*static*/ int my_c_warn_proc_pp_args(int id, const char* msg, const char* file, int line)
 {
     return 1;
 }
+
 }
+
+//
+// call
+//
+#ifdef _MSC_VER
+#pragma warning(disable:4611)
+#endif
+template<typename Ret>
+Ret call(Ret (*proc)(const char*), const char* ptr) noexcept(false)
+{
+    if(setjmp(my_jmp_buffer) != -1)
+    {
+        return (*proc)(ptr);
+    }
+    throw std::exception();
+}
+template<typename Ret>
+Ret call(Ret (*proc)(int), int arg) noexcept(false)
+{
+    if(setjmp(my_jmp_buffer) != -1)
+    {
+        return (*proc)(arg);
+    }
+    throw std::exception();
+}
+template<typename Ret>
+Ret call(Ret (*proc)()) noexcept(false)
+{
+    if(setjmp(my_jmp_buffer) != -1)
+    {
+        return (*proc)();
+    }
+    throw std::exception();
+}
+#ifdef _MSC_VER
+#pragma warning(default:4611)
+#endif
 
 //
 // SECTION: lang=C, mode=disabled, src=undefined
@@ -124,29 +169,17 @@ extern "C" {
 //
 // Disabled Asserts - src=undefined
 //
-static void c_test_trigger_disabled_assert_not_null_ptr(const char* ptr = nullptr)
+static void c_test_disabled_assert_not_null_ptr(const char* ptr)
 {
     Assert_NotNullPtr(ptr);
 }
-static void c_test_success_disabled_assert_not_null_ptr(const char* ptr = "abc")
-{
-    Assert_NotNullPtr(ptr);
-}
-static void c_test_trigger_disabled_assert_check(int arg = 0)
+static void c_test_disabled_assert_check(int arg)
 {
     Assert_Check(arg == 1);
 }
-static void c_test_success_disabled_assert_check(int arg = 0)
-{
-    Assert_Check(arg == 0);
-}
-static void c_test_trigger_disabled_assert_check_msg(int arg = 0)
+static void c_test_disabled_assert_check_msg(int arg)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void c_test_success_disabled_assert_check_msg(int arg = 0)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void c_test_disabled_assert_failure()
 {
@@ -235,16 +268,16 @@ static bool c_test_disabled_check_arg_invalid(int arg = 0)
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C, mode=disabled, src=undefined")
 {
-    CHECK_NOTHROW(c_test_success_disabled_assert_not_null_ptr());
-    CHECK_NOTHROW(c_test_success_disabled_assert_check());
-    CHECK_NOTHROW(c_test_success_disabled_assert_check_msg());
+    CHECK_NOTHROW(call(c_test_disabled_assert_not_null_ptr, "abcde"));
+    CHECK_NOTHROW(call(c_test_disabled_assert_check, 1));
+    CHECK_NOTHROW(call(c_test_disabled_assert_check_msg, 1));
 
-    CHECK_NOTHROW(c_test_trigger_disabled_assert_not_null_ptr());
-    CHECK_NOTHROW(c_test_trigger_disabled_assert_check());
-    CHECK_NOTHROW(c_test_trigger_disabled_assert_check_msg());
+    CHECK_NOTHROW(call(c_test_disabled_assert_not_null_ptr, NULL));
+    CHECK_NOTHROW(call(c_test_disabled_assert_check, 0));
+    CHECK_NOTHROW(call(c_test_disabled_assert_check_msg, 0));
 
-    CHECK_NOTHROW(c_test_disabled_assert_failure());
-    CHECK_NOTHROW(c_test_disabled_assert_failure_msg());
+    CHECK_NOTHROW(call(c_test_disabled_assert_failure));
+    CHECK_NOTHROW(call(c_test_disabled_assert_failure_msg));
 }
 TEST_CASE("general.diagnostics. Checks, lang=C, mode=disabled, src=undefined")
 {
@@ -286,29 +319,17 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=disabled, src=undefined")
 //
 // Disabled Asserts - src=undefined
 //
-static void cpp_test_trigger_disabled_assert_not_null_ptr(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_disabled_assert_not_null_ptr(const char* ptr) noexcept(DIAG_NOEXCEPT)
 {
     Assert_NotNullPtr(ptr);
 }
-static void cpp_test_success_disabled_assert_not_null_ptr(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void cpp_test_trigger_disabled_assert_check(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_disabled_assert_check(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(arg == 1);
 }
-static void cpp_test_success_disabled_assert_check(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_Check(arg == 0);
-}
-static void cpp_test_trigger_disabled_assert_check_msg(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_disabled_assert_check_msg(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void cpp_test_success_disabled_assert_check_msg(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void cpp_test_disabled_assert_failure() noexcept(DIAG_NOEXCEPT)
 {
@@ -396,13 +417,13 @@ static bool cpp_test_disabled_check_arg_invalid(int arg = 0) noexcept(DIAG_NOEXC
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=disabled, src=undefined")
 {
-    CHECK_NOTHROW(cpp_test_success_disabled_assert_not_null_ptr());
-    CHECK_NOTHROW(cpp_test_success_disabled_assert_check());
-    CHECK_NOTHROW(cpp_test_success_disabled_assert_check_msg());
+    CHECK_NOTHROW(cpp_test_disabled_assert_not_null_ptr("abcde"));
+    CHECK_NOTHROW(cpp_test_disabled_assert_check(1));
+    CHECK_NOTHROW(cpp_test_disabled_assert_check_msg(1));
 
-    CHECK_NOTHROW(cpp_test_trigger_disabled_assert_not_null_ptr());
-    CHECK_NOTHROW(cpp_test_trigger_disabled_assert_check());
-    CHECK_NOTHROW(cpp_test_trigger_disabled_assert_check_msg());
+    CHECK_NOTHROW(cpp_test_disabled_assert_not_null_ptr(nullptr));
+    CHECK_NOTHROW(cpp_test_disabled_assert_check(0));
+    CHECK_NOTHROW(cpp_test_disabled_assert_check_msg(0));
 
     CHECK_NOTHROW(cpp_test_disabled_assert_failure());
     CHECK_NOTHROW(cpp_test_disabled_assert_failure_msg());
@@ -448,29 +469,17 @@ extern "C" {
 //
 // Silent Asserts - src=undefined
 //
-static void c_test_trigger_silent_assert_not_null_ptr(const char* ptr = nullptr)
+static void c_test_silent_assert_not_null_ptr(const char* ptr)
 {
     Assert_NotNullPtr(ptr);
 }
-static void c_test_success_silent_assert_not_null_ptr(const char* ptr = "abc")
-{
-    Assert_NotNullPtr(ptr);
-}
-static void c_test_trigger_silent_assert_check(int arg = 0)
+static void c_test_silent_assert_check(int arg)
 {
     Assert_Check(arg == 1);
 }
-static void c_test_success_silent_assert_check(int arg = 0)
-{
-    Assert_Check(arg == 0);
-}
-static void c_test_trigger_silent_assert_check_msg(int arg = 0)
+static void c_test_silent_assert_check_msg(int arg)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void c_test_success_silent_assert_check_msg(int arg = 0)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void c_test_silent_assert_failure()
 {
@@ -559,16 +568,16 @@ static bool c_test_silent_check_arg_invalid(int arg = 0)
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C, mode=silent, src=undefined")
 {
-    CHECK_NOTHROW(c_test_success_silent_assert_not_null_ptr());
-    CHECK_NOTHROW(c_test_success_silent_assert_check());
-    CHECK_NOTHROW(c_test_success_silent_assert_check_msg());
+    CHECK_NOTHROW(call(c_test_silent_assert_not_null_ptr, "abcde"));
+    CHECK_NOTHROW(call(c_test_silent_assert_check, 1));
+    CHECK_NOTHROW(call(c_test_silent_assert_check_msg, 1));
 
-    CHECK_NOTHROW(c_test_trigger_silent_assert_not_null_ptr());
-    CHECK_NOTHROW(c_test_trigger_silent_assert_check());
-    CHECK_NOTHROW(c_test_trigger_silent_assert_check_msg());
+    CHECK_NOTHROW(call(c_test_silent_assert_not_null_ptr, NULL));
+    CHECK_NOTHROW(call(c_test_silent_assert_check, 0));
+    CHECK_NOTHROW(call(c_test_silent_assert_check_msg, 0));
 
-    CHECK_NOTHROW(c_test_silent_assert_failure());
-    CHECK_NOTHROW(c_test_silent_assert_failure_msg());
+    CHECK_NOTHROW(call(c_test_silent_assert_failure));
+    CHECK_NOTHROW(call(c_test_silent_assert_failure_msg));
 }
 TEST_CASE("general.diagnostics. Checks, lang=C, mode=silent, src=undefined")
 {
@@ -610,29 +619,17 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=silent, src=undefined")
 //
 // Silent Asserts - src=undefined
 //
-static void cpp_test_trigger_silent_assert_not_null_ptr(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_silent_assert_not_null_ptr(const char* ptr) noexcept(DIAG_NOEXCEPT)
 {
     Assert_NotNullPtr(ptr);
 }
-static void cpp_test_success_silent_assert_not_null_ptr(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void cpp_test_trigger_silent_assert_check(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_silent_assert_check(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(arg == 1);
 }
-static void cpp_test_success_silent_assert_check(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_Check(arg == 0);
-}
-static void cpp_test_trigger_silent_assert_check_msg(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_silent_assert_check_msg(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void cpp_test_success_silent_assert_check_msg(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void cpp_test_silent_assert_failure() noexcept(DIAG_NOEXCEPT)
 {
@@ -720,13 +717,13 @@ static bool cpp_test_silent_check_arg_invalid(int arg = 0) noexcept(DIAG_NOEXCEP
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=silent, src=undefined")
 {
-    CHECK_NOTHROW(cpp_test_success_silent_assert_not_null_ptr());
-    CHECK_NOTHROW(cpp_test_success_silent_assert_check());
-    CHECK_NOTHROW(cpp_test_success_silent_assert_check_msg());
+    CHECK_NOTHROW(cpp_test_silent_assert_not_null_ptr("abcde"));
+    CHECK_NOTHROW(cpp_test_silent_assert_check(1));
+    CHECK_NOTHROW(cpp_test_silent_assert_check_msg(1));
 
-    CHECK_NOTHROW(cpp_test_trigger_silent_assert_not_null_ptr());
-    CHECK_NOTHROW(cpp_test_trigger_silent_assert_check());
-    CHECK_NOTHROW(cpp_test_trigger_silent_assert_check_msg());
+    CHECK_NOTHROW(cpp_test_silent_assert_not_null_ptr(nullptr));
+    CHECK_NOTHROW(cpp_test_silent_assert_check(0));
+    CHECK_NOTHROW(cpp_test_silent_assert_check_msg(0));
 
     CHECK_NOTHROW(cpp_test_silent_assert_failure());
     CHECK_NOTHROW(cpp_test_silent_assert_failure_msg());
@@ -772,29 +769,17 @@ extern "C" {
 //
 // Steady Asserts - src=none
 //
-static void c_test_trigger_steady_assert_not_null_ptr_no_args(const char* ptr = nullptr)
+static void c_test_steady_assert_not_null_ptr_no_args(const char* ptr)
 {
     Assert_NotNullPtr(ptr);
 }
-static void c_test_success_steady_assert_not_null_ptr_no_args(const char* ptr = "abc")
-{
-    Assert_NotNullPtr(ptr);
-}
-static void c_test_trigger_steady_assert_check_no_args(int arg = 0)
+static void c_test_steady_assert_check_no_args(int arg)
 {
     Assert_Check(arg == 1);
 }
-static void c_test_success_steady_assert_check_no_args(int arg = 0)
-{
-    Assert_Check(arg == 0);
-}
-static void c_test_trigger_steady_assert_check_msg_no_args(int arg = 0)
+static void c_test_steady_assert_check_msg_no_args(int arg)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void c_test_success_steady_assert_check_msg_no_args(int arg = 0)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void c_test_steady_assert_failure_no_args()
 {
@@ -883,16 +868,16 @@ static bool c_test_steady_check_arg_invalid_no_args(int arg = 0)
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C, mode=steady, src=none")
 {
-    CHECK_NOTHROW(c_test_success_steady_assert_not_null_ptr_no_args());
-    CHECK_NOTHROW(c_test_success_steady_assert_check_no_args());
-    CHECK_NOTHROW(c_test_success_steady_assert_check_msg_no_args());
+    CHECK_NOTHROW(call(c_test_steady_assert_not_null_ptr_no_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_no_args, 1));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_msg_no_args, 1));
 
-    CHECK_NOTHROW(c_test_trigger_steady_assert_not_null_ptr_no_args());
-    CHECK_NOTHROW(c_test_trigger_steady_assert_check_no_args());
-    CHECK_NOTHROW(c_test_trigger_steady_assert_check_msg_no_args());
+    CHECK_NOTHROW(call(c_test_steady_assert_not_null_ptr_no_args, NULL));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_no_args, 0));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_msg_no_args, 0));
 
-    CHECK_NOTHROW(c_test_steady_assert_failure_no_args());
-    CHECK_NOTHROW(c_test_steady_assert_failure_msg_no_args());
+    CHECK_NOTHROW(call(c_test_steady_assert_failure_no_args));
+    CHECK_NOTHROW(call(c_test_steady_assert_failure_msg_no_args));
 }
 TEST_CASE("general.diagnostics. Checks, lang=C, mode=steady, src=none")
 {
@@ -935,29 +920,17 @@ extern "C" {
 //
 // Steady Asserts - src=preprocessor
 //
-static void c_test_trigger_steady_assert_not_null_ptr_pp_args(const char* ptr = nullptr)
+static void c_test_steady_assert_not_null_ptr_pp_args(const char* ptr)
 {
     Assert_NotNullPtr(ptr);
 }
-static void c_test_success_steady_assert_not_null_ptr_pp_args(const char* ptr = "abc")
-{
-    Assert_NotNullPtr(ptr);
-}
-static void c_test_trigger_steady_assert_check_pp_args(int arg = 0)
+static void c_test_steady_assert_check_pp_args(int arg)
 {
     Assert_Check(arg == 1);
 }
-static void c_test_success_steady_assert_check_pp_args(int arg = 0)
-{
-    Assert_Check(arg == 0);
-}
-static void c_test_trigger_steady_assert_check_msg_pp_args(int arg = 0)
+static void c_test_steady_assert_check_msg_pp_args(int arg)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void c_test_success_steady_assert_check_msg_pp_args(int arg = 0)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void c_test_steady_assert_failure_pp_args()
 {
@@ -1046,16 +1019,16 @@ static bool c_test_steady_check_arg_invalid_pp_args(int arg = 0)
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C, mode=steady, src=preprocessor")
 {
-    CHECK_NOTHROW(c_test_success_steady_assert_not_null_ptr_pp_args());
-    CHECK_NOTHROW(c_test_success_steady_assert_check_pp_args());
-    CHECK_NOTHROW(c_test_success_steady_assert_check_msg_pp_args());
+    CHECK_NOTHROW(call(c_test_steady_assert_not_null_ptr_pp_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_pp_args, 1));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_msg_pp_args, 1));
 
-    CHECK_NOTHROW(c_test_trigger_steady_assert_not_null_ptr_pp_args());
-    CHECK_NOTHROW(c_test_trigger_steady_assert_check_pp_args());
-    CHECK_NOTHROW(c_test_trigger_steady_assert_check_msg_pp_args());
+    CHECK_NOTHROW(call(c_test_steady_assert_not_null_ptr_pp_args, NULL));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_pp_args, 0));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_msg_pp_args, 0));
 
-    CHECK_NOTHROW(c_test_steady_assert_failure_pp_args());
-    CHECK_NOTHROW(c_test_steady_assert_failure_msg_pp_args());
+    CHECK_NOTHROW(call(c_test_steady_assert_failure_pp_args));
+    CHECK_NOTHROW(call(c_test_steady_assert_failure_msg_pp_args));
 }
 TEST_CASE("general.diagnostics. Checks, lang=C, mode=steady, src=preprocessor")
 {
@@ -1097,29 +1070,17 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=preprocessor")
 //
 // Steady Asserts - src=none
 //
-static void cpp_test_trigger_steady_assert_not_null_ptr_no_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_not_null_ptr_no_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
 {
     Assert_NotNullPtr(ptr);
 }
-static void cpp_test_success_steady_assert_not_null_ptr_no_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void cpp_test_trigger_steady_assert_check_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_no_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(arg == 1);
 }
-static void cpp_test_success_steady_assert_check_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_Check(arg == 0);
-}
-static void cpp_test_trigger_steady_assert_check_msg_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_msg_no_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void cpp_test_success_steady_assert_check_msg_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void cpp_test_steady_assert_failure_no_args() noexcept(DIAG_NOEXCEPT)
 {
@@ -1207,13 +1168,13 @@ static bool cpp_test_steady_check_arg_invalid_no_args(int arg = 0) noexcept(DIAG
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=steady, src=none")
 {
-    CHECK_NOTHROW(cpp_test_success_steady_assert_not_null_ptr_no_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_no_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_msg_no_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_no_args("abcde"));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_no_args(1));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_no_args(1));
 
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_not_null_ptr_no_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_no_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_msg_no_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_no_args(nullptr));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_no_args(1));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_no_args(1));
 
     CHECK_NOTHROW(cpp_test_steady_assert_failure_no_args());
     CHECK_NOTHROW(cpp_test_steady_assert_failure_msg_no_args());
@@ -1258,29 +1219,17 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=none")
 //
 // Steady Asserts - src=preprocessor
 //
-static void cpp_test_trigger_steady_assert_not_null_ptr_pp_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_not_null_ptr_pp_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
 {
     Assert_NotNullPtr(ptr);
 }
-static void cpp_test_success_steady_assert_not_null_ptr_pp_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void cpp_test_trigger_steady_assert_check_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_pp_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(arg == 1);
 }
-static void cpp_test_success_steady_assert_check_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_Check(arg == 0);
-}
-static void cpp_test_trigger_steady_assert_check_msg_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_msg_pp_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void cpp_test_success_steady_assert_check_msg_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void cpp_test_steady_assert_failure_pp_args() noexcept(DIAG_NOEXCEPT)
 {
@@ -1368,13 +1317,13 @@ static bool cpp_test_steady_check_arg_invalid_pp_args(int arg = 0) noexcept(DIAG
 //
 TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=steady, src=preprocessor")
 {
-    CHECK_NOTHROW(cpp_test_success_steady_assert_not_null_ptr_pp_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_pp_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_msg_pp_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_pp_args("abcde"));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_pp_args(1));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_pp_args(1));
 
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_not_null_ptr_pp_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_pp_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_msg_pp_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_pp_args(nullptr));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_pp_args(0));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_pp_args(0));
 
     CHECK_NOTHROW(cpp_test_steady_assert_failure_pp_args());
     CHECK_NOTHROW(cpp_test_steady_assert_failure_msg_pp_args());
@@ -1420,29 +1369,17 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=preprocessor")
 //
 // Steady Asserts - src=std_source_location
 //
-static void cpp_test_trigger_steady_assert_not_null_ptr_sl_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_not_null_ptr_sl_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
 {
     Assert_NotNullPtr(ptr);
 }
-static void cpp_test_success_steady_assert_not_null_ptr_sl_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void cpp_test_trigger_steady_assert_check_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_sl_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(arg == 1);
 }
-static void cpp_test_success_steady_assert_check_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_Check(arg == 0);
-}
-static void cpp_test_trigger_steady_assert_check_msg_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_msg_sl_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void cpp_test_success_steady_assert_check_msg_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void cpp_test_steady_assert_failure_sl_args() noexcept(DIAG_NOEXCEPT)
 {
@@ -1533,13 +1470,13 @@ static bool cpp_test_steady_check_arg_invalid_sl_args(int arg = 0) noexcept(DIAG
 TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=steady, src=std_source_location")
 {
 #ifdef __cpp_lib_source_location
-    CHECK_NOTHROW(cpp_test_success_steady_assert_not_null_ptr_sl_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_sl_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_msg_sl_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_sl_args("abcde"));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_sl_args(1));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_sl_args(1));
 
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_not_null_ptr_sl_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_sl_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_msg_sl_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_sl_args(nullptr));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_sl_args(0));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_sl_args(0));
 
     CHECK_NOTHROW(cpp_test_steady_assert_failure_sl_args());
     CHECK_NOTHROW(cpp_test_steady_assert_failure_msg_sl_args());
@@ -1590,29 +1527,17 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=std_source_loca
 //
 // Steady Asserts - src=std_stacktrace
 //
-static void cpp_test_trigger_steady_assert_not_null_ptr_st_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_not_null_ptr_st_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
 {
     Assert_NotNullPtr(ptr);
 }
-static void cpp_test_success_steady_assert_not_null_ptr_st_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void cpp_test_trigger_steady_assert_check_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_st_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_Check(arg == 1);
 }
-static void cpp_test_success_steady_assert_check_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_Check(arg == 0);
-}
-static void cpp_test_trigger_steady_assert_check_msg_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+static void cpp_test_steady_assert_check_msg_st_args(int arg) noexcept(DIAG_NOEXCEPT)
 {
     Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void cpp_test_success_steady_assert_check_msg_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
-{
-    Assert_CheckMsg(arg == 0, TEST_ASSERT_CHECK_MESSAGE);
 }
 static void cpp_test_steady_assert_failure_st_args() noexcept(DIAG_NOEXCEPT)
 {
@@ -1702,13 +1627,13 @@ static bool cpp_test_steady_check_arg_invalid_st_args(int arg = 0) noexcept(DIAG
 TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=steady, src=std_stacktrace")
 {
 #ifdef __cpp_lib_stacktrace
-    CHECK_NOTHROW(cpp_test_success_steady_assert_not_null_ptr_st_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_st_args());
-    CHECK_NOTHROW(cpp_test_success_steady_assert_check_msg_st_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_st_args("abcde"));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_st_args(1));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_st_args(1));
 
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_not_null_ptr_st_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_st_args());
-    CHECK_NOTHROW(cpp_test_trigger_steady_assert_check_msg_st_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_st_args(nullptr));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_st_args(0));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_st_args(0));
 
     CHECK_NOTHROW(cpp_test_steady_assert_failure_st_args());
     CHECK_NOTHROW(cpp_test_steady_assert_failure_msg_st_args());
@@ -1740,5 +1665,920 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=std_stacktrace"
     CHECK_FALSE(cpp_test_trigger_steady_check_arg_array_st_args());
 
     CHECK_FALSE(cpp_test_steady_check_arg_invalid_st_args());
+#endif
+}
+
+//
+// SECTION: lang=C, mode=noisy, src=none
+//
+extern "C" {
+#include <gkr/diag/undefines.h>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_c_halt_proc_no_args
+#define DIAG_STOP
+#define DIAG_WARN           my_c_warn_proc_no_args
+#define DIAG_NOEXCEPT
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diag/diagnostics.h>
+//
+// Noisy Asserts - src=none
+//
+static void c_test_noisy_assert_not_null_ptr_no_args(const char* ptr)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void c_test_noisy_assert_check_no_args(int arg)
+{
+    Assert_Check(arg == 1);
+}
+static void c_test_noisy_assert_check_msg_no_args(int arg)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void c_test_noisy_assert_failure_no_args()
+{
+    Assert_Failure();
+}
+static void c_test_noisy_assert_failure_msg_no_args()
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Noisy Checks - src=none
+//
+static bool c_test_trigger_noisy_check_not_null_ptr_no_args(const char* ptr = nullptr)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_success_noisy_check_not_null_ptr_no_args(const char* ptr = "abc")
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_trigger_noisy_check_valid_state_no_args(int arg = 0)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_success_noisy_check_valid_state_no_args(int arg = 1)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_noisy_check_failure_msg_no_args()
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool c_test_noisy_check_failure_no_args()
+{
+    Check_Failure(false);
+}
+static bool c_test_noisy_check_recovery_no_args()
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// Noisy Arguments Checks - src=none
+//
+static bool c_test_trigger_noisy_check_arg_not_null_ptr_no_args(const char* ptr = nullptr)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_success_noisy_check_arg_not_null_ptr_no_args(const char* ptr = "abc")
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_trigger_noisy_check_arg_is_valid_no_args(int arg = 0)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_success_noisy_check_arg_is_valid_no_args(int arg = 1)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_trigger_noisy_check_arg_array_no_args(unsigned len = 7, const char* str = "abc def")
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool c_test_success_noisy_check_arg_array_no_args(unsigned len = 7, const char* str = "abc-def")
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool c_test_noisy_check_arg_invalid_no_args(int arg = 0)
+{
+    Check_Arg_Invalid(arg, false);
+}
+}
+//
+// Test cases: lang=C, mode=noisy, src=none
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C, mode=noisy, src=none")
+{
+    CHECK_NOTHROW(call(c_test_noisy_assert_not_null_ptr_no_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_noisy_assert_check_no_args, 1));
+    CHECK_NOTHROW(call(c_test_noisy_assert_check_msg_no_args, 1));
+
+    CHECK_THROWS(call(c_test_noisy_assert_not_null_ptr_no_args, NULL));
+    CHECK_THROWS(call(c_test_noisy_assert_check_no_args, 0));
+    CHECK_THROWS(call(c_test_noisy_assert_check_msg_no_args, 0));
+
+    CHECK_THROWS(call(c_test_noisy_assert_failure_no_args));
+    CHECK_THROWS(call(c_test_noisy_assert_failure_msg_no_args));
+}
+TEST_CASE("general.diagnostics. Checks, lang=C, mode=noisy, src=none")
+{
+    CHECK(c_test_success_noisy_check_not_null_ptr_no_args());
+    CHECK(c_test_success_noisy_check_valid_state_no_args());
+
+    CHECK_FALSE(c_test_trigger_noisy_check_not_null_ptr_no_args());
+    CHECK_FALSE(c_test_trigger_noisy_check_valid_state_no_args());
+
+    CHECK_FALSE(c_test_noisy_check_failure_msg_no_args());
+    CHECK_FALSE(c_test_noisy_check_failure_no_args());
+    CHECK_FALSE(c_test_noisy_check_recovery_no_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C, mode=noisy, src=none")
+{
+    CHECK(c_test_success_noisy_check_arg_not_null_ptr_no_args());
+    CHECK(c_test_success_noisy_check_arg_is_valid_no_args());
+    CHECK(c_test_success_noisy_check_arg_array_no_args());
+
+    CHECK_FALSE(c_test_trigger_noisy_check_arg_not_null_ptr_no_args());
+    CHECK_FALSE(c_test_trigger_noisy_check_arg_is_valid_no_args());
+    CHECK_FALSE(c_test_trigger_noisy_check_arg_array_no_args());
+
+    CHECK_FALSE(c_test_noisy_check_arg_invalid_no_args());
+}
+
+//
+// SECTION: lang=C, mode=noisy, src=preprocessor
+//
+extern "C" {
+#include <gkr/diag/undefines.h>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_c_halt_proc_pp_args
+#define DIAG_STOP
+#define DIAG_WARN           my_c_warn_proc_pp_args
+#define DIAG_NOEXCEPT
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diag/diagnostics.h>
+//
+// Noisy Asserts - src=preprocessor
+//
+static void c_test_noisy_assert_not_null_ptr_pp_args(const char* ptr)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void c_test_noisy_assert_check_pp_args(int arg)
+{
+    Assert_Check(arg == 1);
+}
+static void c_test_noisy_assert_check_msg_pp_args(int arg)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void c_test_noisy_assert_failure_pp_args()
+{
+    Assert_Failure();
+}
+static void c_test_noisy_assert_failure_msg_pp_args()
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Noisy Checks - src=preprocessor
+//
+static bool c_test_trigger_noisy_check_not_null_ptr_pp_args(const char* ptr = nullptr)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_success_noisy_check_not_null_ptr_pp_args(const char* ptr = "abc")
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_trigger_noisy_check_valid_state_pp_args(int arg = 0)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_success_noisy_check_valid_state_pp_args(int arg = 1)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_noisy_check_failure_msg_pp_args()
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool c_test_noisy_check_failure_pp_args()
+{
+    Check_Failure(false);
+}
+static bool c_test_noisy_check_recovery_pp_args()
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// Noisy Arguments Checks - src=preprocessor
+//
+static bool c_test_trigger_noisy_check_arg_not_null_ptr_pp_args(const char* ptr = nullptr)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_success_noisy_check_arg_not_null_ptr_pp_args(const char* ptr = "abc")
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool c_test_trigger_noisy_check_arg_is_valid_pp_args(int arg = 0)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_success_noisy_check_arg_is_valid_pp_args(int arg = 1)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool c_test_trigger_noisy_check_arg_array_pp_args(unsigned len = 7, const char* str = "abc def")
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool c_test_success_noisy_check_arg_array_pp_args(unsigned len = 7, const char* str = "abc-def")
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool c_test_noisy_check_arg_invalid_pp_args(int arg = 0)
+{
+    Check_Arg_Invalid(arg, false);
+}
+}
+//
+// Test cases: lang=C, mode=noisy, src=preprocessor
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C, mode=noisy, src=preprocessor")
+{
+    CHECK_NOTHROW(call(c_test_noisy_assert_not_null_ptr_pp_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_noisy_assert_check_pp_args, 1));
+    CHECK_NOTHROW(call(c_test_noisy_assert_check_msg_pp_args, 1));
+
+    CHECK_THROWS(call(c_test_noisy_assert_not_null_ptr_pp_args, NULL));
+    CHECK_THROWS(call(c_test_noisy_assert_check_pp_args, 0));
+    CHECK_THROWS(call(c_test_noisy_assert_check_msg_pp_args, 0));
+
+    CHECK_THROWS(call(c_test_noisy_assert_failure_pp_args));
+    CHECK_THROWS(call(c_test_noisy_assert_failure_msg_pp_args));
+}
+TEST_CASE("general.diagnostics. Checks, lang=C, mode=noisy, src=preprocessor")
+{
+    CHECK(c_test_success_noisy_check_not_null_ptr_pp_args());
+    CHECK(c_test_success_noisy_check_valid_state_pp_args());
+
+    CHECK_FALSE(c_test_trigger_noisy_check_not_null_ptr_pp_args());
+    CHECK_FALSE(c_test_trigger_noisy_check_valid_state_pp_args());
+
+    CHECK_FALSE(c_test_noisy_check_failure_msg_pp_args());
+    CHECK_FALSE(c_test_noisy_check_failure_pp_args());
+    CHECK_FALSE(c_test_noisy_check_recovery_pp_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C, mode=noisy, src=preprocessor")
+{
+    CHECK(c_test_success_noisy_check_arg_not_null_ptr_pp_args());
+    CHECK(c_test_success_noisy_check_arg_is_valid_pp_args());
+    CHECK(c_test_success_noisy_check_arg_array_pp_args());
+
+    CHECK_FALSE(c_test_trigger_noisy_check_arg_not_null_ptr_pp_args());
+    CHECK_FALSE(c_test_trigger_noisy_check_arg_is_valid_pp_args());
+    CHECK_FALSE(c_test_trigger_noisy_check_arg_array_pp_args());
+
+    CHECK_FALSE(c_test_noisy_check_arg_invalid_pp_args());
+}
+
+//
+// SECTION: lang=C++, mode=noisy, src=none
+//
+#include <gkr/diag/undefines.h>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_cpp_halt_proc_no_args
+#define DIAG_STOP
+#define DIAG_WARN           my_cpp_warn_proc_no_args
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diag/diagnostics.h>
+//
+// Noisy Asserts - src=none
+//
+static void cpp_test_noisy_assert_not_null_ptr_no_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_noisy_assert_check_no_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_noisy_assert_check_msg_no_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_noisy_assert_failure_no_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_noisy_assert_failure_msg_no_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Noisy Checks - src=none
+//
+static bool cpp_test_trigger_noisy_check_not_null_ptr_no_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_not_null_ptr_no_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_valid_state_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_valid_state_no_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_noisy_check_failure_msg_no_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_noisy_check_failure_no_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_noisy_check_recovery_no_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// noisy Arguments Checks - src=none
+//
+static bool cpp_test_trigger_noisy_check_arg_not_null_ptr_no_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_not_null_ptr_no_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_is_valid_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_is_valid_no_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_array_no_args(unsigned len = 7, const char* str = "abc def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_array_no_args(unsigned len = 7, const char* str = "abc-def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_invalid_no_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+//
+// Test cases: lang=C++, mode=noisy, src=none
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=noisy, src=none")
+{
+    CHECK_NOTHROW(cpp_test_noisy_assert_not_null_ptr_no_args("abcde"));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_no_args(1));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_msg_no_args(1));
+
+    CHECK_THROWS(cpp_test_noisy_assert_not_null_ptr_no_args(nullptr));
+    CHECK_THROWS(cpp_test_noisy_assert_check_no_args(0));
+    CHECK_THROWS(cpp_test_noisy_assert_check_msg_no_args(0));
+
+    CHECK_THROWS(cpp_test_noisy_assert_failure_no_args());
+    CHECK_THROWS(cpp_test_noisy_assert_failure_msg_no_args());
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=noisy, src=none")
+{
+    CHECK(cpp_test_success_noisy_check_not_null_ptr_no_args());
+    CHECK(cpp_test_success_noisy_check_valid_state_no_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_not_null_ptr_no_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_valid_state_no_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_failure_msg_no_args());
+    CHECK_FALSE(cpp_test_noisy_check_failure_no_args());
+    CHECK_FALSE(cpp_test_noisy_check_recovery_no_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=none")
+{
+    CHECK(cpp_test_success_noisy_check_arg_not_null_ptr_no_args());
+    CHECK(cpp_test_success_noisy_check_arg_is_valid_no_args());
+    CHECK(cpp_test_success_noisy_check_arg_array_no_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_not_null_ptr_no_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_is_valid_no_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_array_no_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_arg_invalid_no_args());
+}
+
+//
+// SECTION: lang=C++, mode=noisy, src=preprocessor
+//
+#include <gkr/diag/undefines.h>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_cpp_halt_proc_pp_args
+#define DIAG_STOP
+#define DIAG_WARN           my_cpp_warn_proc_pp_args
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diag/diagnostics.h>
+//
+// Noisy Asserts - src=preprocessor
+//
+static void cpp_test_noisy_assert_not_null_ptr_pp_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_noisy_assert_check_pp_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_noisy_assert_check_msg_pp_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_noisy_assert_failure_pp_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_noisy_assert_failure_msg_pp_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Noisy Checks - src=preprocessor
+//
+static bool cpp_test_trigger_noisy_check_not_null_ptr_pp_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_not_null_ptr_pp_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_valid_state_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_valid_state_pp_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_noisy_check_failure_msg_pp_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_noisy_check_failure_pp_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_noisy_check_recovery_pp_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// noisy Arguments Checks - src=preprocessor
+//
+static bool cpp_test_trigger_noisy_check_arg_not_null_ptr_pp_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_not_null_ptr_pp_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_is_valid_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_is_valid_pp_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_array_pp_args(unsigned len = 7, const char* str = "abc def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_array_pp_args(unsigned len = 7, const char* str = "abc-def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_invalid_pp_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+//
+// Test cases: lang=C++, mode=noisy, src=preprocessor
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=noisy, src=preprocessor")
+{
+    CHECK_NOTHROW(cpp_test_noisy_assert_not_null_ptr_pp_args("abcde"));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_pp_args(1));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_msg_pp_args(1));
+
+    CHECK_THROWS(cpp_test_noisy_assert_not_null_ptr_pp_args(nullptr));
+    CHECK_THROWS(cpp_test_noisy_assert_check_pp_args(0));
+    CHECK_THROWS(cpp_test_noisy_assert_check_msg_pp_args(0));
+
+    CHECK_THROWS(cpp_test_noisy_assert_failure_pp_args());
+    CHECK_THROWS(cpp_test_noisy_assert_failure_msg_pp_args());
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=noisy, src=preprocessor")
+{
+    CHECK(cpp_test_success_noisy_check_not_null_ptr_pp_args());
+    CHECK(cpp_test_success_noisy_check_valid_state_pp_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_not_null_ptr_pp_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_valid_state_pp_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_failure_msg_pp_args());
+    CHECK_FALSE(cpp_test_noisy_check_failure_pp_args());
+    CHECK_FALSE(cpp_test_noisy_check_recovery_pp_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=preprocessor")
+{
+    CHECK(cpp_test_success_noisy_check_arg_not_null_ptr_pp_args());
+    CHECK(cpp_test_success_noisy_check_arg_is_valid_pp_args());
+    CHECK(cpp_test_success_noisy_check_arg_array_pp_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_not_null_ptr_pp_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_is_valid_pp_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_array_pp_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_arg_invalid_pp_args());
+}
+
+//
+// SECTION: lang=C++, mode=noisy, src=std_source_location
+//
+#ifdef __cpp_lib_source_location
+#include <gkr/diag/undefines.h>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_cpp_halt_proc_sl_args
+#define DIAG_STOP
+#define DIAG_WARN           my_cpp_warn_proc_sl_args
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diag/diagnostics.h>
+//
+// Noisy Asserts - src=std_source_location
+//
+static void cpp_test_noisy_assert_not_null_ptr_sl_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_noisy_assert_check_sl_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_noisy_assert_check_msg_sl_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_noisy_assert_failure_sl_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_noisy_assert_failure_msg_sl_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// noisy Checks - src=std_source_location
+//
+static bool cpp_test_trigger_noisy_check_not_null_ptr_sl_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_not_null_ptr_sl_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_valid_state_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_valid_state_sl_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_noisy_check_failure_msg_sl_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_noisy_check_failure_sl_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_noisy_check_recovery_sl_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// noisy Arguments Checks - src=std_source_location
+//
+static bool cpp_test_trigger_noisy_check_arg_not_null_ptr_sl_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_not_null_ptr_sl_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_is_valid_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_is_valid_sl_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_array_sl_args(unsigned len = 7, const char* str = "abc def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_array_sl_args(unsigned len = 7, const char* str = "abc-def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_invalid_sl_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+#endif
+
+//
+// Test cases: lang=C++, mode=noisy, src=std_source_location
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=noisy, src=std_source_location")
+{
+#ifdef __cpp_lib_source_location
+    CHECK_NOTHROW(cpp_test_noisy_assert_not_null_ptr_sl_args("abcde"));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_sl_args(1));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_msg_sl_args(1));
+
+    CHECK_THROWS(cpp_test_noisy_assert_not_null_ptr_sl_args(nullptr));
+    CHECK_THROWS(cpp_test_noisy_assert_check_sl_args(0));
+    CHECK_THROWS(cpp_test_noisy_assert_check_msg_sl_args(0));
+
+    CHECK_THROWS(cpp_test_noisy_assert_failure_sl_args());
+    CHECK_THROWS(cpp_test_noisy_assert_failure_msg_sl_args());
+#endif
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=noisy, src=std_source_location")
+{
+#ifdef __cpp_lib_source_location
+    CHECK(cpp_test_success_noisy_check_not_null_ptr_sl_args());
+    CHECK(cpp_test_success_noisy_check_valid_state_sl_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_not_null_ptr_sl_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_valid_state_sl_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_failure_msg_sl_args());
+    CHECK_FALSE(cpp_test_noisy_check_failure_sl_args());
+    CHECK_FALSE(cpp_test_noisy_check_recovery_sl_args());
+#endif
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=std_source_location")
+{
+#ifdef __cpp_lib_source_location
+    CHECK(cpp_test_success_noisy_check_arg_not_null_ptr_sl_args());
+    CHECK(cpp_test_success_noisy_check_arg_is_valid_sl_args());
+    CHECK(cpp_test_success_noisy_check_arg_array_sl_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_not_null_ptr_sl_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_is_valid_sl_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_array_sl_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_arg_invalid_sl_args());
+#endif
+}
+
+//
+// SECTION: lang=C++, mode=noisy, src=std_stacktrace
+//
+#ifdef __cpp_lib_stacktrace
+#include <gkr/diag/undefines.h>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_cpp_halt_proc_st_args
+#define DIAG_STOP
+#define DIAG_WARN           my_cpp_warn_proc_st_args
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diag/diagnostics.h>
+//
+// Noisy Asserts - src=std_stacktrace
+//
+static void cpp_test_noisy_assert_not_null_ptr_st_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_noisy_assert_check_st_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_noisy_assert_check_msg_st_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_noisy_assert_failure_st_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_noisy_assert_failure_msg_st_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Noisy Checks - src=std_stacktrace
+//
+static bool cpp_test_trigger_noisy_check_not_null_ptr_st_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_not_null_ptr_st_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_valid_state_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_valid_state_st_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_noisy_check_failure_msg_st_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_noisy_check_failure_st_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_noisy_check_recovery_st_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// Noisy Arguments Checks - src=std_stacktrace
+//
+static bool cpp_test_trigger_noisy_check_arg_not_null_ptr_st_args(const char* ptr = nullptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_not_null_ptr_st_args(const char* ptr = "abc") noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_is_valid_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_is_valid_st_args(int arg = 1) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_trigger_noisy_check_arg_array_st_args(unsigned len = 7, const char* str = "abc def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_success_noisy_check_arg_array_st_args(unsigned len = 7, const char* str = "abc-def") noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_invalid_st_args(int arg = 0) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+#endif
+//
+// Test cases: lang=C++, mode=noisy, src=std_stacktrace
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=noisy, src=std_stacktrace")
+{
+#ifdef __cpp_lib_stacktrace
+    CHECK_NOTHROW(cpp_test_noisy_assert_not_null_ptr_st_args("abcde"));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_st_args(1));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_msg_st_args(1));
+
+    CHECK_THROWS(cpp_test_noisy_assert_not_null_ptr_st_args(nullptr));
+    CHECK_THROWS(cpp_test_noisy_assert_check_st_args(0));
+    CHECK_THROWS(cpp_test_noisy_assert_check_msg_st_args(0));
+
+    CHECK_THROWS(cpp_test_noisy_assert_failure_st_args());
+    CHECK_THROWS(cpp_test_noisy_assert_failure_msg_st_args());
+#endif
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=noisy, src=std_stacktrace")
+{
+#ifdef __cpp_lib_stacktrace
+    CHECK(cpp_test_success_noisy_check_not_null_ptr_st_args());
+    CHECK(cpp_test_success_noisy_check_valid_state_st_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_not_null_ptr_st_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_valid_state_st_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_failure_msg_st_args());
+    CHECK_FALSE(cpp_test_noisy_check_failure_st_args());
+    CHECK_FALSE(cpp_test_noisy_check_recovery_st_args());
+#endif
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=std_stacktrace")
+{
+#ifdef __cpp_lib_stacktrace
+    CHECK(cpp_test_success_noisy_check_arg_not_null_ptr_st_args());
+    CHECK(cpp_test_success_noisy_check_arg_is_valid_st_args());
+    CHECK(cpp_test_success_noisy_check_arg_array_st_args());
+
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_not_null_ptr_st_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_is_valid_st_args());
+    CHECK_FALSE(cpp_test_trigger_noisy_check_arg_array_st_args());
+
+    CHECK_FALSE(cpp_test_noisy_check_arg_invalid_st_args());
 #endif
 }

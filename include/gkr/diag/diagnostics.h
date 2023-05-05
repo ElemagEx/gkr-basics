@@ -376,10 +376,10 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
-for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_STOP(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #else
 #define Check_Arg_Array(ndx, cnt, check, ...) \
-for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_STOP(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #endif
 
 #else

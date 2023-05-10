@@ -12,12 +12,12 @@
 
 namespace gkr
 {
-using wait_result_t = unsigned;
+using wait_result_t = unsigned long long;
 
-constexpr std::size_t MAXIMUM_WAIT_OBJECTS = sizeof(wait_result_t) * CHAR_BIT - 1;
+constexpr std::size_t WAIT_MAX_OBJECTS = sizeof(wait_result_t) * CHAR_BIT - 1;
 
-constexpr wait_result_t WAIT_RESULT_ERROR   = wait_result_t(1U << MAXIMUM_WAIT_OBJECTS);
-constexpr wait_result_t WAIT_RESULT_TIMEOUT = wait_result_t(0U);
+constexpr wait_result_t WAIT_RESULT_ERROR   = wait_result_t(1) << WAIT_MAX_OBJECTS;
+constexpr wait_result_t WAIT_RESULT_TIMEOUT = wait_result_t(0);
 
 class waitable_object;
 
@@ -152,7 +152,7 @@ public:
         constexpr std::size_t count = sizeof...(waitable_objects);
 
         static_assert(count >= 1, "At least one wait object must be provided");
-        static_assert(count <= MAXIMUM_WAIT_OBJECTS, "Too many wait objects are provided");
+        static_assert(count <= WAIT_MAX_OBJECTS, "Too many wait objects are provided");
 
         waitable_object* objects[count] = {&waitable_objects...};
 
@@ -165,11 +165,11 @@ public:
     static wait_result_t check(std::size_t count, waitable_object** objects) noexcept(DIAG_NOEXCEPT)
     {
         Check_Arg_IsValid(count >= 1, WAIT_RESULT_ERROR);
-        Check_Arg_IsValid(count <= MAXIMUM_WAIT_OBJECTS, WAIT_RESULT_ERROR);
+        Check_Arg_IsValid(count <= WAIT_MAX_OBJECTS, WAIT_RESULT_ERROR);
 
         Check_Arg_NotNull(objects, WAIT_RESULT_ERROR);
 
-        Check_Arg_Array(index, count, objects[index] != nullptr, WAIT_RESULT_ERROR);
+        Check_Arg_Array(index, count, objects[index] != nullptr, WAIT_RESULT_ERROR);//???
 
         wait_result_t result;
 
@@ -185,7 +185,7 @@ public:
         constexpr std::size_t count = sizeof...(waitable_objects);
 
         static_assert(count >= 1, "At least one wait object must be provided");
-        static_assert(count <= MAXIMUM_WAIT_OBJECTS, "Too many wait objects are provided");
+        static_assert(count <= WAIT_MAX_OBJECTS, "Too many wait objects are provided");
 
         waitable_object* objects[count] = {&waitable_objects...};
 
@@ -194,11 +194,11 @@ public:
     wait_result_t wait(std::size_t count, waitable_object** objects) noexcept(DIAG_NOEXCEPT)
     {
         Check_Arg_IsValid(count >= 1, WAIT_RESULT_ERROR);
-        Check_Arg_IsValid(count <= MAXIMUM_WAIT_OBJECTS, WAIT_RESULT_ERROR);
+        Check_Arg_IsValid(count <= WAIT_MAX_OBJECTS, WAIT_RESULT_ERROR);
 
         Check_Arg_NotNull(objects, WAIT_RESULT_ERROR);
 
-        Check_Arg_Array(index, count, objects[index] != nullptr, WAIT_RESULT_ERROR);
+        Check_Arg_Array(index, count, objects[index] != nullptr, WAIT_RESULT_ERROR);//???
 
         return wait_for(count, objects);
     }
@@ -210,7 +210,7 @@ public:
         constexpr std::size_t count = sizeof...(waitable_objects);
 
         static_assert(count >= 1, "At least one wait object must be provided");
-        static_assert(count <= MAXIMUM_WAIT_OBJECTS, "Too many wait objects are provided");
+        static_assert(count <= WAIT_MAX_OBJECTS, "Too many wait objects are provided");
 
         waitable_object* objects[count] = {&waitable_objects...};
 
@@ -229,7 +229,7 @@ public:
     wait_result_t wait(std::chrono::duration<Rep, Period> timeout, std::size_t count, waitable_object** objects) noexcept(DIAG_NOEXCEPT)
     {
         Check_Arg_IsValid(count >= 1, WAIT_RESULT_ERROR);
-        Check_Arg_IsValid(count <= MAXIMUM_WAIT_OBJECTS, WAIT_RESULT_ERROR);
+        Check_Arg_IsValid(count <= WAIT_MAX_OBJECTS, WAIT_RESULT_ERROR);
 
         Check_Arg_NotNull(objects, WAIT_RESULT_ERROR);
 
@@ -516,7 +516,7 @@ inline objects_waiter& this_thread_objects_waiter() noexcept
 
 inline bool waitable_object_wait_is_completed(wait_result_t result, std::size_t index)
 {
-    return ((result & wait_result_t(1U << index)) != 0);
+    return ((result & (wait_result_t(1) << index)) != 0);
 }
 
 inline bool objects_waiter::collect_result(wait_result_t& result, std::size_t count, waitable_object** objects) noexcept
@@ -527,7 +527,7 @@ inline bool objects_waiter::collect_result(wait_result_t& result, std::size_t co
     {
         if(objects[index]->try_consume())
         {
-            result |= (1U << index);
+            result |= (wait_result_t(1) << index);
         }
     }
     return (result != 0);
@@ -546,7 +546,7 @@ inline std::size_t objects_waiter::register_self(std::size_t count, waitable_obj
 }
 inline void objects_waiter::unregiser_self(std::size_t count, waitable_object** objects) noexcept
 {
-    for(std::size_t index = 0; index < count; ++index)
+    for(std::size_t index = count; index-- > 0; )
     {
         objects[index]->unregister_waiter(*this);
     }

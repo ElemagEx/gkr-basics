@@ -1,0 +1,360 @@
+#include <gkr/concurency/worker_thread.h>
+
+#include <gkr/sys/thread_name.h>
+
+namespace gkr
+{
+
+worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept(false)
+{
+    m_actions_queue.reset(initial_action_queue_capacity);
+
+    m_mutex.bind_with(m_outer_waiter);
+    m_done_event.bind_with(m_outer_waiter, false, false);
+    m_actions_queue.bind_with_producer_waiter(m_outer_waiter);
+
+    m_work_event.bind_with(m_inner_waiter, false, false);
+    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
+}
+
+worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(
+        !joinable(),
+        "The running thread must be joined before being destructed or call Join method in leaf child class destructor"
+        );
+}
+
+bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
+{
+    std::lock_guard<mutex_controller> lock(m_mutex);
+
+    Check_ValidState(!m_thread.joinable(), false);
+
+    m_thread = std::thread([this] () { thread_proc(); });
+
+    m_work_event.fire();
+    m_done_event.wait();
+
+    return running();
+}
+
+bool worker_thread::join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT)
+{
+    if(!m_thread.joinable()) return false;
+
+    Check_ValidState(!in_worker_thread(), false);
+
+    if(send_quit_signal) quit();
+
+    m_thread.join();
+
+    return true;
+}
+
+bool worker_thread::quit() noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(running(), false);
+
+    if(in_worker_thread())
+    {
+        m_running = false;
+        return true;
+    }
+    else
+    {
+        return enqueue_action(ACTION_QUIT);
+    }
+}
+
+bool worker_thread::update_wait() noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(running(), false);
+
+    if(in_worker_thread())
+    {
+        m_updating = true;
+        return true;
+    }
+    else
+    {
+        return enqueue_action(ACTION_UPDATE);
+    }
+}
+
+bool worker_thread::resize_actions_queue(size_t capacity) noexcept(false)
+{
+    if(running())
+    {
+        Check_ValidState(!in_worker_thread(), false);
+        return m_actions_queue.resize(capacity);
+    }
+    else
+    {
+        m_actions_queue.reset(capacity);
+        return true;
+    }
+}
+
+bool worker_thread::enqueue_action(action_id_t id, void* param, action_param_deleter_t deleter) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(running(), false);
+
+    return m_actions_queue.push({id, param, deleter});
+}
+
+void worker_thread::perform_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
+{
+    if(in_worker_thread())
+    {
+        safe_do_action(id, param, result, false);
+    }
+    else
+    {
+        forward_action(id, param, result);
+    }
+}
+
+void worker_thread::forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
+{
+    std::lock_guard<mutex_controller> lock(m_mutex);
+
+    Check_ValidState(running(), );
+
+    m_func = func_t{id, param, result};
+
+    m_work_event.fire();
+    m_done_event.wait();
+}
+
+bool worker_thread::can_reply() noexcept
+{
+    return ((m_reentrancy.count == 1) && (m_reentrancy.result != nullptr));
+}
+
+bool worker_thread::reply_action() noexcept
+{
+    if(!can_reply()) return false;
+
+    m_reentrancy.result = nullptr;
+
+    m_done_event.fire();
+
+    return true;
+}
+
+void worker_thread::thread_proc() noexcept(DIAG_NOEXCEPT)
+{
+    m_work_event.wait();
+
+    m_reentrancy = {0, nullptr};
+
+    const char* name = get_name();
+
+    sys::set_current_thread_name(name);
+
+    m_running = safe_start();
+
+    m_done_event.fire();
+
+    if(running())
+    {
+        do
+        {
+            m_updating = false;
+        }
+        while(main_loop());
+
+        dequeue_actions(true);
+    }
+    safe_finish();
+}
+
+bool worker_thread::safe_start() noexcept
+{
+    m_actions_queue.threading.any_thread_can_be_producer();
+    m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
+
+#ifndef __cpp_exceptions
+    return start();
+#else
+    try
+    {
+        return on_start();
+    }
+    catch(const std::exception& e)
+    {
+        return on_exception(except_method_t::on_start, &e);
+    }
+    catch(...)
+    {
+        return on_exception(except_method_t::on_start, nullptr);
+    }
+#endif
+}
+
+void worker_thread::safe_finish() noexcept
+{
+#ifndef __cpp_exceptions
+    finish();
+#else
+    try
+    {
+        on_finish();
+    }
+    catch(const std::exception& e)
+    {
+        on_exception(except_method_t::on_finish, &e);
+    }
+    catch(...)
+    {
+        on_exception(except_method_t::on_finish, nullptr);
+    }
+#endif
+}
+
+bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
+{
+    const std::chrono::nanoseconds timeout = get_wait_timeout();
+
+    m_inner_waiter .remove_all_events();
+    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
+    m_work_event   .bind_with(m_inner_waiter, false, false);
+
+    bind_events(m_inner_waiter);
+
+    while(running())
+    {
+        if(m_updating) return true;
+
+        const wait_result_t wait_result = m_inner_waiter.wait_for(timeout);
+
+        Check_ValidState(wait_result != WAIT_RESULT_ERROR, false);
+
+        if(wait_result == WAIT_RESULT_TIMEOUT)
+        {
+            safe_notify_wait_timeout();
+        }
+        else
+        {
+            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << OWN_EVENTS_TO_WAIT) - 1);
+
+            if((wait_result & OTHER_EVENTS_MASK) != 0)
+            {
+                safe_notify_wait_success(wait_result & OTHER_EVENTS_MASK);
+            }
+            if(m_actions_queue.consumer_event_is_signaled(wait_result))
+            {
+                dequeue_actions(false);
+            }
+            if(m_work_event.is_signaled(wait_result))
+            {
+                safe_do_action(m_func.id, m_func.param, m_func.result, true);
+            }
+        }
+    }
+    return false;
+}
+
+void worker_thread::dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
+{
+    do
+    {
+        auto element = m_actions_queue.try_start_pop();
+
+        if(!element.pop_in_progress()) break;
+
+        queued_action_t& action = *element;
+
+        safe_do_action(action.id, action.param, nullptr, false);
+
+        if(action.deleter)
+        {
+            action.deleter(action.param);
+        }
+    }
+    while(all);
+}
+
+void worker_thread::safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(!cross_thread_caller || (m_reentrancy.count == 0));
+
+    ++m_reentrancy.count;
+
+    if(cross_thread_caller)
+    {
+        m_reentrancy.result = &result;
+    }
+    switch(id)
+    {
+        case ACTION_UPDATE: m_updating = true ; break;
+        case ACTION_QUIT  : m_running  = false; break;
+        default:
+#ifndef __cpp_exceptions
+            on_action(id, param, result);
+#else
+            try
+            {
+                on_action(id, param, result);
+            }
+            catch(const std::exception& e)
+            {
+                m_running = on_exception(except_method_t::on_action, &e);
+            }
+            catch(...)
+            {
+                m_running = on_exception(except_method_t::on_action, nullptr);
+            }
+#endif
+            break;
+    }
+    if(cross_thread_caller)
+    {
+        reply_action();
+    }
+
+    --m_reentrancy.count;
+}
+
+void worker_thread::safe_notify_wait_timeout() noexcept
+{
+#ifndef __cpp_exceptions
+    on_wait_timeout();
+#else
+    try
+    {
+        on_wait_timeout();
+    }
+    catch(const std::exception& e)
+    {
+        m_running = on_exception(except_method_t::on_wait_timeout, &e);
+    }
+    catch(...)
+    {
+        m_running = on_exception(except_method_t::on_wait_timeout, nullptr);
+    }
+#endif
+}
+
+void worker_thread::safe_notify_wait_success(size_t index) noexcept
+{
+#ifndef __cpp_exceptions
+    on_wait_success(index);
+#else
+    try
+    {
+        on_wait_success(index);
+    }
+    catch(const std::exception& e)
+    {
+        m_running = on_exception(except_method_t::on_wait_success, &e);
+    }
+    catch(...)
+    {
+        m_running = on_exception(except_method_t::on_wait_success, nullptr);
+    }
+#endif
+}
+
+}

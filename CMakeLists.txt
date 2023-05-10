@@ -57,12 +57,10 @@ target_sources(
     gkr-basics
     PRIVATE
     "${gkr_basics_inc_path}/diag/diagnostics.h"
+    "${gkr_basics_inc_path}/concurency/events_waiting.h"
+    "${gkr_basics_inc_path}/concurency/waitable_lockfree_queue.h"
     "${gkr_basics_inc_path}/lockfree_grow_only_bag.h"
     "${gkr_basics_inc_path}/lockfree_queue.h"
-    "${gkr_basics_inc_path}/waitable_event.h"
-    "${gkr_basics_inc_path}/waitable_mutex.h"
-    "${gkr_basics_inc_path}/waitable_semaphore.h"
-    "${gkr_basics_inc_path}/waitable_lockfree_queue.h"
     "${gkr_basics_inc_path}/misc/union_cast.h"
     "${gkr_basics_inc_path}/misc/stack_args_order.h"
     "${gkr_basics_inc_path}/cpp/lib_exchange_function.h"
@@ -78,8 +76,8 @@ target_sources(
 target_sources(
     gkr-basics
     PRIVATE
-    "${gkr_basics_inc_path}/thread_worker.h"
-    "${gkr_basics_src_path}/thread_worker.cpp"
+    "${gkr_basics_inc_path}/concurency/worker_thread.h"
+    "${gkr_basics_src_path}/concurency/worker_thread.cpp"
     "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_src_path}/sys/thread_name.cpp"
     "${gkr_basics_inc_path}/log/logger.h"

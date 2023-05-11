@@ -68,15 +68,12 @@ public:
         std::size_t max_message_chars = (1024 - sizeof(message))
         )
     {
-        m_initialized = init(severities, facilities, max_queue_entries, max_message_chars);
+        init(severities, facilities, max_queue_entries, max_message_chars);
     }
     ~logging()
     {
-        if(m_initialized) done();
+        done();
     }
-
-private:
-    bool m_initialized = false;
 
 private:
     logging           (const logging&) noexcept = delete;

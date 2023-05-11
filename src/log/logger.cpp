@@ -16,7 +16,7 @@ namespace log
 
 logger::logger()
 {
-    check_args_order();
+//  check_args_order();
 }
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
@@ -34,16 +34,9 @@ std::chrono::nanoseconds logger::get_wait_timeout() noexcept
     return std::chrono::nanoseconds::max();
 }
 
-std::size_t logger::get_wait_objects_count() noexcept
+void logger::bind_events(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
 {
-    return 1;
-}
-
-waitable_object* logger::get_wait_object(std::size_t index) noexcept
-{
-    Check_ValidState(index == 0, nullptr);
-
-    return m_log_queue.queue_has_items_waitable_object();
+    m_log_queue.bind_with_consumer_waiter(waiter);
 }
 
 bool logger::on_start()
@@ -82,9 +75,9 @@ void logger::on_wait_timeout()
     Check_Failure();
 }
 
-void logger::on_wait_success(std::size_t index)
+void logger::on_wait_success(wait_result_t wait_result)
 {
-    Check_ValidState(index == 0, );
+    Check_ValidState(m_log_queue.consumer_event_is_signaled(wait_result), );
 
     auto element = m_log_queue.start_pop();
 

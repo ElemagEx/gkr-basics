@@ -56,7 +56,7 @@ public:
 
 using namespace gkr::log;
 
-static name_id_pair g_severities[] = {
+constexpr name_id_pair g_severities[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -64,13 +64,14 @@ static name_id_pair g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-static name_id_pair g_facilities[] = {
+constexpr name_id_pair g_facilities[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},
     {"Synchro", FACILITY_SYNCHRO},
     {nullptr  , 0               }
 };
+//extern logging s_logging; logging s_logging(g_severities, g_facilities);
 
 #include <thread>
 

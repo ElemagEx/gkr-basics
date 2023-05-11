@@ -1,4 +1,4 @@
-#include <gkr/lockfree_queue.h>
+#include <gkr/container/lockfree_queue.h>
 
 #include <catch2/catch_test_macros.hpp>
 

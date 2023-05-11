@@ -2,7 +2,10 @@
 
 #include <gkr/concurency/events_waiting.h>
 #include <gkr/concurency/waitable_lockfree_queue.h>
+#include <gkr/misc/stack_args_order.h>
 
+#include <mutex>
+#include <thread>
 #include <functional>
 
 #ifndef GKR_CWT_API
@@ -11,6 +14,22 @@
 
 namespace gkr
 {
+namespace impl
+{
+template<class T>
+struct result_t
+{
+    T value;
+    T* ptr() { return &value; }
+    T& val() { return  value; }
+};
+template<>
+struct result_t<void>
+{
+    void* ptr() { return nullptr; }
+    void  val() { return; }
+};
+}
 
 class worker_thread
 {
@@ -135,19 +154,138 @@ private:
     reentrancy_t m_reentrancy = {};
     func_t       m_func       = {};
 
+    std::mutex  m_mutex;
     std::thread m_thread;
 
+    events_waiter m_queue_waiter;
     events_waiter m_outer_waiter;
     events_waiter m_inner_waiter;
 
     actions_queue_t m_actions_queue;
 
-    mutex_controller m_mutex;
     event_controller m_work_event;
     event_controller m_done_event;
 
     bool m_running  = false;
     bool m_updating = false;
+
+protected:
+    template<typename T>
+    bool reply_action(T&& value)
+    {
+        Check_ValidState(in_worker_thread(), false);
+
+        if(!can_reply())
+        {
+            return false;
+        }
+        if(*m_reentrancy.result != nullptr)
+        {
+            *static_cast<T*>(*m_reentrancy.result) = std::move(value);
+        }
+        return reply_action();
+    }
+    template<typename T>
+    bool reply_action(const T& value)
+    {
+        Check_ValidState(in_worker_thread(), false);
+
+        if(!can_reply())
+        {
+            return false;
+        }
+        if(*m_reentrancy.result != nullptr)
+        {
+            *static_cast<T*>(*m_reentrancy.result) = value;
+        }
+        return reply_action();
+    }
+
+protected:
+    template<typename R, typename... Args>
+    R execute_action_method(action_id_t action, Args&&... args) noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(!in_worker_thread());
+
+        constexpr size_t count = sizeof...(args);
+
+        const void* params[count + 1] = {reinterpret_cast<const void*>(count), static_cast<const void*>(std::addressof(args))...};
+
+        impl::result_t<R> result;
+
+        forward_action(action, params, result.ptr());
+
+        return result.val();
+    }
+
+protected:
+#ifndef GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
+#if defined(__clang__) && defined(__linux__)
+#define GKR_RIGHT_TO_LEFT_ARGS_IN_STACK 0
+#else
+#define GKR_RIGHT_TO_LEFT_ARGS_IN_STACK 1
+#endif
+#endif
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsequenced"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsequence-point"
+#endif
+    static void check_args_order()
+    {
+#if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
+        Assert_Check( method_args_stack_order_is_right_to_left());
+#else
+        Assert_Check(!method_args_stack_order_is_right_to_left());
+#endif
+    }
+
+    template<class R, class C, typename... Args>
+    void call_action_method(R (C::*method)(Args...), void* param, void* result)
+    {
+        Assert_Check(in_worker_thread());
+
+        void** params = reinterpret_cast<void**>(param);
+
+#if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
+        const size_t count = reinterpret_cast<size_t>(*params);
+
+        params += count;
+
+        R ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+#else
+        R ret = (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
+#endif
+        if(result != nullptr)
+        {
+            *static_cast<R*>(result) = ret;
+        }
+    }
+    template<class C, typename... Args>
+    void call_action_method(void (C::*method)(Args...), void* param)
+    {
+        Assert_Check(in_worker_thread());
+
+        void** params = reinterpret_cast<void**>(param);
+
+#if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
+        const size_t count = reinterpret_cast<size_t>(*params);
+
+        params += count;
+
+        (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*params--)...);
+#else
+        (static_cast<C*>(this)->*method)(*reinterpret_cast<typename std::remove_reference<Args>::type*>(*++params)...);
+#endif
+    }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 };
 
 }

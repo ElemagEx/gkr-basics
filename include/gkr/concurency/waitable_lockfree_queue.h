@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/lockfree_queue.h>
+#include <gkr/container/lockfree_queue.h>
 #include <gkr/concurency/events_waiting.h>
 
 namespace gkr

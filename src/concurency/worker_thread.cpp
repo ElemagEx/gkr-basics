@@ -6,15 +6,13 @@ namespace gkr
 {
 
 worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept(false)
+    : m_queue_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsAdd)
+    , m_outer_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsAdd)
+    , m_inner_waiter (gkr::events_waiter::Flag_ForbidMultipleThreadsWait)
+    , m_actions_queue(initial_action_queue_capacity)
 {
-    m_actions_queue.reset(initial_action_queue_capacity);
-
-    m_mutex.bind_with(m_outer_waiter);
     m_done_event.bind_with(m_outer_waiter, false, false);
-    m_actions_queue.bind_with_producer_waiter(m_outer_waiter);
-
     m_work_event.bind_with(m_inner_waiter, false, false);
-    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
 }
 
 worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
@@ -27,7 +25,7 @@ worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
 
 bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
 {
-    std::lock_guard<mutex_controller> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     Check_ValidState(!m_thread.joinable(), false);
 
@@ -117,7 +115,7 @@ void worker_thread::perform_action(action_id_t id, void* param, void* result) no
 
 void worker_thread::forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
 {
-    std::lock_guard<mutex_controller> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     Check_ValidState(running(), );
 
@@ -176,7 +174,7 @@ bool worker_thread::safe_start() noexcept
     m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
 
 #ifndef __cpp_exceptions
-    return start();
+    return on_start();
 #else
     try
     {
@@ -196,7 +194,7 @@ bool worker_thread::safe_start() noexcept
 void worker_thread::safe_finish() noexcept
 {
 #ifndef __cpp_exceptions
-    finish();
+    on_finish();
 #else
     try
     {
@@ -337,14 +335,14 @@ void worker_thread::safe_notify_wait_timeout() noexcept
 #endif
 }
 
-void worker_thread::safe_notify_wait_success(size_t index) noexcept
+void worker_thread::safe_notify_wait_success(wait_result_t wait_result) noexcept
 {
 #ifndef __cpp_exceptions
-    on_wait_success(index);
+    on_wait_success(wait_result);
 #else
     try
     {
-        on_wait_success(index);
+        on_wait_success(wait_result);
     }
     catch(const std::exception& e)
     {

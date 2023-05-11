@@ -2,8 +2,8 @@
 
 #include <gkr/log/message.h>
 
-#include <gkr/thread_worker.h>
-#include <gkr/waitable_lockfree_queue.h>
+#include <gkr/concurency/worker_thread.h>
+#include <gkr/concurency/waitable_lockfree_queue.h>
 
 #include <memory>
 #include <vector>
@@ -18,7 +18,7 @@ namespace log
 struct name_id_pair;
 class consumer;
 
-class logger final : public thread_worker
+class logger final : public worker_thread
 {
     logger           (const logger&) noexcept = delete;
     logger& operator=(const logger&) noexcept = delete;
@@ -35,9 +35,7 @@ private:
 
     virtual std::chrono::nanoseconds get_wait_timeout() noexcept override;
 
-    virtual std::size_t get_wait_objects_count() noexcept override;
-
-    virtual waitable_object* get_wait_object(std::size_t index) noexcept override;
+    virtual void bind_events(events_waiter& waiter) noexcept(DIAG_NOEXCEPT) override;
 
     virtual bool on_start() override;
     virtual void on_finish() override;
@@ -45,7 +43,7 @@ private:
     virtual void on_action(action_id_t action, void* param, void* result) override;
 
     virtual void on_wait_timeout() override;
-    virtual void on_wait_success(std::size_t index) override;
+    virtual void on_wait_success(wait_result_t wait_result) override;
 
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override;
 
@@ -115,7 +113,7 @@ private:
         ACTION_SYNC_LOG_MESSAGE ,
     };
 
-    using lockfree_queue_t = lockfree_queue<void, true, impl::queue_wait_support<0,1>>;
+    using lockfree_queue_t = waitable_lockfree_queue<void, true>;
 
 private:
     lockfree_queue_t m_log_queue;

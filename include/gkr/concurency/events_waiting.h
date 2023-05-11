@@ -47,8 +47,6 @@ constexpr std::size_t WAIT_MAX_OBJECTS = sizeof(wait_result_t) * CHAR_BIT - 1;
 constexpr wait_result_t WAIT_RESULT_ERROR   = wait_result_t(1) << WAIT_MAX_OBJECTS;
 constexpr wait_result_t WAIT_RESULT_TIMEOUT = wait_result_t(0);
 
-class event_controller;
-
 class events_waiter final
 {
     events_waiter           (const events_waiter&) noexcept = delete;
@@ -58,6 +56,16 @@ class events_waiter final
     events_waiter& operator=(events_waiter&&) noexcept = delete;
 
 public:
+    enum Flag
+    {
+        Flag_ForbidMultipleThreadsWait = 0x01,
+        Flag_ForbidMultipleEventsAdd   = 0x02,
+        Flag_AllowPartialEventsWait    = 0x04,
+    };
+
+public:
+    events_waiter(std::size_t flags) : m_flags(flags) {}
+
     events_waiter() noexcept = default;
    ~events_waiter() noexcept = default;
 
@@ -69,6 +77,13 @@ private:
     wait_result_t m_bits_event_state  {0};
     std::size_t   m_events_count      {0};
     std::size_t   m_waiting_threads   {0};
+    std::size_t   m_flags             {0};
+
+private:
+    bool flag_is_set(std::size_t flag) const noexcept
+    {
+        return ((m_flags & flag) != 0);
+    }
 
 public:
     std::size_t events_count() const noexcept
@@ -96,7 +111,9 @@ private:
         std::unique_lock<std::mutex> lock(m_mutex);
 
         Check_ValidState(m_waiting_threads == 0, false);
-        Check_ValidState(m_events_count < WAIT_MAX_OBJECTS, false);
+        Check_ValidState(m_events_count    <= WAIT_MAX_OBJECTS, false);
+
+        Check_ValidState(!flag_is_set(Flag_ForbidMultipleEventsAdd) || (m_events_count == 0), false);
 
         index = ++m_events_count;
 
@@ -107,9 +124,9 @@ private:
 
         return true;
     }
-
     bool fire_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        bool notify_all;
         {
             std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -122,8 +139,20 @@ private:
             m_bits_event_state |= bit;
 
             if(m_waiting_threads == 0) return true;
+
+            notify_all =
+                ((m_bits_manual_reset & bit) != 0)
+                ||
+                flag_is_set(Flag_AllowPartialEventsWait);
         }
-        m_cvar.notify_all();
+        if(notify_all)
+        {
+            m_cvar.notify_all();
+        }
+        else
+        {
+            m_cvar.notify_one();
+        }
         return true;
     }
     bool reset_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
@@ -140,141 +169,148 @@ private:
     }
 
 private:
-    bool stop_waiting_for_one_event(wait_result_t& wait_result, wait_result_t bit) noexcept
+    wait_result_t all_events_mask() const noexcept
     {
-        wait_result = m_bits_event_state & bit;
-        m_bits_event_state &= (~bit | m_bits_manual_reset);
-        return (wait_result != 0);
+        return ((wait_result_t(1) << m_events_count) - 1);
     }
-    bool one_event_check(std::size_t index) noexcept(DIAG_NOEXCEPT)
+    bool mask_is_valid(wait_result_t mask)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_Arg_IsValid(index < m_events_count, false);
-
-        const wait_result_t bit = (wait_result_t(1) << index);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-        stop_waiting_for_one_event(wait_result, bit);
-        return ((wait_result & bit) != 0);
+        if(flag_is_set(Flag_AllowPartialEventsWait))
+        {
+            return ((mask & all_events_mask()) != 0);
+        }
+        else
+        {
+            return (mask == all_events_mask());
+        }
     }
-    bool one_event_wait(std::size_t index) noexcept(DIAG_NOEXCEPT)
+    bool this_thread_can_wait()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_Arg_IsValid(index < m_events_count, false);
-
-        const wait_result_t bit = (wait_result_t(1) << index);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-
-        ++m_waiting_threads;
-        m_cvar.wait(lock, [this, &wait_result, &bit] { return stop_waiting_for_one_event(wait_result, bit); });
-        --m_waiting_threads;
-
-        return ((wait_result & bit) != 0);
-    }
-    template<typename Rep, typename Period>
-    bool one_event_wait_for(std::size_t index, const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_Arg_IsValid(index < m_events_count, false);
-
-        const wait_result_t bit = (wait_result_t(1) << index);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-
-        ++m_waiting_threads;
-        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &bit] { return stop_waiting_for_one_event(wait_result, bit); });
-        --m_waiting_threads;
-
-        return ((wait_result & bit) != 0);
-    }
-    template<typename Clock, typename Duration>
-    bool one_event_wait_until(std::size_t index, const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_Arg_IsValid(index < m_events_count, false);
-
-        const wait_result_t bit = (wait_result_t(1) << index);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-
-        ++m_waiting_threads;
-        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &bit] { return stop_waiting_for_one_event(wait_result, bit); });
-        --m_waiting_threads;
-
-        return ((wait_result & bit) != 0);
+        return !flag_is_set(Flag_ForbidMultipleThreadsWait) || (m_waiting_threads == 0);
     }
 
 private:
-    bool stop_waiting_for_all_events(wait_result_t& wait_result) noexcept
+    bool wait_must_stop(wait_result_t& wait_result, wait_result_t mask) noexcept
     {
-        wait_result = m_bits_event_state;
-        m_bits_event_state &= m_bits_manual_reset;
+        wait_result = m_bits_event_state & mask;
+        m_bits_event_state &= (~mask | m_bits_manual_reset);
         return (wait_result != 0);
+    }
+
+private:
+    wait_result_t masked_check(wait_result_t mask) noexcept(DIAG_NOEXCEPT)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
+        Check_ValidState(mask_is_valid(mask), WAIT_RESULT_ERROR);
+        Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
+
+        wait_result_t wait_result = WAIT_RESULT_ERROR;
+        wait_must_stop(wait_result, mask);
+        return wait_result;
+    }
+    wait_result_t masked_wait(wait_result_t mask) noexcept(DIAG_NOEXCEPT)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
+        Check_ValidState(mask_is_valid(mask), WAIT_RESULT_ERROR);
+        Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
+
+        wait_result_t wait_result = WAIT_RESULT_ERROR;
+
+        ++m_waiting_threads;
+        m_cvar.wait(lock, [this, &wait_result, &mask] { return wait_must_stop(wait_result, mask); });
+        --m_waiting_threads;
+
+        return wait_result;
+    }
+    template<typename Rep, typename Period>
+    wait_result_t masked_wait_for(wait_result_t mask, const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
+        Check_ValidState(mask_is_valid(mask), WAIT_RESULT_ERROR);
+        Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
+
+        wait_result_t wait_result = WAIT_RESULT_ERROR;
+
+        ++m_waiting_threads;
+        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &mask] { return wait_must_stop(wait_result, mask); });
+        --m_waiting_threads;
+
+        return wait_result;
+    }
+    template<typename Clock, typename Duration>
+    wait_result_t masked_wait_until(wait_result_t mask, const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
+        Check_ValidState(mask_is_valid(mask), WAIT_RESULT_ERROR);
+        Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
+
+        wait_result_t wait_result = WAIT_RESULT_ERROR;
+
+        ++m_waiting_threads;
+        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &mask] { return wait_must_stop(wait_result, mask); });
+        --m_waiting_threads;
+
+        return wait_result;
+    }
+
+private:
+    bool single_check(std::size_t index) noexcept(DIAG_NOEXCEPT)
+    {
+        const wait_result_t bit = wait_result_t(1) << index;
+
+        return ((masked_check(bit) & bit) != 0);
+    }
+    bool single_wait(std::size_t index) noexcept(DIAG_NOEXCEPT)
+    {
+        const wait_result_t bit = wait_result_t(1) << index;
+
+        return ((masked_wait(bit) & bit) != 0);
+    }
+    template<typename Rep, typename Period>
+    bool single_wait_for(std::size_t index, const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
+    {
+        const wait_result_t bit = wait_result_t(1) << index;
+
+        return ((masked_wait_for(bit, timeout_duration) & bit) != 0);
+    }
+    template<typename Clock, typename Duration>
+    bool single_wait_until(std::size_t index, const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
+    {
+        const wait_result_t bit = wait_result_t(1) << index;
+
+        return ((masked_wait_for(bit, timeout_time) & bit) != 0);
     }
 
 public:
     wait_result_t check() noexcept(DIAG_NOEXCEPT)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-        stop_waiting_for_all_events(wait_result);
-        return wait_result;
+        return masked_check(all_events_mask());
     }
     wait_result_t wait() noexcept(DIAG_NOEXCEPT)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-
-        ++m_waiting_threads;
-        m_cvar.wait(lock, [this, &wait_result] { return stop_waiting_for_all_events(wait_result); });
-        --m_waiting_threads;
-
-        return wait_result;
+        return masked_wait(all_events_mask());
     }
     template<typename Rep, typename Period>
     wait_result_t wait_for(const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-
-        ++m_waiting_threads;
-        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result] { return stop_waiting_for_all_events(wait_result); });
-        --m_waiting_threads;
-
-        return wait_result;
+        return masked_wait_for(all_events_mask(), timeout_duration);
     }
     template<typename Clock, typename Duration>
     wait_result_t wait_until(const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
-
-        wait_result_t wait_result = WAIT_RESULT_ERROR;
-
-        ++m_waiting_threads;
-        m_cvar.wait_until(lock, timeout_time, [this, &wait_result] { return stop_waiting_for_all_events(wait_result); });
-        --m_waiting_threads;
-
-        return wait_result;
+        return masked_wait_until(all_events_mask(), timeout_time);
     }
 
 private:
-    static bool is_signaled(wait_result_t wait_result, std::size_t index) noexcept
+    static bool event_is_signaled(wait_result_t wait_result, std::size_t index) noexcept
     {
         const wait_result_t bit = (wait_result_t(1) << index);
 
@@ -344,7 +380,7 @@ public:
 public:
     bool is_signaled(wait_result_t wait_result) const noexcept
     {
-        return events_waiter::is_signaled(wait_result, m_index);
+        return events_waiter::event_is_signaled(wait_result, m_index);
     }
 
 public:
@@ -352,27 +388,27 @@ public:
     {
         Check_ValidState(is_bound(), false);
 
-        return m_waiter->one_event_check(m_index);
+        return m_waiter->single_check(m_index);
     }
     bool wait() noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(is_bound(), false);
 
-        return m_waiter->one_event_wait(m_index);
+        return m_waiter->single_wait(m_index);
     }
     template<typename Rep, typename Period>
     bool wait_for(const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(is_bound(), false);
 
-        return m_waiter->one_event_wait_for(m_index, timeout_duration);
+        return m_waiter->single_wait_for(m_index, timeout_duration);
     }
     template<typename Clock, typename Duration>
     bool wait_until(const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(is_bound(), false);
 
-        return m_waiter->one_event_wait_until(m_index, timeout_time);
+        return m_waiter->single_wait_until(m_index, timeout_time);
     }
 };
 

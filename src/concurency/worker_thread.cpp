@@ -193,6 +193,9 @@ bool worker_thread::safe_start() noexcept
 
 void worker_thread::safe_finish() noexcept
 {
+    m_inner_waiter.remove_all_events();
+    m_work_event.bind_with(m_inner_waiter, false, false);
+
 #ifndef __cpp_exceptions
     on_finish();
 #else
@@ -216,8 +219,8 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
     const std::chrono::nanoseconds timeout = get_wait_timeout();
 
     m_inner_waiter .remove_all_events();
-    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
     m_work_event   .bind_with(m_inner_waiter, false, false);
+    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
 
     bind_events(m_inner_waiter);
 
@@ -241,13 +244,13 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
             {
                 safe_notify_wait_success(wait_result & OTHER_EVENTS_MASK);
             }
-            if(m_actions_queue.consumer_event_is_signaled(wait_result))
-            {
-                dequeue_actions(false);
-            }
             if(m_work_event.is_signaled(wait_result))
             {
                 safe_do_action(m_func.id, m_func.param, m_func.result, true);
+            }
+            if(m_actions_queue.consumer_event_is_signaled(wait_result))
+            {
+                dequeue_actions(false);
             }
         }
     }

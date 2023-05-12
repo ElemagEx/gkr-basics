@@ -6,8 +6,8 @@ namespace gkr
 {
 
 worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept(false)
-    : m_queue_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsAdd)
-    , m_outer_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsAdd)
+    : m_queue_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
+    , m_outer_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
     , m_inner_waiter (gkr::events_waiter::Flag_ForbidMultipleThreadsWait)
     , m_actions_queue(initial_action_queue_capacity)
 {

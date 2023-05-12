@@ -227,7 +227,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 
 #ifdef __cplusplus
 //
-// You must define DIAG_NOEXCEPT to true or false when you implement own versions of them
+// You must define DIAG_NOEXCEPT to true or false when you implement own versions of diagnostic functions
 //
 #ifndef DIAG_NOEXCEPT
 #error  DIAG_NOEXCEPT must be defined
@@ -238,7 +238,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 
 #ifdef __cplusplus
 //
-// Indicates whether DIAG_HALT function is noexcept - DIAG_WARN always must be noexcept
+// Indicates whether diagnostic functions are noexcept
 //
 #define DIAG_NOEXCEPT true
 //

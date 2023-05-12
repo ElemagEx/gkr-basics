@@ -59,7 +59,7 @@ public:
     enum Flag
     {
         Flag_ForbidMultipleThreadsWait = 0x01,
-        Flag_ForbidMultipleEventsAdd   = 0x02,
+        Flag_ForbidMultipleEventsBind  = 0x02,
         Flag_AllowPartialEventsWait    = 0x04,
     };
 
@@ -78,6 +78,8 @@ private:
     std::size_t   m_events_count      {0};
     std::size_t   m_waiting_threads   {0};
     std::size_t   m_flags             {0};
+
+    friend class event_controller;
 
 private:
     bool flag_is_set(std::size_t flag) const noexcept
@@ -104,18 +106,16 @@ public:
     }
 
 private:
-    friend class event_controller;
-
     bool add_event(bool manual_reset, bool initial_state, std::size_t& index) noexcept(DIAG_NOEXCEPT)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
 
         Check_ValidState(m_waiting_threads == 0, false);
-        Check_ValidState(m_events_count    <= WAIT_MAX_OBJECTS, false);
+        Check_ValidState(m_events_count    <  WAIT_MAX_OBJECTS, false);
 
-        Check_ValidState(!flag_is_set(Flag_ForbidMultipleEventsAdd) || (m_events_count == 0), false);
+        Check_ValidState(!flag_is_set(Flag_ForbidMultipleEventsBind) || (m_events_count == 0), false);
 
-        index = ++m_events_count;
+        index = m_events_count++;
 
         const wait_result_t bit = wait_result_t(1) << index;
 
@@ -221,7 +221,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait(lock, [this, &wait_result, &mask] { return wait_must_stop(wait_result, mask); });
+        m_cvar.wait(lock, [this, &wait_result, &mask] () noexcept { return wait_must_stop(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -238,7 +238,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &mask] { return wait_must_stop(wait_result, mask); });
+        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &mask] () noexcept { return wait_must_stop(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -255,38 +255,38 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &mask] { return wait_must_stop(wait_result, mask); });
+        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &mask] () noexcept { return wait_must_stop(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
     }
 
 private:
-    bool single_check(std::size_t index) noexcept(DIAG_NOEXCEPT)
+    wait_result_t single_check(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         const wait_result_t bit = wait_result_t(1) << index;
 
-        return ((masked_check(bit) & bit) != 0);
+        return masked_check(bit);
     }
-    bool single_wait(std::size_t index) noexcept(DIAG_NOEXCEPT)
+    wait_result_t single_wait(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         const wait_result_t bit = wait_result_t(1) << index;
 
-        return ((masked_wait(bit) & bit) != 0);
+        return masked_wait(bit);
     }
     template<typename Rep, typename Period>
-    bool single_wait_for(std::size_t index, const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
+    wait_result_t single_wait_for(std::size_t index, const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
     {
         const wait_result_t bit = wait_result_t(1) << index;
 
         return ((masked_wait_for(bit, timeout_duration) & bit) != 0);
     }
     template<typename Clock, typename Duration>
-    bool single_wait_until(std::size_t index, const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
+    wait_result_t single_wait_until(std::size_t index, const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
     {
         const wait_result_t bit = wait_result_t(1) << index;
 
-        return ((masked_wait_for(bit, timeout_time) & bit) != 0);
+        return masked_wait_until(bit, timeout_time);
     }
 
 public:
@@ -330,6 +330,12 @@ private:
     friend class events_waiter;
 
 public:
+    event_controller(events_waiter& waiter, bool manual_reset, bool initial_state) noexcept(DIAG_NOEXCEPT)
+    {
+        bind_with(waiter, manual_reset, initial_state);
+        Assert_Check(is_bound());
+    }
+
     event_controller() noexcept = default;
    ~event_controller() noexcept = default;
 
@@ -386,29 +392,44 @@ public:
 public:
     bool try_consume() noexcept(DIAG_NOEXCEPT)
     {
-        Check_ValidState(is_bound(), false);
+        Assert_Check(is_bound());
 
-        return m_waiter->single_check(m_index);
+        wait_result_t wait_result = m_waiter->single_check(m_index);
+
+        Assert_Check(wait_result != WAIT_RESULT_ERROR);
+
+        return is_signaled(wait_result);
     }
-    bool wait() noexcept(DIAG_NOEXCEPT)
+    void wait() noexcept(DIAG_NOEXCEPT)
     {
-        Check_ValidState(is_bound(), false);
+        Assert_Check(is_bound());
 
-        return m_waiter->single_wait(m_index);
+        [[maybe_unused]] wait_result_t wait_result = m_waiter->single_wait(m_index);
+
+        Assert_Check(wait_result != WAIT_RESULT_ERROR);
+        Assert_Check(is_signaled(wait_result));
     }
     template<typename Rep, typename Period>
     bool wait_for(const std::chrono::duration<Rep, Period>& timeout_duration) noexcept(DIAG_NOEXCEPT)
     {
-        Check_ValidState(is_bound(), false);
+        Assert_Check(is_bound());
 
-        return m_waiter->single_wait_for(m_index, timeout_duration);
+        wait_result_t wait_result = m_waiter->single_wait_for(m_index, timeout_duration);
+
+        Assert_Check(wait_result != WAIT_RESULT_ERROR);
+
+        return is_signaled(wait_result);
     }
     template<typename Clock, typename Duration>
     bool wait_until(const std::chrono::time_point<Clock, Duration>& timeout_time) noexcept(DIAG_NOEXCEPT)
     {
-        Check_ValidState(is_bound(), false);
+        Assert_Check(is_bound());
 
-        return m_waiter->single_wait_until(m_index, timeout_time);
+        wait_result_t wait_result = m_waiter->single_wait_until(m_index, timeout_time);
+
+        Assert_Check(wait_result != WAIT_RESULT_ERROR);
+
+        return is_signaled(wait_result);
     }
 };
 
@@ -465,14 +486,94 @@ public:
     void lock()
     {
         Assert_Check(is_bound());
-        [[maybe_unused]] bool wait_result = m_event_controller.wait();
-        Assert_Check(wait_result);
+        m_event_controller.wait();
     }
     void unlock()
     {
         Assert_Check(is_bound());
-        [[maybe_unused]] bool wait_result = m_event_controller.fire();
-        Assert_Check(wait_result);
+        [[maybe_unused]] bool fire_result = m_event_controller.fire();
+        Assert_Check(fire_result);
+    }
+};
+
+//
+// experimental
+//
+class barier_controller final
+{
+    barier_controller           (const barier_controller&) noexcept = delete;
+    barier_controller& operator=(const barier_controller&) noexcept = delete;
+
+private:
+    event_controller         m_event_controller;
+    std::size_t              m_count  {0};
+    std::atomic<std::size_t> m_arives {0};
+
+public:
+    barier_controller(std::size_t count) : m_count(count) {}
+
+    barier_controller() noexcept = default;
+   ~barier_controller() noexcept = default;
+
+    barier_controller(barier_controller&& other) noexcept
+        : m_event_controller(std::move(other.m_event_controller))
+    {
+    }
+    barier_controller& operator=(barier_controller&& other) noexcept
+    {
+        m_event_controller = std::move(other.m_event_controller);
+        return *this;
+    }
+
+    void swap(barier_controller& other) noexcept
+    {
+        m_event_controller.swap(other.m_event_controller);
+    }
+
+public:
+    bool bind_with(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+    {
+        return m_event_controller.bind_with(waiter, true, false);
+    }
+    bool is_bound() const noexcept
+    {
+        return m_event_controller.is_bound();
+    }
+
+public:
+    bool all_arived(wait_result_t wait_result) noexcept
+    {
+        if(!m_event_controller.is_signaled(wait_result)) return false;
+        if(--m_arives == 0) m_event_controller.reset();
+        return true;
+    }
+
+public:
+    bool reset(std::size_t count = 0) noexcept(DIAG_NOEXCEPT)
+    {
+        if(count > 0) m_count = count;
+        m_arives = 0;
+        return m_event_controller.reset();
+    }
+
+public:
+    void arive()
+    {
+        Assert_Check(is_bound());
+        if(++m_arives != m_count) return;
+        [[maybe_unused]] bool fire_result = m_event_controller.fire();
+        Assert_Check(fire_result);
+    }
+    void wait()
+    {
+        Assert_Check(is_bound());
+        m_event_controller.wait();
+        if(--m_arives == 0) m_event_controller.reset();
+    }
+    void arive_and_wait()
+    {
+        arive();
+        wait();
     }
 };
 

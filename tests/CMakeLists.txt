@@ -1,3 +1,16 @@
+find_package(Catch2 3 REQUIRED)
+include(Catch)
+
+if(MSVC)
+add_compile_options(/wd4388) # '==': signed/unsigned mismatch
+add_compile_options(/wd4623) # default constructor was implicitly defined as deleted
+add_compile_options(/wd4625) # copy constructor was implicitly defined as deleted
+add_compile_options(/wd4626) # assignment operator was implicitly defined as deleted
+add_compile_options(/wd5026) # move constructor was implicitly defined as deleted
+add_compile_options(/wd5027) # move assignment operator was implicitly defined as deleted
+else()
+endif()
+
 add_executable       (t-diagnostic t-diagnostic.cpp)
 target_link_libraries(t-diagnostic PRIVATE gkr-basics Catch2::Catch2WithMain)
 catch_discover_tests (t-diagnostic)

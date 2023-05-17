@@ -20,7 +20,7 @@ static int my_warn_proc(int id, const char* msg DIAG_SRC_PROTOTYPE) noexcept(DIA
 
 #include <thread>
 
-auto now() { return std::chrono::steady_clock::now(); }
+static auto now() { return std::chrono::steady_clock::now(); }
 
 using namespace gkr;
 using namespace std::chrono_literals;

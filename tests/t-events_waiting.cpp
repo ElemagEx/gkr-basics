@@ -68,6 +68,11 @@ TEST_CASE("concurency.events_waiting. Binding (common)")
     //
     CHECK(waiter.remove_all_events());
     CHECK(waiter.events_count() == 0);
+    for(std::size_t index = 0; index < WAIT_MAX_OBJECTS; ++index)
+    {
+        events[index].unbind();
+        CHECK(!events[index].is_bound());
+    }
 }
 
 TEST_CASE("concurency.events_waiting. Binding (Flag_ForbidMultipleEventsBind)")
@@ -95,6 +100,10 @@ TEST_CASE("concurency.events_waiting. Binding (Flag_ForbidMultipleEventsBind)")
     //
     CHECK(waiter.remove_all_events());
     CHECK(waiter.events_count() == 0);
+    event1.unbind();
+    event2.unbind();
+    CHECK(!event1.is_bound());
+    CHECK(!event2.is_bound());
 }
 
 TEST_CASE("concurency.events_waiting. Cleanup")
@@ -122,6 +131,8 @@ TEST_CASE("concurency.events_waiting. Cleanup")
     //
     CHECK(waiter.remove_all_events());
     CHECK(waiter.events_count() == 0);
+    event.unbind();
+    CHECK(!event.is_bound());
 }
 
 TEST_CASE("concurency.events_waiting. Waiting (common)")
@@ -213,21 +224,25 @@ TEST_CASE("concurency.events_waiting. Waiting (common)")
     //
     // Partial waiting must fail (without flag Flag_AllowPartialEventsWait)
     //
-    CHECK_THROWS(event1.wait());
-    CHECK_THROWS(event2.wait());
-    CHECK_THROWS(event3.wait());
+    CHECK_THROWS(event1.try_consume());
+    CHECK_THROWS(event2.try_consume());
+    CHECK_THROWS(event3.try_consume());
     //
     // Cleanup
     //
     CHECK(waiter.remove_all_events());
     CHECK(waiter.events_count() == 0);
+    event1.unbind();
+    event2.unbind();
+    event3.unbind();
+    CHECK(!event1.is_bound());
+    CHECK(!event2.is_bound());
+    CHECK(!event3.is_bound());
 }
 
 TEST_CASE("concurency.events_waiting. Waiting (Flag_AllowPartialEventsWait)")
 {
-    wait_result_t wait_result;
-
-    events_waiter waiter;
+    events_waiter waiter(events_waiter::Flag_AllowPartialEventsWait);
 
     CHECK(waiter.events_count() == 0);
     //
@@ -244,6 +259,70 @@ TEST_CASE("concurency.events_waiting. Waiting (Flag_AllowPartialEventsWait)")
     CHECK(event2.try_consume());
     CHECK(event3.try_consume());
     //
-    // Waiting on single events
+    // Cleanup
     //
+    CHECK(waiter.remove_all_events());
+    CHECK(waiter.events_count() == 0);
+    event1.unbind();
+    event2.unbind();
+    event3.unbind();
+    CHECK(!event1.is_bound());
+    CHECK(!event2.is_bound());
+    CHECK(!event3.is_bound());
+}
+
+TEST_CASE("concurency.events_waiting. Event (auto reset)")
+{
+    events_waiter waiter;
+
+    CHECK(waiter.events_count() == 0);
+    //
+    // Binding event
+    //
+    event_controller event(waiter, false, true);
+    //
+    // Successful consume
+    //
+    CHECK(event.try_consume());
+    //
+    // Failed consume
+    //
+    CHECK(!event.try_consume());
+    //
+    // Cleanup
+    //
+    CHECK(waiter.remove_all_events());
+    CHECK(waiter.events_count() == 0);
+    event.unbind();
+    CHECK(!event.is_bound());
+}
+
+TEST_CASE("concurency.events_waiting. Event (manual reset)")
+{
+    events_waiter waiter;
+
+    CHECK(waiter.events_count() == 0);
+    //
+    // Binding event
+    //
+    event_controller event(waiter, true, true);
+    //
+    // Successful consume
+    //
+    for(std::size_t index = 0; index < 5; ++index)
+    {
+        CHECK(event.try_consume());
+    }
+    //
+    // Failed consume
+    //
+    CHECK(event.reset());
+    CHECK(!event.try_consume());
+    //
+    // Cleanup
+    //
+    CHECK(waiter.remove_all_events());
+    CHECK(waiter.events_count() == 0);
+    event.unbind();
+    CHECK(!event.is_bound());
 }

@@ -2,9 +2,10 @@
 
 project(gkr-basics)
 
+option(GKR_BUILD_TESTS "Build unit tests for the library" ON)
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-include(CTest)
 include(dependencies)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -76,6 +77,7 @@ target_sources(
 
 target_include_directories(gkr-basics PUBLIC "include")
 
-if(BUILD_TESTING)
+if(GKR_BUILD_TESTS)
+enable_testing()
 add_subdirectory(tests)
 endif()

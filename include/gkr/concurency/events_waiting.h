@@ -325,7 +325,7 @@ class event_controller final
 
 private:
     events_waiter* m_waiter {nullptr};
-    std::size_t    m_index  {0};
+    std::size_t    m_index  {std::size_t(-1)};
 
     friend class events_waiter;
 
@@ -341,13 +341,13 @@ public:
 
     event_controller(event_controller&& other) noexcept
         : m_waiter(std::exchange(other.m_waiter, nullptr))
-        , m_index (std::exchange(other.m_index , 0))
+        , m_index (std::exchange(other.m_index , std::size_t(-1)))
     {
     }
     event_controller& operator=(event_controller&& other) noexcept
     {
         m_waiter = std::exchange(other.m_waiter, nullptr);
-        m_index  = std::exchange(other.m_index , 0);
+        m_index  = std::exchange(other.m_index , std::size_t(-1));
         return *this;
     }
 
@@ -363,6 +363,11 @@ public:
         if(!waiter.add_event(manual_reset, initial_state, m_index)) return false;
         m_waiter = &waiter;
         return true;
+    }
+    void unbind() noexcept
+    {
+        m_waiter = nullptr;
+        m_index  = std::size_t(-1);
     }
     bool is_bound() const noexcept
     {
@@ -442,6 +447,11 @@ private:
     event_controller m_event_controller;
 
 public:
+    mutex_controller(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+        : m_event_controller(waiter, false, true)
+    {
+    }
+
     mutex_controller() noexcept = default;
    ~mutex_controller() noexcept = default;
 
@@ -464,6 +474,10 @@ public:
     bool bind_with(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
     {
         return m_event_controller.bind_with(waiter, false, true);
+    }
+    void unbind() noexcept
+    {
+        return m_event_controller.unbind();
     }
     bool is_bound() const noexcept
     {
@@ -510,6 +524,12 @@ private:
     std::atomic<std::size_t> m_arives {0};
 
 public:
+    barier_controller(std::size_t count, events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+        : m_event_controller(waiter, true, false)
+        , m_count(count)
+    {
+    }
+
     barier_controller(std::size_t count) : m_count(count) {}
 
     barier_controller() noexcept = default;
@@ -534,6 +554,10 @@ public:
     bool bind_with(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
     {
         return m_event_controller.bind_with(waiter, true, false);
+    }
+    void unbind() noexcept
+    {
+        return m_event_controller.unbind();
     }
     bool is_bound() const noexcept
     {

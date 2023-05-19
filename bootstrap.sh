@@ -9,9 +9,10 @@ cd Catch2
 git checkout --detach 3f0283de7a9c43200033da996ff9093be3ac84dc
 mkdir build
 cd build
-cmake ..
-cmake --build . --config Debug   --target INSTALL
-cmake --build . --config Release --target INSTALL
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make install
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make install
 cd ../..
 cd ..
 rm -rf tmp

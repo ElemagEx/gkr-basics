@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/bin/sh
 rm -rf tmp
 mkdir tmp
 cd tmp

@@ -393,6 +393,8 @@ public:
     {
         if(this == &other) return true;
 
+        if(size() != other.size()) return false;
+
         const_iterator  this_begin = this->begin(),  this_end = this->end();
         const_iterator other_begin = other.begin(), other_end = other.end();
 

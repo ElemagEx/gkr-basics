@@ -397,6 +397,9 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Comparison", "", int, Data
 
             bag_t bag3;
 
+            CHECK(bag3.empty());
+            CHECK(bag3 != bag1);
+
             bag3.insert(value_t(3));
             bag3.insert(value_t(3));
             bag3.insert(value_t(1));

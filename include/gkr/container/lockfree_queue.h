@@ -23,11 +23,13 @@
 #error  You must use C++14 or preinclude implementation of std::exchange
 #endif
 
+#include <cassert>
+
 #ifndef DIAG_NOEXCEPT
 #define DIAG_NOEXCEPT true
 #endif
 #ifndef Assert_NotNullPtr
-#define Assert_NotNullPtr(ptr)
+#define Assert_NotNullPtr(ptr) assert(ptr)
 #endif
 #ifndef Assert_Check
 #define Assert_Check(cond)
@@ -674,8 +676,9 @@ protected:
     static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
 
 private:
+    long long                m_ns_to_wait {initial_ns_to_wait};
     std::atomic<tid_owner_t> m_tid_paused {0};
-    long long                m_ns_to_wait = initial_ns_to_wait;
+    std::atomic<std::size_t> m_op_threads {0};
 
 protected:
     queue_pausing() noexcept(std::is_nothrow_default_constructible<base_t>::value) = default;
@@ -683,17 +686,19 @@ protected:
 
     queue_pausing(queue_pausing&& other) noexcept(std::is_nothrow_move_constructible<base_t>::value)
         : base_t(other)
-        , m_tid_paused(other.m_tid_paused.exchange(0))
         , m_ns_to_wait(std::exchange(other.m_ns_to_wait, initial_ns_to_wait))
+        , m_tid_paused(other.m_tid_paused.exchange(0))
+        , m_op_threads(other.m_op_threads.exchange(0))
     {
     }
     queue_pausing& operator=(queue_pausing&& other) noexcept(std::is_nothrow_move_assignable<base_t>::value)
     {
         base_t::operator=(std::move(other));
 
-        m_tid_paused = other.m_tid_paused.exchange(0);
-
         m_ns_to_wait = std::exchange(other.m_ns_to_wait, initial_ns_to_wait);
+
+        m_tid_paused = other.m_tid_paused.exchange(0);
+        m_op_threads = other.m_op_threads.exchange(0);
         return *this;
     }
 
@@ -701,9 +706,10 @@ protected:
     {
         base_t::swap(other);
 
-        m_tid_paused = other.m_tid_paused.exchange(m_tid_paused);
-
         std::swap(m_ns_to_wait, other.m_ns_to_wait);
+
+        m_tid_paused = other.m_tid_paused.exchange(m_tid_paused);
+        m_op_threads = other.m_op_threads.exchange(m_op_threads);
     }
 
 protected:
@@ -714,20 +720,31 @@ protected:
         return values.tid_owner;
     }
 
+private:
+    friend class prevent_pause_sentry;
+    friend class pause_resume_sentry;
+
 protected:
     void wait_a_while() noexcept
     {
         std::this_thread::sleep_for(std::chrono::nanoseconds(m_ns_to_wait));
     }
-    void ensure_not_paused() noexcept
+
+private:
+    void enter_no_pause() noexcept
     {
         while(m_tid_paused != 0)
         {
             wait_a_while();
         }
+        ++m_op_threads;
+    }
+    void leave_no_pause() noexcept
+    {
+        --m_op_threads;
     }
 
-protected:
+private:
     void pause() noexcept
     {
         for( ; ; )
@@ -736,13 +753,45 @@ protected:
             if(m_tid_paused.compare_exchange_weak(expected, get_current_tid())) break;
             wait_a_while();
         }
+        while(m_op_threads > 0)
+        {
+            wait_a_while();
+        }
     }
-    void resume() noexcept(DIAG_NOEXCEPT)
+    void resume() noexcept
     {
-        Check_ValidState(m_tid_paused == get_current_tid(), );
-
         m_tid_paused = 0;
     }
+
+protected:
+    class [[nodiscard]] prevent_pause_sentry
+    {
+        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
+        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
+
+        prevent_pause_sentry           (const prevent_pause_sentry&) noexcept = delete;
+        prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
+
+        queue_pausing& m_qp;
+
+    public:
+        prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_no_pause(); }
+       ~prevent_pause_sentry()                             { m_qp.leave_no_pause(); }
+    };
+    class [[nodiscard]] pause_resume_sentry
+    {
+        pause_resume_sentry           (pause_resume_sentry&&) noexcept = delete;
+        pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
+
+        pause_resume_sentry           (const pause_resume_sentry&) noexcept = delete;
+        pause_resume_sentry& operator=(const pause_resume_sentry&) noexcept = delete;
+
+        queue_pausing& m_qp;
+
+    public:
+        pause_resume_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.pause (); }
+       ~pause_resume_sentry()                             { m_qp.resume(); }
+    };
 
 public:
     template<typename Rep, typename Period>
@@ -888,7 +937,7 @@ protected:
     }
     void resize(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(capacity > m_capacity);
+        Assert_Check(capacity >= m_count);
 
         base_t::resize(capacity);
 
@@ -917,9 +966,9 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_producer_element_ownership()) return npos;
+        auto sentry = base_t::prevent_pause_sentry(*this);
 
-        base_t::ensure_not_paused();
+        if(!can_take_producer_element_ownership()) return npos;
 
         if(m_count == m_capacity)
         {
@@ -937,6 +986,8 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        auto sentry = base_t::prevent_pause_sentry(*this);
+
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
         if(index == npos) return false;
@@ -964,9 +1015,9 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_consumer_element_ownership()) return npos;
+        auto sentry = base_t::prevent_pause_sentry(*this);
 
-        base_t::ensure_not_paused();
+        if(!can_take_consumer_element_ownership()) return npos;
 
         if(m_count == 0)
         {
@@ -984,6 +1035,8 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        auto sentry = base_t::prevent_pause_sentry(*this);
+
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
         if(index == npos) return false;
@@ -1037,8 +1090,6 @@ protected:
     template<typename Rep, typename Period>
     std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_producer_element_ownership()) return npos;
-
         for( ; ; )
         {
             const std::size_t index = try_take_producer_element_ownership();
@@ -1051,8 +1102,6 @@ protected:
     template<typename Rep, typename Period>
     std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_consumer_element_ownership()) return npos;
-
         for( ; ; )
         {
             const std::size_t index = try_take_consumer_element_ownership();
@@ -1127,7 +1176,7 @@ protected:
         std::is_nothrow_destructible<base_t       >::value
         )
     {
-        clear();
+        clean();
     }
 
 protected:
@@ -1151,7 +1200,7 @@ protected:
     }
     basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-        clear();
+        clean();
 
         base_t::operator=(std::move(other));
 
@@ -1190,7 +1239,7 @@ protected:
     }
 
 private:
-    void clear() noexcept
+    void clean() noexcept
     {
         if(m_entries != nullptr)
         {
@@ -1298,7 +1347,7 @@ protected:
 
         if(capacity != m_capacity)
         {
-            clear();
+            clean();
 
             m_capacity = capacity;
 
@@ -1327,11 +1376,11 @@ protected:
     }
     void resize(std::size_t capacity) noexcept(false)
     {
-        Assert_Check(capacity > m_capacity);
+        Assert_Check(capacity >= m_count);
 
         base_t::resize(capacity);
 
-        clear();
+        clean();
 
         dequeues_entry* entries = m_allocator.allocate(capacity);
 
@@ -1367,9 +1416,9 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_producer_element_ownership()) return npos;
+        auto sentry = base_t::prevent_pause_sentry(*this);
 
-        base_t::ensure_not_paused();
+        if(!can_take_producer_element_ownership()) return npos;
 
         if(++m_occupied > m_capacity)
         {
@@ -1388,6 +1437,8 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        auto sentry = base_t::prevent_pause_sentry(*this);
+
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
         if(index == npos) return false;
@@ -1421,9 +1472,9 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_consumer_element_ownership()) return npos;
+        auto sentry = base_t::prevent_pause_sentry(*this);
 
-        base_t::ensure_not_paused();
+        if(!can_take_consumer_element_ownership()) return npos;
 
         if(std::ptrdiff_t(--m_available) < 0)
         {
@@ -1442,6 +1493,8 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        auto sentry = base_t::prevent_pause_sentry(*this);
+
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
         if(index == npos) return false;
@@ -1512,8 +1565,6 @@ protected:
     template<typename Rep, typename Period>
     std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_producer_element_ownership()) return npos;
-
         for( ; ; )
         {
             const std::size_t index = try_take_producer_element_ownership();
@@ -1526,8 +1577,6 @@ protected:
     template<typename Rep, typename Period>
     std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
-        if(!can_take_consumer_element_ownership()) return npos;
-
         for( ; ; )
         {
             const std::size_t index = try_take_consumer_element_ownership();
@@ -1735,14 +1784,19 @@ public:
     }
 
 public:
-    void reset(std::size_t capacity = npos) noexcept(false)
+    void reset() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
-        if((capacity == npos) || (capacity == base_t::capacity()))
+        for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
         {
-            base_t::reset(base_t::capacity());
-            return;
+            if(base_t::element_has_value(index, pos))
+            {
+                destroy_element(index);
+            }
         }
-
+        base_t::reset(base_t::capacity());
+    }
+    void reset(std::size_t capacity) noexcept(false)
+    {
         clear();
         base_t::reset(capacity);
 
@@ -1759,11 +1813,11 @@ public:
 public:
     bool resize(std::size_t capacity) noexcept(false)
     {
-        if(capacity <= base_t::capacity()) return false;
+        auto sentry = base_t::pause_resume_sentry(*this);
+
+        if(capacity <= base_t::count()) return false;
 
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
-
-        base_t::pause();//pause_resume_sentry
 
         while(base_t::some_thread_owns_element())
         {
@@ -1785,7 +1839,6 @@ public:
         m_elements = elements;
 
         base_t::resize(capacity);
-        base_t::resume();
         return true;
     }
 
@@ -2573,11 +2626,11 @@ public:
 public:
     bool resize(std::size_t capacity) noexcept(false)
     {
-        if(capacity <= base_t::capacity()) return false;
+        auto sentry = base_t::pause_resume_sentry(*this);
+
+        if(capacity <= base_t::count()) return false;
 
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
-
-        base_t::pause();//pause_resume_sentry
 
         while(base_t::some_thread_owns_element())
         {
@@ -2603,11 +2656,12 @@ public:
         m_offset   = offset;
 
         base_t::resize(capacity);
-        base_t::resume();
         return true;
     }
     bool change_element_size(std::size_t size, void** owned_elements = nullptr, std::size_t count_elements = 1) noexcept(false)
     {
+        auto sentry = base_t::pause_resume_sentry(*this);
+
         if(size <= m_size) return false;
 
         if(owned_elements == nullptr)
@@ -2618,8 +2672,6 @@ public:
 
         std::size_t pos = npos;
         Check_Arg_Array(index, count_elements, base_t::element_has_value(index_of_element(owned_elements[index]), pos), false);
-
-        base_t::pause();//pause_resume_sentry
 
         while(base_t::some_thread_owns_elements(count_elements))
         {
@@ -2662,7 +2714,6 @@ public:
             m_stride   = stride;
         }
         m_size = size;
-        base_t::resume();
         return true;
     }
 

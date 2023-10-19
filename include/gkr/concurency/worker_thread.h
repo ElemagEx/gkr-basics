@@ -149,7 +149,7 @@ private:
         void*                  param;
         action_param_deleter_t deleter;
     };
-    using actions_queue_t = waitable_lockfree_queue<queued_action_t, true>;
+    using actions_queue_t = waitable_lockfree_queue<queued_action_t, true, true>;
 
     reentrancy_t m_reentrancy = {};
     func_t       m_func       = {};

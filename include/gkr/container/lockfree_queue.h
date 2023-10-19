@@ -516,30 +516,43 @@ public:
 namespace impl
 {
 
+using queue_tid_t = long long;
+
+inline queue_tid_t get_current_tid() noexcept
+{
+    union { queue_tid_t tid; std::thread::id id; } values {0};
+    values.id = std::this_thread::get_id();
+    return values.tid;
+}
+inline queue_tid_t get_other_tid(const std::thread& thread)
+{
+    union { queue_tid_t tid; std::thread::id id; } values {0};
+    values.id = thread.get_id();
+    return values.tid;
+}
+
 class queue_threading
 {
     queue_threading           (const queue_threading&) noexcept = delete;
     queue_threading& operator=(const queue_threading&) noexcept = delete;
 
 private:
-    using thread_id_t = std::thread::id;
-
-    thread_id_t m_producer_tid;
-    thread_id_t m_consumer_tid;
+    queue_tid_t m_producer_tid = 0;
+    queue_tid_t m_consumer_tid = 0;
 
 public:
     queue_threading() noexcept = default;
    ~queue_threading() noexcept = default;
 
     queue_threading(queue_threading&& other) noexcept
-        : m_producer_tid(std::exchange(other.m_producer_tid, thread_id_t()))
-        , m_consumer_tid(std::exchange(other.m_consumer_tid, thread_id_t()))
+        : m_producer_tid(std::exchange(other.m_producer_tid, 0))
+        , m_consumer_tid(std::exchange(other.m_consumer_tid, 0))
     {
     }
     queue_threading& operator=(queue_threading&& other) noexcept
     {
-        m_producer_tid = std::exchange(other.m_producer_tid, thread_id_t());
-        m_consumer_tid = std::exchange(other.m_consumer_tid, thread_id_t());
+        m_producer_tid = std::exchange(other.m_producer_tid, 0);
+        m_consumer_tid = std::exchange(other.m_consumer_tid, 0);
         return *this;
     }
     void swap(queue_threading& other) noexcept
@@ -551,38 +564,38 @@ public:
 public:
     void set_this_thread_as_exclusive_producer() noexcept
     {
-        m_producer_tid = std::this_thread::get_id();
+        m_producer_tid = get_current_tid();
     }
     void set_thread_as_exclusive_producer(const std::thread& thread) noexcept
     {
-        m_producer_tid = thread.get_id();
+        m_producer_tid = get_other_tid(thread);
     }
     void any_thread_can_be_producer() noexcept
     {
-        m_producer_tid = thread_id_t();
+        m_producer_tid = 0;
     }
 
     void set_this_thread_as_exclusive_consumer() noexcept
     {
-        m_consumer_tid = std::this_thread::get_id();
+        m_consumer_tid = get_current_tid();
     }
     void set_thread_as_exclusive_consumer(const std::thread& thread) noexcept
     {
-        m_consumer_tid = thread.get_id();
+        m_consumer_tid = get_other_tid(thread);
     }
     void any_thread_can_be_consumer() noexcept
     {
-        m_consumer_tid = thread_id_t();
+        m_consumer_tid = 0;
     }
 
 public:
     bool this_thread_is_valid_producer() const noexcept
     {
-        return (m_producer_tid == thread_id_t()) || (m_producer_tid == std::this_thread::get_id());
+        return (m_producer_tid == 0) || (m_producer_tid == get_current_tid());
     }
     bool this_thread_is_valid_consumer() const noexcept
     {
-        return (m_consumer_tid == thread_id_t()) || (m_consumer_tid == std::this_thread::get_id());
+        return (m_consumer_tid == 0) || (m_consumer_tid == get_current_tid());
     }
 };
 
@@ -662,8 +675,59 @@ protected:
 #endif
 };
 
+template<bool Pausable, typename WaitSupport>
+class queue_pausing;
+
 template<typename WaitSupport>
-class queue_pausing : public WaitSupport
+class queue_pausing<false, WaitSupport> : public WaitSupport
+{
+    queue_pausing           (const queue_pausing&) noexcept = delete;
+    queue_pausing& operator=(const queue_pausing&) noexcept = delete;
+
+    using self_t = queue_pausing<false, WaitSupport>;
+    using base_t = WaitSupport;
+
+protected:
+    queue_pausing() noexcept(std::is_nothrow_default_constructible<base_t>::value) = default;
+   ~queue_pausing() noexcept(std::is_nothrow_destructible         <base_t>::value) = default;
+
+    queue_pausing(queue_pausing&& other) noexcept(std::is_nothrow_move_constructible<base_t>::value)
+        : base_t(other)
+    {
+    }
+    queue_pausing& operator=(queue_pausing&& other) noexcept(std::is_nothrow_move_assignable<base_t>::value)
+    {
+        base_t::operator=(std::move(other));
+        return *this;
+    }
+
+    void swap(queue_pausing& other) noexcept(std::is_nothrow_swappable<base_t>::value)
+    {
+        base_t::swap(other);
+    }
+
+protected:
+    class prevent_pause_sentry
+    {
+        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
+        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
+
+        prevent_pause_sentry           (const prevent_pause_sentry&) noexcept = delete;
+        prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
+
+    public:
+        prevent_pause_sentry(self_t& qp) {};
+       ~prevent_pause_sentry() = default;
+    };
+
+public:
+    template<typename Rep, typename Period>
+    void set_wait_a_while_duration(std::chrono::duration<Rep, Period> timeout) noexcept
+    {
+    }
+};
+template<typename WaitSupport>
+class queue_pausing<true, WaitSupport> : public WaitSupport
 {
     queue_pausing           (const queue_pausing&) noexcept = delete;
     queue_pausing& operator=(const queue_pausing&) noexcept = delete;
@@ -671,14 +735,12 @@ class queue_pausing : public WaitSupport
     using base_t = WaitSupport;
 
 protected:
-    using tid_owner_t = long long;
-
     static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
 
 private:
     long long                m_ns_to_wait {initial_ns_to_wait};
-    std::atomic<tid_owner_t> m_tid_paused {0};
     std::atomic<std::size_t> m_op_threads {0};
+    std::atomic<queue_tid_t> m_tid_paused {0};
 
 protected:
     queue_pausing() noexcept(std::is_nothrow_default_constructible<base_t>::value) = default;
@@ -687,8 +749,8 @@ protected:
     queue_pausing(queue_pausing&& other) noexcept(std::is_nothrow_move_constructible<base_t>::value)
         : base_t(other)
         , m_ns_to_wait(std::exchange(other.m_ns_to_wait, initial_ns_to_wait))
-        , m_tid_paused(other.m_tid_paused.exchange(0))
         , m_op_threads(other.m_op_threads.exchange(0))
+        , m_tid_paused(other.m_tid_paused.exchange(0))
     {
     }
     queue_pausing& operator=(queue_pausing&& other) noexcept(std::is_nothrow_move_assignable<base_t>::value)
@@ -697,8 +759,8 @@ protected:
 
         m_ns_to_wait = std::exchange(other.m_ns_to_wait, initial_ns_to_wait);
 
-        m_tid_paused = other.m_tid_paused.exchange(0);
         m_op_threads = other.m_op_threads.exchange(0);
+        m_tid_paused = other.m_tid_paused.exchange(0);
         return *this;
     }
 
@@ -708,21 +770,9 @@ protected:
 
         std::swap(m_ns_to_wait, other.m_ns_to_wait);
 
-        m_tid_paused = other.m_tid_paused.exchange(m_tid_paused);
         m_op_threads = other.m_op_threads.exchange(m_op_threads);
+        m_tid_paused = other.m_tid_paused.exchange(m_tid_paused);
     }
-
-protected:
-    static tid_owner_t get_current_tid() noexcept
-    {
-        union { tid_owner_t tid_owner; std::thread::id id; } values {};
-        values.id = std::this_thread::get_id();
-        return values.tid_owner;
-    }
-
-private:
-    friend class prevent_pause_sentry;
-    friend class pause_resume_sentry;
 
 protected:
     void wait_a_while() noexcept
@@ -749,7 +799,7 @@ private:
     {
         for( ; ; )
         {
-            tid_owner_t expected = 0;
+            queue_tid_t expected = 0;
             if(m_tid_paused.compare_exchange_weak(expected, get_current_tid())) break;
             wait_a_while();
         }
@@ -763,8 +813,12 @@ private:
         m_tid_paused = 0;
     }
 
+private:
+    friend class prevent_pause_sentry;
+    friend class pause_resume_sentry;
+
 protected:
-    class [[nodiscard]] prevent_pause_sentry
+    class prevent_pause_sentry
     {
         prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
         prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
@@ -778,7 +832,7 @@ protected:
         prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_no_pause(); }
        ~prevent_pause_sentry()                             { m_qp.leave_no_pause(); }
     };
-    class [[nodiscard]] pause_resume_sentry
+    class pause_resume_sentry
     {
         pause_resume_sentry           (pause_resume_sentry&&) noexcept = delete;
         pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
@@ -801,11 +855,11 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, typename WaitSupport, typename BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, bool Pausable, typename WaitSupport, typename BaseAllocator>
 class basic_lockfree_queue;
 
-template<typename WaitSupport, typename BaseAllocator>
-class basic_lockfree_queue<false, WaitSupport, BaseAllocator> : public queue_pausing<WaitSupport>
+template<bool Pausable, typename WaitSupport, typename BaseAllocator>
+class basic_lockfree_queue<false, Pausable, WaitSupport, BaseAllocator> : public queue_pausing<Pausable, WaitSupport>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -816,9 +870,7 @@ public:
     queue_threading threading;
 
 private:
-    using base_t = queue_pausing<WaitSupport>;
-
-    using tid_owner_t = typename base_t::tid_owner_t;
+    using base_t = queue_pausing<Pausable, WaitSupport>;
 
     std::atomic<std::size_t> m_count {0};
 
@@ -826,8 +878,8 @@ private:
     std::size_t m_tail_pos = 0;
     std::size_t m_head_pos = 0;
 
-    tid_owner_t m_producer_tid_owner = 0;
-    tid_owner_t m_consumer_tid_owner = 0;
+    queue_tid_t m_producer_tid_owner = 0;
+    queue_tid_t m_consumer_tid_owner = 0;
 
 protected:
     basic_lockfree_queue() noexcept = delete;
@@ -966,7 +1018,7 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_producer_element_ownership()) return npos;
 
@@ -977,7 +1029,7 @@ protected:
         }
         base_t::notify_producer_ownership_start();
 
-        m_producer_tid_owner = base_t::get_current_tid();
+        m_producer_tid_owner = get_current_tid();
 
         const std::size_t index = (m_tail_pos % m_capacity);
 
@@ -986,13 +1038,13 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
         if(index == npos) return false;
 
-        Check_ValidState(m_producer_tid_owner == base_t::get_current_tid(), false);
+        Check_ValidState(m_producer_tid_owner == get_current_tid(), false);
 
         Check_Arg_IsValid(index == (m_tail_pos % m_capacity), false);
 
@@ -1015,7 +1067,7 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_consumer_element_ownership()) return npos;
 
@@ -1026,7 +1078,7 @@ protected:
         }
         base_t::notify_consumer_ownership_start();
 
-        m_consumer_tid_owner = base_t::get_current_tid();
+        m_consumer_tid_owner = get_current_tid();
 
         const std::size_t index = (m_head_pos % m_capacity);
 
@@ -1035,13 +1087,13 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
         if(index == npos) return false;
 
-        Check_ValidState(m_consumer_tid_owner == base_t::get_current_tid(), false);
+        Check_ValidState(m_consumer_tid_owner == get_current_tid(), false);
 
         Check_ValidState(index == (m_head_pos % m_capacity), false);
 
@@ -1064,7 +1116,7 @@ protected:
 protected:
     bool this_thread_owns_elements(std::size_t count) const noexcept
     {
-        const tid_owner_t current_tid = base_t::get_current_tid();
+        const queue_tid_t current_tid = get_current_tid();
 
         if(m_producer_tid_owner == current_tid) --count;
         if(m_consumer_tid_owner == current_tid) --count;
@@ -1113,8 +1165,8 @@ protected:
     }
 #endif
 };
-template<typename WaitSupport, typename BaseAllocator>
-class basic_lockfree_queue<true, WaitSupport, BaseAllocator> : public queue_pausing<WaitSupport>
+template<bool Pausable, typename WaitSupport, typename BaseAllocator>
+class basic_lockfree_queue<true, Pausable, WaitSupport, BaseAllocator> : public queue_pausing<Pausable, WaitSupport>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -1125,15 +1177,13 @@ public:
     queue_threading threading;
 
 private:
-    using base_t = queue_pausing<WaitSupport>;
-
-    using tid_owner_t = typename base_t::tid_owner_t;
+    using base_t = queue_pausing<Pausable, WaitSupport>;
 
     struct dequeues_entry
     {
         std::size_t free_index;
         std::size_t busy_index;
-        tid_owner_t  tid_owner;
+        queue_tid_t tid_owner;
     };
     static_assert(std::is_trivial<dequeues_entry>::value, "Must be trivial");
 
@@ -1416,7 +1466,7 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_producer_element_ownership()) return npos;
 
@@ -1430,14 +1480,14 @@ protected:
 
         const std::size_t index = m_entries[m_free_head++ % m_capacity].free_index;
 
-        m_entries[index].tid_owner = base_t::get_current_tid();
+        m_entries[index].tid_owner = get_current_tid();
 
         return index;
     }
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
@@ -1445,7 +1495,7 @@ protected:
 
         Check_Arg_IsValid(index < m_capacity, false);
 
-        Check_Arg_IsValid(m_entries[index].tid_owner == base_t::get_current_tid(), false);
+        Check_Arg_IsValid(m_entries[index].tid_owner == get_current_tid(), false);
 
         m_entries[index].tid_owner = 0;
 
@@ -1472,7 +1522,7 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_consumer_element_ownership()) return npos;
 
@@ -1486,14 +1536,14 @@ protected:
 
         const std::size_t index = m_entries[m_busy_head++ % m_capacity].busy_index;
 
-        m_entries[index].tid_owner = base_t::get_current_tid();
+        m_entries[index].tid_owner = get_current_tid();
 
         return index;
     }
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        auto sentry = base_t::prevent_pause_sentry(*this);
+        auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
@@ -1501,7 +1551,7 @@ protected:
 
         Check_Arg_IsValid(index < m_capacity, false);
 
-        Check_Arg_IsValid(m_entries[index].tid_owner == base_t::get_current_tid(), false);
+        Check_Arg_IsValid(m_entries[index].tid_owner == get_current_tid(), false);
 
         m_entries[index].tid_owner = 0;
 
@@ -1528,7 +1578,7 @@ protected:
 protected:
     bool this_thread_owns_elements(std::size_t count) const noexcept
     {
-        const tid_owner_t current_tid = base_t::get_current_tid();
+        const queue_tid_t current_tid = get_current_tid();
 
         for(std::size_t index = 0; index < m_capacity; ++index)
         {
@@ -1594,18 +1644,19 @@ protected:
 template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
+    bool Pausable=false,
     typename WaitSupport  =impl::queue_no_wait_support,
     typename BaseAllocator=std::allocator<char>
     >
 class lockfree_queue
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -1813,7 +1864,9 @@ public:
 public:
     bool resize(std::size_t capacity) noexcept(false)
     {
-        auto sentry = base_t::pause_resume_sentry(*this);
+        static_assert(Pausable, "Cannot resize not pausable queue");
+
+        auto sentry = typename base_t::pause_resume_sentry(*this);
 
         if(capacity <= base_t::count()) return false;
 
@@ -2305,18 +2358,19 @@ public:
 };
 template<
     bool MultipleConsumersMultipleProducersSupport,
+    bool Pausable,
     typename WaitSupport,
     typename BaseAllocator
     >
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
 
 public:
     using base_t::npos;
@@ -2626,7 +2680,9 @@ public:
 public:
     bool resize(std::size_t capacity) noexcept(false)
     {
-        auto sentry = base_t::pause_resume_sentry(*this);
+        static_assert(Pausable, "Cannot resize not pausable queue");
+
+        auto sentry = typename base_t::pause_resume_sentry(*this);
 
         if(capacity <= base_t::count()) return false;
 
@@ -2660,7 +2716,9 @@ public:
     }
     bool change_element_size(std::size_t size, void** owned_elements = nullptr, std::size_t count_elements = 1) noexcept(false)
     {
-        auto sentry = base_t::pause_resume_sentry(*this);
+        static_assert(Pausable, "Cannot change element size of not pausable queue");
+
+        auto sentry = typename base_t::pause_resume_sentry(*this);
 
         if(size <= m_size) return false;
 
@@ -2986,15 +3044,16 @@ namespace std
 template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport,
+    bool Pausable,
     typename WaitSupport,
     typename BaseAllocator
     >
 void swap(
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>& lhs,
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>& rhs
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>& lhs,
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>& rhs
     )
     noexcept(
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, WaitSupport, BaseAllocator>::swap_is_noexcept
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>::swap_is_noexcept
     )
 {
     lhs.swap(rhs);

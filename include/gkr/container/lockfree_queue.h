@@ -53,6 +53,10 @@
 
 namespace gkr
 {
+
+constexpr std::size_t queue_npos = std::size_t(-1);
+
+
 template<typename Queue, typename Element>
 class queue_producer_element
 {
@@ -707,7 +711,7 @@ protected:
     }
 
 protected:
-    class prevent_pause_sentry
+    class [[nodiscard]] prevent_pause_sentry
     {
         prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
         prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
@@ -781,7 +785,7 @@ protected:
     }
 
 private:
-    void enter_no_pause() noexcept
+    void enter_pause_prevention() noexcept
     {
         while(m_tid_paused != 0)
         {
@@ -789,7 +793,7 @@ private:
         }
         ++m_op_threads;
     }
-    void leave_no_pause() noexcept
+    void leave_pause_prevention() noexcept
     {
         --m_op_threads;
     }
@@ -818,7 +822,7 @@ private:
     friend class pause_resume_sentry;
 
 protected:
-    class prevent_pause_sentry
+    class [[nodiscard]] prevent_pause_sentry
     {
         prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
         prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
@@ -829,10 +833,10 @@ protected:
         queue_pausing& m_qp;
 
     public:
-        prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_no_pause(); }
-       ~prevent_pause_sentry()                             { m_qp.leave_no_pause(); }
+        prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_pause_prevention(); }
+       ~prevent_pause_sentry()                             { m_qp.leave_pause_prevention(); }
     };
-    class pause_resume_sentry
+    class [[nodiscard]] pause_resume_sentry
     {
         pause_resume_sentry           (pause_resume_sentry&&) noexcept = delete;
         pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
@@ -865,8 +869,6 @@ class basic_lockfree_queue<false, Pausable, WaitSupport, BaseAllocator> : public
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
 
 public:
-    static constexpr std::size_t npos = std::size_t(-1);
-
     queue_threading threading;
 
 private:
@@ -1020,12 +1022,12 @@ protected:
     {
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
-        if(!can_take_producer_element_ownership()) return npos;
+        if(!can_take_producer_element_ownership()) return queue_npos;
 
         if(m_count == m_capacity)
         {
             base_t::notify_producer_ownership_fail();
-            return npos;
+            return queue_npos;
         }
         base_t::notify_producer_ownership_start();
 
@@ -1042,7 +1044,7 @@ protected:
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
-        if(index == npos) return false;
+        if(index == queue_npos) return false;
 
         Check_ValidState(m_producer_tid_owner == get_current_tid(), false);
 
@@ -1069,12 +1071,12 @@ protected:
     {
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
-        if(!can_take_consumer_element_ownership()) return npos;
+        if(!can_take_consumer_element_ownership()) return queue_npos;
 
         if(m_count == 0)
         {
             base_t::notify_consumer_ownership_fail();
-            return npos;
+            return queue_npos;
         }
         base_t::notify_consumer_ownership_start();
 
@@ -1091,7 +1093,7 @@ protected:
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
-        if(index == npos) return false;
+        if(index == queue_npos) return false;
 
         Check_ValidState(m_consumer_tid_owner == get_current_tid(), false);
 
@@ -1146,9 +1148,9 @@ protected:
         {
             const std::size_t index = try_take_producer_element_ownership();
 
-            if(index != npos) return index;
+            if(index != queue_npos) return index;
 
-            if(!base_t::producer_wait(timeout)) return npos;
+            if(!base_t::producer_wait(timeout)) return queue_npos;
         }
     }
     template<typename Rep, typename Period>
@@ -1158,9 +1160,9 @@ protected:
         {
             const std::size_t index = try_take_consumer_element_ownership();
 
-            if(index != npos) return index;
+            if(index != queue_npos) return index;
 
-            if(!base_t::consumer_wait(timeout)) return npos;
+            if(!base_t::consumer_wait(timeout)) return queue_npos;
         }
     }
 #endif
@@ -1172,8 +1174,6 @@ class basic_lockfree_queue<true, Pausable, WaitSupport, BaseAllocator> : public 
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
 
 public:
-    static constexpr std::size_t npos = std::size_t(-1);
-
     queue_threading threading;
 
 private:
@@ -1468,13 +1468,13 @@ protected:
     {
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
-        if(!can_take_producer_element_ownership()) return npos;
+        if(!can_take_producer_element_ownership()) return queue_npos;
 
         if(++m_occupied > m_capacity)
         {
             --m_occupied;
             base_t::notify_producer_ownership_fail();
-            return npos;
+            return queue_npos;
         }
         base_t::notify_producer_ownership_start();
 
@@ -1491,7 +1491,7 @@ protected:
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
-        if(index == npos) return false;
+        if(index == queue_npos) return false;
 
         Check_Arg_IsValid(index < m_capacity, false);
 
@@ -1524,13 +1524,13 @@ protected:
     {
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
-        if(!can_take_consumer_element_ownership()) return npos;
+        if(!can_take_consumer_element_ownership()) return queue_npos;
 
         if(std::ptrdiff_t(--m_available) < 0)
         {
             ++m_available;
             base_t::notify_consumer_ownership_fail();
-            return npos;
+            return queue_npos;
         }
         base_t::notify_consumer_ownership_start();
 
@@ -1547,7 +1547,7 @@ protected:
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
-        if(index == npos) return false;
+        if(index == queue_npos) return false;
 
         Check_Arg_IsValid(index < m_capacity, false);
 
@@ -1619,9 +1619,9 @@ protected:
         {
             const std::size_t index = try_take_producer_element_ownership();
 
-            if(index != npos) return index;
+            if(index != queue_npos) return index;
 
-            if(!base_t::producer_wait(timeout)) return npos;
+            if(!base_t::producer_wait(timeout)) return queue_npos;
         }
     }
     template<typename Rep, typename Period>
@@ -1631,9 +1631,9 @@ protected:
         {
             const std::size_t index = try_take_consumer_element_ownership();
 
-            if(index != npos) return index;
+            if(index != queue_npos) return index;
 
-            if(!base_t::consumer_wait(timeout)) return npos;
+            if(!base_t::consumer_wait(timeout)) return queue_npos;
         }
     }
 #endif
@@ -1659,8 +1659,6 @@ private:
     using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
 
 public:
-    using base_t::npos;
-
     using element_t = T;
 
     using queue_producer_element_t = queue_producer_element<self_t, element_t>;
@@ -1745,7 +1743,7 @@ private:
     {
         if(m_elements != nullptr)
         {
-            for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+            for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -1767,7 +1765,7 @@ private:
         {
             elements = allocator.allocate(base_t::capacity());
 
-            for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+            for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -1835,9 +1833,9 @@ public:
     }
 
 public:
-    void reset() noexcept(std::is_nothrow_destructible<element_t>::value)
+    void reset() noexcept(!MultipleConsumersMultipleProducersSupport && std::is_nothrow_destructible<element_t>::value)
     {
-        for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
         {
             if(base_t::element_has_value(index, pos))
             {
@@ -1878,7 +1876,7 @@ public:
         }
         element_t* elements = m_allocator.allocate(capacity);
 
-        for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
         {
             if(base_t::element_has_value(index, pos))
             {
@@ -1904,7 +1902,7 @@ public:
     {
         const std::size_t index = base_t::try_take_producer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -1917,7 +1915,7 @@ public:
     {
         const std::size_t index = base_t::try_take_producer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -1930,7 +1928,7 @@ public:
     {
         const std::size_t index = base_t::try_take_producer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -1943,7 +1941,7 @@ public:
     {
         const std::size_t index = base_t::try_take_producer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -1953,7 +1951,7 @@ public:
     {
         const std::size_t index = base_t::try_take_consumer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -1963,11 +1961,11 @@ public:
 private:
     std::size_t index_of_element(element_t* element) const noexcept(DIAG_NOEXCEPT)
     {
-        if(element == nullptr) return npos;
+        if(element == nullptr) return queue_npos;
 
         const std::size_t index = std::size_t(element - m_elements);
 
-        Check_ValidState(index < base_t::capacity(), npos);
+        Check_ValidState(index < base_t::capacity(), queue_npos);
 
         return index;
     }
@@ -1983,7 +1981,7 @@ public:
 
         if_constexpr(!push)
         {
-            if(index != npos)
+            if(index != queue_npos)
             {
                 destroy_element(index);
             }
@@ -2000,7 +1998,7 @@ public:
 
         if_constexpr(pop)
         {
-            if(index != npos)
+            if(index != queue_npos)
             {
                 destroy_element(index);
             }
@@ -2132,7 +2130,7 @@ public:
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -2149,7 +2147,7 @@ public:
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -2165,7 +2163,7 @@ public:
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -2181,7 +2179,7 @@ public:
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -2197,7 +2195,7 @@ public:
     {
         const std::size_t index = base_t::take_consumer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
@@ -2373,8 +2371,6 @@ private:
     using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
 
 public:
-    using base_t::npos;
-
     using queue_producer_element_t = queue_producer_element<self_t, void>;
     using queue_consumer_element_t = queue_consumer_element<self_t, void>;
 
@@ -2625,19 +2621,19 @@ public:
     }
 
 public:
-    void reset(std::size_t capacity = npos, std::size_t size = npos, std::size_t alignment = npos) noexcept(false)
+    void reset() noexcept(!MultipleConsumersMultipleProducersSupport)
     {
-        Check_Arg_IsValid((alignment == npos) || (alignment == 0) || is_power_of_2(alignment), );
+        base_t::reset(base_t::capacity());
+    }
+    void reset(std::size_t capacity, std::size_t size = queue_npos, std::size_t alignment = queue_npos) noexcept(false)
+    {
+        Check_Arg_IsValid((alignment == queue_npos) || (alignment == 0) || is_power_of_2(alignment), );
 
-        if(capacity == npos)
-        {
-            capacity = base_t::capacity();
-        }
-        if(size != npos)
+        if(size != queue_npos)
         {
             m_size = size;
         }
-        if(alignment != npos)
+        if(alignment != queue_npos)
         {
             m_alignment = alignment;
         }
@@ -2699,7 +2695,7 @@ public:
 
         elements += offset;
 
-        for(std::size_t pos = npos, index = 0; index < base_t::capacity(); ++index)
+        for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
         {
             if(base_t::element_has_value(index, pos))
             {
@@ -2728,7 +2724,7 @@ public:
         }
         Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
 
-        std::size_t pos = npos;
+        std::size_t pos = queue_npos;
         Check_Arg_Array(index, count_elements, base_t::element_has_value(index_of_element(owned_elements[index]), pos), false);
 
         while(base_t::some_thread_owns_elements(count_elements))
@@ -2782,7 +2778,7 @@ public:
 
         const std::size_t index = base_t::try_take_producer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         void* element = m_elements + m_stride * index;
 
@@ -2804,7 +2800,7 @@ public:
 
         const std::size_t index = base_t::try_take_consumer_element_ownership();
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         void* element = m_elements + m_stride * index;
 
@@ -2822,11 +2818,11 @@ public:
 private:
     std::size_t index_of_element(void* element) const noexcept(DIAG_NOEXCEPT)
     {
-        if(element == nullptr) return npos;
+        if(element == nullptr) return queue_npos;
 
         const std::size_t index = std::size_t(static_cast<char*>(element) - m_elements) / m_stride;
 
-        Check_ValidState(index < base_t::capacity(), npos);
+        Check_ValidState(index < base_t::capacity(), queue_npos);
 
         return index;
     }
@@ -2866,7 +2862,7 @@ public:
     }
 
 public:
-    bool try_push(const void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool try_push(const void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = try_start_push();
 
@@ -2874,7 +2870,7 @@ public:
 
         if(data != nullptr)
         {
-            size = (size == npos)
+            size = (size == queue_npos)
                 ? m_size
                 : std::min(size, m_size)
                 ;
@@ -2882,7 +2878,7 @@ public:
         }
         return true;
     }
-    bool try_pop(void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool try_pop(void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = try_start_pop();
 
@@ -2890,7 +2886,7 @@ public:
 
         if(data != nullptr)
         {
-            size = (size == npos)
+            size = (size == queue_npos)
                 ? m_size
                 : std::min(size, m_size)
                 ;
@@ -2907,7 +2903,7 @@ public:
 
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         void* element = m_elements + m_stride * index;
 
@@ -2940,7 +2936,7 @@ public:
 
         const std::size_t index = base_t::take_consumer_element_ownership(timeout);
 
-        if(index == npos) return nullptr;
+        if(index == queue_npos) return nullptr;
 
         void* element = m_elements + m_stride * index;
 
@@ -2992,7 +2988,7 @@ public:
 
 public:
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, std::size_t size = npos)  noexcept(DIAG_NOEXCEPT)
+    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, std::size_t size = queue_npos)  noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = start_push(timeout);
 
@@ -3000,7 +2996,7 @@ public:
 
         if(data != nullptr)
         {
-            size = (size == npos)
+            size = (size == queue_npos)
                 ? m_size
                 : std::min(size, m_size)
                 ;
@@ -3008,13 +3004,13 @@ public:
         }
         return true;
     }
-    bool push(const void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool push(const void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
         return push(std::chrono::nanoseconds::max(), data, size);
     }
 
     template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = start_pop(timeout);
 
@@ -3022,7 +3018,7 @@ public:
 
         if(data != nullptr)
         {
-            size = (size == npos)
+            size = (size == queue_npos)
                 ? m_size
                 : std::min(size, m_size)
                 ;
@@ -3030,7 +3026,7 @@ public:
         }
         return true;
     }
-    bool pop(void* data = nullptr, std::size_t size = npos) noexcept(DIAG_NOEXCEPT)
+    bool pop(void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
         return pop(std::chrono::nanoseconds::max(), data, size);
     }

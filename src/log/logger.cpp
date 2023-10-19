@@ -114,11 +114,11 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     else
     {
         const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
-            ? lockfree_queue_t::npos
+            ? queue_npos
             : max_queue_entries
             ;
         const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
-            ? lockfree_queue_t::npos
+            ? queue_npos
             : max_message_chars + sizeof(message)
             ;
 

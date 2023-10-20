@@ -520,17 +520,22 @@ public:
 namespace impl
 {
 
-using queue_tid_t = long long;
+#ifdef _WIN32
+using queue_tid_t = int;
+#else
+using queue_tid_t = long;
+#endif
+static_assert(sizeof(queue_tid_t) == sizeof(std::thread::id), "The size of queue_tid_id must be equal to the size of std::thread::id");
 
 inline queue_tid_t get_current_tid() noexcept
 {
-    union { queue_tid_t tid; std::thread::id id; } values {0};
+    union { queue_tid_t tid; std::thread::id id; } values {};
     values.id = std::this_thread::get_id();
     return values.tid;
 }
 inline queue_tid_t get_other_tid(const std::thread& thread)
 {
-    union { queue_tid_t tid; std::thread::id id; } values {0};
+    union { queue_tid_t tid; std::thread::id id; } values {};
     values.id = thread.get_id();
     return values.tid;
 }
@@ -730,7 +735,8 @@ protected:
         prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
 
     public:
-        prevent_pause_sentry(self_t& qp) {};
+        [[nodiscard]] explicit
+        prevent_pause_sentry(self_t& qp) {}
        ~prevent_pause_sentry() = default;
     };
 
@@ -843,6 +849,7 @@ protected:
         queue_pausing& m_qp;
 
     public:
+        [[nodiscard]] explicit
         prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_pause_prevention(); }
        ~prevent_pause_sentry()                             { m_qp.leave_pause_prevention(); }
     };
@@ -857,6 +864,7 @@ protected:
         queue_pausing& m_qp;
 
     public:
+        [[nodiscard]] explicit
         pause_resume_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.pause (); }
        ~pause_resume_sentry()                             { m_qp.resume(); }
     };

@@ -55,7 +55,7 @@ protected:
         m_busy_count = 0;
         m_free_count = capacity;
 
-        if(capacity > 0)
+        if(m_free_count > 0)
         {
             m_has_space_event.fire();
         }
@@ -68,6 +68,15 @@ protected:
     void resize(std::size_t capacity) noexcept
     {
         m_free_count = capacity - m_busy_count;
+
+        if(m_free_count > 0)
+        {
+            m_has_space_event.fire();
+        }
+        else
+        {
+            m_has_space_event.reset();
+        }
     }
 
 protected:

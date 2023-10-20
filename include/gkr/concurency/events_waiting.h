@@ -173,7 +173,7 @@ private:
     {
         return ((wait_result_t(1) << m_events_count) - 1);
     }
-    bool mask_is_valid(wait_result_t mask)
+    bool mask_is_valid(wait_result_t mask) const noexcept
     {
         if(flag_is_set(Flag_AllowPartialEventsWait))
         {
@@ -184,13 +184,13 @@ private:
             return (mask == all_events_mask());
         }
     }
-    bool this_thread_can_wait()
+    bool this_thread_can_wait() const noexcept
     {
         return !flag_is_set(Flag_ForbidMultipleThreadsWait) || (m_waiting_threads == 0);
     }
 
 private:
-    bool wait_must_stop(wait_result_t& wait_result, wait_result_t mask) noexcept
+    bool has_signaled_event(wait_result_t& wait_result, wait_result_t mask) noexcept
     {
         wait_result = m_bits_event_state & mask;
         m_bits_event_state &= (~mask | m_bits_manual_reset);
@@ -207,7 +207,7 @@ private:
         Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
 
         wait_result_t wait_result = WAIT_RESULT_ERROR;
-        wait_must_stop(wait_result, mask);
+        has_signaled_event(wait_result, mask);
         return wait_result;
     }
     wait_result_t masked_wait(wait_result_t mask) noexcept(DIAG_NOEXCEPT)
@@ -221,7 +221,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait(lock, [this, &wait_result, &mask] () noexcept { return wait_must_stop(wait_result, mask); });
+        m_cvar.wait(lock, [this, &wait_result, &mask] () noexcept { return has_signaled_event(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -238,7 +238,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &mask] () noexcept { return wait_must_stop(wait_result, mask); });
+        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &mask] () noexcept { return has_signaled_event(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -255,7 +255,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &mask] () noexcept { return wait_must_stop(wait_result, mask); });
+        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &mask] () noexcept { return has_signaled_event(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -494,7 +494,7 @@ public:
     [[nodiscard]]
     bool try_lock()
     {
-        Check_ValidState(is_bound(), false);
+        Assert_Check(is_bound());
         return m_event_controller.try_consume();
     }
     void lock()

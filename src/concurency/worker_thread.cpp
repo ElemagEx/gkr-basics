@@ -13,6 +13,8 @@ worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept
 {
     m_done_event.bind_with(m_outer_waiter, false, false);
     m_work_event.bind_with(m_inner_waiter, false, false);
+
+    m_actions_queue.bind_with_producer_waiter(m_queue_waiter);
 }
 
 worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
@@ -223,6 +225,8 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
     m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
 
     bind_events(m_inner_waiter);
+
+    Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT, false);
 
     while(running())
     {

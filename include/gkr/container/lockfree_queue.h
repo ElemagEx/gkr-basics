@@ -657,24 +657,34 @@ protected:
 
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 private:
-    template<typename Rep, typename Period>
+    template<typename>
     static constexpr bool has_wait() noexcept
     {
         return false;
     }
 
 protected:
-    template<typename Rep, typename Period>
-    bool producer_wait(std::chrono::duration<Rep, Period>&) noexcept
+    template<typename Clock, typename Duration>
+    bool producer_wait(const std::chrono::time_point<Clock, Duration>&) noexcept
     {
-        static_assert(has_wait<Rep, Period>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
+        static_assert(has_wait<Clock>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
         return false;
     }
-    template<typename Rep, typename Period>
-    bool consumer_wait(std::chrono::duration<Rep, Period>&) noexcept
+    template<typename T=void>
+    void producer_wait() noexcept
     {
-        static_assert(has_wait<Rep, Period>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
+        static_assert(has_wait<T>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
+    }
+    template<typename Clock, typename Duration>
+    bool consumer_wait(const std::chrono::time_point<Clock, Duration>&) noexcept
+    {
+        static_assert(has_wait<Clock>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
         return false;
+    }
+    template<typename T=void>
+    void consumer_wait() noexcept
+    {
+        static_assert(has_wait<T>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
     }
 #endif
 };
@@ -1142,7 +1152,20 @@ protected:
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
     template<typename Rep, typename Period>
-    std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    std::size_t take_producer_element_ownership(const std::chrono::duration<Rep, Period>& timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
+
+        for( ; ; )
+        {
+            const std::size_t index = try_take_producer_element_ownership();
+
+            if(index != queue_npos) return index;
+
+            if(!base_t::producer_wait(wait_time)) return queue_npos;
+        }
+    }
+    std::size_t take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1150,11 +1173,24 @@ protected:
 
             if(index != queue_npos) return index;
 
-            if(!base_t::producer_wait(timeout)) return queue_npos;
+            base_t::producer_wait();
         }
     }
     template<typename Rep, typename Period>
     std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
+
+        for( ; ; )
+        {
+            const std::size_t index = try_take_consumer_element_ownership();
+
+            if(index != queue_npos) return index;
+
+            if(!base_t::consumer_wait(wait_time)) return queue_npos;
+        }
+    }
+    std::size_t take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1162,7 +1198,7 @@ protected:
 
             if(index != queue_npos) return index;
 
-            if(!base_t::consumer_wait(timeout)) return queue_npos;
+            base_t::consumer_wait(std::chrono::high_resolution_clock::now());
         }
     }
 #endif
@@ -1615,17 +1651,43 @@ protected:
     template<typename Rep, typename Period>
     std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
     {
+        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
+
         for( ; ; )
         {
             const std::size_t index = try_take_producer_element_ownership();
 
             if(index != queue_npos) return index;
 
-            if(!base_t::producer_wait(timeout)) return queue_npos;
+            if(!base_t::producer_wait(wait_time)) return queue_npos;
+        }
+    }
+    std::size_t take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    {
+        for( ; ; )
+        {
+            const std::size_t index = try_take_producer_element_ownership();
+
+            if(index != queue_npos) return index;
+
+            base_t::producer_wait();
         }
     }
     template<typename Rep, typename Period>
     std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    {
+        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
+
+        for( ; ; )
+        {
+            const std::size_t index = try_take_consumer_element_ownership();
+
+            if(index != queue_npos) return index;
+
+            if(!base_t::consumer_wait(wait_time)) return queue_npos;
+        }
+    }
+    std::size_t take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1633,7 +1695,7 @@ protected:
 
             if(index != queue_npos) return index;
 
-            if(!base_t::consumer_wait(timeout)) return queue_npos;
+            base_t::consumer_wait();
         }
     }
 #endif
@@ -2139,7 +2201,13 @@ public:
     template<typename... Args>
     element_t* acquire_producer_element_ownership_ex(Args&&... args) noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_producer_element_ownership_ex(std::chrono::nanoseconds::max(), std::forward<Args>(args)...);
+        const std::size_t index = base_t::take_producer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        element_t* element = (m_elements + index);
+
+        return new (element) element_t(std::forward<Args>(args)...);
     }
 
     template<typename Rep, typename Period>
@@ -2155,7 +2223,13 @@ public:
     }
     element_t* acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_producer_element_ownership(std::chrono::nanoseconds::max());
+        const std::size_t index = base_t::take_producer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        element_t* element = (m_elements + index);
+
+        return new (element) element_t();
     }
 
     template<typename Rep, typename Period>
@@ -2171,7 +2245,13 @@ public:
     }
     element_t* acquire_producer_element_ownership(element_t&& value) noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_producer_element_ownership(std::chrono::nanoseconds::max(), std::move(value));
+        const std::size_t index = base_t::take_producer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        element_t* element = (m_elements + index);
+
+        return new (element) element_t(std::move(value));
     }
 
     template<typename Rep, typename Period>
@@ -2187,7 +2267,13 @@ public:
     }
     element_t* acquire_producer_element_ownership(const element_t& value) noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_producer_element_ownership(std::chrono::nanoseconds::max(), value);
+        const std::size_t index = base_t::take_producer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        element_t* element = (m_elements + index);
+
+        return new (element) element_t(value);
     }
 
     template<typename Rep, typename Period>
@@ -2203,7 +2289,13 @@ public:
     }
     element_t* acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_consumer_element_ownership(std::chrono::nanoseconds::max());
+        const std::size_t index = base_t::take_consumer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        element_t* element = (m_elements + index);
+
+        return element;
     }
 
 public:
@@ -2217,7 +2309,9 @@ public:
     template<typename... Args>
     element_t* start_emplace(Args&&... args) noexcept(DIAG_NOEXCEPT)
     {
-        return start_emplace(std::chrono::nanoseconds::max(), std::forward<Args>(args)...);
+        element_t* element = acquire_producer_element_ownership_ex(std::forward<Args>(args)...);
+
+        return queue_producer_element_t(*this, element);
     }
 
     template<typename Rep, typename Period>
@@ -2229,7 +2323,9 @@ public:
     }
     queue_producer_element_t start_push() noexcept(DIAG_NOEXCEPT)
     {
-        return start_push(std::chrono::nanoseconds::max());
+        element_t* element = acquire_producer_element_ownership();
+
+        return queue_producer_element_t(*this, element);
     }
 
     template<typename Rep, typename Period>
@@ -2241,7 +2337,9 @@ public:
     }
     queue_producer_element_t start_push(element_t&& value) noexcept(DIAG_NOEXCEPT)
     {
-        return start_push(std::chrono::nanoseconds::max(), std::move(value));
+        element_t* element = acquire_producer_element_ownership(std::move(value));
+
+        return queue_producer_element_t(*this, element);
     }
 
     template<typename Rep, typename Period>
@@ -2253,7 +2351,9 @@ public:
     }
     queue_producer_element_t start_push(const element_t& value)
     {
-        return start_push(std::chrono::nanoseconds::max(), value);
+        element_t* element = acquire_producer_element_ownership(value);
+
+        return queue_producer_element_t(*this, element);
     }
 
     template<typename Rep, typename Period>
@@ -2265,7 +2365,9 @@ public:
     }
     queue_consumer_element_t start_pop()
     {
-        return start_pop(std::chrono::nanoseconds::max());
+        element_t* element = acquire_consumer_element_ownership();
+
+        return queue_consumer_element_t(*this, element);
     }
 
 public:
@@ -2277,7 +2379,7 @@ public:
     template<typename... Args>
     bool emplace(Args&&... args) noexcept(DIAG_NOEXCEPT)
     {
-        return emplace(std::chrono::nanoseconds::max(), std::forward<Args>(args)...);
+        return start_emplace(std::forward<Args>(args)...).push_in_progress();
     }
 
     template<typename Rep, typename Period>
@@ -2287,7 +2389,7 @@ public:
     }
     bool push() noexcept(DIAG_NOEXCEPT)
     {
-        return push(std::chrono::nanoseconds::max());
+        return start_push().push_in_progress();
     }
 
     template<typename Rep, typename Period>
@@ -2297,7 +2399,7 @@ public:
     }
     bool push(element_t&& value) noexcept(DIAG_NOEXCEPT)
     {
-        return push(std::chrono::nanoseconds::max(), std::move(value));
+        return start_push(std::move(value)).push_in_progress();
     }
 
     template<typename Rep, typename Period>
@@ -2307,7 +2409,7 @@ public:
     }
     bool push(const element_t& value) noexcept(DIAG_NOEXCEPT)
     {
-        return push(std::chrono::nanoseconds::max(), value);
+        return start_push(value).push_in_progress();
     }
 
 public:
@@ -2318,7 +2420,7 @@ public:
     }
     bool pop() noexcept(DIAG_NOEXCEPT)
     {
-        return pop(std::chrono::nanoseconds::max());
+        return start_pop().pop_in_progress();
     }
 
     template<typename Rep, typename Period>
@@ -2334,7 +2436,13 @@ public:
     }
     bool copy_and_pop(element_t& value) noexcept(DIAG_NOEXCEPT)
     {
-        return copy_and_pop(std::chrono::nanoseconds::max(), value);
+        auto consumer_element = start_pop();
+
+        if(!consumer_element.pop_in_progress()) return false;
+
+        value = consumer_element.value();
+
+        return true;
     }
 
     template<typename Rep, typename Period>
@@ -2350,7 +2458,13 @@ public:
     }
     bool move_and_pop(element_t& value) noexcept(DIAG_NOEXCEPT)
     {
-        return move_and_pop(std::chrono::nanoseconds::max(), value);
+        auto consumer_element = start_pop();
+
+        if(!consumer_element.pop_in_progress()) return false;
+
+        value = std::move(consumer_element.value());
+
+        return true;
     }
 #endif
 };

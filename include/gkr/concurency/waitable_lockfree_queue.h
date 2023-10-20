@@ -132,39 +132,24 @@ protected:
         }
     }
 
-private:
-    template<typename Rep, typename Period>
-    static bool wait(std::chrono::duration<Rep, Period>& timeout, event_controller& event)
-    {
-        using duration_t = std::chrono::duration<Rep, Period>;
-
-        if(timeout <= duration_t::zero()) return false;
-
-        const auto start_time = std::chrono::system_clock::now();
-
-        event.wait_for(timeout);
-
-        if(timeout != duration_t::max())
-        {
-            const auto end_time = std::chrono::system_clock::now();
-
-            const duration_t elapsed_time = std::chrono::duration_cast<duration_t>(end_time - start_time);
-
-            timeout -= elapsed_time;
-        }
-        return true;
-    }
-
 protected:
-    template<typename Rep, typename Period>
-    bool producer_wait(std::chrono::duration<Rep, Period>& timeout)
+    template<typename Clock, typename Duration>
+    bool producer_wait(const std::chrono::time_point<Clock, Duration>& wait_time) noexcept(DIAG_NOEXCEPT)
     {
-        return wait(timeout, m_has_space_event);
+        return m_has_space_event.wait_until(wait_time);
     }
-    template<typename Rep, typename Period>
-    bool consumer_wait(std::chrono::duration<Rep, Period>& timeout)
+    void producer_wait() noexcept(DIAG_NOEXCEPT)
     {
-        return wait(timeout, m_has_items_event);
+        m_has_space_event.wait();
+    }
+    template<typename Clock, typename Duration>
+    bool consumer_wait(const std::chrono::time_point<Clock, Duration>& wait_time) noexcept(DIAG_NOEXCEPT)
+    {
+        return m_has_items_event.wait_until(wait_time);
+    }
+    void consumer_wait() noexcept(DIAG_NOEXCEPT)
+    {
+        m_has_items_event.wait();
     }
 
 public:

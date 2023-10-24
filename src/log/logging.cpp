@@ -32,14 +32,15 @@ bool logging::init(
         done();
         return false;
     }
+
+    s_logger->set_severities(false, severities);
+    s_logger->set_facilities(false, facilities);
+
     if(!s_logger->run())
     {
         done();
         return false;
     }
-
-    s_logger->set_severities(false, severities);
-    s_logger->set_facilities(false, facilities);
 
     return true;
 }
@@ -138,15 +139,15 @@ bool logging::set_this_thread_name(const char* name)
     return true;
 }
 
-bool logging::log_simple_message(bool wait, int severity, int facility, const char* format)
+bool logging::log_simple_message(bool wait, int severity, int facility, const char* text)
 {
-    Check_Arg_NotNull(format, false);
+    Check_Arg_NotNull(text, false);
 
     if(s_logger == nullptr) return false;
 
     check_thread_name(nullptr);
 
-    return s_logger->log_message(wait, severity, facility, format, nullptr);
+    return s_logger->log_message(wait, severity, facility, text, nullptr);
 }
 
 bool logging::log_format_message(bool wait, int severity, int facility, const char* format, ...)
@@ -179,8 +180,10 @@ bool logging::log_valist_message(bool wait, int severity, int facility, const ch
 
 struct thread_name_t
 {
-    char buff[sys::MAX_THREAD_NAME_CCH] = {0};
     bool registered = false;
+#ifndef NDEBUG
+    char buff[sys::MAX_THREAD_NAME_CCH] = {0};
+#endif
 
     ~thread_name_t()
     {
@@ -209,9 +212,15 @@ void logging::check_thread_name(const char* name)
     }
     thread_name.registered = true;
 
-    if(sys::get_current_thread_name(thread_name.buff))
+#ifndef NDEBUG
+    char* buff;
+    buff = thread_name.buff;
+#else
+    char buff[sys::MAX_THREAD_NAME_CCH] = {0};
+#endif
+    if(sys::get_current_thread_name(buff))
     {
-        s_logger->set_thread_name(thread_name.buff);
+        s_logger->set_thread_name(buff);
     }
 }
 

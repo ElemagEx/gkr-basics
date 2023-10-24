@@ -175,6 +175,12 @@ bool worker_thread::safe_start() noexcept
     m_actions_queue.threading.any_thread_can_be_producer();
     m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
 
+    Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT_WHEN_STOPPED, false);
+
+    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
+
+    Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT_WHEN_WORKING, false);
+
 #ifndef __cpp_exceptions
     return on_start();
 #else
@@ -195,8 +201,7 @@ bool worker_thread::safe_start() noexcept
 
 void worker_thread::safe_finish() noexcept
 {
-    m_inner_waiter.remove_all_events();
-    m_work_event.bind_with(m_inner_waiter, false, false);
+    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT_WHEN_STOPPED);
 
 #ifndef __cpp_exceptions
     on_finish();
@@ -220,13 +225,11 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
 {
     const std::chrono::nanoseconds timeout = get_wait_timeout();
 
-    m_inner_waiter .remove_all_events();
-    m_work_event   .bind_with(m_inner_waiter, false, false);
-    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
+    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT_WHEN_WORKING);
 
     bind_events(m_inner_waiter);
 
-    Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT, false);
+    Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT_WHEN_WORKING, false);
 
     while(running())
     {
@@ -242,7 +245,7 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
         }
         else
         {
-            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << OWN_EVENTS_TO_WAIT) - 1);
+            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << OWN_EVENTS_TO_WAIT_WHEN_WORKING) - 1);
 
             if((wait_result & OTHER_EVENTS_MASK) != 0)
             {

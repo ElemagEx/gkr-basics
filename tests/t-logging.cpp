@@ -71,7 +71,7 @@ constexpr name_id_pair g_facilities[] = {
     {"Synchro", FACILITY_SYNCHRO},
     {nullptr  , 0               }
 };
-//extern logging s_logging; logging s_logging(g_severities, g_facilities);
+//logging s_logging(g_severities, g_facilities);
 
 #include <thread>
 

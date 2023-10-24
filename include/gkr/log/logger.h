@@ -113,10 +113,10 @@ private:
         ACTION_SYNC_LOG_MESSAGE ,
     };
 
-    using lockfree_queue_t = waitable_lockfree_queue<void, true, true>;
+    using log_queue_t = waitable_lockfree_queue<void, true, true>;
 
 private:
-    lockfree_queue_t m_log_queue;
+    log_queue_t m_log_queue;
 
     std::vector<consumer_ptr_t> m_consumers;
 

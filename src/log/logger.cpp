@@ -16,7 +16,7 @@ namespace log
 
 logger::logger()
 {
-//  check_args_order();
+    check_args_order();
 }
 
 logger::~logger() noexcept(DIAG_NOEXCEPT)
@@ -134,9 +134,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
 
 void logger::set_severities(bool clear_existing, const name_id_pair* severities)
 {
-    Check_ValidState(running(), );
-
-    if(!in_worker_thread())
+    if(running() && !in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_SEVERITIES, clear_existing, severities);
     }
@@ -152,9 +150,7 @@ void logger::set_severities(bool clear_existing, const name_id_pair* severities)
 
 void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
 {
-    Check_ValidState(running(), );
-
-    if(!in_worker_thread())
+    if(running() && !in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_FACILITIES, clear_existing, facilities);
     }

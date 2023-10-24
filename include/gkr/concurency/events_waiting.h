@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <atomic>
 #include <chrono>
 #include <climits>
 #include <utility>
@@ -64,7 +65,7 @@ public:
     };
 
 public:
-    events_waiter(std::size_t flags) : m_flags(flags) {}
+    events_waiter(std::size_t flags) noexcept : m_flags(flags) {}
 
     events_waiter() noexcept = default;
    ~events_waiter() noexcept = default;
@@ -91,6 +92,22 @@ public:
     std::size_t events_count() const noexcept
     {
         return m_events_count;
+    }
+    bool pop_events(std::size_t min_count) noexcept(DIAG_NOEXCEPT)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        Check_Arg_IsValid(min_count <= m_events_count, false);
+
+        Check_ValidState(m_waiting_threads == 0, false);
+
+        const wait_result_t mask = (wait_result_t(1) << min_count) - 1;
+
+        m_bits_manual_reset &= ~mask;
+        m_bits_event_state  &= ~mask;
+        m_events_count       = min_count;
+
+        return true;
     }
     bool remove_all_events() noexcept(DIAG_NOEXCEPT)
     {
@@ -221,7 +238,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait(lock, [this, &wait_result, &mask] () noexcept { return has_signaled_event(wait_result, mask); });
+        m_cvar.wait(lock, [this, &wait_result, mask] () noexcept { return has_signaled_event(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -238,7 +255,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, &mask] () noexcept { return has_signaled_event(wait_result, mask); });
+        m_cvar.wait_for(lock, timeout_duration, [this, &wait_result, mask] () noexcept { return has_signaled_event(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -255,7 +272,7 @@ private:
         wait_result_t wait_result = WAIT_RESULT_ERROR;
 
         ++m_waiting_threads;
-        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, &mask] () noexcept { return has_signaled_event(wait_result, mask); });
+        m_cvar.wait_until(lock, timeout_time, [this, &wait_result, mask] () noexcept { return has_signaled_event(wait_result, mask); });
         --m_waiting_threads;
 
         return wait_result;
@@ -326,8 +343,6 @@ class event_controller final
 private:
     events_waiter* m_waiter {nullptr};
     std::size_t    m_index  {std::size_t(-1)};
-
-    friend class events_waiter;
 
 public:
     event_controller(events_waiter& waiter, bool manual_reset, bool initial_state) noexcept(DIAG_NOEXCEPT)

@@ -125,7 +125,8 @@ private:
     {
         OWN_EVENT_HAS_ASYNC_ACTION,
         OWN_EVENT_HAS_SYNC_ACTION,
-        OWN_EVENTS_TO_WAIT,
+        OWN_EVENTS_TO_WAIT_WHEN_STOPPED = 1,
+        OWN_EVENTS_TO_WAIT_WHEN_WORKING = 2,
     };
     enum : action_id_t
     {

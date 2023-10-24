@@ -56,7 +56,7 @@ public:
     GKR_LOG_API static bool set_this_thread_name(const char* name = nullptr);
 
 public:
-    GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* format);
+    GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* text);
     GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* format, ...);
     GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args);
 

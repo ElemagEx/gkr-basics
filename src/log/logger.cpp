@@ -48,7 +48,7 @@ bool logger::on_start()
 
 void logger::on_finish()
 {
-    process_pending_messages();
+    while(process_next_message());
 
     del_all_consumers();
 }
@@ -79,13 +79,9 @@ void logger::on_wait_success(wait_result_t wait_result)
 {
     Check_ValidState(m_log_queue.consumer_event_is_signaled(wait_result), );
 
-    auto element = m_log_queue.start_pop();
+    [[maybe_unused]] bool processed = process_next_message();
 
-    Check_ValidState(element.pop_in_progress(), );
-
-    message_data& msg = element.value<message_data>();
-
-    process_message(msg);
+    Check_ValidState(processed, );
 }
 
 bool logger::on_exception(except_method_t method, const std::exception* e) noexcept
@@ -99,6 +95,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     {
         return execute_action_method<bool>(ACTION_CHANGE_LOG_QUEUE, max_queue_entries, max_message_chars);
     }
+
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
@@ -132,7 +129,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     }
 }
 
-void logger::set_severities(bool clear_existing, const name_id_pair* severities)
+void logger::set_severities(bool clear_existing, const name_id_pair_t* severities)
 {
     if(running() && !in_worker_thread())
     {
@@ -148,7 +145,7 @@ void logger::set_severities(bool clear_existing, const name_id_pair* severities)
     }
 }
 
-void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
+void logger::set_facilities(bool clear_existing, const name_id_pair_t* facilities)
 {
     if(running() && !in_worker_thread())
     {
@@ -164,7 +161,7 @@ void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
     }
 }
 
-void logger::set_severity(const name_id_pair& severity)
+void logger::set_severity(const name_id_pair_t& severity)
 {
     Check_ValidState(running(), );
 
@@ -182,7 +179,7 @@ void logger::set_severity(const name_id_pair& severity)
     }
 }
 
-void logger::set_facility(const name_id_pair& facility)
+void logger::set_facility(const name_id_pair_t& facility)
 {
     Check_ValidState(running(), );
 
@@ -212,7 +209,7 @@ bool logger::add_consumer(consumer_ptr_t consumer)
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
-        if(*it == consumer)
+        if(it->consumer == consumer)
         {
             Check_Arg_Invalid(consumer, false);
         }
@@ -221,7 +218,7 @@ bool logger::add_consumer(consumer_ptr_t consumer)
     {
         Check_Failure(false);
     }
-    m_consumers.push_back(consumer);
+    m_consumers.push_back(consumer_data_t{consumer});
 
     return true;
 }
@@ -238,10 +235,10 @@ bool logger::del_consumer(consumer_ptr_t consumer)
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
-        if(*it == consumer)
+        if(it->consumer == consumer)
         {
             m_consumers.erase(it);
-            done_consumer(**it);
+            done_consumer(*consumer);
             return true;
         }
     }
@@ -258,7 +255,7 @@ void logger::del_all_consumers()
     }
     while(!m_consumers.empty())
     {
-        consumer_ptr_t consumer = m_consumers.back();
+        consumer_ptr_t consumer = m_consumers.back().consumer;
 
         m_consumers.pop_back();
 
@@ -288,35 +285,51 @@ void logger::set_thread_name(const char* name, tid_t tid)
     }
 }
 
-bool logger::log_message(bool wait, int severity, int facility, const char* format, std::va_list args)
+bool logger::log_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args)
 {
     Check_Arg_NotNull(format, false);
 
     Check_ValidState(running(), false);
 
-    const std::size_t size = m_log_queue.element_size();
+    const bool logging_inside_logger = in_worker_thread();
 
-    Assert_Check(size > sizeof(message));
-
-    const std::size_t cch = size - sizeof(message);
-
-    auto element = m_log_queue.start_push();
-
-    Check_ValidState(element.push_in_progress(), false);
-
-    message_data& msg = element.value<message_data>();
-
-    if(!compose_message(msg, cch, severity, facility, format, args))
+    for( ; ; )
     {
-        element.cancel_push();
-        return false;
+        auto element = logging_inside_logger
+            ? m_log_queue.try_start_push()
+            : m_log_queue.    start_push();
+
+        if(!element.push_in_progress())
+        {
+            if(logging_inside_logger)
+            {
+                [[maybe_unused]] bool processed = process_next_message();
+                Check_ValidState(processed, false);
+                continue;
+            }
+            Check_Failure(false);
+        }
+
+       const std::size_t size = element.get_element_size();
+
+       Assert_Check(size > sizeof(message));
+
+        const std::size_t cch = size - sizeof(message);
+
+        message_data& msg = element.value<message_data>();
+
+        if(!compose_message(msg, cch, severity, facility, format, args))
+        {
+            element.cancel_push();
+            return false;
+        }
+        if(wait)
+        {
+            sync_log_message(msg);
+            element.cancel_push();
+        }
+        return true;
     }
-    if(wait)
-    {
-        sync_log_message(msg);
-        element.cancel_push();
-    }
-    return true;
 }
 
 void logger::sync_log_message(message_data& msg)
@@ -328,7 +341,7 @@ void logger::sync_log_message(message_data& msg)
     process_message(msg);
 }
 
-bool logger::compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args)
+bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, std::va_list args)
 {
     msg.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
     msg.stamp    = calc_stamp();
@@ -380,9 +393,13 @@ void logger::prepare_message(message_data& msg)
 void logger::consume_message(const message_data& msg)
 {
 #ifndef __cpp_exceptions
-    for(auto& consumer : m_consumers)
+    for(auto& data : m_consumers)
     {
-        consumer->consume_log_message(msg);
+        if(data.reentry_guard) continue;
+
+        data.reentry_guard = true;
+        data.consumer->consume_log_message(msg);
+        data.reentry_guard = false;
     }
 #else
     std::size_t count = m_consumers.size();
@@ -394,13 +411,19 @@ void logger::consume_message(const message_data& msg)
         {
             for( ; index < count; ++index)
             {
-                m_consumers[index]->consume_log_message(msg);
+                consumer_data_t& data = m_consumers[index];
+
+                if(data.reentry_guard) continue;
+
+                data.reentry_guard = true;
+                data.consumer->consume_log_message(msg);
+                data.reentry_guard = false;
             }
             return;
         }
         catch(...)
         {
-            consumer_ptr_t consumer_that_throws = m_consumers[index];
+            consumer_ptr_t consumer_that_throws = m_consumers[index].consumer;
             del_consumer(consumer_that_throws);
             --count;
 
@@ -411,18 +434,17 @@ void logger::consume_message(const message_data& msg)
 #endif
 }
 
-void logger::process_pending_messages()
+bool logger::process_next_message()
 {
-    for( ; ; )
-    {
-        auto element = m_log_queue.try_start_pop();
+    auto element = m_log_queue.start_pop();
 
-        if(!element.pop_in_progress()) break;
+    if(!element.pop_in_progress()) return false;
 
-        message_data& msg = element.value<message_data>();
+    message_data& msg = element.value<message_data>();
 
-        process_message(msg);
-    }
+    process_message(msg);
+
+    return true;
 }
 
 bool logger::init_consumer(consumer& consumer)

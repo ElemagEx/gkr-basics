@@ -56,7 +56,7 @@ public:
 
 using namespace gkr::log;
 
-constexpr name_id_pair g_severities[] = {
+constexpr name_id_pair_t g_severities[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -64,7 +64,7 @@ constexpr name_id_pair g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-constexpr name_id_pair g_facilities[] = {
+constexpr name_id_pair_t g_facilities[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},

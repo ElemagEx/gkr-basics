@@ -15,7 +15,8 @@ namespace gkr
 namespace log
 {
 
-struct name_id_pair;
+struct name_id_pair_t;
+
 class consumer;
 
 class logger final : public worker_thread
@@ -51,11 +52,11 @@ public:
     bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
 public:
-    void set_severities(bool clear_existing, const name_id_pair* severities);
-    void set_facilities(bool clear_existing, const name_id_pair* facilities);
+    void set_severities(bool clear_existing, const name_id_pair_t* severities);
+    void set_facilities(bool clear_existing, const name_id_pair_t* facilities);
 
-    void set_severity(const name_id_pair& severity);
-    void set_facility(const name_id_pair& facility);
+    void set_severity(const name_id_pair_t& severity);
+    void set_facility(const name_id_pair_t& facility);
 
 public:
     using consumer_ptr_t = std::shared_ptr<consumer>;
@@ -71,7 +72,9 @@ public:
     void set_thread_name(const char* name, tid_t tid = 0);
 
 public:
-    bool log_message(bool wait, int severity, int facility, const char* format, std::va_list args);
+    using id_t = unsigned short;
+
+    bool log_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args);
 
 private:
     struct message_data : public message
@@ -83,16 +86,16 @@ private:
     };
 
 private:
-    void sync_log_message(message_data& entry);
+    void sync_log_message(message_data& msg);
 
-    bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, std::va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, std::va_list args);
 
     void process_message(message_data& msg);
     void prepare_message(message_data& msg);
 
     void consume_message(const message_data& msg);
 
-    void process_pending_messages();
+    bool process_next_message();
 
 private:
     static bool init_consumer(consumer& consumer);
@@ -115,10 +118,16 @@ private:
 
     using log_queue_t = waitable_lockfree_queue<void, true, true>;
 
+    struct consumer_data_t
+    {
+        consumer_ptr_t consumer;
+        bool           reentry_guard = false;
+    };
+
 private:
     log_queue_t m_log_queue;
 
-    std::vector<consumer_ptr_t> m_consumers;
+    std::vector<consumer_data_t> m_consumers;
 
     std::unordered_map<unsigned short, const char*> m_severities;
     std::unordered_map<unsigned short, const char*> m_facilities;

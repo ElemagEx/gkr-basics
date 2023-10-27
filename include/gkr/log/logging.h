@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gkr/log/message.h>
-
 #include <memory>
 #include <cstdarg>
 
@@ -14,10 +12,12 @@ namespace gkr
 namespace log
 {
 
-struct name_id_pair
+using id_t = unsigned short;
+
+struct name_id_pair_t
 {
-    const char*    name;
-    unsigned short id;
+    const char* name;
+    id_t        id;
 };
 
 class consumer;
@@ -26,10 +26,10 @@ class logging final
 {
 public:
     GKR_LOG_API static bool init(
-        const name_id_pair* severities = nullptr,
-        const name_id_pair* facilities = nullptr,
+        const name_id_pair_t* severities = nullptr,
+        const name_id_pair_t* facilities = nullptr,
         std::size_t max_queue_entries = 16,
-        std::size_t max_message_chars = (1024 - sizeof(message)) // = 968 chars (64bit) or 984 (32bit)
+        std::size_t max_message_chars = 968 // 1024 - sizeof(log::message)
         );
     GKR_LOG_API static void done();
 
@@ -40,11 +40,11 @@ public:
         );
 
 public:
-    GKR_LOG_API static bool set_severities(bool clear_existing, const name_id_pair* severities = nullptr);
-    GKR_LOG_API static bool set_facilities(bool clear_existing, const name_id_pair* facilities = nullptr);
+    GKR_LOG_API static bool set_severities(bool clear_existing, const name_id_pair_t* severities = nullptr);
+    GKR_LOG_API static bool set_facilities(bool clear_existing, const name_id_pair_t* facilities = nullptr);
 
-    GKR_LOG_API static bool set_severity(const name_id_pair& severity);
-    GKR_LOG_API static bool set_facility(const name_id_pair& facility);
+    GKR_LOG_API static bool set_severity(const name_id_pair_t& severity);
+    GKR_LOG_API static bool set_facility(const name_id_pair_t& facility);
 
 public:
     GKR_LOG_API static bool add_consumer(std::shared_ptr<consumer> consumer);
@@ -56,16 +56,16 @@ public:
     GKR_LOG_API static bool set_this_thread_name(const char* name = nullptr);
 
 public:
-    GKR_LOG_API static bool log_simple_message(bool wait, int severity, int facility, const char* text);
-    GKR_LOG_API static bool log_format_message(bool wait, int severity, int facility, const char* format, ...);
-    GKR_LOG_API static bool log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args);
+    GKR_LOG_API static bool log_simple_message(bool wait, id_t severity, id_t facility, const char* text);
+    GKR_LOG_API static bool log_format_message(bool wait, id_t severity, id_t facility, const char* format, ...);
+    GKR_LOG_API static bool log_valist_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args);
 
 public:
     logging(
-        const name_id_pair* severities = nullptr,
-        const name_id_pair* facilities = nullptr,
+        const name_id_pair_t* severities = nullptr,
+        const name_id_pair_t* facilities = nullptr,
         std::size_t max_queue_entries = 16,
-        std::size_t max_message_chars = (1024 - sizeof(message))
+        std::size_t max_message_chars = 968 // 1024 - sizeof(log::message)
         )
     {
         init(severities, facilities, max_queue_entries, max_message_chars);

@@ -2751,6 +2751,10 @@ public:
     {
         Check_Arg_IsValid((alignment == queue_npos) || (alignment == 0) || is_power_of_2(alignment), );
 
+        if(capacity == queue_npos)
+        {
+            capacity = base_t::capacity();
+        }
         if(size != queue_npos)
         {
             m_size = size;

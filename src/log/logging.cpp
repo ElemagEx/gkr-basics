@@ -14,8 +14,8 @@ alignas(logger)
 static char s_storage_for_logger[sizeof(logger)] {0};
 
 bool logging::init(
-    const name_id_pair* severities,
-    const name_id_pair* facilities,
+    const name_id_pair_t* severities,
+    const name_id_pair_t* facilities,
     std::size_t max_queue_entries,
     std::size_t max_message_chars
     )
@@ -67,7 +67,7 @@ bool logging::change_log_queue(
     return s_logger->change_log_queue(max_queue_entries, max_message_chars);
 }
 
-bool logging::set_severities(bool clear_existing, const name_id_pair* severities)
+bool logging::set_severities(bool clear_existing, const name_id_pair_t* severities)
 {
     if(s_logger == nullptr) return false;
 
@@ -76,7 +76,7 @@ bool logging::set_severities(bool clear_existing, const name_id_pair* severities
     return true;
 }
 
-bool logging::set_facilities(bool clear_existing, const name_id_pair* facilities)
+bool logging::set_facilities(bool clear_existing, const name_id_pair_t* facilities)
 {
     if(s_logger == nullptr) return false;
 
@@ -85,7 +85,7 @@ bool logging::set_facilities(bool clear_existing, const name_id_pair* facilities
     return true;
 }
 
-bool logging::set_severity(const name_id_pair& severity)
+bool logging::set_severity(const name_id_pair_t& severity)
 {
     if(s_logger == nullptr) return false;
 
@@ -94,7 +94,7 @@ bool logging::set_severity(const name_id_pair& severity)
     return true;
 }
 
-bool logging::set_facility(const name_id_pair& facility)
+bool logging::set_facility(const name_id_pair_t& facility)
 {
     if(s_logger == nullptr) return false;
 
@@ -139,7 +139,7 @@ bool logging::set_this_thread_name(const char* name)
     return true;
 }
 
-bool logging::log_simple_message(bool wait, int severity, int facility, const char* text)
+bool logging::log_simple_message(bool wait, id_t severity, id_t facility, const char* text)
 {
     Check_Arg_NotNull(text, false);
 
@@ -150,7 +150,7 @@ bool logging::log_simple_message(bool wait, int severity, int facility, const ch
     return s_logger->log_message(wait, severity, facility, text, nullptr);
 }
 
-bool logging::log_format_message(bool wait, int severity, int facility, const char* format, ...)
+bool logging::log_format_message(bool wait, id_t severity, id_t facility, const char* format, ...)
 {
     Check_Arg_NotNull(format, false);
 
@@ -167,7 +167,7 @@ bool logging::log_format_message(bool wait, int severity, int facility, const ch
     return result;
 }
 
-bool logging::log_valist_message(bool wait, int severity, int facility, const char* format, std::va_list args)
+bool logging::log_valist_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args)
 {
     Check_Arg_NotNull(format, false);
 
@@ -204,6 +204,11 @@ void logging::check_thread_name(const char* name)
 
         s_logger->set_thread_name(name);
 
+#ifndef NDEBUG
+        std::strncpy(thread_name.buff, name, sys::MAX_THREAD_NAME_CCH);
+
+        thread_name.buff[sys::MAX_THREAD_NAME_CCH - 1] = 0;
+#endif
         return;
     }
     if(thread_name.registered)

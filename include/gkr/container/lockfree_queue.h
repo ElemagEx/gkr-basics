@@ -754,13 +754,14 @@ class queue_pausing<true, WaitSupport> : public WaitSupport
 
     using base_t = WaitSupport;
 
-protected:
+private:
     static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
+
+    static constexpr std::size_t max_op_threads = std::size_t(-1) / 4;
 
 private:
     long long                m_ns_to_wait {initial_ns_to_wait};
     std::atomic<std::size_t> m_op_threads {0};
-    std::atomic<queue_tid_t> m_tid_paused {0};
 
 protected:
     queue_pausing() noexcept(std::is_nothrow_default_constructible<base_t>::value) = default;
@@ -770,7 +771,6 @@ protected:
         : base_t(other)
         , m_ns_to_wait(std::exchange(other.m_ns_to_wait, initial_ns_to_wait))
         , m_op_threads(other.m_op_threads.exchange(0))
-        , m_tid_paused(other.m_tid_paused.exchange(0))
     {
     }
     queue_pausing& operator=(queue_pausing&& other) noexcept(std::is_nothrow_move_assignable<base_t>::value)
@@ -780,7 +780,6 @@ protected:
         m_ns_to_wait = std::exchange(other.m_ns_to_wait, initial_ns_to_wait);
 
         m_op_threads = other.m_op_threads.exchange(0);
-        m_tid_paused = other.m_tid_paused.exchange(0);
         return *this;
     }
 
@@ -791,7 +790,6 @@ protected:
         std::swap(m_ns_to_wait, other.m_ns_to_wait);
 
         m_op_threads = other.m_op_threads.exchange(m_op_threads);
-        m_tid_paused = other.m_tid_paused.exchange(m_tid_paused);
     }
 
 protected:
@@ -803,11 +801,11 @@ protected:
 private:
     void enter_pause_prevention() noexcept
     {
-        while(m_tid_paused != 0)
+        while(++m_op_threads > max_op_threads)
         {
+            --m_op_threads;
             wait_a_while();
         }
-        ++m_op_threads;
     }
     void leave_pause_prevention() noexcept
     {
@@ -819,18 +817,14 @@ private:
     {
         for( ; ; )
         {
-            queue_tid_t expected = 0;
-            if(m_tid_paused.compare_exchange_weak(expected, get_current_tid())) break;
-            wait_a_while();
-        }
-        while(m_op_threads > 0)
-        {
+            std::size_t expected = 0;
+            if(m_op_threads.compare_exchange_strong(expected, max_op_threads)) break;
             wait_a_while();
         }
     }
     void resume() noexcept
     {
-        m_tid_paused = 0;
+        m_op_threads -= max_op_threads;
     }
 
 private:

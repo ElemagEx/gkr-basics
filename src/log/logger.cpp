@@ -398,7 +398,10 @@ void logger::consume_message(const message_data& msg)
         if(data.reentry_guard) continue;
 
         data.reentry_guard = true;
-        data.consumer->consume_log_message(msg);
+        if(!data.consumer->filter_log_message(msg))
+        {
+            data.consumer->consume_log_message(msg);
+        }
         data.reentry_guard = false;
     }
 #else
@@ -416,7 +419,10 @@ void logger::consume_message(const message_data& msg)
                 if(data.reentry_guard) continue;
 
                 data.reentry_guard = true;
-                data.consumer->consume_log_message(msg);
+                if(!data.consumer->filter_log_message(msg))
+                {
+                    data.consumer->consume_log_message(msg);
+                }
                 data.reentry_guard = false;
             }
             return;

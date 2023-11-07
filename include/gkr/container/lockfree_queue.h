@@ -871,11 +871,11 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, bool Pausable, typename WaitSupport, typename BaseAllocator>
+template<bool MultipleConsumersMultipleProducersSupport, bool Pausable, typename BaseAllocator, typename WaitSupport>
 class basic_lockfree_queue;
 
-template<bool Pausable, typename WaitSupport, typename BaseAllocator>
-class basic_lockfree_queue<false, Pausable, WaitSupport, BaseAllocator> : public queue_pausing<Pausable, WaitSupport>
+template<bool Pausable, typename BaseAllocator, typename WaitSupport>
+class basic_lockfree_queue<false, Pausable, BaseAllocator, WaitSupport> : public queue_pausing<Pausable, WaitSupport>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -1205,8 +1205,8 @@ protected:
     }
 #endif
 };
-template<bool Pausable, typename WaitSupport, typename BaseAllocator>
-class basic_lockfree_queue<true, Pausable, WaitSupport, BaseAllocator> : public queue_pausing<Pausable, WaitSupport>
+template<bool Pausable, typename BaseAllocator, typename WaitSupport>
+class basic_lockfree_queue<true, Pausable, BaseAllocator, WaitSupport> : public queue_pausing<Pausable, WaitSupport>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -1709,18 +1709,18 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool Pausable=false,
-    typename WaitSupport  =impl::queue_no_wait_support,
-    typename BaseAllocator=std::allocator<char>
+    typename BaseAllocator=std::allocator<char>,
+    typename WaitSupport  =impl::queue_no_wait_support
     >
 class lockfree_queue
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
 
 public:
     using element_t = T;
@@ -1728,9 +1728,9 @@ public:
     using queue_producer_element_t = queue_producer_element<self_t, element_t>;
     using queue_consumer_element_t = queue_consumer_element<self_t, element_t>;
 
-private:
     using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<T>;
 
+private:
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
     static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
@@ -2473,18 +2473,18 @@ public:
 template<
     bool MultipleConsumersMultipleProducersSupport,
     bool Pausable,
-    typename WaitSupport,
-    typename BaseAllocator
+    typename BaseAllocator,
+    typename WaitSupport
     >
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
-    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
 
 public:
     using queue_producer_element_t = queue_producer_element<self_t, void>;
@@ -3161,15 +3161,15 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport,
     bool Pausable,
-    typename WaitSupport,
-    typename BaseAllocator
+    typename BaseAllocator,
+    typename WaitSupport
     >
 void swap(
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>& lhs,
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>& rhs
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>& lhs,
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>& rhs
     )
     noexcept(
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>::swap_is_noexcept
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>::swap_is_noexcept
     )
 {
     lhs.swap(rhs);

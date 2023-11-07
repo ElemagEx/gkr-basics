@@ -17,6 +17,10 @@ class console_consumer : public log::consumer
     virtual void done_logging() override
     {
     }
+    virtual bool filter_log_message(const gkr::log::message& msg) override
+    {
+        return false;
+    }
     virtual void consume_log_message(const gkr::log::message& msg) override
     {
         std::tm tm;

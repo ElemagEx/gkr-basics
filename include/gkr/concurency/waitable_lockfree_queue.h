@@ -188,9 +188,9 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool Pausable=false,
-    typename WaitSupport  =impl::queue_wait_support,
-    typename BaseAllocator=std::allocator<char>
+    typename BaseAllocator=std::allocator<char>,
+    typename WaitSupport  =impl::queue_wait_support
     >
-using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, WaitSupport, BaseAllocator>;
+using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
 
 }

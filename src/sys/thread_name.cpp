@@ -1,5 +1,7 @@
 #include <gkr/sys/thread_name.h>
 
+#include <gkr/diag/diagnostics.h>
+
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
@@ -9,7 +11,7 @@ namespace gkr
 {
 namespace sys
 {
-bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
+bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 {
 	Check_Arg_NotNull(name, false);
 
@@ -23,7 +25,7 @@ bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG
 
 	return SUCCEEDED(hr);
 }
-bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
+bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 {
 	Check_Arg_NotNull(name, false);
 
@@ -52,13 +54,13 @@ namespace gkr
 {
 namespace sys
 {
-bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
+bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 {
 	if(name == nullptr) return false;
 
 	return (0 == prctl(PR_SET_NAME, long(name), 0, 0, 0));
 }
-bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH]) noexcept(DIAG_NOEXCEPT)
+bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 {
 	if(name == nullptr) return false;
 

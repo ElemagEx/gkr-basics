@@ -3,6 +3,7 @@
 #include <gkr/log/message.h>
 
 #include <gkr/concurency/worker_thread.h>
+#include <gkr/concurency/events_waiting.h>
 #include <gkr/concurency/waitable_lockfree_queue.h>
 
 #include <memory>
@@ -125,6 +126,8 @@ private:
     };
 
 private:
+    events_waiter m_msg_waiter;
+
     log_queue_t m_log_queue;
 
     std::vector<consumer_data_t> m_consumers;

@@ -2,6 +2,8 @@
 
 #include <new>
 #include <mutex>
+#include <cstddef>
+#include <cstring>
 #include <stdexcept>
 
 #ifndef CHECK

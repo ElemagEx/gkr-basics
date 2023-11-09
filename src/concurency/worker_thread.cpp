@@ -8,13 +8,15 @@ namespace gkr
 worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept(false)
     : m_queue_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
     , m_outer_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
-    , m_inner_waiter (gkr::events_waiter::Flag_ForbidMultipleThreadsWait)
-    , m_actions_queue(initial_action_queue_capacity)
+    , m_inner_waiter (gkr::events_waiter::Flag_ForbidMultipleThreadsWait | gkr::events_waiter::Flag_AllowPartialEventsWait)
 {
     m_done_event.bind_with(m_outer_waiter, false, false);
     m_work_event.bind_with(m_inner_waiter, false, false);
 
     m_actions_queue.bind_with_producer_waiter(m_queue_waiter);
+    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
+
+    m_actions_queue.reset(initial_action_queue_capacity);
 }
 
 worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
@@ -172,14 +174,10 @@ void worker_thread::thread_proc() noexcept(DIAG_NOEXCEPT)
 
 bool worker_thread::safe_start() noexcept
 {
+    Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT, false);
+
     m_actions_queue.threading.any_thread_can_be_producer();
     m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
-
-    Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT_WHEN_STOPPED, false);
-
-    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
-
-    Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT_WHEN_WORKING, false);
 
 #ifndef __cpp_exceptions
     return on_start();
@@ -201,8 +199,6 @@ bool worker_thread::safe_start() noexcept
 
 void worker_thread::safe_finish() noexcept
 {
-    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT_WHEN_STOPPED);
-
 #ifndef __cpp_exceptions
     on_finish();
 #else
@@ -219,17 +215,19 @@ void worker_thread::safe_finish() noexcept
         on_exception(except_method_t::on_finish, nullptr);
     }
 #endif
+
+    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT);
 }
 
 bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
 {
     const std::chrono::nanoseconds timeout = get_wait_timeout();
 
-    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT_WHEN_WORKING);
+    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT);
 
     bind_events(m_inner_waiter);
 
-    Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT_WHEN_WORKING, false);
+    Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT, false);
 
     while(running())
     {
@@ -245,7 +243,7 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
         }
         else
         {
-            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << OWN_EVENTS_TO_WAIT_WHEN_WORKING) - 1);
+            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << OWN_EVENTS_TO_WAIT) - 1);
 
             if((wait_result & OTHER_EVENTS_MASK) != 0)
             {

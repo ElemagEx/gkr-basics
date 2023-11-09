@@ -3,6 +3,7 @@
 project(gkr-basics)
 
 option(GKR_BUILD_TESTS "Build unit tests for the library" ON)
+option(GKR_BUILD_BASIC_LOG_CONSUMERS "Build basic log consumers" ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -25,6 +26,8 @@ else()
 endif()
 
 include(warnings) #includes ./cmake/warnings.cmake - sets variable ${CMAKE_CXX_FLAGS_WARNINGS}
+
+add_compile_definitions(DIAG_MODE=4)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_WARNINGS}")
 
@@ -55,7 +58,6 @@ target_sources(
     "${gkr_basics_inc_path}/cpp/lib_exchange_function.h"
     "${gkr_basics_inc_path}/cpp/lib_raw_memory_algorithms.h"
     "${gkr_basics_inc_path}/sys/stack_alloc.h"
-    "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_inc_path}/log/consumer.h"
     "${gkr_basics_inc_path}/log/message.h"
     "${gkr_basics_inc_path}/log/stamp.h"
@@ -69,6 +71,7 @@ target_sources(
     "${gkr_basics_src_path}/concurency/worker_thread.cpp"
     "${gkr_basics_inc_path}/sys/thread_name.h"
     "${gkr_basics_src_path}/sys/thread_name.cpp"
+    "${gkr_basics_src_path}/sys/process_name.cpp"
     "${gkr_basics_inc_path}/log/logger.h"
     "${gkr_basics_src_path}/log/logger.cpp"
     "${gkr_basics_inc_path}/log/logging.h"
@@ -76,6 +79,10 @@ target_sources(
     )
 
 target_include_directories(gkr-basics PUBLIC "include")
+
+if(GKR_BUILD_BASIC_LOG_CONSUMERS)
+add_subdirectory(consumers)
+endif()
 
 if(GKR_BUILD_TESTS)
 enable_testing()

@@ -6,9 +6,7 @@
 
 #include <cstdio>
 
-using namespace gkr;
-
-class console_consumer : public log::consumer
+class console_consumer : public gkr::log::consumer
 {
     virtual bool init_logging() override
     {
@@ -58,9 +56,7 @@ public:
 
 #include <gkr/log/logging.h>
 
-using namespace gkr::log;
-
-constexpr name_id_pair_t g_severities[] = {
+constexpr gkr::log::name_id_pair_t g_severities[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -68,7 +64,7 @@ constexpr name_id_pair_t g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-constexpr name_id_pair_t g_facilities[] = {
+constexpr gkr::log::name_id_pair_t g_facilities[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},
@@ -81,6 +77,8 @@ constexpr name_id_pair_t g_facilities[] = {
 
 TEST_CASE("logging.logger. main")
 {
+    using namespace gkr::log;
+
     logging::init(g_severities, g_facilities);
 
     logging::add_consumer(std::make_shared<console_consumer>());

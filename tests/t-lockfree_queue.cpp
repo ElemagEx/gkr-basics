@@ -103,7 +103,8 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. Lifecycle", "",
 
     gkr::testing::get_singlethreaded_pre_allocated_storage<value_t>().reset(16);
     {
-        queue_t queue1(8);
+        queue_t queue1;
+        queue1.reset(8);
 
         CHECK(queue1.empty());
 
@@ -117,7 +118,8 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. Lifecycle", "",
 
 TEST_CASE("container.lockfree_queue. main")
 {
-    gkr::lockfree_queue<V, false> queue2(10);
+    gkr::lockfree_queue<V, false> queue2;
+    queue2.reset(20);
 
     gkr::lockfree_queue<V, false> queue;
 
@@ -139,10 +141,12 @@ TEST_CASE("container.lockfree_queue. main")
         }
     }
 
-    gkr::lockfree_queue<void, true> q1(10, 16);
+    gkr::lockfree_queue<void, true> q1;
+    q1.reset(10, 16);
     q1.try_push();
 
-    gkr::lockfree_queue<void, true> q2(10, 16);
+    gkr::lockfree_queue<void, true> q2;
+    q1.reset(10, 16);
     q2.try_push();
 
     q1 = std::move(q2);

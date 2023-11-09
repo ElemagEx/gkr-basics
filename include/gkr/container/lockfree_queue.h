@@ -1749,12 +1749,6 @@ public:
         , m_allocator(allocator)
     {
     }
-    lockfree_queue(std::size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
-        : base_t     (allocator)
-        , m_allocator(allocator)
-    {
-        reset(capacity);
-    }
     ~lockfree_queue() noexcept(
         std::is_nothrow_destructible<element_t    >::value &&
         std::is_nothrow_destructible<TypeAllocator>::value &&
@@ -2516,18 +2510,6 @@ public:
         : base_t     (allocator)
         , m_allocator(allocator)
     {
-    }
-    lockfree_queue(std::size_t capacity, std::size_t size, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
-        : base_t     (allocator)
-        , m_allocator(allocator)
-    {
-        reset(capacity, size, 0);
-    }
-    lockfree_queue(std::size_t capacity, std::size_t size, std::size_t alignment, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
-        : base_t     (allocator)
-        , m_allocator(allocator)
-    {
-        reset(capacity, size, alignment);
     }
 
     ~lockfree_queue() noexcept(

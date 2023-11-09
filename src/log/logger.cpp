@@ -14,8 +14,10 @@ namespace gkr
 namespace log
 {
 
-logger::logger()
+logger::logger() : m_msg_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
 {
+    m_log_queue.bind_with_producer_waiter(m_msg_waiter);
+
     check_args_order();
 }
 
@@ -91,7 +93,9 @@ bool logger::on_exception(except_method_t method, const std::exception* e) noexc
 
 bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars)
 {
-    if(running() && !in_worker_thread())
+    Check_ValidState(running(), false);
+
+    if(!in_worker_thread())
     {
         return execute_action_method<bool>(ACTION_CHANGE_LOG_QUEUE, max_queue_entries, max_message_chars);
     }
@@ -99,27 +103,18 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    if(running())
+    if(m_log_queue.capacity() > 0)
     {
         bool result = true;
 
-        if(max_queue_entries != std::size_t(-1)) result = m_log_queue.resize             (max_queue_entries                  ) && result;
-        if(max_message_chars != std::size_t(-1)) result = m_log_queue.change_element_size(max_message_chars + sizeof(message)) && result;
+        if(max_queue_entries != std::size_t(-1)) result = m_log_queue.resize             (max_queue_entries                      ) && result;
+        if(max_message_chars != std::size_t(-1)) result = m_log_queue.change_element_size(max_message_chars + 1 + sizeof(message)) && result;
 
         return result;
     }
     else
     {
-        const std::size_t queue_capacity   = (max_queue_entries == std::size_t(-1))
-            ? queue_npos
-            : max_queue_entries
-            ;
-        const std::size_t queue_entry_size = (max_message_chars == std::size_t(-1))
-            ? queue_npos
-            : max_message_chars + sizeof(message)
-            ;
-
-        m_log_queue.reset(queue_capacity, queue_entry_size, alignof(message));
+        m_log_queue.reset(max_queue_entries, max_message_chars + 1 + sizeof(message), alignof(message));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
 
@@ -131,7 +126,9 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
 
 void logger::set_severities(bool clear_existing, const name_id_pair_t* severities)
 {
-    if(running() && !in_worker_thread())
+    Check_ValidState(running(), );
+
+    if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_SEVERITIES, clear_existing, severities);
     }
@@ -147,7 +144,9 @@ void logger::set_severities(bool clear_existing, const name_id_pair_t* severitie
 
 void logger::set_facilities(bool clear_existing, const name_id_pair_t* facilities)
 {
-    if(running() && !in_worker_thread())
+    Check_ValidState(running(), );
+
+    if(!in_worker_thread())
     {
         return execute_action_method<void>(ACTION_SET_FACILITIES, clear_existing, facilities);
     }
@@ -247,7 +246,7 @@ bool logger::del_consumer(consumer_ptr_t consumer)
 
 void logger::del_all_consumers()
 {
-    Check_ValidState(running(), );
+    Check_ValidState(joinable(), );
 
     if(!in_worker_thread())
     {

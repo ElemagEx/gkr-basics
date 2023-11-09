@@ -27,21 +27,19 @@ bool logging::init(
 
     s_logger = new (s_storage_for_logger) logger();
 
-    if(!s_logger->change_log_queue(max_queue_entries, max_message_chars))
-    {
-        done();
-        return false;
-    }
-
-    s_logger->set_severities(false, severities);
-    s_logger->set_facilities(false, facilities);
-
     if(!s_logger->run())
     {
         done();
         return false;
     }
+    s_logger->set_severities(false, severities);
+    s_logger->set_facilities(false, facilities);
 
+    if(!s_logger->change_log_queue(max_queue_entries, max_message_chars))
+    {
+        done();
+        return false;
+    }
     return true;
 }
 

@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <gkr/diag/undefines.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_halt_proc
 #define DIAG_WARN           my_warn_proc

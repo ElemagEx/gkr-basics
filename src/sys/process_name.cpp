@@ -51,7 +51,7 @@ namespace sys
 {
 int get_current_process_id()
 {
-	return (int)getpid();
+	return int(getpid());
 }
 int get_current_process_name(char* name, unsigned cch)
 {

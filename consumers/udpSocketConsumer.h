@@ -21,8 +21,8 @@ public:
 	udpSocketConsumer& operator=(udpSocketConsumer&& other) noexcept;
 
 public:
-	udpSocketConsumer(const char* addr, unsigned short port);
-	virtual ~udpSocketConsumer();
+	udpSocketConsumer(const char* addr, unsigned short port, unsigned maxPacketSize, unsigned bufferSize = 2*1024);
+	virtual ~udpSocketConsumer() override;
 
 protected:
 	virtual bool init_logging() override;
@@ -36,7 +36,10 @@ public:
 	bool setRemoteAddress(const char* addr, unsigned short port);
 
 private:
-	void clearRemoteHostAddress() noexcept;
+	void clearRemoteAddress() noexcept;
+
+	bool retrieveProcessName();
+	bool retrieveHostName();
 
 private:
 	std::string m_processName;
@@ -45,6 +48,9 @@ private:
 	struct hostaddr_t { alignas(4) char bytes[32] = {0}; };
 
 	hostaddr_t m_remoteAddr;
+
+	unsigned   m_maxPacketSize = 0;
+	int        m_pid           = 0;
 };
 
 }

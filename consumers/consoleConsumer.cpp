@@ -10,37 +10,23 @@ namespace gkr
 namespace log
 {
 
-consoleConsumer::consoleConsumer(unsigned bufferCch)
-    : m_bufferPtr(nullptr)
-    , m_bufferCch(bufferCch)
+consoleConsumer::consoleConsumer(std::size_t bufferInitialCapacity)
+    : m_buffer(bufferInitialCapacity)
 {
+    Check_ValidState(m_buffer.capacity() > 0);
 }
 
-consoleConsumer::~consoleConsumer()
-{
-    if(m_bufferPtr != nullptr)
-    {
-        delete [] m_bufferPtr;
-    }
-}
+consoleConsumer::~consoleConsumer() = default;
 
 bool consoleConsumer::init_logging()
 {
-    if(m_bufferCch == 0      ) return false;
-    if(m_bufferPtr != nullptr) return false;
-
-    m_bufferPtr = new char[m_bufferCch];
+    Check_ValidState(m_buffer.capacity() > 0, false);
 
     return true;
 }
 
 void consoleConsumer::done_logging()
 {
-    if(m_bufferPtr != nullptr)
-    {
-        delete [] m_bufferPtr;
-        m_bufferPtr = nullptr;
-    }
 }
 
 bool consoleConsumer::filter_log_message(const message& msg)
@@ -50,16 +36,20 @@ bool consoleConsumer::filter_log_message(const message& msg)
 
 void consoleConsumer::consume_log_message(const message& msg)
 {
-    if(m_bufferPtr == nullptr) return;
+    const std::size_t cch = m_buffer.capacity();
 
-    composeOutput(m_bufferPtr, m_bufferCch, msg);
+    Check_ValidState(cch > 0, );
 
-    m_bufferPtr[m_bufferCch - 1] = 0;
+    char* buffer = m_buffer.data<char>();
 
-    std::cerr << m_bufferPtr << std::endl;
+    composeOutput(buffer, cch, msg);
+
+    buffer[cch - 1] = 0;
+
+    std::cerr << buffer << std::endl;
 }
 
-void consoleConsumer::composeOutput(char* buffer, unsigned cch, const message& msg)
+void consoleConsumer::composeOutput(char* buffer, std::size_t cch, const message& msg)
 {
     std::tm  tm;
     unsigned ns;

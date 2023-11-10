@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gkr/log/consumer.h>
+#include <gkr/container/raw_buffer.h>
 
 namespace gkr
 {
@@ -13,30 +14,28 @@ class androidLogConsumer : public consumer
 	androidLogConsumer& operator=(const androidLogConsumer&) noexcept = delete;
 
 private:
-	char*    m_bufferPtr;
-	unsigned m_bufferCch;
+	using raw_buffer_t = raw_buffer<>;
+
+	raw_buffer_t m_buffer;
 
 public:
-	androidLogConsumer(androidLogConsumer&& other) noexcept
-		: m_bufferPtr(other.m_bufferPtr)
-		, m_bufferCch(other.m_bufferCch)
+	androidLogConsumer(androidLogConsumer&& other) noexcept(
+		std::is_nothrow_move_constructible<raw_buffer_t>::value
+		)
+		: m_buffer(std::move(other.m_buffer))
 	{
-		other.m_bufferPtr = nullptr;
-		other.m_bufferCch = 0;
 	}
-	androidLogConsumer& operator=(androidLogConsumer&& other) noexcept
+	androidLogConsumer& operator=(androidLogConsumer&& other) noexcept(
+		std::is_nothrow_move_assignable<raw_buffer_t>::value
+		)
 	{
-		m_bufferPtr = other.m_bufferPtr;
-		m_bufferCch = other.m_bufferCch;
-
-		other.m_bufferPtr = nullptr;
-		other.m_bufferCch = 0;
+		m_buffer = std::move(other.m_buffer);
 		return *this;
 	}
 
 public:
-	androidLogConsumer(unsigned bufferCch = 2*1024);
-	virtual ~androidLogConsumer();
+	androidLogConsumer(std::size_t bufferInitialCapacity = 2*1024);
+	virtual ~androidLogConsumer() override;
 
 protected:
 	virtual bool init_logging() override;
@@ -51,7 +50,7 @@ protected:
 
 	virtual const char* getTag(const message& msg);
 
-	virtual void formatText(char* buffer, unsigned cch, const message& msg);
+	virtual void formatText(char* buffer, std::size_t cch, const message& msg);
 };
 
 }

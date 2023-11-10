@@ -13,26 +13,17 @@ namespace gkr
 namespace log
 {
 
-androidLogConsumer::androidLogConsumer(unsigned bufferCch)
-    : m_bufferPtr(nullptr)
-    , m_bufferCch(bufferCch)
+androidLogConsumer::androidLogConsumer(std::size_t bufferInitialCapacity)
+    : m_buffer(bufferInitialCapacity)
 {
+    Check_ValidState(m_buffer.capacity() > 0);
 }
 
-androidLogConsumer::~androidLogConsumer()
-{
-    if(m_bufferPtr != nullptr)
-    {
-        delete [] m_bufferPtr;
-    }
-}
+androidLogConsumer::~androidLogConsumer() = default;
 
 bool androidLogConsumer::init_logging()
 {
-    if(m_bufferCch == 0      ) return false;
-    if(m_bufferPtr != nullptr) return false;
-
-    m_bufferPtr = new char[m_bufferCch];
+    Check_ValidState(m_buffer.capacity() > 0, false);
 
 #if defined(__ANDROID__)
     return true;
@@ -43,11 +34,6 @@ bool androidLogConsumer::init_logging()
 
 void androidLogConsumer::done_logging()
 {
-    if(m_bufferPtr != nullptr)
-    {
-        delete [] m_bufferPtr;
-        m_bufferPtr = nullptr;
-    }
 }
 
 bool androidLogConsumer::filter_log_message(const message& msg)
@@ -57,11 +43,15 @@ bool androidLogConsumer::filter_log_message(const message& msg)
 
 void androidLogConsumer::consume_log_message(const message& msg)
 {
-    if(m_bufferPtr == nullptr) return;
+    const std::size_t cch = m_buffer.capacity();
 
-    formatText(m_bufferPtr, m_bufferCch, msg);
+    Check_ValidState(cch > 0, );
 
-    m_bufferPtr[m_bufferCch - 1] = 0;
+    char* buffer = m_buffer.data<char>();
+
+    formatText(buffer, cch, msg);
+
+    buffer[cch - 1] = 0;
 
 #if defined(__ANDROID__)
     const char* tag      = getTag(msg);
@@ -80,7 +70,12 @@ int androidLogConsumer::getPriority(const message& msg)
 #endif
 }
 
-void androidLogConsumer::formatText(char* buffer, unsigned cch, const message& msg)
+const char* androidLogConsumer::getTag(const message& msg)
+{
+    return "";
+}
+
+void androidLogConsumer::formatText(char* buffer, std::size_t cch, const message& msg)
 {
     std::snprintf(
         buffer,
@@ -91,11 +86,6 @@ void androidLogConsumer::formatText(char* buffer, unsigned cch, const message& m
         msg.threadName,
         msg.messageText
         );
-}
-
-const char* androidLogConsumer::getTag(const message& msg)
-{
-    return "";
 }
 
 }

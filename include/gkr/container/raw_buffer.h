@@ -7,9 +7,9 @@
 #include <type_traits>
 
 #ifndef GKR_RAW_BUFFER_SINGLE_HEADER
-#if 0
+
 #include <gkr/diag/diagnostics.h>
-#endif
+
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.h>
 #endif
@@ -19,7 +19,7 @@
 #ifndef __cpp_lib_exchange_function
 #error  You must use C++14 or preinclude implementation of std::exchange
 #endif
-#if 0
+
 #include <cassert>
 
 #ifndef DIAG_NOEXCEPT
@@ -28,10 +28,7 @@
 #ifndef Assert_NotNullPtr
 #define Assert_NotNullPtr(cond) assert(cond)
 #endif
-#ifndef Check_Recovery
-#define Check_Recovery(msg)
-#endif
-#endif
+
 #endif
 
 #ifndef if_constexpr
@@ -363,12 +360,14 @@ public:
     const T& at(size_t index) const
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        Assert_NotNullPtr(m_data);
         return reinterpret_cast<const T*>(m_data)[index];
     }
 	template<typename T>
     T& at(size_t index)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        Assert_NotNullPtr(m_data);
         return reinterpret_cast<T*>(m_data)[index];
     }
 };

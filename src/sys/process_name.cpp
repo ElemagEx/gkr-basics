@@ -64,11 +64,11 @@ int get_current_process_name(char* name, unsigned cch)
 	if((name != nullptr) && (len < cch))
 	{
 		std::strncpy(name, __progname, cch);
-		return len;
+		return int(len);
 	}
 	else
 	{
-		return (len + 1);
+		return int(len + 1);
 	}
 }
 }

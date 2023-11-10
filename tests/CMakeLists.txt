@@ -23,6 +23,10 @@ add_executable       (t-lockfree_queue t-lockfree_queue.cpp)
 target_link_libraries(t-lockfree_queue PRIVATE gkr-basics Catch2::Catch2WithMain)
 catch_discover_tests (t-lockfree_queue)
 
+add_executable       (t-raw_buffer t-raw_buffer.cpp)
+target_link_libraries(t-raw_buffer PRIVATE gkr-basics Catch2::Catch2WithMain)
+catch_discover_tests (t-raw_buffer)
+
 add_executable       (t-events_waiting t-events_waiting.cpp)
 target_link_libraries(t-events_waiting PRIVATE gkr-basics Catch2::Catch2WithMain)
 catch_discover_tests (t-events_waiting)

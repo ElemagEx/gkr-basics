@@ -34,7 +34,7 @@ public:
 	}
 
 public:
-	androidLogConsumer(std::size_t bufferInitialCapacity = 2*1024);
+	androidLogConsumer(std::size_t bufferCapacity = 2*1024);
 	virtual ~androidLogConsumer() override;
 
 protected:

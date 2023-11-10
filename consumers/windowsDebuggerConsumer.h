@@ -34,7 +34,7 @@ public:
 	}
 
 public:
-	windowsDebuggerConsumer(std::size_t bufferInitialCapacity = 2*1024);
+	windowsDebuggerConsumer(std::size_t bufferCapacity = 2*1024);
 	virtual ~windowsDebuggerConsumer() override;
 
 protected:

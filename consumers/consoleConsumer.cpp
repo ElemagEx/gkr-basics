@@ -10,8 +10,8 @@ namespace gkr
 namespace log
 {
 
-consoleConsumer::consoleConsumer(std::size_t bufferInitialCapacity)
-    : m_buffer(bufferInitialCapacity)
+consoleConsumer::consoleConsumer(std::size_t bufferCapacity)
+    : m_buffer(bufferCapacity)
 {
     Check_ValidState(m_buffer.capacity() > 0);
 }

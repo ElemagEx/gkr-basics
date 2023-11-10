@@ -1,4 +1,5 @@
 #include "udpSocketConsumer.h"
+#include "udpMessagePacket.h"
 
 #include <gkr/log/message.h>
 #include <gkr/sys/process_name.h>
@@ -23,6 +24,10 @@ typedef union
     sockaddr_in6   Ipv6;
     unsigned short si_family;
 } sockaddr_inet;
+inline int closesocket(int fd)
+{
+	return close(fd);
+}
 #endif
 
 namespace gkr
@@ -30,77 +35,41 @@ namespace gkr
 namespace log
 {
 
-struct message_packet_desc
+udpSocketConsumer::udpSocketConsumer(
+	const char* addr,
+	unsigned short port,
+	std::size_t maxPacketSize,
+	std::size_t bufferInitialCapacity
+	)
+    : m_packet(maxPacketSize)
+    , m_buffer(bufferInitialCapacity)
+    , m_processId(gkr::sys::get_current_process_id())
 {
-    std::uint16_t packet_size;
-    std::uint8_t  packet_count;
-    std::uint8_t  packet_index;
-};
-struct message_packet_head : message_head
-{
-    std::int32_t  pid;
-    std::uint16_t data_size;
-    std::uint16_t _unused;
-    std::uint16_t offset_to_host;
-    std::uint16_t offset_to_process;
-    std::uint16_t offset_to_thread;
-    std::uint16_t offset_to_facility;
-    std::uint16_t offset_to_severity;
-    std::uint16_t offset_to_text;
-};
+    Check_Arg_IsValid(maxPacketSize >= MINIMUM_UDP_PACKET_SIZE, );
 
-udpSocketConsumer::udpSocketConsumer(udpSocketConsumer&& other) noexcept
-    : m_processName(std::move(other.m_processName))
-    , m_hostName   (std::move(other.m_hostName))
-    , m_remoteAddr (other.m_remoteAddr)
-    , m_pid        (other.m_pid)
-{
-    other.clearRemoteAddress();
-}
+    m_packet.resize(maxPacketSize);
 
-udpSocketConsumer& udpSocketConsumer::operator=(udpSocketConsumer&& other) noexcept
-{
-    m_processName = std::move(other.m_processName);
-    m_hostName    = std::move(other.m_hostName);
-
-    m_remoteAddr = other.m_remoteAddr;
-    m_pid        = other.m_pid;
-
-    other.clearRemoteAddress();
-
-    return *this;
-}
-
-udpSocketConsumer::udpSocketConsumer(const char* addr, unsigned short port, unsigned maxPacketSize, unsigned bufferSize)
-    : m_remoteAddr()
-//  , m_bufferSize(bufferSize)
-    , m_maxPacketSize(maxPacketSize)
-{
     setRemoteAddress(addr, port);
 }
 
 udpSocketConsumer::~udpSocketConsumer()
 {
+    Assert_Check(m_socket == INVALID_SOCKET_VALUE);
 }
 
 bool udpSocketConsumer::init_logging()
 {
-    sockaddr_inet& addr = *reinterpret_cast<sockaddr_inet*>(&m_remoteAddr);
+    Check_ValidState(m_packet.capacity() >= MINIMUM_UDP_PACKET_SIZE, false);
 
-    if(addr.si_family == AF_UNSPEC)
-    {
-        Check_FailureMsg("Remote address is invalid", false);
-    }
+    if(!retrieveProcessName()) return false;
+    if(!retrieveHostName()) return false;
 
-    m_pid = gkr::sys::get_current_process_id();
-
-    if(!retrieveProcessName() || !retrieveHostName()) return false;
-
-    return true;
+    return openUdpSocket();
 }
 
 void udpSocketConsumer::done_logging()
 {
+    closeUdpSocket();
 }
 
 bool udpSocketConsumer::filter_log_message(const message& msg)
@@ -110,6 +79,16 @@ bool udpSocketConsumer::filter_log_message(const message& msg)
 
 void udpSocketConsumer::consume_log_message(const message& msg)
 {
+    constructLogicalPacket(msg);
+
+    if(m_buffer.size() <= m_packet.size())
+    {
+        sendSinglePacket();
+    }
+    else
+    {
+        sendMultiplePackets();
+    }
 }
 
 bool udpSocketConsumer::setRemoteAddress(const char* addr, unsigned short port)
@@ -161,9 +140,170 @@ bool udpSocketConsumer::retrieveHostName()
 
     Check_ValidState(res == 0, false);
 
-    m_hostName = name;
+    m_hostName.assign(name);
 
     return true;
+}
+
+void udpSocketConsumer::constructLogicalPacket(const message& msg)
+{
+    const std::size_t nameLenThread   = std::strlen(msg.threadName);
+    const std::size_t nameLenFacility = std::strlen(msg.facilityName);
+    const std::size_t nameLenSeverity = std::strlen(msg.severityName);
+
+    const std::size_t dataSize =
+        sizeof(message_desc)
+        + m_hostName   .size() + 1
+        + m_processName.size() + 1
+        + nameLenThread   + 1
+        + nameLenFacility + 1
+        + nameLenSeverity + 1
+        + msg.messageLen  + 1
+        ;
+    constexpr std::size_t DATA_OFFSET = sizeof(message_packet_head);
+
+    const std::size_t packetSize = DATA_OFFSET + dataSize;
+
+    m_buffer.resize(packetSize);
+
+    message_packet_head& packetHead = m_buffer.as<message_packet_head>();
+
+    packetHead.packet_id    = m_packetId++;
+    packetHead.packet_count = 1;
+    packetHead.packet_index = 0;
+    packetHead.packet_size  = std::uint16_t(packetSize);
+    packetHead.data_offset  = std::uint16_t(DATA_OFFSET);
+    packetHead.data_size    = std::uint16_t(dataSize);
+    packetHead.msg_offset   = 0;
+    packetHead.msg_size     = std::uint16_t(dataSize);
+
+    message_desc& messageData = m_buffer.as<message_desc>(DATA_OFFSET);
+
+    messageData.tid      = msg.tid;
+    messageData.stamp    = msg.stamp;
+    messageData.severity = msg.severity;
+    messageData.facility = msg.facility;
+
+    messageData.pid      = m_processId;
+    messageData.size     = std::uint16_t(dataSize);
+
+    std::size_t offsetToStr = sizeof(message_desc);
+
+    messageData.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
+    messageData.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
+    messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread   + 1;
+    messageData.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility + 1;
+    messageData.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity + 1;
+    messageData.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen  + 1;
+
+    Assert_Check(offsetToStr == dataSize);
+
+    char* base = m_buffer.data<char>(DATA_OFFSET);
+
+    std::strncpy(base + messageData.offset_to_host    , m_hostName   .c_str(), m_hostName   .size() + 1); 
+    std::strncpy(base + messageData.offset_to_process , m_processName.c_str(), m_processName.size() + 1);
+    std::strncpy(base + messageData.offset_to_thread  , msg.threadName       , nameLenThread   + 1);
+    std::strncpy(base + messageData.offset_to_facility, msg.facilityName     , nameLenFacility + 1);
+    std::strncpy(base + messageData.offset_to_severity, msg.severityName     , nameLenSeverity + 1);
+    std::strncpy(base + messageData.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
+}
+
+void udpSocketConsumer::sendSinglePacket()
+{
+    sendUdpPacket(m_buffer.data(), m_buffer.size());
+}
+
+void udpSocketConsumer::sendMultiplePackets()
+{
+    constexpr std::size_t DATA_OFFSET = sizeof(message_packet_head);
+
+    const message_desc& message = m_buffer.as<message_desc>(DATA_OFFSET);
+
+    const std::size_t maxPacketSize = m_packet.size();
+    Assert_Check(maxPacketSize > DATA_OFFSET);
+
+    const std::size_t maxDataSize = (maxPacketSize - DATA_OFFSET);
+
+    const std::size_t count       = ((message.size % maxDataSize) == 0)
+        ? ((message.size / maxDataSize) + 0)
+        : ((message.size / maxDataSize) + 1)
+        ;
+    Assert_Check(count < 256);
+
+    message_packet_head& packetHead = m_packet.as<message_packet_head>();
+
+    packetHead.packet_id    = m_buffer.as<message_packet_head>().packet_id;
+    packetHead.packet_count = std::uint8_t(count);
+//  packetHead.packet_index = 0;
+//  packetHead.packet_size  = 0;
+    packetHead.data_offset  = DATA_OFFSET;
+//  packetHead.data_size    = 0;
+//  packetHead.msg_offset   = 0;
+    packetHead.msg_size     = message.size;
+
+    std::size_t restDataSize = message.size;
+    std::size_t sentDataSize = 0;
+
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        Assert_Check(restDataSize > 0);
+
+        const std::size_t curDataSize = (restDataSize >= maxDataSize)
+            ?  maxDataSize
+            : restDataSize
+            ;
+        const std::size_t packetSize = curDataSize + DATA_OFFSET;
+
+        packetHead.packet_index = std::uint8_t (index);
+        packetHead.packet_size  = std::uint16_t(packetSize);
+        packetHead.data_size    = std::uint16_t(curDataSize);
+        packetHead.msg_offset   = std::uint16_t(sentDataSize);
+
+        sendUdpPacket(&packetHead, packetSize);
+
+        restDataSize -= curDataSize;
+        sentDataSize += curDataSize;
+    }
+    Assert_Check(restDataSize == 0);
+    Assert_Check(sentDataSize == message.size);
+}
+
+bool udpSocketConsumer::openUdpSocket()
+{
+    Check_ValidState(m_socket == INVALID_SOCKET_VALUE, false);
+
+    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_remoteAddr);
+
+    Check_ValidState(sockAddr.si_family != AF_UNSPEC);
+
+    m_socket = socket(sockAddr.si_family, SOCK_DGRAM, IPPROTO_UDP);
+
+    return (m_socket != INVALID_SOCKET_VALUE);
+}
+
+void udpSocketConsumer::closeUdpSocket()
+{
+    if(m_socket == INVALID_SOCKET_VALUE) return;
+
+    closesocket(m_socket);
+
+    m_socket = INVALID_SOCKET_VALUE;
+}
+
+void udpSocketConsumer::sendUdpPacket(const void* packet, std::size_t size)
+{
+    const sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_remoteAddr);
+
+    socklen_t tolen;
+    switch(sockAddr.si_family)
+    {
+        case AF_INET : tolen = sizeof(sockaddr_in ); break;
+        case AF_INET6: tolen = sizeof(sockaddr_in6); break;
+
+        default: Check_Failure();
+    }
+
+    sendto(m_socket, static_cast<const char*>(packet), socklen_t(size), 0, reinterpret_cast<const sockaddr*>(&sockAddr), tolen);
 }
 
 }

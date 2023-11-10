@@ -13,8 +13,8 @@ namespace gkr
 namespace log
 {
 
-androidLogConsumer::androidLogConsumer(std::size_t bufferInitialCapacity)
-    : m_buffer(bufferInitialCapacity)
+androidLogConsumer::androidLogConsumer(std::size_t bufferCapacity)
+    : m_buffer(bufferCapacity)
 {
     Check_ValidState(m_buffer.capacity() > 0);
 }

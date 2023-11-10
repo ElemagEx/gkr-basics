@@ -345,6 +345,21 @@ public:
     }
 
 	template<typename T>
+    const T& as(size_t offset = 0) const
+    {
+        static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        Assert_NotNullPtr(m_data);
+        return *reinterpret_cast<const T*>(m_data + offset);
+    }
+	template<typename T>
+    T& as(size_t offset = 0)
+    {
+        static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        Assert_NotNullPtr(m_data);
+        return *reinterpret_cast<T*>(m_data + offset);
+    }
+
+	template<typename T>
     const T* ptr(size_t index) const
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");

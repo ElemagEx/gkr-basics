@@ -34,7 +34,7 @@ public:
 	}
 
 public:
-	consoleConsumer(std::size_t bufferInitialCapacity = 2*1024);
+	consoleConsumer(std::size_t bufferCapacity = 2*1024);
 	virtual ~consoleConsumer() override;
 
 protected:

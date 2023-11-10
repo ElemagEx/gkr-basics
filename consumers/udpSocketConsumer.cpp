@@ -247,6 +247,7 @@ void udpSocketConsumer::sendMultiplePackets()
     for(std::size_t index = 0; index < count; ++index)
     {
         Assert_Check(restDataSize > 0);
+        Assert_Check(sentDataSize < message.size);
 
         const std::size_t curDataSize = (restDataSize >= maxDataSize)
             ?  maxDataSize

@@ -80,10 +80,8 @@ private:
 	bool retrieveProcessName();
 	bool retrieveHostName();
 
-	void constructLogicalPacket(const message& msg);
-
-	void sendSinglePacket();
-	void sendMultiplePackets();
+	void constructData(const message& msg);
+	void sendData();
 
 	bool  openUdpSocket();
 	void closeUdpSocket();
@@ -103,17 +101,17 @@ private:
 	static constexpr socket_t INVALID_SOCKET_VALUE = socket_t(-1);
 
 private:
-	std::string  m_processName;
-	std::string  m_hostName;
+	std::string   m_processName;
+	std::string   m_hostName;
 
-	raw_buffer_t m_packet;
-	raw_buffer_t m_buffer;
+	raw_buffer_t  m_packet;
+	raw_buffer_t  m_buffer;
 
-	hostaddr_t   m_remoteAddr;
-	int          m_processId {0};
-	unsigned     m_packetId  {0};
+	hostaddr_t    m_remoteAddr;
+	int           m_processId {0};
+	std::uint64_t m_packetId  {0};
 
-	socket_t     m_socket {INVALID_SOCKET_VALUE};
+	socket_t      m_socket {INVALID_SOCKET_VALUE};
 };
 
 }

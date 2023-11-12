@@ -8,7 +8,7 @@ namespace gkr
 namespace log
 {
 
-struct message_head
+struct message_info
 {
 	std::int64_t  tid;
 	std::int64_t  stamp;
@@ -16,7 +16,7 @@ struct message_head
 	std::uint16_t facility;
 	std::uint32_t _reserved;
 };
-struct message : public message_head
+struct message : public message_info
 {
 	const char* threadName;
 	const char* severityName;

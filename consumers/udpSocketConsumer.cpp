@@ -79,16 +79,8 @@ bool udpSocketConsumer::filter_log_message(const message& msg)
 
 void udpSocketConsumer::consume_log_message(const message& msg)
 {
-    constructLogicalPacket(msg);
-
-    if(m_buffer.size() <= m_packet.size())
-    {
-        sendSinglePacket();
-    }
-    else
-    {
-        sendMultiplePackets();
-    }
+    constructData(msg);
+    sendData();
 }
 
 bool udpSocketConsumer::setRemoteAddress(const char* addr, unsigned short port)
@@ -145,14 +137,14 @@ bool udpSocketConsumer::retrieveHostName()
     return true;
 }
 
-void udpSocketConsumer::constructLogicalPacket(const message& msg)
+void udpSocketConsumer::constructData(const message& msg)
 {
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
     const std::size_t nameLenSeverity = std::strlen(msg.severityName);
 
     const std::size_t dataSize =
-        sizeof(message_desc)
+        sizeof(message_data)
         + m_hostName   .size() + 1
         + m_processName.size() + 1
         + nameLenThread   + 1
@@ -160,105 +152,89 @@ void udpSocketConsumer::constructLogicalPacket(const message& msg)
         + nameLenSeverity + 1
         + msg.messageLen  + 1
         ;
-    constexpr std::size_t DATA_OFFSET = sizeof(message_packet_head);
+    m_buffer.resize(dataSize);
 
-    const std::size_t packetSize = DATA_OFFSET + dataSize;
+    message_data& messageData = m_buffer.as<message_data>();
 
-    m_buffer.resize(packetSize);
+    messageData.head.signature = SIGNITURE_LOG_MSG;
+    messageData.head.size      = std::uint32_t(dataSize);
 
-    message_packet_head& packetHead = m_buffer.as<message_packet_head>();
+    messageData.info = static_cast<const message_info&>(msg);
 
-    packetHead.packet_id    = m_packetId++;
-    packetHead.packet_count = 1;
-    packetHead.packet_index = 0;
-    packetHead.packet_size  = std::uint16_t(packetSize);
-    packetHead.data_offset  = std::uint16_t(DATA_OFFSET);
-    packetHead.data_size    = std::uint16_t(dataSize);
-    packetHead.msg_offset   = 0;
-    packetHead.msg_size     = std::uint16_t(dataSize);
+    messageData.desc.pid = std::uint32_t(m_processId);
 
-    message_desc& messageData = m_buffer.as<message_desc>(DATA_OFFSET);
+    std::size_t offsetToStr = sizeof(message_data);
 
-    messageData.tid      = msg.tid;
-    messageData.stamp    = msg.stamp;
-    messageData.severity = msg.severity;
-    messageData.facility = msg.facility;
-
-    messageData.pid      = m_processId;
-    messageData.size     = std::uint16_t(dataSize);
-
-    std::size_t offsetToStr = sizeof(message_desc);
-
-    messageData.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
-    messageData.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
-    messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread   + 1;
-    messageData.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility + 1;
-    messageData.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity + 1;
-    messageData.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen  + 1;
+    messageData.desc.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
+    messageData.desc.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
+    messageData.desc.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread   + 1;
+    messageData.desc.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility + 1;
+    messageData.desc.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity + 1;
+    messageData.desc.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen  + 1;
 
     Assert_Check(offsetToStr == dataSize);
 
-    char* base = m_buffer.data<char>(DATA_OFFSET);
+    char* strBase = reinterpret_cast<char*>(&messageData);
 
-    std::strncpy(base + messageData.offset_to_host    , m_hostName   .c_str(), m_hostName   .size() + 1); 
-    std::strncpy(base + messageData.offset_to_process , m_processName.c_str(), m_processName.size() + 1);
-    std::strncpy(base + messageData.offset_to_thread  , msg.threadName       , nameLenThread   + 1);
-    std::strncpy(base + messageData.offset_to_facility, msg.facilityName     , nameLenFacility + 1);
-    std::strncpy(base + messageData.offset_to_severity, msg.severityName     , nameLenSeverity + 1);
-    std::strncpy(base + messageData.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
+    std::strncpy(strBase + messageData.desc.offset_to_host    , m_hostName   .c_str(), m_hostName   .size() + 1); 
+    std::strncpy(strBase + messageData.desc.offset_to_process , m_processName.c_str(), m_processName.size() + 1);
+    std::strncpy(strBase + messageData.desc.offset_to_thread  , msg.threadName       , nameLenThread   + 1);
+    std::strncpy(strBase + messageData.desc.offset_to_facility, msg.facilityName     , nameLenFacility + 1);
+    std::strncpy(strBase + messageData.desc.offset_to_severity, msg.severityName     , nameLenSeverity + 1);
+    std::strncpy(strBase + messageData.desc.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
 }
 
-void udpSocketConsumer::sendSinglePacket()
+void udpSocketConsumer::sendData()
 {
-    sendUdpPacket(m_buffer.data(), m_buffer.size());
-}
-
-void udpSocketConsumer::sendMultiplePackets()
-{
-    constexpr std::size_t DATA_OFFSET = sizeof(message_packet_head);
-
-    const message_desc& message = m_buffer.as<message_desc>(DATA_OFFSET);
+    constexpr std::size_t DATA_OFFSET = sizeof(net::split_packet_head);
 
     const std::size_t maxPacketSize = m_packet.size();
     Assert_Check(maxPacketSize > DATA_OFFSET);
 
-    const std::size_t maxDataSize = (maxPacketSize - DATA_OFFSET);
+    const std::size_t allDataSize          = m_buffer.as<message_data>(DATA_OFFSET).head.size;
+    const std::size_t maxDataSizePerPacket = (maxPacketSize - DATA_OFFSET);
 
-    const std::size_t count       = ((message.size % maxDataSize) == 0)
-        ? ((message.size / maxDataSize) + 0)
-        : ((message.size / maxDataSize) + 1)
+    const std::size_t count       = ((allDataSize % maxDataSizePerPacket) == 0)
+        ? ((allDataSize / maxDataSizePerPacket) + 0)
+        : ((allDataSize / maxDataSizePerPacket) + 1)
         ;
-    Assert_Check(count < 256);
+    Assert_Check(count > 0);
+    Assert_Check(count < 65536);
 
-    message_packet_head& packetHead = m_packet.as<message_packet_head>();
+    net::split_packet_head& packetHead = m_packet.as<net::split_packet_head>();
 
-    packetHead.packet_id    = m_buffer.as<message_packet_head>().packet_id;
-    packetHead.packet_count = std::uint8_t(count);
+    packetHead.packet_id    = m_packetId++;
+    packetHead.packet_count = std::uint16_t(count);
 //  packetHead.packet_index = 0;
 //  packetHead.packet_size  = 0;
     packetHead.data_offset  = DATA_OFFSET;
 //  packetHead.data_size    = 0;
-//  packetHead.msg_offset   = 0;
-    packetHead.msg_size     = message.size;
+//  packetHead.data_offset  = 0;
 
-    std::size_t restDataSize = message.size;
+    const
+    char* data = m_buffer.data<char>();
+    char* buff = m_packet.data<char>(DATA_OFFSET);
+
+    std::size_t restDataSize = allDataSize;
     std::size_t sentDataSize = 0;
 
     for(std::size_t index = 0; index < count; ++index)
     {
         Assert_Check(restDataSize > 0);
-        Assert_Check(sentDataSize < message.size);
+        Assert_Check(sentDataSize < allDataSize);
 
-        const std::size_t curDataSize = (restDataSize >= maxDataSize)
-            ?  maxDataSize
+        const std::size_t curDataSize = (restDataSize >= maxDataSizePerPacket)
+            ?  maxDataSizePerPacket
             : restDataSize
             ;
         const std::size_t packetSize = curDataSize + DATA_OFFSET;
 
-        packetHead.packet_index = std::uint8_t (index);
+        packetHead.packet_index = std::uint16_t(index);
         packetHead.packet_size  = std::uint16_t(packetSize);
-        packetHead.data_size    = std::uint16_t(curDataSize);
-        packetHead.msg_offset   = std::uint16_t(sentDataSize);
+        packetHead.data_size    = std::uint32_t( allDataSize);
+        packetHead.data_sent    = std::uint32_t(sentDataSize);
+
+        std::memcpy(buff, data + sentDataSize, curDataSize);
 
         sendUdpPacket(&packetHead, packetSize);
 
@@ -266,7 +242,7 @@ void udpSocketConsumer::sendMultiplePackets()
         sentDataSize += curDataSize;
     }
     Assert_Check(restDataSize == 0);
-    Assert_Check(sentDataSize == message.size);
+    Assert_Check(sentDataSize == allDataSize);
 }
 
 bool udpSocketConsumer::openUdpSocket()

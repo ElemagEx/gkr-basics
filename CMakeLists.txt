@@ -2,8 +2,8 @@
 
 project(gkr-basics)
 
-option(GKR_BUILD_TESTS "Build unit tests for the library" ON)
-option(GKR_BUILD_BASIC_LOG_CONSUMERS "Build basic log consumers" ON)
+option(GKR_BUILD_TESTS    "Build unit tests for the library" ON)
+option(GKR_BUILD_EXAMPLES "Build examples" ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -80,8 +80,8 @@ target_sources(
 
 target_include_directories(gkr-basics PUBLIC "include")
 
-if(GKR_BUILD_BASIC_LOG_CONSUMERS)
-add_subdirectory(consumers)
+if(GKR_BUILD_EXAMPLES)
+add_subdirectory(examples)
 endif()
 
 if(GKR_BUILD_TESTS)

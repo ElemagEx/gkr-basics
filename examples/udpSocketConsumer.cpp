@@ -16,7 +16,6 @@
 using sockaddr_inet = SOCKADDR_INET;
 #else
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
 typedef union
 {
@@ -36,8 +35,8 @@ namespace log
 {
 
 udpSocketConsumer::udpSocketConsumer(
-	const char* addr,
-	unsigned short port,
+	const char*    remoteHost,
+	unsigned short remotePort,
 	std::size_t maxPacketSize,
 	std::size_t bufferInitialCapacity
 	)
@@ -49,7 +48,7 @@ udpSocketConsumer::udpSocketConsumer(
 
     m_packet.resize(maxPacketSize);
 
-    setRemoteAddress(addr, port);
+    setRemoteAddress(remoteHost, remotePort);
 }
 
 udpSocketConsumer::~udpSocketConsumer()
@@ -80,35 +79,10 @@ bool udpSocketConsumer::filter_log_message(const message& msg)
 void udpSocketConsumer::consume_log_message(const message& msg)
 {
     constructData(msg);
-    sendData();
-}
 
-bool udpSocketConsumer::setRemoteAddress(const char* addr, unsigned short port)
-{
-    static_assert(sizeof(m_remoteAddr) >= sizeof(sockaddr_inet), "The size of host address buffer must be larger");
+    const message_data& messageData = m_buffer.as<message_data>();
 
-    clearRemoteAddress();
-
-    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_remoteAddr);
-
-    if(1 == inet_pton(AF_INET, addr, &sockAddr.Ipv4.sin_addr))
-    {
-        sockAddr.Ipv4.sin_family = AF_INET;
-        sockAddr.Ipv4.sin_port   = htons(port);
-        return true;
-    }
-    if(1 == inet_pton(AF_INET6, addr, &sockAddr.Ipv6.sin6_addr))
-    {
-        sockAddr.Ipv6.sin6_family = AF_INET6;
-        sockAddr.Ipv6.sin6_port   = htons(port);
-        return true;
-    }
-    Check_Arg_Invalid(addr, false);
-}
-
-void udpSocketConsumer::clearRemoteAddress() noexcept
-{
-    for(auto& byte : m_remoteAddr.bytes) byte = 0;
+    sendData(reinterpret_cast<const char*>(&messageData), messageData.head.size);
 }
 
 bool udpSocketConsumer::retrieveProcessName()
@@ -159,7 +133,7 @@ void udpSocketConsumer::constructData(const message& msg)
     messageData.head.signature = SIGNITURE_LOG_MSG;
     messageData.head.size      = std::uint32_t(dataSize);
 
-    messageData.info = static_cast<const message_info&>(msg);
+    messageData.info = msg;
 
     messageData.desc.pid = std::uint32_t(m_processId);
 
@@ -184,19 +158,18 @@ void udpSocketConsumer::constructData(const message& msg)
     std::strncpy(strBase + messageData.desc.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
 }
 
-void udpSocketConsumer::sendData()
+void udpSocketConsumer::sendData(const char* data, std::size_t size)
 {
     constexpr std::size_t DATA_OFFSET = sizeof(net::split_packet_head);
 
     const std::size_t maxPacketSize = m_packet.size();
     Assert_Check(maxPacketSize > DATA_OFFSET);
 
-    const std::size_t allDataSize          = m_buffer.as<message_data>(DATA_OFFSET).head.size;
     const std::size_t maxDataSizePerPacket = (maxPacketSize - DATA_OFFSET);
 
-    const std::size_t count       = ((allDataSize % maxDataSizePerPacket) == 0)
-        ? ((allDataSize / maxDataSizePerPacket) + 0)
-        : ((allDataSize / maxDataSizePerPacket) + 1)
+    const std::size_t count = ((size % maxDataSizePerPacket) == 0)
+        ? ((size / maxDataSizePerPacket) + 0)
+        : ((size / maxDataSizePerPacket) + 1)
         ;
     Assert_Check(count > 0);
     Assert_Check(count < 65536);
@@ -208,20 +181,18 @@ void udpSocketConsumer::sendData()
 //  packetHead.packet_index = 0;
 //  packetHead.packet_size  = 0;
     packetHead.data_offset  = DATA_OFFSET;
-//  packetHead.data_size    = 0;
-//  packetHead.data_offset  = 0;
+    packetHead.data_size    = std::uint32_t(size);
+//  packetHead.data_sent    = 0;
 
-    const
-    char* data = m_buffer.data<char>();
     char* buff = m_packet.data<char>(DATA_OFFSET);
 
-    std::size_t restDataSize = allDataSize;
+    std::size_t restDataSize = size;
     std::size_t sentDataSize = 0;
 
     for(std::size_t index = 0; index < count; ++index)
     {
         Assert_Check(restDataSize > 0);
-        Assert_Check(sentDataSize < allDataSize);
+        Assert_Check(sentDataSize < size);
 
         const std::size_t curDataSize = (restDataSize >= maxDataSizePerPacket)
             ?  maxDataSizePerPacket
@@ -231,7 +202,6 @@ void udpSocketConsumer::sendData()
 
         packetHead.packet_index = std::uint16_t(index);
         packetHead.packet_size  = std::uint16_t(packetSize);
-        packetHead.data_size    = std::uint32_t( allDataSize);
         packetHead.data_sent    = std::uint32_t(sentDataSize);
 
         std::memcpy(buff, data + sentDataSize, curDataSize);
@@ -242,18 +212,16 @@ void udpSocketConsumer::sendData()
         sentDataSize += curDataSize;
     }
     Assert_Check(restDataSize == 0);
-    Assert_Check(sentDataSize == allDataSize);
+    Assert_Check(sentDataSize == size);
 }
 
 bool udpSocketConsumer::openUdpSocket()
 {
     Check_ValidState(m_socket == INVALID_SOCKET_VALUE, false);
 
-    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_remoteAddr);
+    Check_ValidState(m_remoteAddr.isValid(), false);
 
-    Check_ValidState(sockAddr.si_family != AF_UNSPEC);
-
-    m_socket = socket(sockAddr.si_family, SOCK_DGRAM, IPPROTO_UDP);
+    m_socket = socket(m_remoteAddr.family(), SOCK_DGRAM, IPPROTO_UDP);
 
     return (m_socket != INVALID_SOCKET_VALUE);
 }
@@ -269,18 +237,11 @@ void udpSocketConsumer::closeUdpSocket()
 
 void udpSocketConsumer::sendUdpPacket(const void* packet, std::size_t size)
 {
-    const sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_remoteAddr);
+    socklen_t tolen = socklen_t(m_remoteAddr.size());
 
-    socklen_t tolen;
-    switch(sockAddr.si_family)
-    {
-        case AF_INET : tolen = sizeof(sockaddr_in ); break;
-        case AF_INET6: tolen = sizeof(sockaddr_in6); break;
+    const sockaddr* addr = reinterpret_cast<const sockaddr*>(m_remoteAddr.data());
 
-        default: Check_Failure();
-    }
-
-    sendto(m_socket, static_cast<const char*>(packet), socklen_t(size), 0, reinterpret_cast<const sockaddr*>(&sockAddr), tolen);
+    sendto(m_socket, static_cast<const char*>(packet), socklen_t(size), 0, addr, tolen);
 }
 
 }

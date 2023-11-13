@@ -1,0 +1,181 @@
+#include <gkr/net/address.h>
+
+#include <gkr/diag/diagnostics.h>
+
+#ifdef _WIN32
+#pragma warning(disable:4668)
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#pragma warning(default:4668)
+using sockaddr_inet = SOCKADDR_INET;
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+typedef union
+{
+    sockaddr_in    Ipv4;
+    sockaddr_in6   Ipv6;
+    unsigned short si_family;
+} sockaddr_inet;
+#endif
+
+#include <cstring>
+#include <cstdio>
+
+namespace gkr
+{
+namespace net
+{
+
+bool address::reset(const char* host, unsigned short port)
+{
+    Check_Arg_NotNull(host, false);
+
+    static_assert(family_unspec == AF_UNSPEC, "Checkout constant valid value");
+    static_assert(family_inet   == AF_INET  , "Checkout constant valid value");
+    static_assert(family_inet6  == AF_INET6 , "Checkout constant valid value");
+
+    static_assert(sizeof(m_addr) >= sizeof(sockaddr_inet), "The size of host address buffer must be larger");
+
+    reset();
+
+    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_addr);
+
+    if(1 == inet_pton(AF_INET, host, &sockAddr.Ipv4.sin_addr))
+    {
+        sockAddr.Ipv4.sin_family = AF_INET;
+        sockAddr.Ipv4.sin_port   = htons(port);
+        return true;
+    }
+    if(1 == inet_pton(AF_INET6, host, &sockAddr.Ipv6.sin6_addr))
+    {
+        sockAddr.Ipv6.sin6_family = AF_INET6;
+        sockAddr.Ipv6.sin6_port   = htons(port);
+        return true;
+    }
+    return false;
+}
+
+std::size_t address::size() const noexcept
+{
+    const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
+
+    switch(sockAddr.si_family)
+    {
+        case AF_INET : return sizeof(sockaddr_in );
+        case AF_INET6: return sizeof(sockaddr_in6);
+
+        default: return 0;
+    }
+}
+
+unsigned short address::port() const noexcept
+{
+    const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
+
+    switch(sockAddr.si_family)
+    {
+        case AF_INET : return ntohs(sockAddr.Ipv4.sin_port );
+        case AF_INET6: return ntohs(sockAddr.Ipv6.sin6_port);
+
+        default: return 0;
+    }
+}
+
+std::size_t address::host(char* buff, std::size_t cch) const
+{
+    constexpr std::size_t HOST_CCH = 64;
+    char host[HOST_CCH];
+
+    const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
+
+    switch(sockAddr.si_family)
+    {
+        case AF_INET:
+            if(nullptr == inet_ntop(AF_INET, &sockAddr.Ipv4.sin_addr, host, HOST_CCH))
+            {
+                return 0;
+            }
+            break;
+
+        case AF_INET6:
+            if(nullptr == inet_ntop(AF_INET6, &sockAddr.Ipv6.sin6_addr, host, HOST_CCH))
+            {
+                return 0;
+            }
+            break;
+
+        default:
+            return 0;
+    }
+    const std::size_t len = std::strlen(host);
+
+    if(len >= cch) return (len + 1);
+
+    Check_Arg_NotNull(buff, 0);
+
+    std::strncpy(buff, host, cch);
+
+    return len;
+}
+
+std::size_t address::addr(char* buff, std::size_t cch) const
+{
+    constexpr std::size_t ADDR_CCH = 72;
+    char addr[ADDR_CCH];
+
+    std::size_t len;
+
+    const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
+
+    switch(sockAddr.si_family)
+    {
+        case AF_INET:
+            if(nullptr == inet_ntop(AF_INET, &sockAddr.Ipv4.sin_addr, addr, ADDR_CCH))
+            {
+                return 0;
+            }
+            else
+            {
+                const unsigned short port = ntohs(sockAddr.Ipv4.sin_port);
+
+                len = std::strlen(addr);
+                Assert_Check(len < ADDR_CCH);
+
+                len += std::size_t(std::snprintf(addr + len, ADDR_CCH - len, ":%hu", port));
+            }
+            break;
+
+        case AF_INET6:
+            if(nullptr == inet_ntop(AF_INET6, &sockAddr.Ipv6.sin6_addr, addr + 1, ADDR_CCH - 1))
+            {
+                return 0;
+            }
+            else
+            {
+                const unsigned short port = ntohs(sockAddr.Ipv6.sin6_port);
+
+                *addr = '[';
+
+                len = std::strlen(addr);
+                Assert_Check(len < ADDR_CCH);
+
+                len += std::size_t(std::snprintf(addr + len, ADDR_CCH - len, "]:%hu", port));
+            }
+            break;
+
+        default:
+            return 0;
+    }
+
+    if(len >= cch) return (len + 1);
+
+    Check_Arg_NotNull(buff, 0);
+
+    std::strncpy(buff, addr, cch);
+
+    return len;
+}
+
+}
+}

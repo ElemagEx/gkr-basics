@@ -76,6 +76,8 @@ target_sources(
     "${gkr_basics_src_path}/log/logger.cpp"
     "${gkr_basics_inc_path}/log/logging.h"
     "${gkr_basics_src_path}/log/logging.cpp"
+    "${gkr_basics_inc_path}/net/address.h"
+    "${gkr_basics_src_path}/net/address.cpp"
     )
 
 target_include_directories(gkr-basics PUBLIC "include")

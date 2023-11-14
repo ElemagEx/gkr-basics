@@ -34,3 +34,11 @@ catch_discover_tests (t-events_waiting)
 add_executable       (t-logging t-logging.cpp)
 target_link_libraries(t-logging PRIVATE gkr-basics Catch2::Catch2WithMain)
 catch_discover_tests (t-logging)
+
+add_executable       (t-address t-address.cpp)
+target_link_libraries(t-address PRIVATE gkr-basics Catch2::Catch2WithMain)
+catch_discover_tests (t-address)
+
+add_executable       (t-socket t-socket.cpp)
+target_link_libraries(t-socket PRIVATE gkr-basics Catch2::Catch2WithMain)
+catch_discover_tests (t-socket)

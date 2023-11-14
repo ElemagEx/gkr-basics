@@ -3,31 +3,11 @@
 
 #include <gkr/log/message.h>
 #include <gkr/sys/process_name.h>
+#include <gkr/net/lib.h>
 
 #include <gkr/diag/diagnostics.h>
 
 #include <cstring>
-
-#ifdef _WIN32
-#pragma warning(disable:4668)
-#include <winsock2.h>
-#include <Ws2tcpip.h>
-#pragma warning(default:4668)
-using sockaddr_inet = SOCKADDR_INET;
-#else
-#include <unistd.h>
-#include <netinet/in.h>
-typedef union
-{
-    sockaddr_in    Ipv4;
-    sockaddr_in6   Ipv6;
-    unsigned short si_family;
-} sockaddr_inet;
-inline int closesocket(int fd)
-{
-	return close(fd);
-}
-#endif
 
 namespace gkr
 {
@@ -51,7 +31,7 @@ udpSocketConsumer::udpSocketConsumer(
 
 udpSocketConsumer::~udpSocketConsumer()
 {
-    Assert_Check(m_socket == INVALID_SOCKET_VALUE);
+    Assert_Check(!m_socket.is_open());
 }
 
 bool udpSocketConsumer::init_logging()
@@ -61,12 +41,15 @@ bool udpSocketConsumer::init_logging()
     if(!retrieveProcessName()) return false;
     if(!retrieveHostName()) return false;
 
-    return openUdpSocket();
+    Check_ValidState(!m_socket.is_open(), false);
+    Check_ValidState(m_remoteAddr.is_valid(), false);
+
+    return m_socket.open_as_udp(m_remoteAddr.is_ipv6());
 }
 
 void udpSocketConsumer::done_logging()
 {
-    closeUdpSocket();
+    m_socket.close();
 }
 
 bool udpSocketConsumer::filter_log_message(const log::message& msg)
@@ -80,7 +63,7 @@ void udpSocketConsumer::consume_log_message(const log::message& msg)
 
     const log::message_data& messageData = m_buffer.as<log::message_data>();
 
-    sendData(reinterpret_cast<const char*>(&messageData), messageData.head.size);
+    postData(reinterpret_cast<const char*>(&messageData), messageData.head.size);
 }
 
 bool udpSocketConsumer::retrieveProcessName()
@@ -100,11 +83,11 @@ bool udpSocketConsumer::retrieveHostName()
 {
     char name[256];
 
-    [[maybe_unused]] const int res = gethostname(name, 256);
+    const int len = gkr::net::get_hostname(name, 256);
 
-    Check_ValidState(res == 0, false);
+    Check_ValidState(len > 0, false);
 
-    m_hostName.assign(name);
+    m_hostName.assign(name, unsigned(len));
 
     return true;
 }
@@ -156,7 +139,7 @@ void udpSocketConsumer::constructData(const log::message& msg)
     std::strncpy(strBase + messageData.desc.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
 }
 
-void udpSocketConsumer::sendData(const char* data, std::size_t size)
+void udpSocketConsumer::postData(const char* data, std::size_t size)
 {
     constexpr std::size_t DATA_OFFSET = sizeof(net::split_packet_head);
 
@@ -204,42 +187,13 @@ void udpSocketConsumer::sendData(const char* data, std::size_t size)
 
         std::memcpy(buff, data + sentDataSize, curDataSize);
 
-        sendUdpPacket(&packetHead, packetSize);
+        m_socket.send_to(&packetHead, packetSize, m_remoteAddr);
 
         restDataSize -= curDataSize;
         sentDataSize += curDataSize;
     }
     Assert_Check(restDataSize == 0);
     Assert_Check(sentDataSize == size);
-}
-
-bool udpSocketConsumer::openUdpSocket()
-{
-    Check_ValidState(m_socket == INVALID_SOCKET_VALUE, false);
-
-    Check_ValidState(m_remoteAddr.isValid(), false);
-
-    m_socket = socket(m_remoteAddr.family(), SOCK_DGRAM, IPPROTO_UDP);
-
-    return (m_socket != INVALID_SOCKET_VALUE);
-}
-
-void udpSocketConsumer::closeUdpSocket()
-{
-    if(m_socket == INVALID_SOCKET_VALUE) return;
-
-    closesocket(m_socket);
-
-    m_socket = INVALID_SOCKET_VALUE;
-}
-
-void udpSocketConsumer::sendUdpPacket(const void* packet, std::size_t size)
-{
-    socklen_t tolen = socklen_t(m_remoteAddr.size());
-
-    const sockaddr* addr = reinterpret_cast<const sockaddr*>(m_remoteAddr.data());
-
-    sendto(m_socket, static_cast<const char*>(packet), socklen_t(size), 0, addr, tolen);
 }
 
 }

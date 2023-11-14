@@ -56,25 +56,14 @@ public:
         m_addr = addr_t();
     }
 
-private:
-    enum : unsigned short { family_unspec = 0, family_inet = 2, family_inet6 = 23 };
-
 public:
-    unsigned short family() const noexcept
+    int family() const noexcept
     {
         return *reinterpret_cast<const unsigned short*>(&m_addr);
     }
-    bool isValid() const noexcept
+    bool is_valid() const noexcept
     {
-        return ((family() == family_inet) || (family() == family_inet6));
-    }
-    bool isIPv4() const noexcept
-    {
-        return (family() == family_inet);
-    }
-    bool isIPv6() const noexcept
-    {
-        return (family() == family_inet6);;
+        return (is_ipv4() || is_ipv6());
     }
     const void* data() const noexcept
     {
@@ -86,6 +75,9 @@ public:
     GKR_NET_API bool reset(bool ipv6, unsigned short port);
 
 public:
+    GKR_NET_API bool is_ipv4() const noexcept;
+    GKR_NET_API bool is_ipv6() const noexcept;
+
     GKR_NET_API std::size_t size() const noexcept;
 
     GKR_NET_API unsigned short port() const noexcept;

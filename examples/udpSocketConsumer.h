@@ -2,6 +2,7 @@
 
 #include <gkr/log/consumer.h>
 #include <gkr/net/address.h>
+#include <gkr/net/socket.h>
 #include <gkr/container/raw_buffer.h>
 
 #include <string>
@@ -24,10 +25,10 @@ public:
         , m_hostName   (std::move(other.m_hostName))
         , m_packet     (std::move(other.m_packet))
         , m_buffer     (std::move(other.m_buffer))
+        , m_socket     (std::move(other.m_socket))
         , m_remoteAddr (std::move(other.m_remoteAddr))
-        , m_processId  (other.m_processId)
-        , m_packetId   (std::exchange(other.m_packetId, 0))
-        , m_socket     (std::exchange(other.m_socket  , INVALID_SOCKET_VALUE))
+        , m_processId  (std::exchange(other.m_processId, 0))
+        , m_packetId   (std::exchange(other.m_packetId , 0))
     {
     }
     udpSocketConsumer& operator=(udpSocketConsumer&& other) noexcept(
@@ -38,17 +39,16 @@ public:
         m_hostName    = std::move(other.m_hostName);
         m_packet      = std::move(other.m_packet);
         m_buffer      = std::move(other.m_buffer);
+        m_socket      = std::move(other.m_socket);
         m_remoteAddr  = std::move(other.m_remoteAddr);
 
-        m_processId   = other.m_processId;
-
-        m_packetId    = std::exchange(other.m_packetId, 0);
-        m_socket      = std::exchange(other.m_socket  , INVALID_SOCKET_VALUE);
+        m_processId   = std::exchange(other.m_processId, 0);
+        m_packetId    = std::exchange(other.m_packetId , 0);
         return *this;
     }
 
 public:
-    static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1500;
+    static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;
     static constexpr std::size_t MINIMUM_UDP_PACKET_SIZE = 240;
 
     udpSocketConsumer(
@@ -78,20 +78,7 @@ private:
     bool retrieveHostName();
 
     void constructData(const log::message& msg);
-    void sendData(const char* data, std::size_t size);
-
-    bool  openUdpSocket();
-    void closeUdpSocket();
-
-    void sendUdpPacket(const void* packet, std::size_t size);
-
-private:
-#ifdef _WIN32
-    using socket_t = std::size_t;
-#else
-    using socket_t = int;
-#endif
-    static constexpr socket_t INVALID_SOCKET_VALUE = socket_t(-1);
+    void postData(const char* data, std::size_t size);
 
 private:
     std::string     m_processName;
@@ -100,11 +87,11 @@ private:
     raw_buffer_t    m_packet;
     raw_buffer_t    m_buffer;
 
+    net::socket     m_socket;
     net::address    m_remoteAddr;
+
     int             m_processId {0};
     std::uint64_t   m_packetId  {0};
-
-    socket_t        m_socket {INVALID_SOCKET_VALUE};
 };
 
 }

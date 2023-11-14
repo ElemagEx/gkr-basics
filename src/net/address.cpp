@@ -31,10 +31,6 @@ bool address::reset(const char* host, unsigned short port)
 {
     Check_Arg_NotNull(host, false);
 
-    static_assert(family_unspec == AF_UNSPEC, "Checkout constant valid value");
-    static_assert(family_inet   == AF_INET  , "Checkout constant valid value");
-    static_assert(family_inet6  == AF_INET6 , "Checkout constant valid value");
-
     static_assert(sizeof(m_addr) >= sizeof(sockaddr_inet), "The size of host address buffer must be larger");
 
     reset();
@@ -66,13 +62,29 @@ bool address::reset(bool ipv6, unsigned short port)
     {
         sockAddr.Ipv4.sin_family = AF_INET;
         sockAddr.Ipv4.sin_port   = htons(port);
+    //  sockAddr.Ipv4.sin_addr   = INADDR_ANY;
     }
     else
     {
         sockAddr.Ipv6.sin6_family = AF_INET6;
         sockAddr.Ipv6.sin6_port   = htons(port);
+    //  sockAddr.Ipv4.sin_addr    = INADDR6_ANY;
     }
     return true;
+}
+
+bool address::is_ipv4() const noexcept
+{
+    const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
+
+    return (sockAddr.si_family == AF_INET);
+}
+
+bool address::is_ipv6() const noexcept
+{
+    const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
+
+    return (sockAddr.si_family == AF_INET6);
 }
 
 std::size_t address::size() const noexcept

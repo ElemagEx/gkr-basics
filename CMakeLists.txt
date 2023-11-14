@@ -76,11 +76,19 @@ target_sources(
     "${gkr_basics_src_path}/log/logger.cpp"
     "${gkr_basics_inc_path}/log/logging.h"
     "${gkr_basics_src_path}/log/logging.cpp"
+    "${gkr_basics_inc_path}/net/lib.h"
+    "${gkr_basics_src_path}/net/lib.cpp"
     "${gkr_basics_inc_path}/net/address.h"
     "${gkr_basics_src_path}/net/address.cpp"
+    "${gkr_basics_inc_path}/net/socket.h"
+    "${gkr_basics_src_path}/net/socket.cpp"
     )
 
 target_include_directories(gkr-basics PUBLIC "include")
+
+if(WIN32)
+target_link_libraries(gkr-basics PRIVATE ws2_32)
+endif()
 
 if(GKR_BUILD_EXAMPLES)
 add_subdirectory(examples)

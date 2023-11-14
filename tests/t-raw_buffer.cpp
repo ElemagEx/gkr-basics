@@ -4,7 +4,7 @@
 
 TEST_CASE("container.raw_buffer. main")
 {
-    gkr::raw_buffer b1;
+    gkr::raw_buffer_t b1;
 
     b1.reserve(1024);
 }

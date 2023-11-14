@@ -7,8 +7,6 @@
 
 namespace gkr
 {
-namespace log
-{
 
 consoleConsumer::consoleConsumer(std::size_t bufferCapacity)
     : m_buffer(bufferCapacity)
@@ -29,12 +27,12 @@ void consoleConsumer::done_logging()
 {
 }
 
-bool consoleConsumer::filter_log_message(const message& msg)
+bool consoleConsumer::filter_log_message(const log::message& msg)
 {
     return false;
 }
 
-void consoleConsumer::consume_log_message(const message& msg)
+void consoleConsumer::consume_log_message(const log::message& msg)
 {
     const std::size_t cch = m_buffer.capacity();
 
@@ -49,7 +47,7 @@ void consoleConsumer::consume_log_message(const message& msg)
     std::cerr << buffer << std::endl;
 }
 
-void consoleConsumer::composeOutput(char* buffer, std::size_t cch, const message& msg)
+void consoleConsumer::composeOutput(char* buffer, std::size_t cch, const log::message& msg)
 {
     std::tm  tm;
     unsigned ns;
@@ -71,5 +69,4 @@ void consoleConsumer::composeOutput(char* buffer, std::size_t cch, const message
         );
 }
 
-}
 }

@@ -5,10 +5,8 @@
 
 namespace gkr
 {
-namespace log
-{
 
-class consoleConsumer : public consumer
+class consoleConsumer : public log::consumer
 {
 	consoleConsumer           (const consoleConsumer&) noexcept = delete;
 	consoleConsumer& operator=(const consoleConsumer&) noexcept = delete;
@@ -41,13 +39,12 @@ protected:
 	virtual bool init_logging() override;
 	virtual void done_logging() override;
 
-	virtual bool filter_log_message(const message& msg) override;
+	virtual bool filter_log_message(const log::message& msg) override;
 
-	virtual void consume_log_message(const message& msg) override;
+	virtual void consume_log_message(const log::message& msg) override;
 
 protected:
-	virtual void composeOutput(char* buffer, std::size_t cch, const message& msg);
+	virtual void composeOutput(char* buffer, std::size_t cch, const log::message& msg);
 };
 
-}
 }

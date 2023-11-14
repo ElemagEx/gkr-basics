@@ -45,15 +45,19 @@ public:
     {
         reset(host, port);
     }
-
-private:
-    enum : unsigned short { family_unspec = 0, family_inet = 2, family_inet6 = 23 };
+    address(bool ipv6, unsigned short port)
+    {
+        reset(ipv6, port);
+    }
 
 public:
     void reset() noexcept
     {
-        *reinterpret_cast<unsigned short*>(&m_addr) = family_unspec;
+        m_addr = addr_t();
     }
+
+private:
+    enum : unsigned short { family_unspec = 0, family_inet = 2, family_inet6 = 23 };
 
 public:
     unsigned short family() const noexcept
@@ -78,15 +82,16 @@ public:
     }
 
 public:
+    GKR_NET_API bool reset(const char* host, unsigned short port);
+    GKR_NET_API bool reset(bool ipv6, unsigned short port);
+
+public:
     GKR_NET_API std::size_t size() const noexcept;
 
     GKR_NET_API unsigned short port() const noexcept;
 
     GKR_NET_API std::size_t host(char* buff, std::size_t cch) const;
     GKR_NET_API std::size_t addr(char* buff, std::size_t cch) const;
-
-public:
-    GKR_NET_API bool reset(const char* host, unsigned short port);
 
 public:
     template<std::size_t CCH>

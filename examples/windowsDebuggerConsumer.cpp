@@ -11,8 +11,6 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char*);
 
 namespace gkr
 {
-namespace log
-{
 
 windowsDebuggerConsumer::windowsDebuggerConsumer(std::size_t bufferCapacity)
     : m_buffer(bufferCapacity)
@@ -37,12 +35,12 @@ void windowsDebuggerConsumer::done_logging()
 {
 }
 
-bool windowsDebuggerConsumer::filter_log_message(const message& msg)
+bool windowsDebuggerConsumer::filter_log_message(const log::message& msg)
 {
     return false;
 }
 
-void windowsDebuggerConsumer::consume_log_message(const message& msg)
+void windowsDebuggerConsumer::consume_log_message(const log::message& msg)
 {
     const std::size_t cch = m_buffer.capacity();
 
@@ -60,7 +58,7 @@ void windowsDebuggerConsumer::consume_log_message(const message& msg)
 #endif
 }
 
-void windowsDebuggerConsumer::composeOutput(char* buffer, std::size_t cch, const message& msg)
+void windowsDebuggerConsumer::composeOutput(char* buffer, std::size_t cch, const log::message& msg)
 {
     std::tm  tm;
     unsigned ns;
@@ -82,5 +80,4 @@ void windowsDebuggerConsumer::composeOutput(char* buffer, std::size_t cch, const
         );
 }
 
-}
 }

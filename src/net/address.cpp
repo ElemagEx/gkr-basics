@@ -56,6 +56,25 @@ bool address::reset(const char* host, unsigned short port)
     return false;
 }
 
+bool address::reset(bool ipv6, unsigned short port)
+{
+    reset();
+
+    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_addr);
+
+    if(ipv6)
+    {
+        sockAddr.Ipv4.sin_family = AF_INET;
+        sockAddr.Ipv4.sin_port   = htons(port);
+    }
+    else
+    {
+        sockAddr.Ipv6.sin6_family = AF_INET6;
+        sockAddr.Ipv6.sin6_port   = htons(port);
+    }
+    return true;
+}
+
 std::size_t address::size() const noexcept
 {
     const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);

@@ -10,8 +10,6 @@
 
 namespace gkr
 {
-namespace log
-{
 
 androidLogConsumer::androidLogConsumer(std::size_t bufferCapacity)
     : m_buffer(bufferCapacity)
@@ -36,12 +34,12 @@ void androidLogConsumer::done_logging()
 {
 }
 
-bool androidLogConsumer::filter_log_message(const message& msg)
+bool androidLogConsumer::filter_log_message(const log::message& msg)
 {
     return false;
 }
 
-void androidLogConsumer::consume_log_message(const message& msg)
+void androidLogConsumer::consume_log_message(const log::message& msg)
 {
     const std::size_t cch = m_buffer.capacity();
 
@@ -61,7 +59,7 @@ void androidLogConsumer::consume_log_message(const message& msg)
 #endif
 }
 
-int androidLogConsumer::getPriority(const message& msg)
+int androidLogConsumer::getPriority(const log::message& msg)
 {
 #if defined(__ANDROID__)
     return ANDROID_LOG_VERBOSE;
@@ -70,12 +68,12 @@ int androidLogConsumer::getPriority(const message& msg)
 #endif
 }
 
-const char* androidLogConsumer::getTag(const message& msg)
+const char* androidLogConsumer::getTag(const log::message& msg)
 {
     return "";
 }
 
-void androidLogConsumer::formatText(char* buffer, std::size_t cch, const message& msg)
+void androidLogConsumer::formatText(char* buffer, std::size_t cch, const log::message& msg)
 {
     std::snprintf(
         buffer,
@@ -88,5 +86,4 @@ void androidLogConsumer::formatText(char* buffer, std::size_t cch, const message
         );
 }
 
-}
 }

@@ -31,8 +31,6 @@ inline int closesocket(int fd)
 
 namespace gkr
 {
-namespace log
-{
 
 udpSocketConsumer::udpSocketConsumer(
 	const char*    remoteHost,
@@ -71,16 +69,16 @@ void udpSocketConsumer::done_logging()
     closeUdpSocket();
 }
 
-bool udpSocketConsumer::filter_log_message(const message& msg)
+bool udpSocketConsumer::filter_log_message(const log::message& msg)
 {
     return false;
 }
 
-void udpSocketConsumer::consume_log_message(const message& msg)
+void udpSocketConsumer::consume_log_message(const log::message& msg)
 {
     constructData(msg);
 
-    const message_data& messageData = m_buffer.as<message_data>();
+    const log::message_data& messageData = m_buffer.as<log::message_data>();
 
     sendData(reinterpret_cast<const char*>(&messageData), messageData.head.size);
 }
@@ -111,14 +109,14 @@ bool udpSocketConsumer::retrieveHostName()
     return true;
 }
 
-void udpSocketConsumer::constructData(const message& msg)
+void udpSocketConsumer::constructData(const log::message& msg)
 {
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
     const std::size_t nameLenSeverity = std::strlen(msg.severityName);
 
     const std::size_t dataSize =
-        sizeof(message_data)
+        sizeof(log::message_data)
         + m_hostName   .size() + 1
         + m_processName.size() + 1
         + nameLenThread   + 1
@@ -128,16 +126,16 @@ void udpSocketConsumer::constructData(const message& msg)
         ;
     m_buffer.resize(dataSize);
 
-    message_data& messageData = m_buffer.as<message_data>();
+    log::message_data& messageData = m_buffer.as<log::message_data>();
 
-    messageData.head.signature = SIGNITURE_LOG_MSG;
+    messageData.head.signature = log::SIGNITURE_LOG_MSG;
     messageData.head.size      = std::uint32_t(dataSize);
 
     messageData.info = msg;
 
     messageData.desc.pid = std::uint32_t(m_processId);
 
-    std::size_t offsetToStr = sizeof(message_data);
+    std::size_t offsetToStr = sizeof(log::message_data);
 
     messageData.desc.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
     messageData.desc.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
@@ -244,5 +242,4 @@ void udpSocketConsumer::sendUdpPacket(const void* packet, std::size_t size)
     sendto(m_socket, static_cast<const char*>(packet), socklen_t(size), 0, addr, tolen);
 }
 
-}
 }

@@ -387,6 +387,8 @@ public:
     }
 };
 
+using raw_buffer_t = raw_buffer<>;
+
 }
 
 namespace std

@@ -5,10 +5,8 @@
 
 namespace gkr
 {
-namespace log
-{
 
-class androidLogConsumer : public consumer
+class androidLogConsumer : public log::consumer
 {
 	androidLogConsumer           (const androidLogConsumer&) noexcept = delete;
 	androidLogConsumer& operator=(const androidLogConsumer&) noexcept = delete;
@@ -41,17 +39,16 @@ protected:
 	virtual bool init_logging() override;
 	virtual void done_logging() override;
 
-	virtual bool filter_log_message(const message& msg) override;
+	virtual bool filter_log_message(const log::message& msg) override;
 
-	virtual void consume_log_message(const message& msg) override;
+	virtual void consume_log_message(const log::message& msg) override;
 
 protected:
-	virtual int getPriority(const message& msg);
+	virtual int getPriority(const log::message& msg);
 
-	virtual const char* getTag(const message& msg);
+	virtual const char* getTag(const log::message& msg);
 
-	virtual void formatText(char* buffer, std::size_t cch, const message& msg);
+	virtual void formatText(char* buffer, std::size_t cch, const log::message& msg);
 };
 
-}
 }

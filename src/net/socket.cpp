@@ -17,6 +17,8 @@ enum
 #else
 #include <unistd.h>
 #include <netinet/in.h>
+#include <errno.h>
+
 inline int closesocket(int fd)
 {
     return close(fd);
@@ -102,7 +104,7 @@ int socket::family() const
 
 #ifdef WIN32
     WSAPROTOCOL_INFOW info;
-    int len = sizeof(info);
+    socklen_t len = sizeof(info);
 
     if(0 == getsockopt(m_socket, SOL_SOCKET, SO_PROTOCOL_INFO, reinterpret_cast<char*>(&info), &len))
     {
@@ -110,8 +112,8 @@ int socket::family() const
     }
 #else
     int family;
-    int len = sizeof(family)
-    if(0 == getsocket(m_socket, SOL_SOCKET, SO_DOMAIN, reinterpret_cast<char*>(&family), &len))
+    socklen_t len = sizeof(family);
+    if(0 == getsockopt(m_socket, SOL_SOCKET, SO_DOMAIN, reinterpret_cast<char*>(&family), &len))
     {
         return family;
     }
@@ -126,7 +128,7 @@ int socket::type() const
 
 #ifdef WIN32
     WSAPROTOCOL_INFOW info;
-    int len = sizeof(info);
+    socklen_t len = sizeof(info);
 
     if(0 == getsockopt(m_socket, SOL_SOCKET, SO_PROTOCOL_INFO, reinterpret_cast<char*>(&info), &len))
     {
@@ -134,8 +136,8 @@ int socket::type() const
     }
 #else
     int type;
-    int len = sizeof(type)
-    if(0 == getsocket(m_socket, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&type), &len))
+    socklen_t len = sizeof(type);
+    if(0 == getsockopt(m_socket, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&type), &len))
     {
         return type;
     }
@@ -150,7 +152,7 @@ int socket::protocol() const
 
 #ifdef WIN32
     WSAPROTOCOL_INFOW info;
-    int len = sizeof(info);
+    socklen_t len = sizeof(info);
 
     if(0 == getsockopt(m_socket, SOL_SOCKET, SO_PROTOCOL_INFO, reinterpret_cast<char*>(&info), &len))
     {
@@ -158,8 +160,8 @@ int socket::protocol() const
     }
 #else
     int protocol;
-    int len = sizeof(protocol)
-    if(0 == getsocket(m_socket, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&protocol), &len))
+    socklen_t len = sizeof(protocol);
+    if(0 == getsockopt(m_socket, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&protocol), &len))
     {
         return protocol;
     }
@@ -173,7 +175,7 @@ std::size_t socket::get_send_buffer_size() const
     Check_ValidState(is_open(), 0);
 
     int val;
-    int len = sizeof(val);
+    socklen_t len = sizeof(val);
 
     if(0 == getsockopt(m_socket, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&val), &len))
     {
@@ -202,7 +204,7 @@ std::size_t socket::get_receive_buffer_size() const
     Check_ValidState(is_open(), 0);
 
     int val;
-    int len = sizeof(val);
+    socklen_t len = sizeof(val);
 
     if(0 == getsockopt(m_socket, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&val), &len))
     {
@@ -230,15 +232,15 @@ bool socket::set_send_timeout(unsigned timeout)
 {
     Check_ValidState(is_open(), false);
 
-#if _WIN32
+#ifdef _WIN32
     if(0 == setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)))
     {
         return true;
     }
 #else
     timeval tv;
-    to.tv_sec  = (timeout / 1000);
-    to.tv_usec = (timeout % 1000) * 1000000;
+    tv.tv_sec  = (timeout / 1000);
+    tv.tv_usec = (timeout % 1000) * 1000000;
 
     if(0 == setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&tv), sizeof(tv)))
     {
@@ -253,17 +255,17 @@ bool socket::set_receive_timeout(unsigned timeout)
 {
     Check_ValidState(is_open(), false);
 
-#if _WIN32
+#ifdef _WIN32
     if(0 == setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)))
     {
         return true;
     }
 #else
     timeval tv;
-    to.tv_sec  = (timeout / 1000);
-    to.tv_usec = (timeout % 1000) * 1000000;
+    tv.tv_sec  = (timeout / 1000);
+    tv.tv_usec = (timeout % 1000) * 1000000;
 
-    if(0 == setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&tv), sizeof(tv)))
+    if(0 == setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&tv), sizeof(tv)))
     {
         return true;
     }
@@ -286,7 +288,6 @@ bool socket::bind(unsigned short port)
     {
         return true;
     }
-    const int error = net_error();
     //errno
     return false;
 }

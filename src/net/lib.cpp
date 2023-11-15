@@ -55,7 +55,7 @@ int get_hostname(char* buffer, unsigned cch)
 
     const std::size_t len = std::strlen(hostname);
 
-    if(len >= cch) return cch + 1;
+    if(len >= cch) return int(cch + 1);
 
     Check_Arg_NotNull(buffer, 0);
 

@@ -233,7 +233,20 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
     {
         if(m_updating) return true;
 
-        const wait_result_t wait_result = m_inner_waiter.wait_for(timeout);
+        wait_result_t wait_result;
+
+        if(timeout == std::chrono::nanoseconds::max())
+        {
+            wait_result = m_inner_waiter.wait();
+        }
+        else if(timeout == std::chrono::nanoseconds::zero())
+        {
+            wait_result = m_inner_waiter.check();
+        }
+        else
+        {
+            wait_result = m_inner_waiter.wait_for(timeout);
+        }
 
         Check_ValidState(wait_result != WAIT_RESULT_ERROR, false);
 

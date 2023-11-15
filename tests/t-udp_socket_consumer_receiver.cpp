@@ -40,7 +40,7 @@ constexpr gkr::log::name_id_pair_t g_facilities[] = {
     {nullptr  , 0               }
 };
 
-gkr::net::lib networking;
+static gkr::net::lib networking;
 
 constexpr unsigned short UDP_COMM_PORT = 12345;
 
@@ -48,29 +48,29 @@ class receiver : public gkr::worker_thread
 {
     gkr::udpSocketReceiver m_receiver;
 
-    virtual const char* get_name() noexcept
+    virtual const char* get_name() noexcept override
     {
         return "udp-receiver";
     }
-    virtual std::chrono::nanoseconds get_wait_timeout() noexcept
+    virtual std::chrono::nanoseconds get_wait_timeout() noexcept override
     {
         return std::chrono::nanoseconds::zero();
     }
-    virtual void bind_events(gkr::events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+    virtual void bind_events(gkr::events_waiter& waiter) noexcept(DIAG_NOEXCEPT) override
     {
     }
-    virtual bool on_start()
+    virtual bool on_start() override
     {
         return m_receiver.setWaitPacketTimeout(1000) && m_receiver.startReceivingPackets(UDP_COMM_PORT);
     }
-    virtual void on_finish()
+    virtual void on_finish() override
     {
         m_receiver.stopReceivingPackets();
     }
-    virtual void on_action(action_id_t action, void* param, void* result)
+    virtual void on_action(action_id_t action, void* param, void* result) override
     {
     }
-    virtual void on_wait_timeout()
+    virtual void on_wait_timeout() override
     {
         if(m_receiver.receivePacket())
         {
@@ -92,6 +92,7 @@ class receiver : public gkr::worker_thread
                     char host[80];
                     addr.host(host);
 
+                    using ulonglong = unsigned long long;
                     char str[256];
                     std::snprintf(
                         str,
@@ -106,7 +107,7 @@ class receiver : public gkr::worker_thread
                         (base + msg.desc.offset_to_process),
                         msg.desc.pid,
                         (base + msg.desc.offset_to_thread),
-                        msg.info.tid,
+                        ulonglong(msg.info.tid),
                         (base + msg.desc.offset_to_severity),
                         (base + msg.desc.offset_to_facility)
                         );
@@ -115,10 +116,10 @@ class receiver : public gkr::worker_thread
             }
         }
     }
-    virtual void on_wait_success(gkr::wait_result_t wait_result)
+    virtual void on_wait_success(gkr::wait_result_t wait_result) override
     {
     }
-    virtual bool on_exception(except_method_t method, const std::exception* e) noexcept
+    virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override
     {
         return false;
     }

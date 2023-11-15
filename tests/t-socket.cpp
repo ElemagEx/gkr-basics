@@ -3,7 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-gkr::net::lib networking;
+static gkr::net::lib networking;
 
 TEST_CASE("network.socket. main")
 {

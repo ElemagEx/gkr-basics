@@ -44,6 +44,14 @@ public:
     }
 
 public:
+    enum : unsigned
+    {
+        error_none    = 0,
+        error_timeout = (1U <<  0),
+        error_other   = (1U << 31)
+    };
+
+public:
     GKR_NET_API bool open_as_udp(bool ipv6 = false);
     GKR_NET_API bool reopen();
     GKR_NET_API void close();
@@ -73,6 +81,11 @@ public:
 
 public:
     GKR_NET_API std::size_t send_to(const void* buff, std::size_t size, const address& addr);
+
+    GKR_NET_API std::size_t receive_from(void* buff, std::size_t size, address& addr, unsigned* errors = nullptr);
+
+private:
+    static bool check_errors(int error, unsigned* errors);
 
 private:
 #ifdef _WIN32

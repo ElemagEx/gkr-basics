@@ -61,7 +61,7 @@ int get_hostname(char* buffer, unsigned cch)
 
     std::strncpy(buffer, hostname, cch);
 
-    return len;
+    return int(len);
 }
 
 }

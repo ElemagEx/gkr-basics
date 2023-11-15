@@ -51,6 +51,21 @@ public:
     }
 
 public:
+    bool operator==(const address& other) const noexcept
+    {
+        return (0 == compare(other));
+    }
+    bool operator!=(const address& other) const noexcept
+    {
+        return (0 != compare(other));
+    }
+
+    bool operator<(const address& other) const noexcept
+    {
+        return (0 > compare(other));
+    }
+
+public:
     void reset() noexcept
     {
         m_addr = addr_t();
@@ -69,6 +84,17 @@ public:
     {
         return &m_addr;
     }
+    void* data() noexcept
+    {
+        return &m_addr;
+    }
+    constexpr std::size_t capacity() const noexcept
+    {
+        return sizeof(m_addr);
+    }
+
+public:
+    GKR_NET_API int compare(const address& other) const noexcept;
 
 public:
     GKR_NET_API bool reset(const char* host, unsigned short port);

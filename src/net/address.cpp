@@ -27,6 +27,21 @@ namespace gkr
 namespace net
 {
 
+int address::compare(const address& other) const noexcept
+{
+    const sockaddr_inet&  thisSockAddr = *reinterpret_cast<const sockaddr_inet*>(&      m_addr);
+    const sockaddr_inet& otherSockAddr = *reinterpret_cast<const sockaddr_inet*>(&other.m_addr);
+
+    std::size_t sizeToCompare = sizeof(addr_t);
+
+    switch(thisSockAddr.si_family)
+    {
+        case AF_INET : if(otherSockAddr.si_family == AF_INET ) sizeToCompare = sizeof(sockaddr_in ); break;
+        case AF_INET6: if(otherSockAddr.si_family == AF_INET6) sizeToCompare = sizeof(sockaddr_in6); break;
+    }
+    return std::memcmp(&thisSockAddr, &otherSockAddr, sizeToCompare);
+}
+
 bool address::reset(const char* host, unsigned short port)
 {
     Check_Arg_NotNull(host, false);
@@ -58,7 +73,7 @@ bool address::reset(bool ipv6, unsigned short port)
 
     sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_addr);
 
-    if(ipv6)
+    if(!ipv6)
     {
         sockAddr.Ipv4.sin_family = AF_INET;
         sockAddr.Ipv4.sin_port   = htons(port);

@@ -28,6 +28,9 @@
 #ifndef Assert_NotNullPtr
 #define Assert_NotNullPtr(cond) assert(cond)
 #endif
+#ifndef Check_ValidState
+#define Check_ValidState(cond, ...)  if(!(cond)) return __VA_ARGS__
+#endif
 
 #endif
 
@@ -317,6 +320,11 @@ public:
         {
             reserve(size);
         }
+        m_size = size;
+    }
+    void set_size(std::size_t size)
+    {
+        Check_ValidState(size <= m_capacity, );
         m_size = size;
     }
 

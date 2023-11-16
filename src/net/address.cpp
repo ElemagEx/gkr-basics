@@ -29,6 +29,8 @@ namespace net
 
 int address::compare(const address& other) const noexcept
 {
+    static_assert(sizeof(m_addr) >= sizeof(sockaddr_inet), "The size of host address buffer must be larger");
+
     const sockaddr_inet&  thisSockAddr = *reinterpret_cast<const sockaddr_inet*>(&      m_addr);
     const sockaddr_inet& otherSockAddr = *reinterpret_cast<const sockaddr_inet*>(&other.m_addr);
 
@@ -46,25 +48,9 @@ bool address::reset(const char* host, unsigned short port)
 {
     Check_Arg_NotNull(host, false);
 
-    static_assert(sizeof(m_addr) >= sizeof(sockaddr_inet), "The size of host address buffer must be larger");
-
     reset();
 
-    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_addr);
-
-    if(1 == inet_pton(AF_INET, host, &sockAddr.Ipv4.sin_addr))
-    {
-        sockAddr.Ipv4.sin_family = AF_INET;
-        sockAddr.Ipv4.sin_port   = htons(port);
-        return true;
-    }
-    if(1 == inet_pton(AF_INET6, host, &sockAddr.Ipv6.sin6_addr))
-    {
-        sockAddr.Ipv6.sin6_family = AF_INET6;
-        sockAddr.Ipv6.sin6_port   = htons(port);
-        return true;
-    }
-    return false;
+    return change_host(host) && change_port(port);
 }
 
 bool address::reset(bool ipv6, unsigned short port)
@@ -76,16 +62,46 @@ bool address::reset(bool ipv6, unsigned short port)
     if(!ipv6)
     {
         sockAddr.Ipv4.sin_family = AF_INET;
-        sockAddr.Ipv4.sin_port   = htons(port);
     //  sockAddr.Ipv4.sin_addr   = INADDR_ANY;
     }
     else
     {
         sockAddr.Ipv6.sin6_family = AF_INET6;
-        sockAddr.Ipv6.sin6_port   = htons(port);
     //  sockAddr.Ipv4.sin_addr    = INADDR6_ANY;
     }
+    return change_port(port);
+}
+
+bool address::change_port(unsigned short port)
+{
+    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_addr);
+
+    switch(sockAddr.si_family)
+    {
+        case AF_INET : sockAddr.Ipv4.sin_port  = htons(port); break;
+        case AF_INET6: sockAddr.Ipv6.sin6_port = htons(port); break;
+        default: return false;
+    }
     return true;
+}
+bool address::change_host(const char* host)
+{
+    Check_Arg_NotNull(host, false);
+
+    sockaddr_inet& sockAddr = *reinterpret_cast<sockaddr_inet*>(&m_addr);
+
+    if(1 == inet_pton(AF_INET, host, &sockAddr.Ipv4.sin_addr))
+    {
+        sockAddr.Ipv4.sin_family = AF_INET;
+        return true;
+    }
+    if(1 == inet_pton(AF_INET6, host, &sockAddr.Ipv6.sin6_addr))
+    {
+        sockAddr.Ipv6.sin6_family = AF_INET6;
+        return true;
+    }
+    sockAddr.si_family = AF_UNSPEC;
+    return false;
 }
 
 bool address::is_ipv4() const noexcept

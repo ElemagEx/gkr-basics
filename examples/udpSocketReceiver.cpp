@@ -44,69 +44,150 @@ bool udpSocketReceiver::receivePacket()
 
     const std::size_t received = m_socket.receive_from(m_packet.data(), m_packet.capacity(), m_addr, &errors);
 
-    if(received == 0) return false;
+    if(received == 0) return (errors != 0);
 
     Assert_Check(received <= m_packet.capacity());
 
-    const net::split_packet_head& packet_head = m_packet.as<const net::split_packet_head>();
+    m_packet.set_size(received);
 
-    if(received != packet_head.packet_size)
+    const net::split_packet_head& packetHead = m_packet.as<const net::split_packet_head>();
+
+    if(received != packetHead.packet_size)
     {
         //LOG
-        return false;
     }
-    if(packet_head.data_offset < sizeof(net::split_packet_head))
+    else if(packetHead.data_offset < sizeof(net::split_packet_head))
     {
         //LOG
-        return false;
     }
-
-    if((packet_head.packet_count == 1) && (packet_head.packet_index == 0))
+    else if(packetHead.packet_index >= packetHead.packet_count)
     {
-        m_offset = packet_head.data_offset;
-        m_packet.set_size(received);
-
-        return handleUnsplittedPacket();
+        //LOG
+    }
+    else if((packetHead.packet_index == 0) && (packetHead.packet_count == 1))
+    {
+        handleUnsplittedPacket();
     }
     else
     {
-        //LOG
-        return false;
+        handlePartialPacket();
     }
-}
-
-bool udpSocketReceiver::getPacketData(net::address& addr, const void*& data, std::size_t& size)
-{
-    Check_ValidState(m_offset > 0, false);
-    Check_ValidState(m_offset < m_packet.size(), false);
-
-    data = m_packet.data(m_offset);
-    size = m_packet.size() - m_offset;
-
-    addr = m_addr;
     return true;
 }
 
-bool udpSocketReceiver::handleUnsplittedPacket()
+bool udpSocketReceiver::getReadyPacketData(net::address& addr, const void*& data, std::size_t& size)
 {
-    const net::split_packet_head& packet_head = m_packet.as<const net::split_packet_head>();
-    const net::packet_data_head&  packet_data = m_packet.as<const net::packet_data_head>(packet_head.data_offset);
+    if(m_offset > 0)
+    {
+        Check_ValidState(m_offset < m_packet.size(), false);
 
-    Assert_Check(m_offset == packet_head.data_offset);
+        addr = m_addr;
+        data = m_packet.data(m_offset);
+        size = m_packet.size() - m_offset;
 
-    const std::size_t size = (packet_head.packet_size - packet_head.data_offset);
+        m_addr  .reset();
+        m_packet.set_size(0);
+        m_offset = 0;
+        return true;
+    }
+    if(m_buffer.size() > 0)
+    {
+        addr = m_addr;
+        data = m_buffer.data(m_offset);
+        size = m_buffer.size() - m_offset;
 
-    if((size != packet_head.data_size) || (0 != packet_head.data_sent))
+        //todo
+        m_buffer.set_size(0);
+        return true;
+    }
+    return false;
+}
+
+void udpSocketReceiver::handleUnsplittedPacket()
+{
+    const net::split_packet_head& packetHead = m_packet.as<const net::split_packet_head>();
+    const net::packet_data_head&  packetData = m_packet.as<const net::packet_data_head>(packetHead.data_offset);
+
+    const std::size_t data_size = (packetHead.packet_size - packetHead.data_offset);
+
+    if((data_size != packetHead.data_size) || (0 != packetHead.data_sent))
     {
         //LOG
-        return false;
     }
-    if(size != packet_data.size)
+    else if(data_size != packetData.size)
     {
         //LOG
-        return false;
     }
-    return true;
+    else
+    {
+        m_offset == packetHead.data_offset;
+    }
+}
+
+void udpSocketReceiver::handlePartialPacket()
+{
+    const net::split_packet_head& packetHead = m_packet.as<const net::split_packet_head>();
+
+    std::size_t partialDataSize;
+    partial_packet_t& partialPacket = findPartialPacket(packetHead, partialDataSize);
+
+    if(partialPacket.count == 0) return;
+
+    partialPacket.updated = std::chrono::steady_clock::now();
+
+    std::memcpy(partialPacket.buffer.data(packetHead.data_sent), m_packet.data(packetHead.data_offset), partialDataSize);
+
+    if(++partialPacket.received == partialPacket.count)
+    {
+        std::swap(m_buffer, partialPacket.buffer);
+        partialPacket.reset();
+    }
+}
+
+udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const net::split_packet_head& packetHead, std::size_t& partialDataSize)
+{
+    partialDataSize = (packetHead.packet_size - packetHead.data_offset);
+    Assert_Check(packetHead.packet_count > 0);
+
+    partial_packet_t* unused = nullptr;
+
+    for(partial_packet_t& partialPacket : m_partialPackets)
+    {
+        if(partialPacket.count == 0)
+        {
+            unused = &partialPacket;
+        }
+        else if((packetHead.packet_id == partialPacket.id) && (m_addr == partialPacket.sender))
+        {
+            if(partialPacket.count != packetHead.packet_count)
+            {
+                //LOG
+                partialPacket.reset();
+            }
+            else if(partialPacket.buffer.size() != packetHead.data_size)
+            {
+                //LOG
+                partialPacket.reset();
+            }
+            else if(partialPacket.buffer.size() < (packetHead.data_sent + partialDataSize))
+            {
+                //LOG
+                partialPacket.reset();
+            }
+            return partialPacket;
+        }
+    }
+    partial_packet_t& partialPacket = (unused != nullptr)
+        ? *unused
+        : (m_partialPackets.emplace_back(), m_partialPackets.back())
+        ;
+    partialPacket.count    = packetHead.packet_count;
+    partialPacket.received = 0;
+    partialPacket.id       = packetHead.packet_id;
+    partialPacket.sender   = m_addr;
+
+    partialPacket.buffer.resize(packetHead.data_size);
+    return partialPacket;
 }
 
 }

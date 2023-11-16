@@ -3,7 +3,7 @@
 #include <gkr/log/logging.h>
 #include <gkr/log/message.h>
 #include <gkr/log/consumer.h>
-#include <gkr/log/stamp.h>
+#include <gkr/stamp.h>
 
 #include <gkr/misc/union_cast.h>
 

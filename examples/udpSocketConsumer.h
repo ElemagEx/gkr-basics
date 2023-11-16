@@ -90,7 +90,7 @@ private:
     net::socket     m_socket;
     net::address    m_remoteAddr;
 
-    int             m_processId {0};
+    unsigned        m_processId {0};
     std::uint64_t   m_packetId  {0};
 };
 

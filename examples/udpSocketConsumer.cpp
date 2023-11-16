@@ -20,8 +20,10 @@ udpSocketConsumer::udpSocketConsumer(
 	)
     : m_packet(maxPacketSize)
     , m_buffer(bufferInitialCapacity)
-    , m_processId(gkr::sys::get_current_process_id())
+    , m_processId(unsigned(gkr::sys::get_current_process_id()))
 {
+    m_packetId = (std::uint64_t(m_processId) << 32);
+
     Check_Arg_IsValid(maxPacketSize >= MINIMUM_UDP_PACKET_SIZE, );
 
     m_packet.resize(maxPacketSize);
@@ -116,7 +118,7 @@ void udpSocketConsumer::constructData(const log::message& msg)
 
     messageData.info = msg;
 
-    messageData.desc.pid = std::uint32_t(m_processId);
+    messageData.desc.pid = m_processId;
 
     std::size_t offsetToStr = sizeof(log::message_data);
 

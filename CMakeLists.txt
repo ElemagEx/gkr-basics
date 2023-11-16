@@ -48,6 +48,7 @@ endif()
 target_sources(
     gkr-basics
     PRIVATE
+    "${gkr_basics_inc_path}/stamp.h"
     "${gkr_basics_inc_path}/diag/diagnostics.h"
     "${gkr_basics_inc_path}/concurency/events_waiting.h"
     "${gkr_basics_inc_path}/concurency/waitable_lockfree_queue.h"
@@ -60,7 +61,6 @@ target_sources(
     "${gkr_basics_inc_path}/sys/stack_alloc.h"
     "${gkr_basics_inc_path}/log/consumer.h"
     "${gkr_basics_inc_path}/log/message.h"
-    "${gkr_basics_inc_path}/log/stamp.h"
     "${gkr_basics_inc_path}/testing/allocator.h"
     )
 # Headers + Implementations

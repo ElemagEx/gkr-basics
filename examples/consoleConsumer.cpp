@@ -1,7 +1,7 @@
 #include "consoleConsumer.h"
 
 #include <gkr/log/message.h>
-#include <gkr/log/stamp.h>
+#include <gkr/stamp.h>
 
 #include <iostream>
 

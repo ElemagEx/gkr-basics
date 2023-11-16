@@ -4,8 +4,13 @@
 #include <gkr/net/address.h>
 #include <gkr/net/socket.h>
 
+#include <vector>
+#include <chrono>
+
 namespace gkr
 {
+
+namespace net { struct split_packet_head; }
 
 class udpSocketReceiver
 {
@@ -45,18 +50,39 @@ public:
 
 public:
     bool receivePacket();
-    bool getPacketData(net::address& addr, const void*& data, std::size_t& size);
+    bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
 
 private:
-    bool handleUnsplittedPacket();
+    void handleUnsplittedPacket();
+    void handlePartialPacket();
+
+private:
+    using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
+    using packet_id_t  = unsigned long long;
+
+    struct partial_packet_t
+    {
+        std::size_t     count    = 0;
+        std::size_t     received = 0;
+        packet_id_t     id       = 0;
+        net::address    sender;
+        raw_buffer_t    buffer;
+        time_point_t    updated;
+
+        void reset() { count = 0; }
+    };
+
+    partial_packet_t& findPartialPacket(const net::split_packet_head& packetHead, std::size_t& partialDataSize);
 
 private:
     net::socket  m_socket;
     raw_buffer_t m_packet;
-
     raw_buffer_t m_buffer;
+
     net::address m_addr;
     std::size_t  m_offset {0};
+
+    std::vector<partial_packet_t> m_partialPackets;
 };
 
 }

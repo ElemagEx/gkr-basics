@@ -1,6 +1,6 @@
 #include <gkr/log/consumer.h>
 #include <gkr/log/message.h>
-#include <gkr/log/stamp.h>
+#include <gkr/stamp.h>
 
 #include <catch2/catch_test_macros.hpp>
 

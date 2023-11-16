@@ -14,8 +14,7 @@ TEST_CASE("network.address. Lifecycle")
 
 TEST_CASE("network.address. main")
 {
-    gkr::net::address addr1(ipv4, 54321);
-
+    gkr::net::address addr(ipv4, 54321);
 
     CHECK(addr.is_valid());
 
@@ -24,5 +23,5 @@ TEST_CASE("network.address. main")
     char buf[32];
     addr.host(buf);
 
-    CHECK(!std::strcmp(ip, buf));
+    CHECK(!std::strcmp(ipv4, buf));
 }

@@ -2,7 +2,7 @@
 #include <udpSocketReceiver.h>
 #include <udpMessagePacket.h>
 
-#include <gkr/log/stamp.h>
+#include <gkr/stamp.h>
 #include <gkr/net/lib.h>
 #include <gkr/net/address.h>
 #include <gkr/concurency/worker_thread.h>
@@ -77,7 +77,7 @@ class receiver : public gkr::worker_thread
             gkr::net::address addr;
             const void* data;
             std::size_t size;
-            if(m_receiver.getPacketData(addr, data, size))
+            while(m_receiver.getReadyPacketData(addr, data, size))
             {
                 const gkr::log::message_data& msg = *static_cast<const gkr::log::message_data*>(data);
 

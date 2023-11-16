@@ -100,6 +100,9 @@ public:
     GKR_NET_API bool reset(const char* host, unsigned short port);
     GKR_NET_API bool reset(bool ipv6, unsigned short port);
 
+    GKR_NET_API bool change_port(unsigned short port);
+    GKR_NET_API bool change_host(const char* host);
+
 public:
     GKR_NET_API bool is_ipv4() const noexcept;
     GKR_NET_API bool is_ipv6() const noexcept;

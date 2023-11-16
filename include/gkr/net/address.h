@@ -13,7 +13,7 @@ namespace net
 
 class address
 {
-    struct addr_t { alignas(4) char bytes[32] = {0}; };
+    struct addr_t { alignas(4) unsigned char bytes[32] = {0}; };
 
     addr_t m_addr {};
 

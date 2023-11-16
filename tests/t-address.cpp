@@ -2,19 +2,27 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+constexpr char ipv4[] = "192.168.0.2";
+
+TEST_CASE("network.address. Lifecycle")
+{
+    gkr::net::address addr(ipv4, 54321);
+
+
+
+}
+
 TEST_CASE("network.address. main")
 {
-    constexpr char ip[] = "192.168.0.2";
+    gkr::net::address addr1(ipv4, 54321);
 
-    gkr::net::address addr(ip, 1234);
 
     CHECK(addr.is_valid());
 
-    CHECK(addr.family() != 0);
+    CHECK(addr.family() == 2);
 
     char buf[32];
     addr.host(buf);
 
     CHECK(!std::strcmp(ip, buf));
-
 }

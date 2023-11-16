@@ -20,10 +20,10 @@
 </Type>
 
 <Type Name="gkr::net::address">
-	<DisplayString Condition="*(short*)m_Buff ==  0">Uninitialized Address</DisplayString>
-	<DisplayString Condition="*(short*)m_Buff ==  2">{(int)m_addr[4]}.{(int)m_addr[5]}.{(int)m_addr[6]}.{(int)m_addr[7]}:{m_addr[2]*256+m_addr[3]}</DisplayString>
-	<DisplayString Condition="*(short*)m_Buff == 23">IPV6 Address</DisplayString>
-	<DisplayString>Unknown address</DisplayString>
+    <DisplayString Condition="*(short*)m_addr.bytes ==  0">Uninitialized Address</DisplayString>
+    <DisplayString Condition="*(short*)m_addr.bytes ==  2">{(int)m_addr.bytes[4]}.{(int)m_addr.bytes[5]}.{(int)m_addr.bytes[6]}.{(int)m_addr.bytes[7]}:{(int)m_addr.bytes[2]*256+(int)m_addr.bytes[3]}</DisplayString>
+    <DisplayString Condition="*(short*)m_addr.bytes == 23">IPV6 Address</DisplayString>
+    <DisplayString>Unknown address</DisplayString>
 </Type>
 
 </AutoVisualizer>

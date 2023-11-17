@@ -2,7 +2,7 @@
 
 #include <gkr/net/address.h>
 
-#include <gkr/diag/diagnostics.h>
+#include <gkr/diagnostics.h>
 
 #ifdef _WIN32
 #pragma warning(disable:4668)

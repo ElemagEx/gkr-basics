@@ -6,7 +6,7 @@
 #include <climits>
 #include <condition_variable>
 
-#include <gkr/diag/diagnostics.h>
+#include <gkr/diagnostics.h>
 
 #include <gkr/lockfree_grow_only_bag.h>
 

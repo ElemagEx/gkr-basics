@@ -1,7 +1,7 @@
 //NOTE: Do not include protect this file - its multiple inclusions are intended
 
 //
-// Undefines all controlling macros in diag/diagnostics.h file
+// Undefines all controlling macros in diagnostics.h file
 //
 #undef DIAG_MODE
 #undef DIAG_SRC_INFO

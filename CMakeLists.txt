@@ -48,8 +48,8 @@ endif()
 target_sources(
     gkr-basics
     PRIVATE
+    "${gkr_basics_inc_path}/diagnostics.h"
     "${gkr_basics_inc_path}/stamp.h"
-    "${gkr_basics_inc_path}/diag/diagnostics.h"
     "${gkr_basics_inc_path}/concurency/events_waiting.h"
     "${gkr_basics_inc_path}/concurency/waitable_lockfree_queue.h"
     "${gkr_basics_inc_path}/container/lockfree_grow_only_bag.h"
@@ -62,6 +62,8 @@ target_sources(
     "${gkr_basics_inc_path}/log/consumer.h"
     "${gkr_basics_inc_path}/log/message.h"
     "${gkr_basics_inc_path}/testing/allocator.h"
+    "${gkr_basics_inc_path}/testing/diag_names.h"
+    "${gkr_basics_inc_path}/testing/diag_undefs.h"
     )
 # Headers + Implementations
 target_sources(

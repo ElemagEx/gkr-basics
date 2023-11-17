@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <gkr/diag/undefines.h>
+#include <gkr/testing/diag_undefs.h>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_halt_proc
 #define DIAG_WARN           my_warn_proc
 #define DIAG_NOEXCEPT       false
-#include <gkr/diag/diagnostics.h>
+#include <gkr/diagnostics.h>
 
 [[noreturn]]
 static void my_halt_proc(int id, const char* msg DIAG_SRC_PROTOTYPE) noexcept(DIAG_NOEXCEPT)

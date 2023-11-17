@@ -11,7 +11,7 @@
 
 #ifndef GKR_LOCKFREE_QUEUE_SINGLE_HEADER
 
-#include <gkr/diag/diagnostics.h>
+#include <gkr/diagnostics.h>
 
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.h>

@@ -5,7 +5,7 @@
 #include <gkr/sys/process_name.h>
 #include <gkr/net/lib.h>
 
-#include <gkr/diag/diagnostics.h>
+#include <gkr/diagnostics.h>
 
 #include <cstring>
 

@@ -120,7 +120,7 @@ void udpSocketReceiver::handleUnsplittedPacket()
     }
     else
     {
-        m_offset == packetHead.data_offset;
+        m_offset = packetHead.data_offset;
     }
 }
 
@@ -179,7 +179,7 @@ udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const 
     }
     partial_packet_t& partialPacket = (unused != nullptr)
         ? *unused
-        : (m_partialPackets.emplace_back(), m_partialPackets.back())
+        : ((void)m_partialPackets.emplace_back(), m_partialPackets.back())
         ;
     partialPacket.count    = packetHead.packet_count;
     partialPacket.received = 0;

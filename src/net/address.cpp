@@ -44,6 +44,36 @@ int address::compare(const address& other) const noexcept
     return std::memcmp(&thisSockAddr, &otherSockAddr, sizeToCompare);
 }
 
+bool address::has_same_host(const address& other) const noexcept
+{
+    const sockaddr_inet&  thisSockAddr = *reinterpret_cast<const sockaddr_inet*>(&      m_addr);
+    const sockaddr_inet& otherSockAddr = *reinterpret_cast<const sockaddr_inet*>(&other.m_addr);
+
+    switch(thisSockAddr.si_family)
+    {
+        case AF_INET :
+            if(otherSockAddr.si_family == AF_INET )
+            {
+                return (thisSockAddr.Ipv4.sin_addr.s_addr == otherSockAddr.Ipv4.sin_addr.s_addr);
+            }
+            break;
+        case AF_INET6:
+            if(otherSockAddr.si_family == AF_INET6)
+            {
+                for(std::size_t index = 0; index < 8; ++index)
+                {
+                    if(thisSockAddr.Ipv6.sin6_addr.s6_words[index] != otherSockAddr.Ipv6.sin6_addr.s6_words[index])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            break;
+    }
+    return false;
+}
+
 bool address::reset(const char* host, unsigned short port)
 {
     Check_Arg_NotNull(host, false);
@@ -186,18 +216,14 @@ std::size_t address::addr(char* buff, std::size_t cch) const
     constexpr std::size_t ADDR_CCH = 72;
     char addr[ADDR_CCH];
 
-    std::size_t len;
+    std::size_t len = 0;
 
     const sockaddr_inet& sockAddr = *reinterpret_cast<const sockaddr_inet*>(&m_addr);
 
     switch(sockAddr.si_family)
     {
         case AF_INET:
-            if(nullptr == inet_ntop(AF_INET, &sockAddr.Ipv4.sin_addr, addr, ADDR_CCH))
-            {
-                return 0;
-            }
-            else
+            if(nullptr != inet_ntop(AF_INET, &sockAddr.Ipv4.sin_addr, addr, ADDR_CCH))
             {
                 const unsigned short port = ntohs(sockAddr.Ipv4.sin_port);
 
@@ -209,11 +235,7 @@ std::size_t address::addr(char* buff, std::size_t cch) const
             break;
 
         case AF_INET6:
-            if(nullptr == inet_ntop(AF_INET6, &sockAddr.Ipv6.sin6_addr, addr + 1, ADDR_CCH - 1))
-            {
-                return 0;
-            }
-            else
+            if(nullptr != inet_ntop(AF_INET6, &sockAddr.Ipv6.sin6_addr, addr + 1, ADDR_CCH - 1))
             {
                 const unsigned short port = ntohs(sockAddr.Ipv6.sin6_port);
 
@@ -225,9 +247,11 @@ std::size_t address::addr(char* buff, std::size_t cch) const
                 len += std::size_t(std::snprintf(addr + len, ADDR_CCH - len, "]:%hu", port));
             }
             break;
-
-        default:
-            return 0;
+    }
+    if(len == 0)
+    {
+        if((cch > 0) && (buff != nullptr)) *buff = 0;
+        return 0;
     }
 
     if(len >= cch) return (len + 1);

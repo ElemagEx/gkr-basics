@@ -96,6 +96,8 @@ public:
 public:
     GKR_NET_API int compare(const address& other) const noexcept;
 
+    GKR_NET_API bool has_same_host(const address& other) const noexcept;
+
 public:
     GKR_NET_API bool reset(const char* host, unsigned short port);
     GKR_NET_API bool reset(bool ipv6, unsigned short port);

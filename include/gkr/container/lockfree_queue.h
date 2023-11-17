@@ -1032,6 +1032,7 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_producer_element_ownership()) return queue_npos;
@@ -1052,6 +1053,7 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
@@ -1081,6 +1083,7 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_consumer_element_ownership()) return queue_npos;
@@ -1101,6 +1104,7 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
@@ -1504,6 +1508,7 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_producer_element_ownership()) return queue_npos;
@@ -1525,6 +1530,7 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
@@ -1560,6 +1566,7 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         if(!can_take_consumer_element_ownership()) return queue_npos;
@@ -1581,6 +1588,7 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::prevent_pause_sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
@@ -1922,6 +1930,7 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::pause_resume_sentry(*this);
 
         if(capacity <= base_t::count()) return false;
@@ -2780,6 +2789,7 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::pause_resume_sentry(*this);
 
         if(capacity <= base_t::count()) return false;
@@ -2816,6 +2826,7 @@ public:
     {
         static_assert(Pausable, "Cannot change element size of not pausable queue");
 
+        [[maybe_unused]] //todo:remove this line
         auto sentry = typename base_t::pause_resume_sentry(*this);
 
         if(size <= m_size) return false;

@@ -1,50 +1,73 @@
 #pragma once
 
 #include <gkr/log/consumer.h>
-#include <gkr/container/raw_buffer.h>
 
-namespace gkr
-{
+#ifndef GKR_SAMPLE_API
+#define GKR_SAMPLE_API
+#endif
 
-class windowsDebuggerConsumer : public log::consumer
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+GKR_SAMPLE_API unsigned windowsDebuggerComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
+
+GKR_SAMPLE_API void* windowsDebuggerCreateParam(
+    unsigned bufferCapacity,
+    unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
+    );
+
+GKR_SAMPLE_API int windowsDebuggerInitLogging(void* param);
+
+GKR_SAMPLE_API void windowsDebuggerDoneLogging(void* param);
+
+GKR_SAMPLE_API int windowsDebuggerFilterLogMessage(void* param, const struct gkr_log_message* msg);
+
+GKR_SAMPLE_API void windowsDebuggerConsumeLogMessage(void* param, const struct gkr_log_message* msg);
+
+#ifdef __cplusplus
+}
+
+class windowsDebuggerConsumer : public gkr::log::consumer
 {
-	windowsDebuggerConsumer           (const windowsDebuggerConsumer&) noexcept = delete;
-	windowsDebuggerConsumer& operator=(const windowsDebuggerConsumer&) noexcept = delete;
+    windowsDebuggerConsumer           (const windowsDebuggerConsumer&) noexcept = delete;
+    windowsDebuggerConsumer& operator=(const windowsDebuggerConsumer&) noexcept = delete;
 
 private:
-	using raw_buffer_t = raw_buffer<>;
-
-	raw_buffer_t m_buffer;
-
-public:
-	windowsDebuggerConsumer(windowsDebuggerConsumer&& other) noexcept(
-		std::is_nothrow_move_constructible<raw_buffer_t>::value
-		)
-		: m_buffer(std::move(other.m_buffer))
-	{
-	}
-	windowsDebuggerConsumer& operator=(windowsDebuggerConsumer&& other) noexcept(
-		std::is_nothrow_move_assignable<raw_buffer_t>::value
-		)
-	{
-		m_buffer = std::move(other.m_buffer);
-		return *this;
-	}
+    char*    m_buf;
+    unsigned m_cch;
 
 public:
-	windowsDebuggerConsumer(std::size_t bufferCapacity = 2*1024);
-	virtual ~windowsDebuggerConsumer() override;
+    windowsDebuggerConsumer(windowsDebuggerConsumer&& other) noexcept
+        : m_buf(other.m_buf)
+        , m_cch(other.m_cch)
+    {
+        other.m_buf = nullptr;
+        other.m_cch = 0;
+    }
+    windowsDebuggerConsumer& operator=(windowsDebuggerConsumer&& other) noexcept
+    {
+        m_buf = other.m_buf;
+        m_cch = other.m_cch;
+        other.m_buf = nullptr;
+        other.m_cch = 0;
+        return *this;
+    }
+
+public:
+    GKR_SAMPLE_API windowsDebuggerConsumer(unsigned bufferCapacity = 2*1024);
+    GKR_SAMPLE_API virtual ~windowsDebuggerConsumer() override;
 
 protected:
-	virtual bool init_logging() override;
-	virtual void done_logging() override;
+    GKR_SAMPLE_API virtual bool init_logging() override;
+    GKR_SAMPLE_API virtual void done_logging() override;
 
-	virtual bool filter_log_message(const log::message& msg) override;
+    GKR_SAMPLE_API virtual bool filter_log_message(const gkr::log::message& msg) override;
 
-	virtual void consume_log_message(const log::message& msg) override;
+    GKR_SAMPLE_API virtual void consume_log_message(const gkr::log::message& msg) override;
 
 protected:
-	virtual void composeOutput(char* buffer, std::size_t cch, const log::message& msg);
+    GKR_SAMPLE_API virtual unsigned composeOutput(char* buf, unsigned cch, const gkr::log::message& msg);
 };
 
-}
+#endif

@@ -1,90 +1,84 @@
 #pragma once
 
-#include <memory>
-#include <cstdarg>
+#include <gkr/log/log.h>
 
-#ifndef GKR_LOG_API
-#define GKR_LOG_API
+#ifdef __cplusplus
+extern "C"
+{
 #endif
+
+struct gkr_log_name_id_pair
+{
+    const char*  name;
+    gkr_log_id_t id;
+};
+
+struct gkr_log_consumer;
+
+GKR_LOG_API int gkr_log_init(
+    const struct gkr_log_name_id_pair* severities,
+    const struct gkr_log_name_id_pair* facilities,
+    unsigned max_queue_entries,
+    unsigned max_message_chars
+    );
+GKR_LOG_API int gkr_log_done();
+
+GKR_LOG_API int gkr_log_set_max_queue_entries(unsigned max_queue_entries);
+GKR_LOG_API int gkr_log_set_max_message_chars(unsigned max_message_chars);
+
+GKR_LOG_API int gkr_log_set_severities(int clear_existing, const struct gkr_log_name_id_pair* severities);
+GKR_LOG_API int gkr_log_set_facilities(int clear_existing, const struct gkr_log_name_id_pair* facilities);
+
+GKR_LOG_API int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity);
+GKR_LOG_API int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility);
+
+GKR_LOG_API int gkr_log_add_consumer(struct gkr_log_consumer* consumer, void* param);
+GKR_LOG_API int gkr_log_del_consumer(struct gkr_log_consumer* consumer, void* param);
+
+GKR_LOG_API int gkr_log_del_all_consumers();
+
+#ifdef __cplusplus
+}
+
+#include <memory>
 
 namespace gkr
 {
 namespace log
 {
 
-using id_t = unsigned short;
-
-struct name_id_pair_t
-{
-    const char* name;
-    id_t        id;
-};
-
+using name_id_pair = gkr_log_name_id_pair;
 class consumer;
 
-class logging final
+struct logging final
 {
-public:
-    GKR_LOG_API static bool init(
-        const name_id_pair_t* severities = nullptr,
-        const name_id_pair_t* facilities = nullptr,
-        std::size_t max_queue_entries = 16,
-        std::size_t max_message_chars = 968 // 1024 - sizeof(log::message)
-        );
-    GKR_LOG_API static void done();
+    const bool initialized;
 
-public:
-    GKR_LOG_API static bool change_log_queue(
-        std::size_t max_queue_entries = std::size_t(-1),
-        std::size_t max_message_chars = std::size_t(-1)
-        );
-
-public:
-    GKR_LOG_API static bool set_severities(bool clear_existing, const name_id_pair_t* severities = nullptr);
-    GKR_LOG_API static bool set_facilities(bool clear_existing, const name_id_pair_t* facilities = nullptr);
-
-    GKR_LOG_API static bool set_severity(const name_id_pair_t& severity);
-    GKR_LOG_API static bool set_facility(const name_id_pair_t& facility);
-
-public:
-    GKR_LOG_API static bool add_consumer(std::shared_ptr<consumer> consumer);
-    GKR_LOG_API static bool del_consumer(std::shared_ptr<consumer> consumer);
-
-    GKR_LOG_API static bool del_all_consumers();
-
-public:
-    GKR_LOG_API static bool set_this_thread_name(const char* name = nullptr);
-
-public:
-    GKR_LOG_API static bool log_simple_message(bool wait, id_t severity, id_t facility, const char* text);
-    GKR_LOG_API static bool log_format_message(bool wait, id_t severity, id_t facility, const char* format, ...);
-    GKR_LOG_API static bool log_valist_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args);
-
-public:
     logging(
-        const name_id_pair_t* severities = nullptr,
-        const name_id_pair_t* facilities = nullptr,
-        std::size_t max_queue_entries = 16,
-        std::size_t max_message_chars = 968 // 1024 - sizeof(log::message)
+        const name_id_pair* severities = nullptr,
+        const name_id_pair* facilities = nullptr,
+        unsigned max_queue_entries = 16,
+        unsigned max_message_chars = 968 // 1024 - sizeof(log::message)
         )
+        : initialized(0 != gkr_log_init(severities, facilities, max_queue_entries, max_message_chars))
     {
-        init(severities, facilities, max_queue_entries, max_message_chars);
     }
     ~logging()
     {
-        done();
+        gkr_log_done();
     }
 
-private:
-    logging           (const logging&) noexcept = delete;
-    logging& operator=(const logging&) noexcept = delete;
+    logging           (const logging& other) noexcept : initialized(other.initialized) {}
+    logging& operator=(const logging&      ) noexcept { return *this; }
 
-    logging           (logging&&) noexcept = delete;
-    logging& operator=(logging&&) noexcept = delete;
-
-private:
-    static void check_thread_name(const char* name);
+    logging           (logging&& other) noexcept : initialized(other.initialized) {}
+    logging& operator=(logging&&      ) noexcept { return *this; }
 };
 
 }
 }
+
+GKR_LOG_API int gkr_log_add_consumer(std::shared_ptr<gkr::log::consumer> consumer);
+GKR_LOG_API int gkr_log_del_consumer(std::shared_ptr<gkr::log::consumer> consumer);
+
+#endif

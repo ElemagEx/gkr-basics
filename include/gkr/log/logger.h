@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gkr/log/message.h>
+#include <gkr/log/consumer.h>
 
 #include <gkr/concurency/worker_thread.h>
 #include <gkr/concurency/events_waiting.h>
@@ -8,15 +9,16 @@
 
 #include <memory>
 #include <vector>
-#include <cstdarg>
 #include <unordered_map>
+
+struct gkr_log_name_id_pair;
 
 namespace gkr
 {
 namespace log
 {
 
-struct name_id_pair_t;
+using name_id_pair = gkr_log_name_id_pair;
 
 class consumer;
 
@@ -53,13 +55,18 @@ public:
     bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
 public:
-    void set_severities(bool clear_existing, const name_id_pair_t* severities);
-    void set_facilities(bool clear_existing, const name_id_pair_t* facilities);
+    void set_severities(bool clear_existing, const name_id_pair* severities);
+    void set_facilities(bool clear_existing, const name_id_pair* facilities);
 
-    void set_severity(const name_id_pair_t& severity);
-    void set_facility(const name_id_pair_t& facility);
+    void set_severity(const name_id_pair& severity);
+    void set_facility(const name_id_pair& facility);
 
 public:
+    using functions_t = gkr_log_consumer;
+
+    bool add_consume_functions(functions_t* functions, void* param);
+    bool del_consume_functions(functions_t* functions, void* param);
+
     using consumer_ptr_t = std::shared_ptr<consumer>;
 
     bool add_consumer(consumer_ptr_t consumer);
@@ -68,14 +75,14 @@ public:
     void del_all_consumers();
 
 public:
-    using tid_t = decltype(message::tid);
+    using tid_t = long long;
 
     void set_thread_name(const char* name, tid_t tid = 0);
 
 public:
     using id_t = unsigned short;
 
-    bool log_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args);
+    bool log_message(bool wait, id_t severity, id_t facility, const char* format, va_list args);
 
 private:
     struct message_data : public message
@@ -89,7 +96,7 @@ private:
 private:
     void sync_log_message(message_data& msg);
 
-    bool compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, std::va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, va_list args);
 
     void process_message(message_data& msg);
     void prepare_message(message_data& msg);
@@ -112,6 +119,8 @@ private:
         ACTION_SET_FACILITY     ,
         ACTION_ADD_CONSUMER     ,
         ACTION_DEL_CONSUMER     ,
+        ACTION_ADD_FUNCTIONS    ,
+        ACTION_DEL_FUNCTIONS    ,
         ACTION_DEL_ALL_CONSUMERS,
         ACTION_SET_THREAD_NAME  ,
         ACTION_SYNC_LOG_MESSAGE ,
@@ -122,7 +131,9 @@ private:
     struct consumer_data_t
     {
         consumer_ptr_t consumer;
-        bool           reentry_guard = false;
+        functions_t    functions {nullptr, nullptr, nullptr, nullptr};
+        void*          param     {nullptr};
+        bool           reentry_guard {false};
     };
 
 private:

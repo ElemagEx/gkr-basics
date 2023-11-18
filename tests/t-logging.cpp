@@ -23,7 +23,7 @@ class console_consumer : public gkr::log::consumer
     {
         std::tm tm;
         unsigned ns;
-        gkr::log::decompose_stamp(true, msg.stamp, tm, ns);
+        gkr_stamp_decompose(true, msg.info.stamp, &tm, ns);
 
         using ulonglong = unsigned long long;
 
@@ -32,7 +32,7 @@ class console_consumer : public gkr::log::consumer
             tm.tm_min,
             tm.tm_sec,
             (ns / 1000000U),
-            ulonglong(msg.tid),
+            ulonglong(msg.info.tid),
             msg.threadName,
             msg.severityName,
             msg.facilityName,
@@ -56,7 +56,7 @@ public:
 
 #include <gkr/log/logging.h>
 
-constexpr gkr::log::name_id_pair_t g_severities[] = {
+constexpr gkr::log::name_id_pair g_severities[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -64,7 +64,7 @@ constexpr gkr::log::name_id_pair_t g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-constexpr gkr::log::name_id_pair_t g_facilities[] = {
+constexpr gkr::log::name_id_pair g_facilities[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},
@@ -77,21 +77,19 @@ constexpr gkr::log::name_id_pair_t g_facilities[] = {
 
 TEST_CASE("logging.logger. main")
 {
-    using namespace gkr::log;
+    gkr_log_init(g_severities, g_facilities, 16, 1024);
 
-    logging::init(g_severities, g_facilities);
+    gkr_log_add_consumer(std::make_shared<console_consumer>());
 
-    logging::add_consumer(std::make_shared<console_consumer>());
-
-    logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
+    gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
     std::thread t([] () {
-        logging::set_this_thread_name("gkr-bar");
-        logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
+        gkr_log_set_this_thread_name("gkr-bar");
+        gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
     });
     t.join();
 
-    logging::log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
+    gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
-    logging::done();
+    gkr_log_done();
 }

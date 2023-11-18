@@ -8,6 +8,8 @@
 #include <Ws2tcpip.h>
 #pragma warning(default:4668)
 using sockaddr_inet = SOCKADDR_INET;
+#define s6_addr16 s6_words
+#define IN6ADDR_ANY_INIT { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } }
 #else
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -52,7 +54,7 @@ bool address::has_same_host(const address& other) const noexcept
     switch(thisSockAddr.si_family)
     {
         case AF_INET :
-            if(otherSockAddr.si_family == AF_INET )
+            if(otherSockAddr.si_family == AF_INET)
             {
                 return (thisSockAddr.Ipv4.sin_addr.s_addr == otherSockAddr.Ipv4.sin_addr.s_addr);
             }
@@ -62,7 +64,7 @@ bool address::has_same_host(const address& other) const noexcept
             {
                 for(std::size_t index = 0; index < 8; ++index)
                 {
-                    if(thisSockAddr.Ipv6.sin6_addr.s6_words[index] != otherSockAddr.Ipv6.sin6_addr.s6_words[index])
+                    if(thisSockAddr.Ipv6.sin6_addr.s6_addr16[index] != otherSockAddr.Ipv6.sin6_addr.s6_addr16[index])
                     {
                         return false;
                     }
@@ -91,13 +93,13 @@ bool address::reset(bool ipv6, unsigned short port)
 
     if(!ipv6)
     {
-        sockAddr.Ipv4.sin_family = AF_INET;
-    //  sockAddr.Ipv4.sin_addr   = INADDR_ANY;
+        sockAddr.Ipv4.sin_family      = AF_INET;
+        sockAddr.Ipv4.sin_addr.s_addr = INADDR_ANY;
     }
     else
     {
         sockAddr.Ipv6.sin6_family = AF_INET6;
-    //  sockAddr.Ipv4.sin_addr    = INADDR6_ANY;
+        sockAddr.Ipv6.sin6_addr   = IN6ADDR_ANY_INIT;
     }
     return change_port(port);
 }

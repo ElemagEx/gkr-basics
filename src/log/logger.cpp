@@ -14,6 +14,15 @@ namespace gkr
 namespace log
 {
 
+inline bool are_equals(const logger::functions_t& functions1, const logger::functions_t& functions2)
+{
+    return (
+        (functions1.init_logging == functions2.init_logging) &&
+        (functions1.done_logging == functions2.done_logging) &&
+        (functions1. filter_log_message == functions2. filter_log_message) &&
+        (functions1.consume_log_message == functions2.consume_log_message) );
+}
+
 logger::logger() : m_msg_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
 {
     m_log_queue.bind_with_producer_waiter(m_msg_waiter);
@@ -124,7 +133,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     }
 }
 
-void logger::set_severities(bool clear_existing, const name_id_pair_t* severities)
+void logger::set_severities(bool clear_existing, const name_id_pair* severities)
 {
     Check_ValidState(running(), );
 
@@ -142,7 +151,7 @@ void logger::set_severities(bool clear_existing, const name_id_pair_t* severitie
     }
 }
 
-void logger::set_facilities(bool clear_existing, const name_id_pair_t* facilities)
+void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
 {
     Check_ValidState(running(), );
 
@@ -160,7 +169,7 @@ void logger::set_facilities(bool clear_existing, const name_id_pair_t* facilitie
     }
 }
 
-void logger::set_severity(const name_id_pair_t& severity)
+void logger::set_severity(const name_id_pair& severity)
 {
     Check_ValidState(running(), );
 
@@ -178,7 +187,7 @@ void logger::set_severity(const name_id_pair_t& severity)
     }
 }
 
-void logger::set_facility(const name_id_pair_t& facility)
+void logger::set_facility(const name_id_pair& facility)
 {
     Check_ValidState(running(), );
 
@@ -196,13 +205,66 @@ void logger::set_facility(const name_id_pair_t& facility)
     }
 }
 
+bool logger::add_consume_functions(functions_t* functions, void* param)
+{
+    Check_ValidState(running(), false);
+
+    if(!in_worker_thread())
+    {
+        return execute_action_method<bool>(ACTION_ADD_FUNCTIONS, functions, param);
+    }
+    Check_Arg_NotNull(functions, false);
+    Check_Arg_NotNull(functions->init_logging, false);
+    Check_Arg_NotNull(functions->done_logging, false);
+    Check_Arg_NotNull(functions-> filter_log_message, false);
+    Check_Arg_NotNull(functions->consume_log_message, false);
+
+    for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
+    {
+        if(are_equals(it->functions, *functions) && (it->param == param))
+        {
+            Check_Arg_Invalid(consumer, false);
+        }
+    }
+    if(!(*functions->init_logging)(param))
+    {
+        (*functions->done_logging)(param);
+        Check_Failure(false);
+    }
+    m_consumers.push_back(consumer_data_t{nullptr, *functions, param});
+
+    return true;
+}
+
+bool logger::del_consume_functions(functions_t* functions, void* param)
+{
+    Check_ValidState(running(), false);
+
+    if(!in_worker_thread())
+    {
+        return execute_action_method<bool>(ACTION_DEL_FUNCTIONS, functions, param);
+    }
+    Check_Arg_NotNull(functions, false);
+
+    for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
+    {
+        if(are_equals(it->functions, *functions) && (it->param == param))
+        {
+            m_consumers.erase(it);
+            (*functions->done_logging)(param);
+            return true;
+        }
+    }
+    Check_Arg_Invalid(functions && param, false);
+}
+
 bool logger::add_consumer(consumer_ptr_t consumer)
 {
     Check_ValidState(running(), false);
 
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_ADD_CONSUMER, consumer);
+        return execute_action_method<bool>(ACTION_DEL_FUNCTIONS, consumer);
     }
     Check_Arg_NotNull(consumer, false);
 
@@ -215,6 +277,7 @@ bool logger::add_consumer(consumer_ptr_t consumer)
     }
     if(!init_consumer(*consumer))
     {
+        done_consumer(*consumer);
         Check_Failure(false);
     }
     m_consumers.push_back(consumer_data_t{consumer});
@@ -284,7 +347,7 @@ void logger::set_thread_name(const char* name, tid_t tid)
     }
 }
 
-bool logger::log_message(bool wait, id_t severity, id_t facility, const char* format, std::va_list args)
+bool logger::log_message(bool wait, id_t severity, id_t facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
 
@@ -340,12 +403,12 @@ void logger::sync_log_message(message_data& msg)
     process_message(msg);
 }
 
-bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, std::va_list args)
+bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, va_list args)
 {
-    msg.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
-    msg.stamp    = calc_stamp();
-    msg.severity = std::uint16_t(severity);
-    msg.facility = std::uint16_t(facility);
+    msg.info.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
+    msg.info.stamp    = gkr_stamp_now();
+    msg.info.severity = std::uint16_t(severity);
+    msg.info.facility = std::uint16_t(facility);
 
     if(args == nullptr)
     {
@@ -353,7 +416,7 @@ bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, 
 
         msg.buffer[cch - 1] = 0;
 
-        msg.messageLen = std::strlen(msg.buffer);
+        msg.messageLen = unsigned(std::strlen(msg.buffer));
     }
     else
     {
@@ -361,7 +424,7 @@ bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, 
 
         Check_ValidState(len >= 0, false);
 
-        msg.messageLen = std::size_t(len);
+        msg.messageLen = unsigned(len);
     }
     return true;
 }
@@ -376,9 +439,9 @@ void logger::prepare_message(message_data& msg)
 {
     msg.messageText = msg.buffer;
 
-    auto itThreadId = m_thread_ids.find(msg.tid);
-    auto itSeverity = m_severities.find(msg.severity);
-    auto itFacility = m_facilities.find(msg.facility);
+    auto itThreadId = m_thread_ids.find(msg.info.tid);
+    auto itSeverity = m_severities.find(msg.info.severity);
+    auto itFacility = m_facilities.find(msg.info.facility);
 
     static constexpr char s_empty_name[1] = {0};
 
@@ -416,9 +479,19 @@ void logger::consume_message(const message_data& msg)
                 if(data.reentry_guard) continue;
 
                 data.reentry_guard = true;
-                if(!data.consumer->filter_log_message(msg))
+                if(data.consumer != nullptr)
                 {
-                    data.consumer->consume_log_message(msg);
+                    if(!data.consumer->filter_log_message(msg))
+                    {
+                        data.consumer->consume_log_message(msg);
+                    }
+                }
+                else
+                {
+                    if(!(*data.functions.filter_log_message)(data.param, &msg))
+                    {
+                        (*data.functions.consume_log_message)(data.param, &msg);
+                    }
                 }
                 data.reentry_guard = false;
             }

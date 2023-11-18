@@ -6,7 +6,7 @@ add_library               (android_log_consumer STATIC  androidLogConsumer.h and
 target_link_libraries     (android_log_consumer PRIVATE gkr-basics)
 target_include_directories(android_log_consumer PUBLIC  ".")
 
-add_library               (console_consumer STATIC  consoleConsumer.h consoleConsumer.cpp)
+add_library               (console_consumer STATIC  appConsoleConsumer.h appConsoleConsumer.cpp)
 target_link_libraries     (console_consumer PRIVATE gkr-basics)
 target_include_directories(console_consumer PUBLIC  ".")
 

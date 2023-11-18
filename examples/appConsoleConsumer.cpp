@@ -1,4 +1,4 @@
-#include "windowsDebuggerConsumer.h"
+#include "appConsoleConsumer.h"
 
 #include <gkr/diagnostics.h>
 #include <gkr/log/message.h>
@@ -6,24 +6,34 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
-#ifdef _WIN32
-extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char*);
+static void outputToConsole(int method, const char* text)
+{
+    switch(method)
+    {
+        default:
+            printf("%s\n", text);
+            break;
 
-static void outputToWindowsDebugger(const char* text)
-{
-    OutputDebugStringA(text);
-    OutputDebugStringA("\n");
+        case appConsoleWriteMethod_fputs2stderr:
+            std::fputs(text, stderr);
+            std::fputs("\n", stderr);
+            break;
+        case appConsoleWriteMethod_fputs2stdout:
+            std::fputs(text, stdout);
+            std::fputs("\n", stdout);
+            break;
+
+        case appConsoleWriteMethod_stream2cerr: std::cerr << text << std::endl; break;
+        case appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
+        case appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
+    }
 }
-#else
-static void outputToWindowsDebugger(const char* text)
-{
-}
-#endif
 
 extern "C" {
 
-unsigned windowsDebuggerComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
+unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
     unsigned  ns;
@@ -49,11 +59,13 @@ unsigned windowsDebuggerComposeOutput(char* buf, unsigned cch, const struct gkr_
 struct data_t
 {
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*);
+    int      method;
     unsigned cch;
     char     buf[1];
 };
 
-void* windowsDebuggerCreateParam(
+void* appConsoleCreateParam(
+    int method,
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
     )
@@ -66,21 +78,18 @@ void* windowsDebuggerCreateParam(
     if(data != nullptr)
     {
         data->composeOutput = composeOutput;
+        data->method        = method;
         data->cch           = bufferCapacity;
     }
     return data;
 }
 
-int windowsDebuggerInitLogging(void* param)
+int appConsoleInitLogging(void* param)
 {
-#ifdef _WIN32
     return (param != nullptr);
-#else
-    return false;
-#endif
 }
 
-void windowsDebuggerDoneLogging(void* param)
+void appConsoleDoneLogging(void* param)
 {
     if(param != nullptr)
     {
@@ -88,12 +97,12 @@ void windowsDebuggerDoneLogging(void* param)
     }
 }
 
-int windowsDebuggerFilterLogMessage(void* param, const struct gkr_log_message* msg)
+int appConsoleFilterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     return false;
 }
 
-void windowsDebuggerConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void appConsoleConsumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     data_t* data = static_cast<data_t*>(param);
 
@@ -101,21 +110,22 @@ void windowsDebuggerConsumeLogMessage(void* param, const struct gkr_log_message*
 
     data->buf[data->cch - 1] = 0;
 
-    outputToWindowsDebugger(data->buf);
+    outputToConsole(data->method, data->buf);
 }
 
 }
 
-windowsDebuggerConsumer::windowsDebuggerConsumer(unsigned bufferCapacity)
+appConsoleConsumer::appConsoleConsumer(int method, unsigned bufferCapacity)
     : m_buf(nullptr)
     , m_cch(bufferCapacity)
+    , m_mth(method)
 {
     Check_Arg_IsValid(bufferCapacity > 0, );
 
     m_buf = new char[bufferCapacity];
 }
 
-windowsDebuggerConsumer::~windowsDebuggerConsumer()
+appConsoleConsumer::~appConsoleConsumer()
 {
     if(m_buf != nullptr)
     {
@@ -123,7 +133,7 @@ windowsDebuggerConsumer::~windowsDebuggerConsumer()
     }
 }
 
-bool windowsDebuggerConsumer::init_logging()
+bool appConsoleConsumer::init_logging()
 {
 #ifdef _WIN32
     return (m_buf != nullptr);
@@ -132,25 +142,25 @@ bool windowsDebuggerConsumer::init_logging()
 #endif
 }
 
-void windowsDebuggerConsumer::done_logging()
+void appConsoleConsumer::done_logging()
 {
 }
 
-bool windowsDebuggerConsumer::filter_log_message(const gkr::log::message& msg)
+bool appConsoleConsumer::filter_log_message(const gkr::log::message& msg)
 {
     return false;
 }
 
-void windowsDebuggerConsumer::consume_log_message(const gkr::log::message& msg)
+void appConsoleConsumer::consume_log_message(const gkr::log::message& msg)
 {
     composeOutput(m_buf, m_cch, msg);
 
     m_buf[m_cch - 1] = 0;
 
-    outputToWindowsDebugger(m_buf);
+    outputToConsole(m_mth, m_buf);
 }
 
-unsigned windowsDebuggerConsumer::composeOutput(char* buf, unsigned cch, const gkr::log::message& msg)
+unsigned appConsoleConsumer::composeOutput(char* buf, unsigned cch, const gkr::log::message& msg)
 {
-    return windowsDebuggerComposeOutput(m_buf, m_cch, &msg);
+    return appConsoleComposeOutput(m_buf, m_cch, &msg);
 }

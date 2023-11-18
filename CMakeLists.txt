@@ -49,7 +49,6 @@ target_sources(
     gkr-basics
     PRIVATE
     "${gkr_basics_inc_path}/diagnostics.h"
-    "${gkr_basics_inc_path}/stamp.h"
     "${gkr_basics_inc_path}/concurency/events_waiting.h"
     "${gkr_basics_inc_path}/concurency/waitable_lockfree_queue.h"
     "${gkr_basics_inc_path}/container/lockfree_grow_only_bag.h"
@@ -69,6 +68,8 @@ target_sources(
 target_sources(
     gkr-basics
     PRIVATE
+    "${gkr_basics_inc_path}/stamp.h"
+    "${gkr_basics_inc_path}/stamp.cpp"
     "${gkr_basics_inc_path}/concurency/worker_thread.h"
     "${gkr_basics_src_path}/concurency/worker_thread.cpp"
     "${gkr_basics_inc_path}/sys/thread_name.h"

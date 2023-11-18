@@ -116,7 +116,7 @@ void udpSocketConsumer::constructData(const log::message& msg)
     messageData.head.signature = log::SIGNITURE_LOG_MSG;
     messageData.head.size      = std::uint32_t(dataSize);
 
-    messageData.info = msg;
+    messageData.info = msg.info;
 
     messageData.desc.pid = m_processId;
 

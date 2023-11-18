@@ -1,14 +1,12 @@
 #pragma once
 
-#ifndef GKR_SYS_API
-#define GKR_SYS_API
-#endif
+#include <gkr/api.h>
 
 namespace gkr
 {
 namespace sys
 {
-GKR_SYS_API int get_current_process_id();
-GKR_SYS_API int get_current_process_name(char* name, unsigned cch);
+GKR_CORE_API int get_current_process_id();
+GKR_CORE_API int get_current_process_name(char* name, unsigned cch);
 }
 }

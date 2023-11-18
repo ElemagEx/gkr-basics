@@ -1,10 +1,8 @@
 #pragma once
 
-#include <time.h>
+#include <gkr/api.h>
 
-#ifndef GKR_CORE_API
-#define GKR_CORE_API
-#endif
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstddef>
+#include <gkr/api.h>
 
-#ifndef GKR_NET_API
-#define GKR_NET_API
-#endif
+#include <cstddef>
 
 namespace gkr
 {
@@ -94,27 +92,27 @@ public:
     }
 
 public:
-    GKR_NET_API int compare(const address& other) const noexcept;
+    GKR_CORE_API int compare(const address& other) const noexcept;
 
-    GKR_NET_API bool has_same_host(const address& other) const noexcept;
-
-public:
-    GKR_NET_API bool reset(const char* host, unsigned short port);
-    GKR_NET_API bool reset(bool ipv6, unsigned short port);
-
-    GKR_NET_API bool change_port(unsigned short port);
-    GKR_NET_API bool change_host(const char* host);
+    GKR_CORE_API bool has_same_host(const address& other) const noexcept;
 
 public:
-    GKR_NET_API bool is_ipv4() const noexcept;
-    GKR_NET_API bool is_ipv6() const noexcept;
+    GKR_CORE_API bool reset(const char* host, unsigned short port);
+    GKR_CORE_API bool reset(bool ipv6, unsigned short port);
 
-    GKR_NET_API std::size_t size() const noexcept;
+    GKR_CORE_API bool change_port(unsigned short port);
+    GKR_CORE_API bool change_host(const char* host);
 
-    GKR_NET_API unsigned short port() const noexcept;
+public:
+    GKR_CORE_API bool is_ipv4() const noexcept;
+    GKR_CORE_API bool is_ipv6() const noexcept;
 
-    GKR_NET_API std::size_t host(char* buff, std::size_t cch) const;
-    GKR_NET_API std::size_t addr(char* buff, std::size_t cch) const;
+    GKR_CORE_API std::size_t size() const noexcept;
+
+    GKR_CORE_API unsigned short port() const noexcept;
+
+    GKR_CORE_API std::size_t host(char* buff, std::size_t cch) const;
+    GKR_CORE_API std::size_t addr(char* buff, std::size_t cch) const;
 
 public:
     template<std::size_t CCH>

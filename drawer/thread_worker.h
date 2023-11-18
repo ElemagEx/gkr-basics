@@ -1,18 +1,15 @@
 #pragma once
 
-#include <mutex>
-#include <thread>
-#include <functional>
-
+#include <gkr/api.h>
 #include <gkr/thread_waiting.h>
 #include <gkr/waitable_event.h>
 #include <gkr/waitable_lockfree_queue.h>
 
 #include <gkr/misc/stack_args_order.h>
 
-#ifndef GKR_BTW_API
-#define GKR_BTW_API
-#endif
+#include <mutex>
+#include <thread>
+#include <functional>
 
 namespace gkr
 {
@@ -47,8 +44,8 @@ public:
     using action_param_deleter_t = std::function<void(void*)>;
 
 protected:
-    GKR_BTW_API          thread_worker(std::size_t initial_action_queue_capacity = 8) noexcept(false);
-    GKR_BTW_API virtual ~thread_worker() noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API          thread_worker(std::size_t initial_action_queue_capacity = 8) noexcept(false);
+    GKR_CORE_API virtual ~thread_worker() noexcept(DIAG_NOEXCEPT);
 
 protected:
     virtual const char* get_name() noexcept = 0;
@@ -71,25 +68,25 @@ protected:
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept = 0;
 
 public:
-    GKR_BTW_API bool run() noexcept(DIAG_NOEXCEPT);
-    GKR_BTW_API bool join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API bool run() noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API bool join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT);
 
 public:
-    GKR_BTW_API bool quit() noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API bool quit() noexcept(DIAG_NOEXCEPT);
 
-    GKR_BTW_API bool update_wait() noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API bool update_wait() noexcept(DIAG_NOEXCEPT);
 
-    GKR_BTW_API bool resize_actions_queue(std::size_t capacity) noexcept(false);
+    GKR_CORE_API bool resize_actions_queue(std::size_t capacity) noexcept(false);
 
 public:
-    GKR_BTW_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr) noexcept(DIAG_NOEXCEPT);
-    GKR_BTW_API void perform_action(action_id_t id, void* param = nullptr, void* result = nullptr) noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr) noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API void perform_action(action_id_t id, void* param = nullptr, void* result = nullptr) noexcept(DIAG_NOEXCEPT);
 
 private:
-    GKR_BTW_API void forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT);
+    GKR_CORE_API void forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT);
 
-    GKR_BTW_API bool can_reply() noexcept;
-    GKR_BTW_API bool reply_action() noexcept;
+    GKR_CORE_API bool can_reply() noexcept;
+    GKR_CORE_API bool reply_action() noexcept;
 
 public:
     std::thread::id get_thread_id() const noexcept

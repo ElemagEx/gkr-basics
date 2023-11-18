@@ -41,7 +41,7 @@
 #define DIAG_MODE_DISABLED  0 /* Disables all diagnostics */
 #define DIAG_MODE_SILENT    1 /* Asserts are disabled and checks are silient - default for RELASE builds */
 #define DIAG_MODE_STEADY    2 /* Asserts are disabled and checks warns on fail */
-#define DIAG_MODE_NOISY     3 /* Asserts halts execution and checks warns on fail - default for DEBUG builds */
+#define DIAG_MODE_NOISY     3 /* Asserts halts execution and checks warns on fail - default for debug builds */
 #define DIAG_MODE_INTRUSIVE 4 /* All diagnostics halts execution */
 
 //
@@ -165,7 +165,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 // If DIAG_MODE is not defined in advance tries to determine the right value
 //
 #ifndef DIAG_MODE
-#if defined(_DEBUG)
+#if defined(_DEBUG) || defined(DEBUG)
 #define DIAG_MODE DIAG_MODE_NOISY
 #elif defined(NDEBUG)
 #define DIAG_MODE DIAG_MODE_SILENT

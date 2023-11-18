@@ -1,18 +1,16 @@
 #pragma once
 
-#ifndef GKR_NET_API
-#define GKR_NET_API
-#endif
+#include <gkr/api.h>
 
 namespace gkr
 {
 namespace net
 {
 
-GKR_NET_API bool startup();
-GKR_NET_API void shutdown();
+GKR_CORE_API bool startup();
+GKR_CORE_API void shutdown();
 
-GKR_NET_API int get_hostname(char* buffer, unsigned cch);
+GKR_CORE_API int get_hostname(char* buffer, unsigned cch);
 
 struct lib
 {

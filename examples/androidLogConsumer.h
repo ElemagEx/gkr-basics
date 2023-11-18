@@ -14,7 +14,7 @@ GKR_SAMPLE_API int androidLogGetPriority(const struct gkr_log_message* msg);
 GKR_SAMPLE_API const char* androidLogGetTag(const struct gkr_log_message* msg);
 GKR_SAMPLE_API void androidLogFormatText(char* buf, unsigned cch, const struct gkr_log_message* msg);
 
-GKR_SAMPLE_API void* androidLogCreateParam(
+GKR_SAMPLE_API void* androidLogCreateConsumerParam(
     unsigned bufferCapacity,
     int (*getPriority)(const struct gkr_log_message*),
     const char* (*getTag)(const struct gkr_log_message*),

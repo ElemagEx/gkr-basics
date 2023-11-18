@@ -75,6 +75,8 @@ void logger::on_action(action_id_t action, void* param, void* result)
         case ACTION_SET_FACILITY     : call_action_method(&logger::set_facility     , param); break;
         case ACTION_ADD_CONSUMER     : call_action_method(&logger::add_consumer     , param, result); break;
         case ACTION_DEL_CONSUMER     : call_action_method(&logger::del_consumer     , param, result); break;
+        case ACTION_ADD_FUNCTIONS    : call_action_method(&logger::add_functions    , param, result); break;
+        case ACTION_DEL_FUNCTIONS    : call_action_method(&logger::del_functions    , param, result); break;
         case ACTION_DEL_ALL_CONSUMERS: call_action_method(&logger::del_all_consumers, param); break;
         case ACTION_SET_THREAD_NAME  : call_action_method(&logger::set_thread_name  , param); break;
         case ACTION_SYNC_LOG_MESSAGE : call_action_method(&logger::sync_log_message , param); break;
@@ -205,7 +207,7 @@ void logger::set_facility(const name_id_pair& facility)
     }
 }
 
-bool logger::add_consume_functions(functions_t* functions, void* param)
+bool logger::add_functions(functions_t* functions, void* param)
 {
     Check_ValidState(running(), false);
 
@@ -236,7 +238,7 @@ bool logger::add_consume_functions(functions_t* functions, void* param)
     return true;
 }
 
-bool logger::del_consume_functions(functions_t* functions, void* param)
+bool logger::del_functions(functions_t* functions, void* param)
 {
     Check_ValidState(running(), false);
 
@@ -264,7 +266,7 @@ bool logger::add_consumer(consumer_ptr_t consumer)
 
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_DEL_FUNCTIONS, consumer);
+        return execute_action_method<bool>(ACTION_ADD_CONSUMER, consumer);
     }
     Check_Arg_NotNull(consumer, false);
 

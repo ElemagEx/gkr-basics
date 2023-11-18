@@ -125,7 +125,7 @@ int gkr_log_add_consumer(gkr_log_consumer* consumer, void* param)
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->add_consume_functions(consumer, param);
+    return s_logger->add_functions(consumer, param);
 }
 
 int gkr_log_del_consumer(gkr_log_consumer* consumer, void* param)
@@ -134,7 +134,7 @@ int gkr_log_del_consumer(gkr_log_consumer* consumer, void* param)
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->del_consume_functions(consumer, param);
+    return s_logger->del_functions(consumer, param);
 }
 
 int gkr_log_del_all_consumers()

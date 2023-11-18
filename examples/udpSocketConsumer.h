@@ -1,16 +1,40 @@
 #pragma once
 
 #include <gkr/log/consumer.h>
-#include <gkr/net/address.h>
+
+#ifndef GKR_SAMPLE_API
+#define GKR_SAMPLE_API
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+GKR_SAMPLE_API void* udpSocketCreateConsumerParam(
+    const char*    remoteHost,
+    unsigned short remotePort,
+    unsigned maxPacketSize,
+    unsigned bufferCapacity
+    );
+
+GKR_SAMPLE_API int udpSocketInitLogging(void* param);
+
+GKR_SAMPLE_API void udpSocketDoneLogging(void* param);
+
+GKR_SAMPLE_API int udpSocketFilterLogMessage(void* param, const struct gkr_log_message* msg);
+
+GKR_SAMPLE_API void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg);
+
+#ifdef __cplusplus
+}
+
 #include <gkr/net/socket.h>
+#include <gkr/net/address.h>
 #include <gkr/container/raw_buffer.h>
 
 #include <string>
 
-namespace gkr
-{
-
-class udpSocketConsumer : public log::consumer
+class udpSocketConsumer : public gkr::log::consumer
 {
     udpSocketConsumer() noexcept = delete;
 
@@ -19,7 +43,7 @@ class udpSocketConsumer : public log::consumer
 
 public:
     udpSocketConsumer(udpSocketConsumer&& other) noexcept(
-        std::is_nothrow_move_constructible<raw_buffer_t>::value
+        std::is_nothrow_move_constructible<gkr::raw_buffer_t>::value
         )
         : m_processName(std::move(other.m_processName))
         , m_hostName   (std::move(other.m_hostName))
@@ -32,7 +56,7 @@ public:
     {
     }
     udpSocketConsumer& operator=(udpSocketConsumer&& other) noexcept(
-        std::is_nothrow_move_assignable<raw_buffer_t>::value
+        std::is_nothrow_move_assignable<gkr::raw_buffer_t>::value
         )
     {
         m_processName = std::move(other.m_processName);
@@ -49,23 +73,23 @@ public:
 
 public:
     static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;
-    static constexpr std::size_t MINIMUM_UDP_PACKET_SIZE = 240;
+    static constexpr std::size_t MINIMUM_UDP_PACKET_SIZE = 80;
 
-    udpSocketConsumer(
+    GKR_SAMPLE_API udpSocketConsumer(
         const char*    remoteHost,
         unsigned short remotePort,
-        std::size_t maxPacketSize = OPTIMAL_UDP_PACKET_SIZE,
-        std::size_t bufferInitialCapacity = 2*1024
+        unsigned maxPacketSize  = OPTIMAL_UDP_PACKET_SIZE,
+        unsigned bufferCapacity = 2*1024
         );
-    virtual ~udpSocketConsumer() override;
+    GKR_SAMPLE_API virtual ~udpSocketConsumer() override;
 
-protected:
-    virtual bool init_logging() override;
-    virtual void done_logging() override;
+public:
+    GKR_SAMPLE_API virtual bool init_logging() override;
+    GKR_SAMPLE_API virtual void done_logging() override;
 
-    virtual bool filter_log_message(const log::message& msg) override;
+    GKR_SAMPLE_API virtual bool filter_log_message(const gkr::log::message& msg) override;
 
-    virtual void consume_log_message(const log::message& msg) override;
+    GKR_SAMPLE_API virtual void consume_log_message(const gkr::log::message& msg) override;
 
 public:
     bool setRemoteAddress(const char* remoteHost, unsigned short remotePort)
@@ -77,21 +101,21 @@ private:
     bool retrieveProcessName();
     bool retrieveHostName();
 
-    void constructData(const log::message& msg);
+    void constructData(const gkr::log::message& msg);
     void postData(const char* data, std::size_t size);
 
 private:
-    std::string     m_processName;
-    std::string     m_hostName;
+    std::string m_processName;
+    std::string m_hostName;
 
-    raw_buffer_t    m_packet;
-    raw_buffer_t    m_buffer;
+    gkr::raw_buffer_t m_packet;
+    gkr::raw_buffer_t m_buffer;
 
-    net::socket     m_socket;
-    net::address    m_remoteAddr;
+    gkr::net::socket  m_socket;
+    gkr::net::address m_remoteAddr;
 
-    unsigned        m_processId {0};
-    std::uint64_t   m_packetId  {0};
+    unsigned      m_processId {0};
+    std::uint64_t m_packetId  {0};
 };
 
-}
+#endif

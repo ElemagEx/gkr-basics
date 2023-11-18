@@ -54,15 +54,18 @@ bool udpSocketReceiver::receivePacket()
 
     if(received != packetHead.packet_size)
     {
-        //LOG
+        //TODO:replace with log
+        Check_Recovery("Invalid packet header");
     }
     else if(packetHead.data_offset < sizeof(net::split_packet_head))
     {
-        //LOG
+        //TODO:replace with log
+        Check_Recovery("Invalid packet header");
     }
     else if(packetHead.packet_index >= packetHead.packet_count)
     {
-        //LOG
+        //TODO:replace with log
+        Check_Recovery("Invalid packet header");
     }
     else if((packetHead.packet_index == 0) && (packetHead.packet_count == 1))
     {
@@ -112,11 +115,13 @@ void udpSocketReceiver::handleUnsplittedPacket()
 
     if((data_size != packetHead.data_size) || (0 != packetHead.data_sent))
     {
-        //LOG
+        //TODO:replace with log
+        Check_Recovery("Invalid packet header");
     }
     else if(data_size != packetData.size)
     {
-        //LOG
+        //TODO:replace with log
+        Check_Recovery("Invalid packet header");
     }
     else
     {
@@ -161,17 +166,20 @@ udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const 
         {
             if(partialPacket.count != packetHead.packet_count)
             {
-                //LOG
+                //TODO:replace with log
+                Check_Recovery("Invalid packet header");
                 partialPacket.reset();
             }
             else if(partialPacket.buffer.size() != packetHead.data_size)
             {
-                //LOG
+                //TODO:replace with log
+                Check_Recovery("Invalid packet header");
                 partialPacket.reset();
             }
             else if(partialPacket.buffer.size() < (packetHead.data_sent + partialDataSize))
             {
-                //LOG
+                //TODO:replace with log
+                Check_Recovery("Invalid packet header");
                 partialPacket.reset();
             }
             return partialPacket;

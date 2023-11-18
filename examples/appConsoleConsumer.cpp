@@ -64,7 +64,7 @@ struct data_t
     char     buf[1];
 };
 
-void* appConsoleCreateParam(
+void* appConsoleCreateConsumerParam(
     int method,
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)

@@ -71,7 +71,6 @@ constexpr gkr::log::name_id_pair g_facilities[] = {
     {"Synchro", FACILITY_SYNCHRO},
     {nullptr  , 0               }
 };
-//logging s_logging(g_severities, g_facilities);
 
 #include <thread>
 

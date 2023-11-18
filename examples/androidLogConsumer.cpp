@@ -56,7 +56,7 @@ struct data_t
     char        buf[1];
 };
 
-void* androidLogCreateParam(
+void* androidLogCreateConsumerParam(
     unsigned bufferCapacity,
     int (*getPriority)(const struct gkr_log_message*),
     const char* (*getTag)(const struct gkr_log_message*),

@@ -16,25 +16,32 @@ namespace sys
 {
 int get_current_process_id()
 {
-	return (int)GetCurrentProcessId();
+    return (int)GetCurrentProcessId();
 }
 int get_current_process_name(char* name, unsigned cch)
 {
-	char file[MAX_PATH];
+    char file[MAX_PATH];
 
-	const unsigned len = GetModuleBaseNameA(GetCurrentProcess(), nullptr, file, MAX_PATH);
+    unsigned len = GetModuleBaseNameA(GetCurrentProcess(), nullptr, file, MAX_PATH);
 
-	Check_ValidState((len > 0) && (len < MAX_PATH), 0);
+    Check_ValidState((len > 0) && (len < MAX_PATH), 0);
 
-	if((name != nullptr) && (len < cch))
-	{
-		std::strncpy(name, file, cch);
-		return len;
-	}
-	else
-	{
-		return (len + 1);
-	}
+    char* ext = std::strrchr(file, '.');
+
+    if((ext != nullptr) && (0 == std::strcmp(ext, ".exe")))
+    {
+        *ext = 0;
+        len -= 4;
+    }
+    if((name != nullptr) && (len < cch))
+    {
+        std::strncpy(name, file, cch);
+        return len;
+    }
+    else
+    {
+        return (len + 1);
+    }
 }
 }
 }
@@ -51,25 +58,25 @@ namespace sys
 {
 int get_current_process_id()
 {
-	return int(getpid());
+    return int(getpid());
 }
 int get_current_process_name(char* name, unsigned cch)
 {
-	Check_ValidState(__progname != nullptr, 0);
+    Check_ValidState(__progname != nullptr, 0);
 
-	const std::size_t len = std::strlen(__progname);
+    const std::size_t len = std::strlen(__progname);
 
-	Check_ValidState(len > 0, 0);
+    Check_ValidState(len > 0, 0);
 
-	if((name != nullptr) && (len < cch))
-	{
-		std::strncpy(name, __progname, cch);
-		return int(len);
-	}
-	else
-	{
-		return int(len + 1);
-	}
+    if((name != nullptr) && (len < cch))
+    {
+        std::strncpy(name, __progname, cch);
+        return int(len);
+    }
+    else
+    {
+        return int(len + 1);
+    }
 }
 }
 }

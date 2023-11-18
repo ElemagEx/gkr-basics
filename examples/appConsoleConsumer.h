@@ -24,7 +24,7 @@ extern "C" {
 
 GKR_SAMPLE_API unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
 
-GKR_SAMPLE_API void* appConsoleCreateParam(
+GKR_SAMPLE_API void* appConsoleCreateConsumerParam(
     int method,
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)

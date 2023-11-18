@@ -4,36 +4,89 @@
 
 #include <gkr/diagnostics.h>
 
+#include <string>
+
 #ifdef _WIN32
 #pragma warning(disable:4668)
 #include <winsock2.h>
-#include <Ws2tcpip.h>
+#include <ws2tcpip.h>
 #pragma warning(default:4668)
-inline int net_error() { return WSAGetLastError(); }
 enum
 {
     NET_ERROR_TIMEDOUT = WSAETIMEDOUT,
 };
+inline int net_error()
+{
+    return WSAGetLastError();
+}
+static std::string get_net_error_text(int error)
+{
+    std::string text;
+    char* buffer;
+    const unsigned len = FormatMessageA(
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+        nullptr,
+        error,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (char*)&buffer,
+        128,
+        nullptr
+        );
+    if(len > 0)
+    {
+        text.assign(buffer, len);
+        LocalFree(buffer);
+    }
+    return text;
+}
 #else
 #include <unistd.h>
 #include <netinet/in.h>
 #include <errno.h>
-
+#include <string.h>
 inline int closesocket(int fd)
 {
     return close(fd);
 }
-inline int net_error() { return errno; }
 enum
 {
     NET_ERROR_TIMEDOUT = ETIMEDOUT,
 };
+inline int net_error()
+{
+    return errno;
+}
+static std::string get_net_error_text(int error)
+{
+    return strerror(error);
+}
 #endif
 
 namespace gkr
 {
 namespace net
 {
+
+static void report_net_error(int error, unsigned* errors = nullptr)
+{
+    if(errors != nullptr)
+    {
+        unsigned err;
+        switch(error)
+        {
+            case NET_ERROR_TIMEDOUT: err = socket::error_timeout; break;
+            default:                 err = socket::error_other  ; break;
+        }
+        if((*errors & err) != 0)
+        {
+            *errors = err;
+            return;
+        }
+    }
+    [[maybe_unused]] auto text = get_net_error_text(error);
+    //TODO:change Check_Failure with log
+    Check_Failure();
+}
 
 bool socket::open_as_udp(bool ipv6)
 {
@@ -47,7 +100,7 @@ bool socket::open_as_udp(bool ipv6)
     {
         return true;
     }
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -67,7 +120,7 @@ bool socket::reopen()
         m_socket = new_socket;
         return true;
     }
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -80,7 +133,7 @@ void socket::close()
         m_socket = INVALID_SOCKET_VALUE;
         return;
     }
-    //errno
+    report_net_error(net_error());
     return;
 }
 
@@ -118,7 +171,7 @@ int socket::family() const
         return family;
     }
 #endif
-    //errno
+    report_net_error(net_error());
     return AF_UNSPEC;
 }
 
@@ -142,7 +195,7 @@ int socket::type() const
         return type;
     }
 #endif
-    //errno
+    report_net_error(net_error());
     return 0;
 }
 
@@ -161,12 +214,12 @@ int socket::protocol() const
 #else
     int protocol;
     socklen_t len = sizeof(protocol);
-    if(0 == getsockopt(m_socket, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&protocol), &len))
+    if(0 == getsockopt(m_socket, SOL_SOCKET, SO_PROTOCOL, reinterpret_cast<char*>(&protocol), &len))
     {
         return protocol;
     }
 #endif
-    //errno
+    report_net_error(net_error());
     return 0;
 }
 
@@ -181,7 +234,7 @@ std::size_t socket::get_send_buffer_size() const
     {
         return std::size_t(val);
     }
-    //errno
+    report_net_error(net_error());
     return 0;
 }
 
@@ -195,7 +248,7 @@ bool socket::set_send_buffer_size(std::size_t size)
     {
         return true;
     }
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -210,7 +263,7 @@ std::size_t socket::get_receive_buffer_size() const
     {
         return std::size_t(val);
     }
-    //errno
+    report_net_error(net_error());
     return 0;
 }
 
@@ -224,7 +277,7 @@ bool socket::set_receive_buffer_size(std::size_t size)
     {
         return true;
     }
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -247,7 +300,7 @@ bool socket::set_send_timeout(unsigned timeout)
         return true;
     }
 #endif
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -270,7 +323,7 @@ bool socket::set_receive_timeout(unsigned timeout)
         return true;
     }
 #endif
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -288,7 +341,7 @@ bool socket::bind(unsigned short port)
     {
         return true;
     }
-    //errno
+    report_net_error(net_error());
     return false;
 }
 
@@ -309,7 +362,7 @@ std::size_t socket::send_to(const void* buff, std::size_t size, const address& a
     {
         return std::size_t(sent);
     }
-    //errno
+    report_net_error(net_error());
     return 0;
 }
 
@@ -332,25 +385,8 @@ std::size_t socket::receive_from(void* buff, std::size_t size, address& addr, un
         Check_ValidState(std::size_t(recv) <= size, 0);
         return std::size_t(recv);
     }
-    const int error = net_error();
-
-    if(check_errors(error, errors)) return 0;
-
-    //errno
+    report_net_error(net_error(), errors);
     return 0;
-}
-
-bool socket::check_errors(int error, unsigned* errors)
-{
-    if(errors != nullptr)
-    {
-        switch(error)
-        {
-            case NET_ERROR_TIMEDOUT: if((*errors & error_timeout)  == 0) break; *errors = error_timeout; return true;
-        }
-        *errors = error_other;
-    }
-    return false;
 }
 
 }

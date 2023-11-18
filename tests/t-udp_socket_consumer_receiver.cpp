@@ -39,8 +39,9 @@ constexpr gkr::log::name_id_pair g_facilities[] = {
     {"Synchro", FACILITY_SYNCHRO},
     {nullptr  , 0               }
 };
-static gkr::log::logging logging(g_severities, g_facilities);
+
 static gkr::net::lib     networking;
+static gkr::log::logging logging(g_severities, g_facilities);
 
 constexpr unsigned short UDP_COMM_PORT = 12345;
 
@@ -142,14 +143,12 @@ TEST_CASE("logging.consumer.udp_socket. Simple packet")
     receiver recv(3);
     REQUIRE(recv.run());
 
-    using namespace gkr::log;
+    REQUIRE(gkr_log_del_all_consumers());
+    REQUIRE(gkr_log_add_consumer(std::make_shared<udpSocketConsumer>("127.0.0.1", UDP_COMM_PORT)));
 
-    gkr_log_del_all_consumers();
-    gkr_log_add_consumer(std::make_shared<gkr::udpSocketConsumer>("127.0.0.1", UDP_COMM_PORT));
+    REQUIRE(gkr_log_set_this_thread_name("thread-0"));
 
-    gkr_log_set_this_thread_name("thread-0");
-
-    gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First simple log message");
+    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First simple log message"));
 
     std::thread t([] () {
         gkr_log_set_this_thread_name("thread-1");
@@ -157,9 +156,9 @@ TEST_CASE("logging.consumer.udp_socket. Simple packet")
     });
     t.join();
 
-    gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second simple log message");
+    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second simple log message"));
 
-    gkr_log_done();
+    recv.join(false);
 }
 
 TEST_CASE("logging.consumer.udp_socket. Splitted packet")
@@ -167,19 +166,20 @@ TEST_CASE("logging.consumer.udp_socket. Splitted packet")
     receiver recv(3);
     REQUIRE(recv.run());
 
-    gkr_log_add_consumer(std::make_shared<gkr::udpSocketConsumer>("127.0.0.1", UDP_COMM_PORT, 128));
+    REQUIRE(gkr_log_del_all_consumers());
+    REQUIRE(gkr_log_add_consumer(std::make_shared<udpSocketConsumer>("127.0.0.1", UDP_COMM_PORT, 128)));
 
-    gkr_log_set_this_thread_name("thread-0");
+    REQUIRE(gkr_log_set_this_thread_name("thread-A"));
 
-    gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First splitted log message");
+    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First splitted log message"));
 
     std::thread t([] () {
-        gkr_log_set_this_thread_name("thread-1");
+        gkr_log_set_this_thread_name("thread-B");
         gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread splitted log message");
     });
     t.join();
 
-    gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second splitted log message");
+    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second splitted log message"));
 
-    gkr_log_done();
+    recv.join(false);
 }

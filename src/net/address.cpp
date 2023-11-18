@@ -9,7 +9,6 @@
 #pragma warning(default:4668)
 using sockaddr_inet = SOCKADDR_INET;
 #define s6_addr16 s6_words
-#define IN6ADDR_ANY_INIT { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } }
 #else
 #include <arpa/inet.h>
 #include <netinet/in.h>

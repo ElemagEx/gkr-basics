@@ -12,7 +12,7 @@ extern "C" {
 
 GKR_SAMPLE_API unsigned windowsDebuggerComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
 
-GKR_SAMPLE_API void* windowsDebuggerCreateParam(
+GKR_SAMPLE_API void* windowsDebuggerCreateConsumerParam(
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
     );

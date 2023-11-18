@@ -85,9 +85,6 @@ public:
     GKR_NET_API std::size_t receive_from(void* buff, std::size_t size, address& addr, unsigned* errors = nullptr);
 
 private:
-    static bool check_errors(int error, unsigned* errors);
-
-private:
 #ifdef _WIN32
     using socket_t = std::size_t;
 #else

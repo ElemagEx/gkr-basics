@@ -64,8 +64,8 @@ public:
 public:
     using functions_t = gkr_log_consumer;
 
-    bool add_consume_functions(functions_t* functions, void* param);
-    bool del_consume_functions(functions_t* functions, void* param);
+    bool add_functions(functions_t* functions, void* param);
+    bool del_functions(functions_t* functions, void* param);
 
     using consumer_ptr_t = std::shared_ptr<consumer>;
 

@@ -2,6 +2,15 @@
 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+<Type Name="gkr::raw_buffer&lt;*&gt;">
+    <DisplayString Condition="m_capacity == 0">null</DisplayString>
+    <DisplayString>size={m_size}</DisplayString>
+    <Expand>
+        <Item Name="[size]"      ExcludeView="simple">m_size</Item>
+        <Item Name="[capacity]"  ExcludeView="simple">m_capacity</Item>
+        <Item Name="[allocator]" ExcludeView="simple">m_allocator</Item>
+    </Expand>
+</Type>
 <Type Name="gkr::lockfree_grow_only_bag&lt;*&gt;">
     <!-- VS 2019 16.0 or earlier -->
     <!--<Intrinsic Optional="true" Name="head" Expression="m_first._My_val"/>-->

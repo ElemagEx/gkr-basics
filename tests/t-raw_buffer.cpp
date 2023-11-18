@@ -6,5 +6,9 @@ TEST_CASE("container.raw_buffer. main")
 {
     gkr::raw_buffer_t b1;
 
-    b1.reserve(1024);
+    b1.reserve(256);
+
+    b1.set_size(16);
+
+    b1.data();
 }

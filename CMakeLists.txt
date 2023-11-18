@@ -69,7 +69,7 @@ target_sources(
     gkr-basics
     PRIVATE
     "${gkr_basics_inc_path}/stamp.h"
-    "${gkr_basics_inc_path}/stamp.cpp"
+    "${gkr_basics_src_path}/stamp.cpp"
     "${gkr_basics_inc_path}/concurency/worker_thread.h"
     "${gkr_basics_src_path}/concurency/worker_thread.cpp"
     "${gkr_basics_inc_path}/sys/thread_name.h"

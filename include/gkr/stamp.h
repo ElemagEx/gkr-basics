@@ -25,6 +25,10 @@ inline stamp_t stamp_now()
     return gkr_stamp_now();
 }
 
+inline void stamp_decompose(bool local, stamp_t stamp, struct tm& tm)
+{
+    return gkr_stamp_decompose(local, stamp, &tm, nullptr);
+}
 inline void stamp_decompose(bool local, stamp_t stamp, struct tm& tm, unsigned& ns)
 {
     return gkr_stamp_decompose(local, stamp, &tm, &ns);

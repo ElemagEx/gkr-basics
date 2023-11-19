@@ -37,22 +37,22 @@ public:
     }
 
 public:
-    GKR_REMOTE_API udpSocketReceiver(
+    GKR_COMM_API udpSocketReceiver(
         std::size_t maxPacketSize = 2*1024,
         bool useIPv6 = false
         );
-    GKR_REMOTE_API ~udpSocketReceiver();
+    GKR_COMM_API ~udpSocketReceiver();
 
 public:
-    GKR_REMOTE_API bool setWaitPacketTimeout(unsigned waitPacketTimeout);
+    GKR_COMM_API bool setWaitPacketTimeout(unsigned waitPacketTimeout);
 
 public:
-    GKR_REMOTE_API bool startReceivingPackets(unsigned short port);
-    GKR_REMOTE_API void  stopReceivingPackets();
+    GKR_COMM_API bool startReceivingPackets(unsigned short port);
+    GKR_COMM_API void  stopReceivingPackets();
 
 public:
-    GKR_REMOTE_API bool receivePacket();
-    GKR_REMOTE_API bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
+    GKR_COMM_API bool receivePacket();
+    GKR_COMM_API bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
 
 private:
     void handleUnsplittedPacket();

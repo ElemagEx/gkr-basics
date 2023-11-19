@@ -42,7 +42,7 @@ add_executable       (t-socket t-socket.cpp)
 target_link_libraries(t-socket PRIVATE gkr_core Catch2::Catch2WithMain)
 catch_discover_tests (t-socket)
 
-if(GKR_BUILD_EXAMPLES)
+if(GKR_BASICS_EXAMPLES)
 add_executable       (t-udp_socket_consumer_receiver t-udp_socket_consumer_receiver.cpp)
 target_link_libraries(t-udp_socket_consumer_receiver PRIVATE gkr_core udp_socket_consumer udp_socket_receiver Catch2::Catch2WithMain)
 catch_discover_tests (t-udp_socket_consumer_receiver)

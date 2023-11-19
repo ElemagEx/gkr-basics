@@ -28,7 +28,7 @@ unsigned windowsDebuggerComposeOutput(char* buf, unsigned cch, const struct gkr_
     struct tm tm;
     unsigned  ns;
 
-    gkr_stamp_decompose(true, msg->info.stamp, &tm, ns);
+    gkr::stamp_decompose(true, msg->info.stamp, tm, ns);
 
     const int len = std::snprintf(
         buf,

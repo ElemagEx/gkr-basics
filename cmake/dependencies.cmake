@@ -1,4 +1,4 @@
-if(GKR_BUILD_TESTS)
+if(GKR_BASICS_TESTS)
 #    include(FetchContent)
 #    FetchContent_Declare(
 #        Catch2

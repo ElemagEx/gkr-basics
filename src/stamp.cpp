@@ -20,9 +20,10 @@ stamp_t gkr_stamp_now()
     return stamp;
 }
 
-void gkr_stamp_decompose(int local, stamp_t stamp, struct tm* tm, unsigned& ns)
+void gkr_stamp_decompose(int local, stamp_t stamp, struct tm* tm, unsigned* ns)
 {
     Check_Arg_NotNull(tm, );
+    Check_Arg_NotNull(ns, );
 
     const auto nanoseconds = std::chrono::nanoseconds(stamp);
 
@@ -32,7 +33,7 @@ void gkr_stamp_decompose(int local, stamp_t stamp, struct tm* tm, unsigned& ns)
 
     const std::time_t time = std::chrono::system_clock::to_time_t(when);
 
-    ns = unsigned(stamp - stamp_t(time) * 1000000000LL);
+    *ns = unsigned(stamp - stamp_t(time) * 1000000000LL);
 
 #ifdef _MSC_VER
     if(local)

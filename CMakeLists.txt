@@ -2,8 +2,8 @@
 
 project(gkr-basics)
 
-option(GKR_BUILD_TESTS    "Build unit tests for the library" ON)
-option(GKR_BUILD_EXAMPLES "Build examples" ON)
+option(GKR_BASICS_TESTS    "Build unit tests for the library" ON)
+option(GKR_BASICS_EXAMPLES "Build examples" ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -88,11 +88,11 @@ target_sources(
     "${gkr_core_src_path}/net/socket.cpp"
     )
 
-if(GKR_BUILD_EXAMPLES)
+if(GKR_BASICS_EXAMPLES)
 add_subdirectory(examples)
 endif()
 
-if(GKR_BUILD_TESTS)
+if(GKR_BASICS_TESTS)
 enable_testing()
 add_subdirectory(tests)
 endif()

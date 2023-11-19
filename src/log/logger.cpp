@@ -408,7 +408,7 @@ void logger::sync_log_message(message_data& msg)
 bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, va_list args)
 {
     msg.info.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
-    msg.info.stamp    = gkr_stamp_now();
+    msg.info.stamp    = stamp_now();
     msg.info.severity = std::uint16_t(severity);
     msg.info.facility = std::uint16_t(facility);
 

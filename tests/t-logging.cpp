@@ -21,9 +21,9 @@ class console_consumer : public gkr::log::consumer
     }
     virtual void consume_log_message(const gkr::log::message& msg) override
     {
-        std::tm tm;
-        unsigned ns;
-        gkr_stamp_decompose(true, msg.info.stamp, &tm, ns);
+        struct tm tm;
+        unsigned  ns;
+        gkr::stamp_decompose(true, msg.info.stamp, tm, ns);
 
         using ulonglong = unsigned long long;
 

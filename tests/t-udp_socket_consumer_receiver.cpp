@@ -82,9 +82,9 @@ class receiver : public gkr::worker_thread
 
                 if(msg.head.signature == gkr::log::SIGNITURE_LOG_MSG)
                 {
-                    std::tm tm;
+                    struct tm tm;
                     unsigned ns;
-                    gkr_stamp_decompose(true, msg.info.stamp, &tm, ns);
+                    gkr::stamp_decompose(true, msg.info.stamp, tm, ns);
 
                     const char* base = static_cast<const char*>(data);
 

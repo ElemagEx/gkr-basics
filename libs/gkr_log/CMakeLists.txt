@@ -8,6 +8,7 @@ set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 target_sources(
     gkr_log
     INTERFACE
+    "gkr/log/api.h"
     "gkr/log/log.h"
     "gkr/log/logging.h"
     "gkr/log/message.h"

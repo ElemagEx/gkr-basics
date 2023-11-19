@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/api.h>
+#include <gkr/comm/api.h>
 
 #include <gkr/container/raw_buffer.h>
 #include <gkr/net/address.h>

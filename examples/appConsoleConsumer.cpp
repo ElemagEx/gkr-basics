@@ -36,14 +36,12 @@ extern "C" {
 unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
-    unsigned  ns;
-
-    gkr::stamp_decompose(true, msg->info.stamp, tm, ns);
+    int ns = gkr::stamp_decompose(true, msg->info.stamp, tm);
 
     const int len = std::snprintf(
         buf,
         cch,
-        "[%02d:%02d:%02d.%03u][%s][%s][%s] - %s",
+        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
         tm.tm_hour,
         tm.tm_min,
         tm.tm_sec,

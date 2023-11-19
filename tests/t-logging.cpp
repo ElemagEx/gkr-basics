@@ -22,12 +22,11 @@ class console_consumer : public gkr::log::consumer
     virtual void consume_log_message(const gkr::log::message& msg) override
     {
         struct tm tm;
-        unsigned  ns;
-        gkr::stamp_decompose(true, msg.info.stamp, tm, ns);
+        int ns = gkr::stamp_decompose(true, msg.info.stamp, tm);
 
         using ulonglong = unsigned long long;
 
-        std::printf("[%02i:%02i:%02i.%03u] (Thread (%llu): %s) | (Severity: %s) | (Facility: %s) - %s\n",
+        std::printf("[%02i:%02i:%02i.%03d] (Thread (%llu): %s) | (Severity: %s) | (Facility: %s) - %s\n",
             tm.tm_hour,
             tm.tm_min,
             tm.tm_sec,

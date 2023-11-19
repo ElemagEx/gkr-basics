@@ -83,8 +83,7 @@ class receiver : public gkr::worker_thread
                 if(msg.head.signature == gkr::log::SIGNITURE_LOG_MSG)
                 {
                     struct tm tm;
-                    unsigned ns;
-                    gkr::stamp_decompose(true, msg.info.stamp, tm, ns);
+                    int ns = gkr::stamp_decompose(true, msg.info.stamp, tm, ns);
 
                     const char* base = static_cast<const char*>(data);
 
@@ -96,7 +95,7 @@ class receiver : public gkr::worker_thread
                     std::snprintf(
                         str,
                         256,
-                        "[%02i:%02i:%02i.%03u] (Host: %s [%s])(Process: %s [%u])(Thread: %s [%llu])(Severity: %s)(Facility: %s) - ",
+                        "[%02i:%02i:%02i.%03d] (Host: %s [%s])(Process: %s [%u])(Thread: %s [%llu])(Severity: %s)(Facility: %s) - ",
                         tm.tm_hour,
                         tm.tm_min,
                         tm.tm_sec,

@@ -12,7 +12,7 @@ typedef long long stamp_t;
 
 GKR_CORE_API stamp_t gkr_stamp_now();
 
-GKR_CORE_API void gkr_stamp_decompose(int local, stamp_t stamp, struct tm* tm, unsigned* ns);
+GKR_CORE_API int gkr_stamp_decompose(int local, stamp_t stamp, struct tm* tm);
 
 #ifdef __cplusplus
 }
@@ -25,13 +25,9 @@ inline stamp_t stamp_now()
     return gkr_stamp_now();
 }
 
-inline void stamp_decompose(bool local, stamp_t stamp, struct tm& tm)
+inline int stamp_decompose(bool local, stamp_t stamp, struct tm& tm)
 {
-    return gkr_stamp_decompose(local, stamp, &tm, nullptr);
-}
-inline void stamp_decompose(bool local, stamp_t stamp, struct tm& tm, unsigned& ns)
-{
-    return gkr_stamp_decompose(local, stamp, &tm, &ns);
+    return gkr_stamp_decompose(local, stamp, &tm);
 }
 
 }

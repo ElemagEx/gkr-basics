@@ -22,7 +22,7 @@ class console_consumer : public gkr::log::consumer
     virtual void consume_log_message(const gkr::log::message& msg) override
     {
         struct tm tm;
-        int ns = gkr::stamp_decompose(true, msg.info.stamp, tm);
+        int ns = gkr::stamp_decompose(true, msg.stamp, tm);
 
         using ulonglong = unsigned long long;
 
@@ -31,7 +31,7 @@ class console_consumer : public gkr::log::consumer
             tm.tm_min,
             tm.tm_sec,
             (ns / 1000000U),
-            ulonglong(msg.info.tid),
+            ulonglong(msg.tid),
             msg.threadName,
             msg.severityName,
             msg.facilityName,

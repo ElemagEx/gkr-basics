@@ -1,6 +1,6 @@
 #include <gkr/log/consumers/udpSocketConsumer.h>
 
-#include <gkr/data/udpMessagePacket.h>
+#include <gkr/data/log_message.h>
 
 #include <gkr/log/message.h>
 #include <gkr/sys/process_name.h>
@@ -58,7 +58,7 @@ void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg)
 
 }
 
-static_assert(udpSocketConsumer::MINIMUM_UDP_PACKET_SIZE > sizeof(gkr::net::split_packet_head), "Minimum size is not enough to deliver data");
+static_assert(udpSocketConsumer::MINIMUM_UDP_PACKET_SIZE > sizeof(gkr::data::split_packet_head), "Minimum size is not enough to deliver data");
 
 udpSocketConsumer::udpSocketConsumer(
     const char*    remoteHost,
@@ -111,9 +111,9 @@ void udpSocketConsumer::consume_log_message(const gkr::log::message& msg)
 {
     constructData(msg);
 
-    const gkr::log::message_data& messageData = m_buffer.as<gkr::log::message_data>();
+    const gkr::data::log_message& messageData = m_buffer.as<gkr::data::log_message>();
 
-    postData(reinterpret_cast<const char*>(&messageData), messageData.head.size);
+    postData(reinterpret_cast<const char*>(&messageData), messageData.size);
 }
 
 bool udpSocketConsumer::retrieveProcessName()
@@ -149,7 +149,7 @@ void udpSocketConsumer::constructData(const gkr::log::message& msg)
     const std::size_t nameLenSeverity = std::strlen(msg.severityName);
 
     const std::size_t dataSize =
-        sizeof(gkr::log::message_data)
+        sizeof(gkr::data::log_message)
         + m_hostName   .size() + 1
         + m_processName.size() + 1
         + nameLenThread   + 1
@@ -159,39 +159,41 @@ void udpSocketConsumer::constructData(const gkr::log::message& msg)
         ;
     m_buffer.resize(dataSize);
 
-    gkr::log::message_data& messageData = m_buffer.as<gkr::log::message_data>();
+    gkr::data::log_message& messageData = m_buffer.as<gkr::data::log_message>();
 
-    messageData.head.signature = gkr::log::SIGNITURE_LOG_MSG;
-    messageData.head.size      = std::uint32_t(dataSize);
+    messageData.signature = gkr::data::SIGNITURE_LOG_MESSAGE;
+    messageData.size      = std::uint32_t(dataSize);
 
-    messageData.info = msg.info;
+    messageData.stamp    = msg.stamp;
+    messageData.tid      = msg.tid;
+    messageData.pid      = m_processId;
+    messageData.severity = msg.severity;
+    messageData.facility = msg.facility;
 
-    messageData.desc.pid = m_processId;
+    std::size_t offsetToStr = sizeof(gkr::data::log_message);
 
-    std::size_t offsetToStr = sizeof(gkr::log::message_data);
-
-    messageData.desc.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
-    messageData.desc.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
-    messageData.desc.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread   + 1;
-    messageData.desc.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility + 1;
-    messageData.desc.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity + 1;
-    messageData.desc.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen  + 1;
+    messageData.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
+    messageData.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
+    messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread   + 1;
+    messageData.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility + 1;
+    messageData.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity + 1;
+    messageData.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen  + 1;
 
     Assert_Check(offsetToStr == dataSize);
 
     char* strBase = reinterpret_cast<char*>(&messageData);
 
-    std::strncpy(strBase + messageData.desc.offset_to_host    , m_hostName   .c_str(), m_hostName   .size() + 1); 
-    std::strncpy(strBase + messageData.desc.offset_to_process , m_processName.c_str(), m_processName.size() + 1);
-    std::strncpy(strBase + messageData.desc.offset_to_thread  , msg.threadName       , nameLenThread   + 1);
-    std::strncpy(strBase + messageData.desc.offset_to_facility, msg.facilityName     , nameLenFacility + 1);
-    std::strncpy(strBase + messageData.desc.offset_to_severity, msg.severityName     , nameLenSeverity + 1);
-    std::strncpy(strBase + messageData.desc.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
+    std::strncpy(strBase + messageData.offset_to_host    , m_hostName   .c_str(), m_hostName   .size() + 1); 
+    std::strncpy(strBase + messageData.offset_to_process , m_processName.c_str(), m_processName.size() + 1);
+    std::strncpy(strBase + messageData.offset_to_thread  , msg.threadName       , nameLenThread   + 1);
+    std::strncpy(strBase + messageData.offset_to_facility, msg.facilityName     , nameLenFacility + 1);
+    std::strncpy(strBase + messageData.offset_to_severity, msg.severityName     , nameLenSeverity + 1);
+    std::strncpy(strBase + messageData.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
 }
 
 void udpSocketConsumer::postData(const char* data, std::size_t size)
 {
-    constexpr std::size_t DATA_OFFSET = sizeof(gkr::net::split_packet_head);
+    constexpr std::size_t DATA_OFFSET = sizeof(gkr::data::split_packet_head);
 
     const std::size_t maxPacketSize = m_packet.size();
     Assert_Check(maxPacketSize > DATA_OFFSET);
@@ -205,7 +207,7 @@ void udpSocketConsumer::postData(const char* data, std::size_t size)
     Assert_Check(count > 0);
     Assert_Check(count < 65536);
 
-    gkr::net::split_packet_head& packetHead = m_packet.as<gkr::net::split_packet_head>();
+    gkr::data::split_packet_head& packetHead = m_packet.as<gkr::data::split_packet_head>();
 
     packetHead.packet_id    = m_packetId++;
     packetHead.packet_count = std::uint16_t(count);

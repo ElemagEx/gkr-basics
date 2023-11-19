@@ -1,6 +1,6 @@
 #include <gkr/log/consumers/udpSocketConsumer.h>
 #include <gkr/comm/udpSocketReceiver.h>
-#include <gkr/data/udpMessagePacket.h>
+#include <gkr/data/log_message.h>
 
 #include <gkr/stamp.h>
 #include <gkr/net/lib.h>
@@ -78,12 +78,12 @@ class receiver : public gkr::worker_thread
             std::size_t size;
             while(m_receiver.getReadyPacketData(addr, data, size))
             {
-                const gkr::log::message_data& msg = *static_cast<const gkr::log::message_data*>(data);
+                const gkr::data::log_message& msg = *static_cast<const gkr::data::log_message*>(data);
 
-                if(msg.head.signature == gkr::log::SIGNITURE_LOG_MSG)
+                if(msg.signature == gkr::data::SIGNITURE_LOG_MESSAGE)
                 {
                     struct tm tm;
-                    int ns = gkr::stamp_decompose(true, msg.info.stamp, tm);
+                    int ns = gkr::stamp_decompose(true, msg.stamp, tm);
 
                     const char* base = static_cast<const char*>(data);
 
@@ -100,16 +100,16 @@ class receiver : public gkr::worker_thread
                         tm.tm_min,
                         tm.tm_sec,
                         (ns / 1000000U),
-                        (base + msg.desc.offset_to_host),
+                        (base + msg.offset_to_host),
                         host,
-                        (base + msg.desc.offset_to_process),
-                        msg.desc.pid,
-                        (base + msg.desc.offset_to_thread),
-                        ulonglong(msg.info.tid),
-                        (base + msg.desc.offset_to_severity),
-                        (base + msg.desc.offset_to_facility)
+                        (base + msg.offset_to_process),
+                        msg.pid,
+                        (base + msg.offset_to_thread),
+                        ulonglong(msg.tid),
+                        (base + msg.offset_to_severity),
+                        (base + msg.offset_to_facility)
                         );
-                    std::cout << str << (base + msg.desc.offset_to_text) << std::endl;
+                    std::cout << str << (base + msg.offset_to_text) << std::endl;
                 }
                 if(--m_count == 0) quit();
             }

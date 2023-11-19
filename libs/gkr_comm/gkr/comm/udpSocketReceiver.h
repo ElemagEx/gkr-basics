@@ -12,7 +12,7 @@
 namespace gkr
 {
 
-namespace net { struct split_packet_head; }
+namespace data { struct split_packet_head; }
 
 class udpSocketReceiver
 {
@@ -74,7 +74,7 @@ private:
         void reset() { count = 0; }
     };
 
-    partial_packet_t& findPartialPacket(const net::split_packet_head& packetHead, std::size_t& partialDataSize);
+    partial_packet_t& findPartialPacket(const data::split_packet_head& packetHead, std::size_t& partialDataSize);
 
 private:
     net::socket  m_socket;

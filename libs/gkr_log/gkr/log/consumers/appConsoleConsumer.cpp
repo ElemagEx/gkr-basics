@@ -36,7 +36,7 @@ extern "C" {
 unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
-    int ns = gkr::stamp_decompose(true, msg->info.stamp, tm);
+    int ns = gkr::stamp_decompose(true, msg->stamp, tm);
 
     const int len = std::snprintf(
         buf,

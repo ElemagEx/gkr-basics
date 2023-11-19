@@ -1,6 +1,6 @@
 #include "udpSocketReceiver.h"
 
-#include <gkr/data/udpMessagePacket.h>
+#include <gkr/data/split_packet.h>
 
 namespace gkr
 {
@@ -50,14 +50,14 @@ bool udpSocketReceiver::receivePacket()
 
     m_packet.set_size(received);
 
-    const net::split_packet_head& packetHead = m_packet.as<const net::split_packet_head>();
+    const data::split_packet_head& packetHead = m_packet.as<const data::split_packet_head>();
 
     if(received != packetHead.packet_size)
     {
         //TODO:replace with log
         Check_Recovery("Invalid packet header");
     }
-    else if(packetHead.data_offset < sizeof(net::split_packet_head))
+    else if(packetHead.data_offset < sizeof(data::split_packet_head))
     {
         //TODO:replace with log
         Check_Recovery("Invalid packet header");
@@ -108,8 +108,8 @@ bool udpSocketReceiver::getReadyPacketData(net::address& addr, const void*& data
 
 void udpSocketReceiver::handleUnsplittedPacket()
 {
-    const net::split_packet_head& packetHead = m_packet.as<const net::split_packet_head>();
-    const net::packet_data_head&  packetData = m_packet.as<const net::packet_data_head>(packetHead.data_offset);
+    const data::split_packet_head&      packetHead = m_packet.as<const data::split_packet_head>();
+    const data::split_packet_data_head& packetData = m_packet.as<const data::split_packet_data_head>(packetHead.data_offset);
 
     const std::size_t data_size = (packetHead.packet_size - packetHead.data_offset);
 
@@ -131,7 +131,7 @@ void udpSocketReceiver::handleUnsplittedPacket()
 
 void udpSocketReceiver::handlePartialPacket()
 {
-    const net::split_packet_head& packetHead = m_packet.as<const net::split_packet_head>();
+    const data::split_packet_head& packetHead = m_packet.as<const data::split_packet_head>();
 
     std::size_t partialDataSize;
     partial_packet_t& partialPacket = findPartialPacket(packetHead, partialDataSize);
@@ -149,7 +149,7 @@ void udpSocketReceiver::handlePartialPacket()
     }
 }
 
-udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const net::split_packet_head& packetHead, std::size_t& partialDataSize)
+udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const data::split_packet_head& packetHead, std::size_t& partialDataSize)
 {
     partialDataSize = (packetHead.packet_size - packetHead.data_offset);
     Assert_Check(packetHead.packet_count > 0);

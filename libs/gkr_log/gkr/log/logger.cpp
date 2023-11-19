@@ -407,10 +407,10 @@ void logger::sync_log_message(message_data& msg)
 
 bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, va_list args)
 {
-    msg.info.tid      = misc::union_cast<std::int64_t>(std::this_thread::get_id());
-    msg.info.stamp    = stamp_now();
-    msg.info.severity = std::uint16_t(severity);
-    msg.info.facility = std::uint16_t(facility);
+    msg.tid      = misc::union_cast<long long>(std::this_thread::get_id());
+    msg.stamp    = stamp_now();
+    msg.severity = severity;
+    msg.facility = facility;
 
     if(args == nullptr)
     {
@@ -441,9 +441,9 @@ void logger::prepare_message(message_data& msg)
 {
     msg.messageText = msg.buffer;
 
-    auto itThreadId = m_thread_ids.find(msg.info.tid);
-    auto itSeverity = m_severities.find(msg.info.severity);
-    auto itFacility = m_facilities.find(msg.info.facility);
+    auto itThreadId = m_thread_ids.find(msg.tid);
+    auto itSeverity = m_severities.find(msg.severity);
+    auto itFacility = m_facilities.find(msg.facility);
 
     static constexpr char s_empty_name[1] = {0};
 

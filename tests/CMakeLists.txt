@@ -43,5 +43,5 @@ target_link_libraries(t-logging PRIVATE Catch2::Catch2WithMain gkr_core gkr_test
 catch_discover_tests (t-logging)
 
 add_executable       (t-udp_socket_consumer_receiver t-udp_socket_consumer_receiver.cpp)
-target_link_libraries(t-udp_socket_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_core gkr_testing gkr_comm gkr_log gkr_remote)
+target_link_libraries(t-udp_socket_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_core gkr_testing gkr_data gkr_log gkr_remote)
 catch_discover_tests (t-udp_socket_consumer_receiver)

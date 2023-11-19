@@ -2,7 +2,6 @@
 
 #include <gkr/diagnostics.h>
 #include <gkr/log/message.h>
-#include <gkr/comm/udpMessagePacket.h>
 
 #include <cstdio>
 #include <cstdlib>

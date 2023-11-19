@@ -1,6 +1,6 @@
 #include <gkr/log/consumers/udpSocketConsumer.h>
 #include <gkr/remote/udpSocketReceiver.h>
-#include <gkr/comm/udpMessagePacket.h>
+#include <gkr/data/udpMessagePacket.h>
 
 #include <gkr/stamp.h>
 #include <gkr/net/lib.h>

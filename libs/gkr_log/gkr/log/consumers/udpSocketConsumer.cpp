@@ -1,6 +1,6 @@
-#include "udpSocketConsumer.h"
+#include <gkr/log/consumers/udpSocketConsumer.h>
 
-#include "udpMessagePacket.h"
+#include <gkr/comm/udpMessagePacket.h>
 
 #include <gkr/log/message.h>
 #include <gkr/sys/process_name.h>

@@ -1,6 +1,6 @@
 #include "udpSocketReceiver.h"
 
-#include "udpMessagePacket.h"
+#include <gkr/comm/udpMessagePacket.h>
 
 namespace gkr
 {

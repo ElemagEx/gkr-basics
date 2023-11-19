@@ -1,6 +1,6 @@
-#include <udpSocketConsumer.h>
-#include <udpSocketReceiver.h>
-#include <udpMessagePacket.h>
+#include <gkr/log/consumers/udpSocketConsumer.h>
+#include <gkr/remote/udpSocketReceiver.h>
+#include <gkr/comm/udpMessagePacket.h>
 
 #include <gkr/stamp.h>
 #include <gkr/net/lib.h>
@@ -83,7 +83,7 @@ class receiver : public gkr::worker_thread
                 if(msg.head.signature == gkr::log::SIGNITURE_LOG_MSG)
                 {
                     struct tm tm;
-                    int ns = gkr::stamp_decompose(true, msg.info.stamp, tm, ns);
+                    int ns = gkr::stamp_decompose(true, msg.info.stamp, tm);
 
                     const char* base = static_cast<const char*>(data);
 

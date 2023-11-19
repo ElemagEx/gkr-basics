@@ -1,4 +1,4 @@
-#include "windowsDebuggerConsumer.h"
+#include <gkr/log/consumers/windowsDebuggerConsumer.h>
 
 #include <gkr/diagnostics.h>
 #include <gkr/log/message.h>

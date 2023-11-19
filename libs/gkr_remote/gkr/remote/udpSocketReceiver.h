@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gkr/api.h>
+
 #include <gkr/container/raw_buffer.h>
 #include <gkr/net/address.h>
 #include <gkr/net/socket.h>
@@ -35,22 +37,22 @@ public:
     }
 
 public:
-    udpSocketReceiver(
+    GKR_REMOTE_API udpSocketReceiver(
         std::size_t maxPacketSize = 2*1024,
         bool useIPv6 = false
         );
-    ~udpSocketReceiver();
+    GKR_REMOTE_API ~udpSocketReceiver();
 
 public:
-    bool setWaitPacketTimeout(unsigned waitPacketTimeout);
+    GKR_REMOTE_API bool setWaitPacketTimeout(unsigned waitPacketTimeout);
 
 public:
-    bool startReceivingPackets(unsigned short port);
-    void  stopReceivingPackets();
+    GKR_REMOTE_API bool startReceivingPackets(unsigned short port);
+    GKR_REMOTE_API void  stopReceivingPackets();
 
 public:
-    bool receivePacket();
-    bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
+    GKR_REMOTE_API bool receivePacket();
+    GKR_REMOTE_API bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
 
 private:
     void handleUnsplittedPacket();

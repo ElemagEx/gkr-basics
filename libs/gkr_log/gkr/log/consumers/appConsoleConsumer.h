@@ -1,10 +1,7 @@
 #pragma once
 
 #include <gkr/log/consumer.h>
-
-#ifndef GKR_SAMPLE_API
-#define GKR_SAMPLE_API
-#endif
+#include <gkr/api.h>
 
 enum appConsoleWriteMethod
 {
@@ -22,21 +19,21 @@ enum appConsoleWriteMethod
 extern "C" {
 #endif
 
-GKR_SAMPLE_API unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
+GKR_LOG_API unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
 
-GKR_SAMPLE_API void* appConsoleCreateConsumerParam(
+GKR_LOG_API void* appConsoleCreateConsumerParam(
     int method,
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
     );
 
-GKR_SAMPLE_API int appConsoleInitLogging(void* param);
+GKR_LOG_API int appConsoleInitLogging(void* param);
 
-GKR_SAMPLE_API void appConsoleDoneLogging(void* param);
+GKR_LOG_API void appConsoleDoneLogging(void* param);
 
-GKR_SAMPLE_API int appConsoleFilterLogMessage(void* param, const struct gkr_log_message* msg);
+GKR_LOG_API int appConsoleFilterLogMessage(void* param, const struct gkr_log_message* msg);
 
-GKR_SAMPLE_API void appConsoleConsumeLogMessage(void* param, const struct gkr_log_message* msg);
+GKR_LOG_API void appConsoleConsumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }
@@ -73,19 +70,19 @@ public:
     }
 
 public:
-    GKR_SAMPLE_API appConsoleConsumer(int method = appConsoleWriteMethod_stream2cerr, unsigned bufferCapacity = 2*1024);
-    GKR_SAMPLE_API virtual ~appConsoleConsumer() override;
+    GKR_LOG_API appConsoleConsumer(int method = appConsoleWriteMethod_stream2cerr, unsigned bufferCapacity = 2*1024);
+    GKR_LOG_API virtual ~appConsoleConsumer() override;
 
 protected:
-    GKR_SAMPLE_API virtual bool init_logging() override;
-    GKR_SAMPLE_API virtual void done_logging() override;
+    GKR_LOG_API virtual bool init_logging() override;
+    GKR_LOG_API virtual void done_logging() override;
 
-    GKR_SAMPLE_API virtual bool filter_log_message(const gkr::log::message& msg) override;
+    GKR_LOG_API virtual bool filter_log_message(const gkr::log::message& msg) override;
 
-    GKR_SAMPLE_API virtual void consume_log_message(const gkr::log::message& msg) override;
+    GKR_LOG_API virtual void consume_log_message(const gkr::log::message& msg) override;
 
 protected:
-    GKR_SAMPLE_API virtual unsigned composeOutput(char* buf, unsigned cch, const gkr::log::message& msg);
+    GKR_LOG_API virtual unsigned composeOutput(char* buf, unsigned cch, const gkr::log::message& msg);
 };
 
 #endif

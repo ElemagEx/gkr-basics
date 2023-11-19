@@ -1,29 +1,26 @@
 #pragma once
 
 #include <gkr/log/consumer.h>
-
-#ifndef GKR_SAMPLE_API
-#define GKR_SAMPLE_API
-#endif
+#include <gkr/api.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-GKR_SAMPLE_API void* udpSocketCreateConsumerParam(
+GKR_LOG_API void* udpSocketCreateConsumerParam(
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
     unsigned bufferCapacity
     );
 
-GKR_SAMPLE_API int udpSocketInitLogging(void* param);
+GKR_LOG_API int udpSocketInitLogging(void* param);
 
-GKR_SAMPLE_API void udpSocketDoneLogging(void* param);
+GKR_LOG_API void udpSocketDoneLogging(void* param);
 
-GKR_SAMPLE_API int udpSocketFilterLogMessage(void* param, const struct gkr_log_message* msg);
+GKR_LOG_API int udpSocketFilterLogMessage(void* param, const struct gkr_log_message* msg);
 
-GKR_SAMPLE_API void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg);
+GKR_LOG_API void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }
@@ -75,21 +72,21 @@ public:
     static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;
     static constexpr std::size_t MINIMUM_UDP_PACKET_SIZE = 80;
 
-    GKR_SAMPLE_API udpSocketConsumer(
+    GKR_LOG_API udpSocketConsumer(
         const char*    remoteHost,
         unsigned short remotePort,
         unsigned maxPacketSize  = OPTIMAL_UDP_PACKET_SIZE,
         unsigned bufferCapacity = 2*1024
         );
-    GKR_SAMPLE_API virtual ~udpSocketConsumer() override;
+    GKR_LOG_API virtual ~udpSocketConsumer() override;
 
 public:
-    GKR_SAMPLE_API virtual bool init_logging() override;
-    GKR_SAMPLE_API virtual void done_logging() override;
+    GKR_LOG_API virtual bool init_logging() override;
+    GKR_LOG_API virtual void done_logging() override;
 
-    GKR_SAMPLE_API virtual bool filter_log_message(const gkr::log::message& msg) override;
+    GKR_LOG_API virtual bool filter_log_message(const gkr::log::message& msg) override;
 
-    GKR_SAMPLE_API virtual void consume_log_message(const gkr::log::message& msg) override;
+    GKR_LOG_API virtual void consume_log_message(const gkr::log::message& msg) override;
 
 public:
     bool setRemoteAddress(const char* remoteHost, unsigned short remotePort)

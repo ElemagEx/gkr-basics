@@ -1,4 +1,4 @@
-#include "appConsoleConsumer.h"
+#include <gkr/log/consumers/appConsoleConsumer.h>
 
 #include <gkr/diagnostics.h>
 #include <gkr/log/message.h>

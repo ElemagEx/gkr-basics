@@ -99,15 +99,15 @@ class receiver : public gkr::worker_thread
                         tm.tm_hour,
                         tm.tm_min,
                         tm.tm_sec,
-                        (ns / 1000000U),
-                        (base + msg.offset_to_host),
+                        ns / 1000000,
+                        base + msg.offset_to_host,
                         host,
-                        (base + msg.offset_to_process),
+                        base + msg.offset_to_process,
                         msg.pid,
-                        (base + msg.offset_to_thread),
+                        base + msg.offset_to_thread,
                         ulonglong(msg.tid),
-                        (base + msg.offset_to_severity),
-                        (base + msg.offset_to_facility)
+                        base + msg.offset_to_severity,
+                        base + msg.offset_to_facility
                         );
                     std::cout << str << (base + msg.offset_to_text) << std::endl;
                 }

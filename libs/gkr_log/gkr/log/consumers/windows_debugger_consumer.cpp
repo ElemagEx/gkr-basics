@@ -35,7 +35,7 @@ unsigned gkr_log_windowsDebugger_ComposeOutput(char* buf, unsigned cch, const st
         tm.tm_hour,
         tm.tm_min,
         tm.tm_sec,
-        ns / 1000000U,
+        ns / 1000000,
         msg->severityName,
         msg->facilityName,
         msg->threadName,

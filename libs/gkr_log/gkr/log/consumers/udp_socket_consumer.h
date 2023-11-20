@@ -7,20 +7,20 @@
 extern "C" {
 #endif
 
-GKR_LOG_API void* udpSocketCreateConsumerParam(
+GKR_LOG_API void* gkr_log_udpSocket_CreateConsumerParam(
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
     unsigned bufferCapacity
     );
 
-GKR_LOG_API int udpSocketInitLogging(void* param);
+GKR_LOG_API int gkr_log_udpSocket_InitLogging(void* param);
 
-GKR_LOG_API void udpSocketDoneLogging(void* param);
+GKR_LOG_API void gkr_log_udpSocket_DoneLogging(void* param);
 
-GKR_LOG_API int udpSocketFilterLogMessage(void* param, const struct gkr_log_message* msg);
+GKR_LOG_API int gkr_log_udpSocket_FilterLogMessage(void* param, const struct gkr_log_message* msg);
 
-GKR_LOG_API void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg);
+GKR_LOG_API void gkr_log_udpSocket_ConsumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }
@@ -103,8 +103,8 @@ private:
     bool retrieve_process_name();
     bool retrieve_host_name();
 
-    void constructData(const message& msg);
-    void postData(const char* data, std::size_t size);
+    void construct_data(const message& msg);
+    void post_data(const char* data, std::size_t size);
 
 private:
     std::string m_processName;

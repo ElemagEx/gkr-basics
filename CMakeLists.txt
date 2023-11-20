@@ -25,9 +25,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GKR_BASICS_FLAGS_WARNINGS}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+if(GKR_BASICS_TESTS)
+enable_testing()
+find_package(Catch2 3 REQUIRED)
+include(Catch)
+endif()
+
 add_subdirectory(libs)
 
 if(GKR_BASICS_TESTS)
-enable_testing()
 add_subdirectory(tests)
 endif()

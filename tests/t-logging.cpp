@@ -30,7 +30,7 @@ class console_consumer : public gkr::log::consumer
             tm.tm_hour,
             tm.tm_min,
             tm.tm_sec,
-            (ns / 1000000U),
+            ns / 1000000U,
             ulonglong(msg.tid),
             msg.threadName,
             msg.severityName,

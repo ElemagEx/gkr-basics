@@ -45,7 +45,7 @@ unsigned gkr_log_appConsole_ComposeOutput(char* buf, unsigned cch, const struct 
         tm.tm_hour,
         tm.tm_min,
         tm.tm_sec,
-        ns,
+        ns / 1000000U,
         msg->severityName,
         msg->facilityName,
         msg->threadName,

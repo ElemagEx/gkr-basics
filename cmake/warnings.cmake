@@ -17,6 +17,16 @@ if(MSVC)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(GKR_BASICS_FLAGS_WARNINGS "${GKR_BASICS_FLAGS_WARNINGS} ${GKR_BASICS_EXCLUDE_CLANG_WARNINGS}")
     endif()
+
+    if(GKR_BASICS_TESTS)
+        # C4388 - '==': signed/unsigned mismatch
+        # C4623 - default constructor was implicitly defined as deleted
+        # C4625 - copy constructor was implicitly defined as deleted
+        # C4626 - assignment operator was implicitly defined as deleted
+        # C5026 - move constructor was implicitly defined as deleted
+        # C5027 - move assignment operator was implicitly defined as deleted
+        set(GKR_BASICS_TESTING_WARNINGS /wd4388 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027)
+    endif()
 else()
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(GKR_BASICS_FLAGS_WARNINGS "-Weverything -Wno-unused-parameter -Wno-padded -Wno-alloca -Wno-weak-vtables ${GKR_BASICS_EXCLUDE_CLANG_WARNINGS}")

@@ -12,7 +12,7 @@
 
 extern "C" {
 
-void* udpSocketCreateConsumerParam(
+void* gkr_log_udpSocket_CreateConsumerParam(
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
@@ -22,7 +22,7 @@ void* udpSocketCreateConsumerParam(
     return new gkr::log::udp_socket_consumer(remoteHost, remotePort, maxPacketSize, bufferCapacity);
 }
 
-int udpSocketInitLogging(void* param)
+int gkr_log_udpSocket_InitLogging(void* param)
 {
     if(param == nullptr) return false;
 
@@ -31,7 +31,7 @@ int udpSocketInitLogging(void* param)
     return consumer->init_logging();
 }
 
-void udpSocketDoneLogging(void* param)
+void gkr_log_udpSocket_DoneLogging(void* param)
 {
     if(param == nullptr) return;
 
@@ -42,14 +42,14 @@ void udpSocketDoneLogging(void* param)
     delete consumer;
 }
 
-int udpSocketFilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_udpSocket_FilterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
     return consumer->filter_log_message(*msg);
 }
 
-void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_udpSocket_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
@@ -114,11 +114,11 @@ bool udp_socket_consumer::filter_log_message(const message& msg)
 
 void udp_socket_consumer::consume_log_message(const message& msg)
 {
-    constructData(msg);
+    construct_data(msg);
 
     const gkr::data::log_message& messageData = m_buffer.as<gkr::data::log_message>();
 
-    postData(reinterpret_cast<const char*>(&messageData), messageData.size);
+    post_data(reinterpret_cast<const char*>(&messageData), messageData.size);
 }
 
 bool udp_socket_consumer::retrieve_process_name()
@@ -147,7 +147,7 @@ bool udp_socket_consumer::retrieve_host_name()
     return true;
 }
 
-void udp_socket_consumer::constructData(const message& msg)
+void udp_socket_consumer::construct_data(const message& msg)
 {
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
@@ -196,7 +196,7 @@ void udp_socket_consumer::constructData(const message& msg)
     std::strncpy(strBase + messageData.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
 }
 
-void udp_socket_consumer::postData(const char* data, std::size_t size)
+void udp_socket_consumer::post_data(const char* data, std::size_t size)
 {
     constexpr std::size_t DATA_OFFSET = sizeof(gkr::data::split_packet_head);
 

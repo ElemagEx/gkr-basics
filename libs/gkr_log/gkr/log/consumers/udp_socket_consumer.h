@@ -31,15 +31,20 @@ GKR_LOG_API void udpSocketConsumeLogMessage(void* param, const struct gkr_log_me
 
 #include <string>
 
-class udpSocketConsumer : public gkr::log::consumer
+namespace gkr
 {
-    udpSocketConsumer() noexcept = delete;
+namespace log
+{
 
-    udpSocketConsumer           (const udpSocketConsumer&) noexcept = delete;
-    udpSocketConsumer& operator=(const udpSocketConsumer&) noexcept = delete;
+class udp_socket_consumer : public consumer
+{
+    udp_socket_consumer() noexcept = delete;
+
+    udp_socket_consumer           (const udp_socket_consumer&) noexcept = delete;
+    udp_socket_consumer& operator=(const udp_socket_consumer&) noexcept = delete;
 
 public:
-    udpSocketConsumer(udpSocketConsumer&& other) noexcept(
+    udp_socket_consumer(udp_socket_consumer&& other) noexcept(
         std::is_nothrow_move_constructible<gkr::raw_buffer_t>::value
         )
         : m_processName(std::move(other.m_processName))
@@ -52,7 +57,7 @@ public:
         , m_packetId   (std::exchange(other.m_packetId , 0))
     {
     }
-    udpSocketConsumer& operator=(udpSocketConsumer&& other) noexcept(
+    udp_socket_consumer& operator=(udp_socket_consumer&& other) noexcept(
         std::is_nothrow_move_assignable<gkr::raw_buffer_t>::value
         )
     {
@@ -72,33 +77,33 @@ public:
     static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;
     static constexpr std::size_t MINIMUM_UDP_PACKET_SIZE = 80;
 
-    GKR_LOG_API udpSocketConsumer(
+    GKR_LOG_API udp_socket_consumer(
         const char*    remoteHost,
         unsigned short remotePort,
         unsigned maxPacketSize  = OPTIMAL_UDP_PACKET_SIZE,
         unsigned bufferCapacity = 2*1024
         );
-    GKR_LOG_API virtual ~udpSocketConsumer() override;
+    GKR_LOG_API virtual ~udp_socket_consumer() override;
 
 public:
     GKR_LOG_API virtual bool init_logging() override;
     GKR_LOG_API virtual void done_logging() override;
 
-    GKR_LOG_API virtual bool filter_log_message(const gkr::log::message& msg) override;
+    GKR_LOG_API virtual bool filter_log_message(const message& msg) override;
 
-    GKR_LOG_API virtual void consume_log_message(const gkr::log::message& msg) override;
+    GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 public:
-    bool setRemoteAddress(const char* remoteHost, unsigned short remotePort)
+    bool set_remote_address(const char* remoteHost, unsigned short remotePort)
     {
         return m_remoteAddr.reset(remoteHost, remotePort);
     }
 
 private:
-    bool retrieveProcessName();
-    bool retrieveHostName();
+    bool retrieve_process_name();
+    bool retrieve_host_name();
 
-    void constructData(const gkr::log::message& msg);
+    void constructData(const message& msg);
     void postData(const char* data, std::size_t size);
 
 private:
@@ -114,5 +119,8 @@ private:
     unsigned      m_processId {0};
     std::uint64_t m_packetId  {0};
 };
+
+}
+}
 
 #endif

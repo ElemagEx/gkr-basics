@@ -1,4 +1,4 @@
-#include <gkr/log/consumers/udpSocketConsumer.h>
+#include <gkr/log/consumers/udp_socket_consumer.h>
 #include <gkr/comm/udpSocketReceiver.h>
 #include <gkr/data/log_message.h>
 
@@ -143,7 +143,7 @@ TEST_CASE("logging.consumer.udp_socket. Simple packet")
     REQUIRE(recv.run());
 
     REQUIRE(gkr_log_del_all_consumers());
-    REQUIRE(gkr_log_add_consumer(std::make_shared<udpSocketConsumer>("127.0.0.1", UDP_COMM_PORT)));
+    REQUIRE(gkr_log_add_consumer(std::make_shared<gkr::log::udp_socket_consumer>("127.0.0.1", UDP_COMM_PORT)));
 
     REQUIRE(gkr_log_set_this_thread_name("thread-0"));
 
@@ -166,7 +166,7 @@ TEST_CASE("logging.consumer.udp_socket. Splitted packet")
     REQUIRE(recv.run());
 
     REQUIRE(gkr_log_del_all_consumers());
-    REQUIRE(gkr_log_add_consumer(std::make_shared<udpSocketConsumer>("127.0.0.1", UDP_COMM_PORT, 128)));
+    REQUIRE(gkr_log_add_consumer(std::make_shared<gkr::log::udp_socket_consumer>("127.0.0.1", UDP_COMM_PORT, 128)));
 
     REQUIRE(gkr_log_set_this_thread_name("thread-A"));
 

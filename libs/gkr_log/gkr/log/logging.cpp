@@ -119,22 +119,22 @@ int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility)
     return true;
 }
 
-int gkr_log_add_consumer(gkr_log_consumer* consumer, void* param)
+int gkr_log_add_functions(gkr_log_functions* functions, void* param)
 {
-    Check_Arg_NotNull(consumer, false);
+    Check_Arg_NotNull(functions, false);
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->add_functions(consumer, param);
+    return s_logger->add_functions(functions, param);
 }
 
-int gkr_log_del_consumer(gkr_log_consumer* consumer, void* param)
+int gkr_log_del_functions(gkr_log_functions* functions, void* param)
 {
-    Check_Arg_NotNull(consumer, false);
+    Check_Arg_NotNull(functions, false);
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->del_functions(consumer, param);
+    return s_logger->del_functions(functions, param);
 }
 
 int gkr_log_del_all_consumers()

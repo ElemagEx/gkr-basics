@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gkr/log/api.h>
 #include <gkr/log/log.h>
 
 #ifdef __cplusplus
@@ -12,7 +13,7 @@ struct gkr_log_name_id_pair
     gkr_log_id_t id;
 };
 
-struct gkr_log_consumer;
+struct gkr_log_functions;
 
 GKR_LOG_API int gkr_log_init(
     const struct gkr_log_name_id_pair* severities,
@@ -31,8 +32,8 @@ GKR_LOG_API int gkr_log_set_facilities(int clear_existing, const struct gkr_log_
 GKR_LOG_API int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity);
 GKR_LOG_API int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility);
 
-GKR_LOG_API int gkr_log_add_consumer(struct gkr_log_consumer* consumer, void* param);
-GKR_LOG_API int gkr_log_del_consumer(struct gkr_log_consumer* consumer, void* param);
+GKR_LOG_API int gkr_log_add_functions(struct gkr_log_functions* functions, void* param);
+GKR_LOG_API int gkr_log_del_functions(struct gkr_log_functions* functions, void* param);
 
 GKR_LOG_API int gkr_log_del_all_consumers();
 

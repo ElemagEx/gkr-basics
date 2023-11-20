@@ -13,10 +13,10 @@ target_sources(
     "gkr/log/logging.h"
     "gkr/log/message.h"
     "gkr/log/consumer.h"
-    "gkr/log/consumers/udpSocketConsumer.h"
-    "gkr/log/consumers/androidLogConsumer.h"
-    "gkr/log/consumers/appConsoleConsumer.h"
-    "gkr/log/consumers/windowsDebuggerConsumer.h"
+    "gkr/log/consumers/udp_socket_consumer.h"
+    "gkr/log/consumers/android_log_consumer.h"
+    "gkr/log/consumers/app_console_consumer.h"
+    "gkr/log/consumers/windows_debugger_consumer.h"
     )
 target_sources(
     gkr_log
@@ -24,8 +24,8 @@ target_sources(
     "gkr/log/logger.h"
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
-    "gkr/log/consumers/udpSocketConsumer.cpp"
-    "gkr/log/consumers/androidLogConsumer.cpp"
-    "gkr/log/consumers/appConsoleConsumer.cpp"
-    "gkr/log/consumers/windowsDebuggerConsumer.cpp"
+    "gkr/log/consumers/udp_socket_consumer.cpp"
+    "gkr/log/consumers/android_log_consumer.cpp"
+    "gkr/log/consumers/app_console_consumer.cpp"
+    "gkr/log/consumers/windows_debugger_consumer.cpp"
     )

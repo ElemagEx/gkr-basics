@@ -1,4 +1,4 @@
-#include <gkr/log/consumers/udpSocketConsumer.h>
+#include <gkr/log/consumers/udp_socket_consumer.h>
 
 #include <gkr/data/log_message.h>
 
@@ -19,14 +19,14 @@ void* udpSocketCreateConsumerParam(
     unsigned bufferCapacity
     )
 {
-    return new udpSocketConsumer(remoteHost, remotePort, maxPacketSize, bufferCapacity);
+    return new gkr::log::udp_socket_consumer(remoteHost, remotePort, maxPacketSize, bufferCapacity);
 }
 
 int udpSocketInitLogging(void* param)
 {
     if(param == nullptr) return false;
 
-    udpSocketConsumer* consumer = static_cast<udpSocketConsumer*>(param);
+    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
     return consumer->init_logging();
 }
@@ -35,7 +35,7 @@ void udpSocketDoneLogging(void* param)
 {
     if(param == nullptr) return;
 
-    udpSocketConsumer* consumer = static_cast<udpSocketConsumer*>(param);
+    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
     consumer->done_logging();
 
@@ -44,23 +44,28 @@ void udpSocketDoneLogging(void* param)
 
 int udpSocketFilterLogMessage(void* param, const struct gkr_log_message* msg)
 {
-    udpSocketConsumer* consumer = static_cast<udpSocketConsumer*>(param);
+    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
     return consumer->filter_log_message(*msg);
 }
 
 void udpSocketConsumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
-    udpSocketConsumer* consumer = static_cast<udpSocketConsumer*>(param);
+    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
     consumer->consume_log_message(*msg);
 }
 
 }
 
-static_assert(udpSocketConsumer::MINIMUM_UDP_PACKET_SIZE > sizeof(gkr::data::split_packet_head), "Minimum size is not enough to deliver data");
+namespace gkr
+{
+namespace log
+{
 
-udpSocketConsumer::udpSocketConsumer(
+static_assert(udp_socket_consumer::MINIMUM_UDP_PACKET_SIZE > sizeof(gkr::data::split_packet_head), "Minimum size is not enough to deliver data");
+
+udp_socket_consumer::udp_socket_consumer(
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
@@ -76,20 +81,20 @@ udpSocketConsumer::udpSocketConsumer(
 
     m_packet.resize(maxPacketSize);
 
-    setRemoteAddress(remoteHost, remotePort);
+    set_remote_address(remoteHost, remotePort);
 }
 
-udpSocketConsumer::~udpSocketConsumer()
+udp_socket_consumer::~udp_socket_consumer()
 {
     Assert_Check(!m_socket.is_open());
 }
 
-bool udpSocketConsumer::init_logging()
+bool udp_socket_consumer::init_logging()
 {
     Check_ValidState(m_packet.capacity() >= MINIMUM_UDP_PACKET_SIZE, false);
 
-    if(!retrieveProcessName()) return false;
-    if(!retrieveHostName()) return false;
+    if(!retrieve_process_name()) return false;
+    if(!retrieve_host_name()) return false;
 
     Check_ValidState(!m_socket.is_open(), false);
     Check_ValidState(m_remoteAddr.is_valid(), false);
@@ -97,17 +102,17 @@ bool udpSocketConsumer::init_logging()
     return m_socket.open_as_udp(m_remoteAddr.is_ipv6());
 }
 
-void udpSocketConsumer::done_logging()
+void udp_socket_consumer::done_logging()
 {
     m_socket.close();
 }
 
-bool udpSocketConsumer::filter_log_message(const gkr::log::message& msg)
+bool udp_socket_consumer::filter_log_message(const message& msg)
 {
     return false;
 }
 
-void udpSocketConsumer::consume_log_message(const gkr::log::message& msg)
+void udp_socket_consumer::consume_log_message(const message& msg)
 {
     constructData(msg);
 
@@ -116,7 +121,7 @@ void udpSocketConsumer::consume_log_message(const gkr::log::message& msg)
     postData(reinterpret_cast<const char*>(&messageData), messageData.size);
 }
 
-bool udpSocketConsumer::retrieveProcessName()
+bool udp_socket_consumer::retrieve_process_name()
 {
     char name[256];
 
@@ -129,7 +134,7 @@ bool udpSocketConsumer::retrieveProcessName()
     return true;
 }
 
-bool udpSocketConsumer::retrieveHostName()
+bool udp_socket_consumer::retrieve_host_name()
 {
     char name[256];
 
@@ -142,7 +147,7 @@ bool udpSocketConsumer::retrieveHostName()
     return true;
 }
 
-void udpSocketConsumer::constructData(const gkr::log::message& msg)
+void udp_socket_consumer::constructData(const message& msg)
 {
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
@@ -191,7 +196,7 @@ void udpSocketConsumer::constructData(const gkr::log::message& msg)
     std::strncpy(strBase + messageData.offset_to_text    , msg.messageText      , msg.messageLen  + 1);
 }
 
-void udpSocketConsumer::postData(const char* data, std::size_t size)
+void udp_socket_consumer::postData(const char* data, std::size_t size)
 {
     constexpr std::size_t DATA_OFFSET = sizeof(gkr::data::split_packet_head);
 
@@ -246,4 +251,7 @@ void udpSocketConsumer::postData(const char* data, std::size_t size)
     }
     Assert_Check(restDataSize == 0);
     Assert_Check(sentDataSize == size);
+}
+
+}
 }

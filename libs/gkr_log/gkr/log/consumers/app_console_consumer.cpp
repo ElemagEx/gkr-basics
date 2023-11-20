@@ -1,4 +1,4 @@
-#include <gkr/log/consumers/appConsoleConsumer.h>
+#include <gkr/log/consumers/app_console_consumer.h>
 
 #include <gkr/diagnostics.h>
 #include <gkr/log/message.h>
@@ -16,24 +16,24 @@ static void outputToConsole(int method, const char* text)
             printf("%s\n", text);
             break;
 
-        case appConsoleWriteMethod_fputs2stderr:
+        case gkr_log_appConsoleWriteMethod_fputs2stderr:
             std::fputs(text, stderr);
             std::fputs("\n", stderr);
             break;
-        case appConsoleWriteMethod_fputs2stdout:
+        case gkr_log_appConsoleWriteMethod_fputs2stdout:
             std::fputs(text, stdout);
             std::fputs("\n", stdout);
             break;
 
-        case appConsoleWriteMethod_stream2cerr: std::cerr << text << std::endl; break;
-        case appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
-        case appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
+        case gkr_log_appConsoleWriteMethod_stream2cerr: std::cerr << text << std::endl; break;
+        case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
+        case gkr_log_appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
     }
 }
 
 extern "C" {
 
-unsigned appConsoleComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
+unsigned gkr_log_appConsole_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
     int ns = gkr::stamp_decompose(true, msg->stamp, tm);
@@ -62,7 +62,7 @@ struct data_t
     char     buf[1];
 };
 
-void* appConsoleCreateConsumerParam(
+void* gkr_log_appConsole_CreateConsumerParam(
     int method,
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
@@ -82,12 +82,12 @@ void* appConsoleCreateConsumerParam(
     return data;
 }
 
-int appConsoleInitLogging(void* param)
+int gkr_log_appConsole_InitLogging(void* param)
 {
     return (param != nullptr);
 }
 
-void appConsoleDoneLogging(void* param)
+void gkr_log_appConsole_DoneLogging(void* param)
 {
     if(param != nullptr)
     {
@@ -95,12 +95,12 @@ void appConsoleDoneLogging(void* param)
     }
 }
 
-int appConsoleFilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_appConsole_FilterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     return false;
 }
 
-void appConsoleConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_appConsole_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     data_t* data = static_cast<data_t*>(param);
 
@@ -113,7 +113,12 @@ void appConsoleConsumeLogMessage(void* param, const struct gkr_log_message* msg)
 
 }
 
-appConsoleConsumer::appConsoleConsumer(int method, unsigned bufferCapacity)
+namespace gkr
+{
+namespace log
+{
+
+app_console_consumer::app_console_consumer(int method, unsigned bufferCapacity)
     : m_buf(nullptr)
     , m_cch(bufferCapacity)
     , m_mth(method)
@@ -123,7 +128,7 @@ appConsoleConsumer::appConsoleConsumer(int method, unsigned bufferCapacity)
     m_buf = new char[bufferCapacity];
 }
 
-appConsoleConsumer::~appConsoleConsumer()
+app_console_consumer::~app_console_consumer()
 {
     if(m_buf != nullptr)
     {
@@ -131,7 +136,7 @@ appConsoleConsumer::~appConsoleConsumer()
     }
 }
 
-bool appConsoleConsumer::init_logging()
+bool app_console_consumer::init_logging()
 {
 #ifdef _WIN32
     return (m_buf != nullptr);
@@ -140,25 +145,28 @@ bool appConsoleConsumer::init_logging()
 #endif
 }
 
-void appConsoleConsumer::done_logging()
+void app_console_consumer::done_logging()
 {
 }
 
-bool appConsoleConsumer::filter_log_message(const gkr::log::message& msg)
+bool app_console_consumer::filter_log_message(const message& msg)
 {
     return false;
 }
 
-void appConsoleConsumer::consume_log_message(const gkr::log::message& msg)
+void app_console_consumer::consume_log_message(const message& msg)
 {
-    composeOutput(m_buf, m_cch, msg);
+    compose_output(m_buf, m_cch, msg);
 
     m_buf[m_cch - 1] = 0;
 
     outputToConsole(m_mth, m_buf);
 }
 
-unsigned appConsoleConsumer::composeOutput(char* buf, unsigned cch, const gkr::log::message& msg)
+unsigned app_console_consumer::compose_output(char* buf, unsigned cch, const message& msg)
 {
-    return appConsoleComposeOutput(m_buf, m_cch, &msg);
+    return gkr_log_appConsole_ComposeOutput(m_buf, m_cch, &msg);
+}
+
+}
 }

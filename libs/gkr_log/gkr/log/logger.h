@@ -62,7 +62,7 @@ public:
     void set_facility(const name_id_pair& facility);
 
 public:
-    using functions_t = gkr_log_consumer;
+    using functions_t = gkr_log_functions;
 
     bool add_functions(functions_t* functions, void* param);
     bool del_functions(functions_t* functions, void* param);

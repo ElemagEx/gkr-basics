@@ -6,7 +6,7 @@ extern "C" {
 
 struct gkr_log_message;
 
-struct gkr_log_consumer
+struct gkr_log_functions
 {
     int  (*init_logging)(void*);
     void (*done_logging)(void*);

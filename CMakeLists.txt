@@ -4,6 +4,8 @@ project(gkr-basics)
 
 option(GKR_BASICS_TESTS "Build unit tests for the library" ON)
 
+option(GKR_BASICS_TESTS_PROSPONE "Prospone tests execution" ON) #Dependent option
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 include(dependencies)
@@ -28,6 +30,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 if(GKR_BASICS_TESTS)
 enable_testing()
 find_package(Catch2 3 REQUIRED)
+if(${GKR_BASICS_TESTS_PROSPONE})
+set(CMAKE_CATCH_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
+endif()
 include(Catch)
 endif()
 

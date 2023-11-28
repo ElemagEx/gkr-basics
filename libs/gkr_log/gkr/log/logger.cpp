@@ -233,8 +233,11 @@ bool logger::add_functions(functions_t* functions, void* param)
         (*functions->done_logging)(param);
         Check_Failure(false);
     }
-    m_consumers.push_back(consumer_data_t{nullptr, *functions, param});
+    m_consumers.emplace_back();
 
+    consumer_data_t& data = m_consumers.back();
+    data.functions = *functions;
+    data.param     = param;
     return true;
 }
 
@@ -282,8 +285,10 @@ bool logger::add_consumer(consumer_ptr_t consumer)
         done_consumer(*consumer);
         Check_Failure(false);
     }
-    m_consumers.push_back(consumer_data_t{consumer});
+    m_consumers.emplace_back();
 
+    consumer_data_t& data = m_consumers.back();
+    data.consumer = consumer;
     return true;
 }
 

@@ -13,12 +13,18 @@
 
 #include <gkr/diagnostics.h>
 
+#ifndef __cpp_lib_is_swappable
+#include <gkr/cpp/lib_is_swappable.h>
+#endif
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.h>
 #endif
 
 #else
 
+#ifndef __cpp_lib_is_swappable
+#error  You must use C++17 or preinclude implementation of std::is_nothrow_swappable
+#endif
 #ifndef __cpp_lib_exchange_function
 #error  You must use C++14 or preinclude implementation of std::exchange
 #endif
@@ -728,12 +734,18 @@ protected:
 protected:
     class [[nodiscard]] prevent_pause_sentry
     {
-        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
-        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
-
         prevent_pause_sentry           (const prevent_pause_sentry&) noexcept = delete;
         prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
 
+#ifdef __cpp_guaranteed_copy_elision
+    private:
+        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
+        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
+#else
+    public:
+        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = default;
+        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = default;
+#endif
     public:
         [[nodiscard]] explicit
         prevent_pause_sentry(self_t& qp) {}
@@ -834,33 +846,51 @@ private:
 protected:
     class [[nodiscard]] prevent_pause_sentry
     {
-        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
-        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
-
         prevent_pause_sentry           (const prevent_pause_sentry&) noexcept = delete;
         prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
-
+#ifdef __cpp_guaranteed_copy_elision
         queue_pausing& m_qp;
-
+    private:
+        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
+        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
     public:
         [[nodiscard]] explicit
         prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_pause_prevention(); }
        ~prevent_pause_sentry()                             { m_qp.leave_pause_prevention(); }
+#else
+        queue_pausing* m_qp;
+    public:
+        prevent_pause_sentry           (prevent_pause_sentry&& other) noexcept : m_qp(std::exchange(other.m_qp, nullptr)) {}
+        prevent_pause_sentry& operator=(prevent_pause_sentry&& other) noexcept { m_qp=std::exchange(other.m_qp, nullptr);  }
+    public:
+        [[nodiscard]] explicit
+        prevent_pause_sentry(queue_pausing& qp) : m_qp(&qp) { m_qp->enter_pause_prevention(); }
+       ~prevent_pause_sentry()          { if(m_qp != nullptr) m_qp->leave_pause_prevention(); }
+#endif
     };
     class [[nodiscard]] pause_resume_sentry
     {
-        pause_resume_sentry           (pause_resume_sentry&&) noexcept = delete;
-        pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
-
         pause_resume_sentry           (const pause_resume_sentry&) noexcept = delete;
         pause_resume_sentry& operator=(const pause_resume_sentry&) noexcept = delete;
-
+#ifdef __cpp_guaranteed_copy_elision
         queue_pausing& m_qp;
-
+    private:
+        pause_resume_sentry           (pause_resume_sentry&&) noexcept = delete;
+        pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
     public:
         [[nodiscard]] explicit
         pause_resume_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.pause (); }
        ~pause_resume_sentry()                             { m_qp.resume(); }
+#else
+        queue_pausing* m_qp;
+    public:
+        pause_resume_sentry           (pause_resume_sentry&& other) noexcept : m_qp(std::exchange(other.m_qp, nullptr)) {}
+        pause_resume_sentry& operator=(pause_resume_sentry&& other) noexcept { m_qp=std::exchange(other.m_qp, nullptr);  }
+    public:
+        [[nodiscard]] explicit
+        pause_resume_sentry(queue_pausing& qp) : m_qp(&qp) { m_qp->pause (); }
+       ~pause_resume_sentry()          { if(m_qp != nullptr) m_qp->resume(); }
+#endif
     };
 
 public:

@@ -24,6 +24,7 @@ target_sources(
     "gkr/concurency/waitable_lockfree_queue.h"
     "gkr/misc/union_cast.h"
     "gkr/misc/stack_args_order.h"
+    "gkr/cpp/lib_is_swappable.h"
     "gkr/cpp/lib_exchange_function.h"
     "gkr/cpp/lib_raw_memory_algorithms.h"
     "gkr/sys/stack_alloc.h"

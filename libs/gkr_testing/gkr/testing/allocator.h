@@ -204,11 +204,11 @@ public:
     using difference_type = std::ptrdiff_t;
 
 public:
-    using is_always_equal = std::bool_constant<(FLAGS & EqualsAlways) != 0>;
+    using is_always_equal = std::integral_constant<bool, (FLAGS & EqualsAlways) != 0>;
 
-    using propagate_on_container_copy_assignment = std::bool_constant<(FLAGS & PropagatesOnCopyAssignment) != 0>;
-    using propagate_on_container_move_assignment = std::bool_constant<(FLAGS & PropagatesOnMoveAssignment) != 0>;
-    using propagate_on_container_swap            = std::bool_constant<(FLAGS & PropagatesOnSwap          ) != 0>;
+    using propagate_on_container_copy_assignment = std::integral_constant<bool, (FLAGS & PropagatesOnCopyAssignment) != 0>;
+    using propagate_on_container_move_assignment = std::integral_constant<bool, (FLAGS & PropagatesOnMoveAssignment) != 0>;
+    using propagate_on_container_swap            = std::integral_constant<bool, (FLAGS & PropagatesOnSwap          ) != 0>;
 
 private:
     static constexpr bool MULTITHREADED = ((FLAGS & MultiThreaded) != 0);

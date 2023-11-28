@@ -660,8 +660,8 @@ TEST_CASE("container.lockfree_grow_only_bag. Multithreading")
     {
         bag_t bag;
 
-        std::atomic<int> n = threads_count;
-        std::atomic<int> m = 0;
+        std::atomic<int> n(threads_count);
+        std::atomic<int> m(0);
 
         std::thread threads[threads_count];
 

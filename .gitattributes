@@ -1,2 +1,6 @@
 # All text files must have lf eoln
 * text eol=lf
+
+# except Windows-only files
+*.cmd    text eol=crlf
+*.natvis text eol=crlf

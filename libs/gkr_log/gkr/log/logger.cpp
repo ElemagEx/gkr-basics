@@ -379,9 +379,9 @@ bool logger::log_message(bool wait, id_t severity, id_t facility, const char* fo
             Check_Failure(false);
         }
 
-       const std::size_t size = element.get_element_size();
+        const std::size_t size = element.get_element_size();
 
-       Assert_Check(size > sizeof(message));
+        Assert_Check(size > sizeof(message));
 
         const std::size_t cch = size - sizeof(message);
 

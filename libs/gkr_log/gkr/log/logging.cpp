@@ -222,7 +222,7 @@ struct thread_name_t
 #endif
     ~thread_name_t()
     {
-        if(registered && (s_logger != nullptr))
+        if(registered && (s_logger != nullptr) && s_logger->running())
         {
             s_logger->set_thread_name(nullptr);
         }

@@ -44,7 +44,8 @@ private:
     virtual bool on_start() override;
     virtual void on_finish() override;
 
-    virtual void on_action(action_id_t action, void* param, void* result) override;
+    virtual void on_cross_action(action_id_t action, void* param, void* result) override;
+    virtual void on_queue_action(action_id_t action, void* data) override;
 
     virtual void on_wait_timeout() override;
     virtual void on_wait_success(wait_result_t wait_result) override;

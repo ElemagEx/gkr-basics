@@ -1,13 +1,14 @@
 #pragma once
 
 #include <gkr/api.h>
+#include <gkr/diagnostics.h>
 #include <gkr/concurency/events_waiting.h>
 #include <gkr/concurency/waitable_lockfree_queue.h>
 #include <gkr/misc/stack_args_order.h>
 
-#include <mutex>
+#include <cstddef>
 #include <thread>
-#include <functional>
+#include <mutex>
 
 namespace gkr
 {
@@ -39,10 +40,14 @@ class worker_thread
 public:
     using action_id_t = std::size_t;
 
-    using action_param_deleter_t = std::function<void(void*)>;
+    struct alignas(std::max_align_t) actions_queue_element_header_t { action_id_t id {0}; };
 
 protected:
-    GKR_CORE_API          worker_thread(std::size_t initial_action_queue_capacity = 8) noexcept(false);
+    GKR_CORE_API worker_thread(
+        std::size_t initial_actions_queue_capacity     = 8,
+        std::size_t initial_actions_queue_element_size = sizeof(actions_queue_element_header_t)
+        )
+        noexcept(false);
     GKR_CORE_API virtual ~worker_thread() noexcept(DIAG_NOEXCEPT);
 
 protected:
@@ -55,12 +60,13 @@ protected:
     virtual bool on_start() = 0;
     virtual void on_finish() = 0;
 
-    virtual void on_action(action_id_t action, void* param, void* result) = 0;
+    virtual void on_cross_action(action_id_t action, void* param, void* result) = 0;
+    virtual void on_queue_action(action_id_t action, void* data) = 0;
 
     virtual void on_wait_timeout() = 0;
     virtual void on_wait_success(wait_result_t wait_result) = 0;
 
-    enum class except_method_t {on_start, on_finish, on_action, on_wait_timeout, on_wait_success};
+    enum class except_method_t {on_start, on_finish, on_cross_action, on_queue_action, on_wait_timeout, on_wait_success};
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept = 0;
 
 public:
@@ -74,14 +80,9 @@ public:
 
     GKR_CORE_API bool resize_actions_queue(std::size_t capacity) noexcept(false);
 
-public:
-    GKR_CORE_API bool enqueue_action(action_id_t id, void* param = nullptr, action_param_deleter_t deleter = nullptr) noexcept(DIAG_NOEXCEPT);
-    GKR_CORE_API void perform_action(action_id_t id, void* param = nullptr, void* result = nullptr) noexcept(DIAG_NOEXCEPT);
-
 private:
     GKR_CORE_API void forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT);
 
-    GKR_CORE_API bool can_reply() noexcept;
     GKR_CORE_API bool reply_action() noexcept;
 
 public:
@@ -110,9 +111,9 @@ private:
 
     bool main_loop() noexcept(DIAG_NOEXCEPT);
 
-    void dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT);
+    void safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT);
 
-    void safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller) noexcept(DIAG_NOEXCEPT);
+    void safe_do_cross_action() noexcept(DIAG_NOEXCEPT);
 
     void safe_notify_wait_timeout() noexcept;
     void safe_notify_wait_success(wait_result_t wait_result) noexcept;
@@ -135,21 +136,10 @@ private:
         void*       param;
         void*       result;
     };
-    struct reentrancy_t
-    {
-        std::size_t count;
-        void**      result;
-    };
-    struct queued_action_t
-    {
-        action_id_t            id;
-        void*                  param;
-        action_param_deleter_t deleter;
-    };
-    using actions_queue_t = waitable_lockfree_queue<queued_action_t, true, true>;
+    using actions_queue_t = waitable_lockfree_queue<void, true, true>;
 
-    reentrancy_t m_reentrancy = {};
-    func_t       m_func       = {};
+    func_t m_func  = {};
+    void** m_reply = nullptr;
 
     std::mutex  m_mutex;
     std::thread m_thread;
@@ -167,18 +157,94 @@ private:
     bool m_updating = false;
 
 protected:
+    bool enqueue_action(action_id_t id) noexcept(DIAG_NOEXCEPT)
+    {
+        Check_ValidState(running() && !in_worker_thread(), false);
+
+        auto element = m_actions_queue.start_push();
+
+        Check_ValidState(element.push_in_progress(), false);
+
+        element.value<actions_queue_element_header_t>().id = id;
+        return true;
+    }
+    template<typename T>
+    bool enqueue_action(action_id_t id, T&& data) noexcept(DIAG_NOEXCEPT && std::is_nothrow_move_constructible<T>::value)
+    {
+        Check_ValidState(running() && !in_worker_thread(), false);
+
+        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must interit or start with actions_queue_element_header_t");
+        static_assert(alignof(T) <= sizeof(actions_queue_element_header_t), "Your data must have alignment less or equal to the alignement of actions_queue_element_header_t");
+
+        auto element = m_actions_queue.start_push();
+
+        Check_ValidState(element.push_in_progress(), false);
+
+        new (element.data()) T(std::move(data));
+
+        element.value<actions_queue_element_header_t>().id = id;
+        return true;
+    }
+    template<typename T>
+    bool enqueue_action(action_id_t id, const T& data) noexcept(DIAG_NOEXCEPT && std::is_nothrow_copy_constructible<T>::value)
+    {
+        Check_ValidState(running() && !in_worker_thread(), false);
+
+        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must interit or start with actions_queue_element_header_t");
+        static_assert(alignof(T) <= sizeof(actions_queue_element_header_t), "Your data must have alignment less or equal to the alignement of actions_queue_element_header_t");
+
+        auto element = m_actions_queue.start_push();
+
+        Check_ValidState(element.push_in_progress(), false);
+
+        new (element.data()) T(data);
+
+        element.value<actions_queue_element_header_t>().id = id;
+        return true;
+    }
+
+protected:
+    template<typename T>
+    struct queued_data
+    {
+        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must interit or start with actions_queue_element_header_t");
+        static_assert(alignof(T) <= sizeof(actions_queue_element_header_t), "Your data must have alignment less or equal to the alignement of actions_queue_element_header_t");
+
+        queued_data           (queued_data&&) noexcept = delete;
+        queued_data& operator=(queued_data&&) noexcept = delete;
+
+        queued_data           (const queued_data&) noexcept = delete;
+        queued_data& operator=(const queued_data&) noexcept = delete;
+
+        queued_data(void* data) noexcept : m_data(data)
+        {
+            Assert_NotNullPtr(data);
+        }
+        ~queued_data() noexcept(std::is_nothrow_destructible<T>::value)
+        {
+            value().~T();
+        }
+        T& value() noexcept
+        {
+            return *static_cast<T*>(m_data);
+        }
+    private:
+        void* m_data;
+    };
+
+protected:
     template<typename T>
     bool reply_action(T&& value)
     {
         Check_ValidState(in_worker_thread(), false);
 
-        if(!can_reply())
+        if(m_reply == nullptr)
         {
             return false;
         }
-        if(*m_reentrancy.result != nullptr)
+        if(*m_reply != nullptr)
         {
-            *static_cast<T*>(*m_reentrancy.result) = std::move(value);
+            *static_cast<T*>(*m_reply) = std::move(value);
         }
         return reply_action();
     }
@@ -187,13 +253,13 @@ protected:
     {
         Check_ValidState(in_worker_thread(), false);
 
-        if(!can_reply())
+        if(m_reply == nullptr)
         {
             return false;
         }
-        if(*m_reentrancy.result != nullptr)
+        if(*m_reply != nullptr)
         {
-            *static_cast<T*>(*m_reentrancy.result) = value;
+            *static_cast<T*>(*m_reply) = value;
         }
         return reply_action();
     }

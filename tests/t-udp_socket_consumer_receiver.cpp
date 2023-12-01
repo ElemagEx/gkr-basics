@@ -66,8 +66,13 @@ class receiver : public gkr::worker_thread
     {
         m_receiver.stopReceivingPackets();
     }
-    virtual void on_action(action_id_t action, void* param, void* result) override
+    virtual void on_cross_action(action_id_t action, void* param, void* result) override
     {
+        Check_Failure();
+    }
+    virtual void on_queue_action(action_id_t action, void* data) override
+    {
+        Check_Failure();
     }
     virtual void on_wait_timeout() override
     {

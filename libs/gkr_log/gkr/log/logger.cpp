@@ -64,7 +64,7 @@ void logger::on_finish()
     del_all_consumers();
 }
 
-void logger::on_action(action_id_t action, void* param, void* result)
+void logger::on_cross_action(action_id_t action, void* param, void* result)
 {
     switch(action)
     {
@@ -81,6 +81,11 @@ void logger::on_action(action_id_t action, void* param, void* result)
         case ACTION_SET_THREAD_NAME  : call_action_method(&logger::set_thread_name  , param); break;
         case ACTION_SYNC_LOG_MESSAGE : call_action_method(&logger::sync_log_message , param); break;
     }
+}
+
+void logger::on_queue_action(action_id_t action, void* data)
+{
+    Check_Failure();
 }
 
 void logger::on_wait_timeout()

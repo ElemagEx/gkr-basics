@@ -5,7 +5,7 @@
 namespace gkr
 {
 
-worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept(false)
+worker_thread::worker_thread(std::size_t initial_actions_queue_capacity, std::size_t initial_actions_queue_element_size) noexcept(false)
     : m_queue_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
     , m_outer_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
     , m_inner_waiter (gkr::events_waiter::Flag_ForbidMultipleThreadsWait | gkr::events_waiter::Flag_AllowPartialEventsWait)
@@ -16,7 +16,11 @@ worker_thread::worker_thread(std::size_t initial_action_queue_capacity) noexcept
     m_actions_queue.bind_with_producer_waiter(m_queue_waiter);
     m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
 
-    m_actions_queue.reset(initial_action_queue_capacity);
+    m_actions_queue.reset(
+        initial_actions_queue_capacity,
+        initial_actions_queue_element_size,
+        alignof(actions_queue_element_header_t)
+        );
 }
 
 worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
@@ -29,6 +33,8 @@ worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
 
 bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
 {
+    Check_ValidState(m_actions_queue.element_size() >= sizeof(actions_queue_element_header_t), false);
+
     std::lock_guard<std::mutex> lock(m_mutex);
 
     Check_ValidState(!m_thread.joinable(), false);
@@ -98,25 +104,6 @@ bool worker_thread::resize_actions_queue(size_t capacity) noexcept(false)
     }
 }
 
-bool worker_thread::enqueue_action(action_id_t id, void* param, action_param_deleter_t deleter) noexcept(DIAG_NOEXCEPT)
-{
-    Check_ValidState(running(), false);
-
-    return m_actions_queue.push({id, param, deleter});
-}
-
-void worker_thread::perform_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
-{
-    if(in_worker_thread())
-    {
-        safe_do_action(id, param, result, false);
-    }
-    else
-    {
-        forward_action(id, param, result);
-    }
-}
-
 void worker_thread::forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -129,16 +116,11 @@ void worker_thread::forward_action(action_id_t id, void* param, void* result) no
     m_done_event.wait();
 }
 
-bool worker_thread::can_reply() noexcept
-{
-    return ((m_reentrancy.count == 1) && (m_reentrancy.result != nullptr));
-}
-
 bool worker_thread::reply_action() noexcept
 {
-    if(!can_reply()) return false;
+    if(m_reply == nullptr) return false;
 
-    m_reentrancy.result = nullptr;
+    m_reply = nullptr;
 
     m_done_event.fire();
 
@@ -148,8 +130,6 @@ bool worker_thread::reply_action() noexcept
 void worker_thread::thread_proc() noexcept(DIAG_NOEXCEPT)
 {
     m_work_event.wait();
-
-    m_reentrancy = {0, nullptr};
 
     const char* name = get_name();
 
@@ -167,7 +147,7 @@ void worker_thread::thread_proc() noexcept(DIAG_NOEXCEPT)
         }
         while(main_loop());
 
-        dequeue_actions(true);
+        safe_dequeue_actions(true);
     }
     safe_finish();
 }
@@ -264,18 +244,18 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
             }
             if(m_work_event.is_signaled(wait_result))
             {
-                safe_do_action(m_func.id, m_func.param, m_func.result, true);
+                safe_do_cross_action();
             }
             if(m_actions_queue.consumer_event_is_signaled(wait_result))
             {
-                dequeue_actions(false);
+                safe_dequeue_actions(false);
             }
         }
     }
     return false;
 }
 
-void worker_thread::dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
+void worker_thread::safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
 {
     do
     {
@@ -283,57 +263,57 @@ void worker_thread::dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
 
         if(!element.pop_in_progress()) break;
 
-        queued_action_t& action = *element;
+        actions_queue_element_header_t& header = element.value<actions_queue_element_header_t>();
 
-        safe_do_action(action.id, action.param, nullptr, false);
-
-        if(action.deleter)
+        switch(header.id)
         {
-            action.deleter(action.param);
+            case ACTION_UPDATE: m_updating = true ; break;
+            case ACTION_QUIT  : m_running  = false; break;
+            default:
+#ifndef __cpp_exceptions
+                on_queue_action(header.id, element.data());
+#else
+                try
+                {
+                    on_queue_action(header.id, element.data());
+                }
+                catch(const std::exception& e)
+                {
+                    m_running = on_exception(except_method_t::on_queue_action, &e);
+                }
+                catch(...)
+                {
+                    m_running = on_exception(except_method_t::on_queue_action, nullptr);
+                }
+#endif
+                break;
         }
     }
     while(all);
 }
 
-void worker_thread::safe_do_action(action_id_t id, void* param, void* result, bool cross_thread_caller) noexcept(DIAG_NOEXCEPT)
+void worker_thread::safe_do_cross_action() noexcept(DIAG_NOEXCEPT)
 {
-    Assert_Check(!cross_thread_caller || (m_reentrancy.count == 0));
+    m_reply = &m_func.result;
 
-    ++m_reentrancy.count;
-
-    if(cross_thread_caller)
-    {
-        m_reentrancy.result = &result;
-    }
-    switch(id)
-    {
-        case ACTION_UPDATE: m_updating = true ; break;
-        case ACTION_QUIT  : m_running  = false; break;
-        default:
 #ifndef __cpp_exceptions
-            on_action(id, param, result);
+    on_action(id, param, result);
 #else
-            try
-            {
-                on_action(id, param, result);
-            }
-            catch(const std::exception& e)
-            {
-                m_running = on_exception(except_method_t::on_action, &e);
-            }
-            catch(...)
-            {
-                m_running = on_exception(except_method_t::on_action, nullptr);
-            }
-#endif
-            break;
-    }
-    if(cross_thread_caller)
+    try
     {
-        reply_action();
+        on_cross_action(m_func.id, m_func.param, m_func.result);
     }
+    catch(const std::exception& e)
+    {
+        m_running = on_exception(except_method_t::on_cross_action, &e);
+    }
+    catch(...)
+    {
+        m_running = on_exception(except_method_t::on_cross_action, nullptr);
+    }
+#endif
 
-    --m_reentrancy.count;
+    reply_action();
 }
 
 void worker_thread::safe_notify_wait_timeout() noexcept

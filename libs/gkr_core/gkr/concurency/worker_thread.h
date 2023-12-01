@@ -157,6 +157,10 @@ private:
     bool m_updating = false;
 
 protected:
+    unsigned get_actions_queue_fill_percentage() const noexcept
+    {
+        return unsigned((100 * m_actions_queue.count()) / m_actions_queue.capacity());
+    }
     bool enqueue_action(action_id_t id) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(running() && !in_worker_thread(), false);

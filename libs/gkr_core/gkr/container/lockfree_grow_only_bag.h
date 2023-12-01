@@ -40,6 +40,13 @@
 #define if_constexpr if
 #endif
 #endif
+#ifndef gkr_attr_no_unique_address
+#if __has_cpp_attribute(no_unique_address)
+#define gkr_attr_no_unique_address [[no_unique_address]]
+#else
+#define gkr_attr_no_unique_address
+#endif
+#endif
 
 namespace gkr
 {
@@ -92,8 +99,7 @@ public:
 private:
     std::atomic<node_data*> m_first {nullptr};
 
-    [[no_unique_address]]
-    allocator_type m_allocator;
+    gkr_attr_no_unique_address allocator_type m_allocator;
 
 private:
     node_data* copy_elements(const node_data* other_first) noexcept(false)

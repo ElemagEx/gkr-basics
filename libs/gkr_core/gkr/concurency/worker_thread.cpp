@@ -201,7 +201,7 @@ void worker_thread::safe_finish() noexcept
 
 bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
 {
-    const std::chrono::nanoseconds timeout = get_wait_timeout();
+    const std::chrono::nanoseconds timeout_duration = get_wait_timeout();
 
     m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT);
 
@@ -209,23 +209,25 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
 
     Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT, false);
 
+    std::chrono::steady_clock::time_point timeout_time = std::chrono::steady_clock::now() + timeout_duration;
+
     while(running())
     {
         if(m_updating) return true;
 
         wait_result_t wait_result;
 
-        if(timeout == std::chrono::nanoseconds::max())
+        if(timeout_duration == std::chrono::nanoseconds::max())
         {
             wait_result = m_inner_waiter.wait();
         }
-        else if(timeout == std::chrono::nanoseconds::zero())
+        else if(timeout_duration <= std::chrono::nanoseconds::zero())
         {
             wait_result = m_inner_waiter.check();
         }
         else
         {
-            wait_result = m_inner_waiter.wait_for(timeout);
+            wait_result = m_inner_waiter.wait_until(timeout_time);
         }
 
         Check_ValidState(wait_result != WAIT_RESULT_ERROR, false);
@@ -233,6 +235,8 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
         if(wait_result == WAIT_RESULT_TIMEOUT)
         {
             safe_notify_wait_timeout();
+
+            timeout_time = std::chrono::steady_clock::now() + timeout_duration;
         }
         else
         {

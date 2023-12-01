@@ -56,6 +56,13 @@
 #define if_constexpr if
 #endif
 #endif
+#ifndef gkr_attr_no_unique_address
+#if __has_cpp_attribute(no_unique_address)
+#define gkr_attr_no_unique_address [[no_unique_address]]
+#else
+#define gkr_attr_no_unique_address
+#endif
+#endif
 
 namespace gkr
 {
@@ -1266,8 +1273,7 @@ private:
     static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
     static constexpr bool swap_is_noexcept = std::is_nothrow_swappable      <base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap           ::value);
 
-    [[no_unique_address]]
-    TypeAllocator   m_allocator;
+    gkr_attr_no_unique_address TypeAllocator m_allocator;
 
     std::size_t     m_capacity = 0;
     dequeues_entry* m_entries  = nullptr;
@@ -1774,9 +1780,9 @@ private:
     static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
     static constexpr bool swap_is_noexcept = std::is_nothrow_swappable      <base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap           ::value);
 
-    [[no_unique_address]]
-    TypeAllocator m_allocator;
-    element_t*    m_elements = nullptr;
+    gkr_attr_no_unique_address TypeAllocator m_allocator;
+
+    element_t* m_elements = nullptr;
 
 public:
     lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(
@@ -2532,14 +2538,14 @@ private:
     static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
     static constexpr bool swap_is_noexcept = std::is_nothrow_swappable      <base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap           ::value);
 
-    [[no_unique_address]]
-    TypeAllocator m_allocator;
-    char*         m_elements  = nullptr;
-    std::size_t   m_offset    = 0;
-    std::size_t   m_size      = 0;
-    std::size_t   m_alignment = 0;
-    std::size_t   m_padding   = 0;
-    std::size_t   m_stride    = 0;
+    gkr_attr_no_unique_address TypeAllocator m_allocator;
+
+    char*       m_elements  = nullptr;
+    std::size_t m_offset    = 0;
+    std::size_t m_size      = 0;
+    std::size_t m_alignment = 0;
+    std::size_t m_padding   = 0;
+    std::size_t m_stride    = 0;
 
 public:
     lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(

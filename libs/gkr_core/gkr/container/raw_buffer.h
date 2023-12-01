@@ -41,6 +41,13 @@
 #define if_constexpr if
 #endif
 #endif
+#ifndef gkr_attr_no_unique_address
+#if __has_cpp_attribute(no_unique_address)
+#define gkr_attr_no_unique_address [[no_unique_address]]
+#else
+#define gkr_attr_no_unique_address
+#endif
+#endif
 
 namespace gkr
 {
@@ -86,8 +93,7 @@ private:
     std::size_t m_size     = 0;
     std::size_t m_capacity = 0;
 
-    [[no_unique_address]]
-    Allocator   m_allocator;
+    gkr_attr_no_unique_address Allocator m_allocator;
 
 public:
     raw_buffer(std::size_t capacity, const Allocator& allocator = Allocator())

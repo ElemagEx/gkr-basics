@@ -1,7 +1,13 @@
-#include <gkr/log/logging.h>
+#ifdef GKR_NO_OSTREAM_LOGGING
+#undef GKR_NO_OSTREAM_LOGGING
+#endif
 
-#include <gkr/log/logger.h>
+#include <gkr/log/logging.hpp>
+
+#include <gkr/log/logger.hpp>
 #include <gkr/sys/thread_name.h>
+
+#include <exception>
 
 using logger = gkr::log::logger;
 
@@ -221,6 +227,69 @@ int gkr_log_del_consumer(std::shared_ptr<gkr::log::consumer> consumer)
     if(s_logger == nullptr) return false;
 
     return s_logger->del_consumer(consumer);
+}
+
+struct buffer_t
+{
+    void*       id   = nullptr;
+    void*       ptr  = nullptr;
+    std::size_t size = 0;
+};
+thread_local buffer_t thread_local_buffer;
+
+namespace gkr
+{
+namespace log
+{
+namespace impl
+{
+
+void* allocate_bytes(std::size_t& cb)
+{
+    Assert_NotNullPtr(thread_local_buffer.ptr);
+
+    if(cb > thread_local_buffer.size) throw std::bad_alloc();
+
+    cb = thread_local_buffer.size;
+
+    return thread_local_buffer.ptr;
+}
+void deallocate_bytes(void* p, std::size_t n)
+{
+}
+}
+ostream::ostream(int wait, int severity, int facility) : m_wait(wait), m_severity(severity), m_facility(facility)
+{
+    if(thread_local_buffer.id != nullptr)
+    {
+        throw std::bad_alloc();
+    }
+    Assert_Check(thread_local_buffer.ptr  == nullptr);
+    Assert_Check(thread_local_buffer.size == 0);
+
+    if(!s_logger->start_log_message(thread_local_buffer.id, thread_local_buffer.ptr, thread_local_buffer.size))
+    {
+        m_ostream.setstate(std::ios_base::badbit);
+    }
+}
+ostream::~ostream()
+{
+    if(!m_ostream.bad())
+    {
+        auto len = m_ostream.tellp();
+
+        Assert_Check(len >= 0);
+        Assert_Check(len <  thread_local_buffer.size);
+
+        static_cast<char*>(thread_local_buffer.ptr)[std::size_t(len)] = 0;
+
+        s_logger->finish_log_message(thread_local_buffer.id, I2B(m_wait), m_severity, m_facility);
+    }
+    thread_local_buffer.id   = nullptr;
+    thread_local_buffer.ptr  = nullptr;
+    thread_local_buffer.size = 0;
+}
+}
 }
 
 struct thread_name_t

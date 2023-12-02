@@ -1,4 +1,4 @@
-#include <gkr/log/logger.h>
+#include <gkr/log/logger.hpp>
 
 #include <gkr/log/logging.h>
 #include <gkr/log/message.h>
@@ -359,6 +359,39 @@ void logger::set_thread_name(const char* name, tid_t tid)
     }
 }
 
+bool logger::start_log_message(void*& id, void*& buf, std::size_t& cch)
+{
+    Check_ValidState(running(), false);
+
+    Check_ValidState(!in_worker_thread(), false);
+
+    id = m_log_queue.acquire_producer_element_ownership();
+
+    Assert_Check(m_log_queue.element_size() > sizeof(message));
+
+    cch = m_log_queue.element_size() - sizeof(message);
+
+    buf = static_cast<char*>(id) + sizeof(message);
+    return true;
+}
+
+bool logger::finish_log_message(void* id, bool wait, int severity, int facility)
+{
+    message_data& msg = *static_cast<message_data*>(id);
+
+    if(!compose_message(msg, 0, severity, facility, nullptr, nullptr))
+    {
+        m_log_queue.cancel_producer_element_ownership(id);
+        return false;
+    }
+    if(wait)
+    {
+        sync_log_message(msg);
+        m_log_queue.cancel_producer_element_ownership(id);
+    }
+    return m_log_queue.release_producer_element_ownership(id);
+}
+
 bool logger::log_message(bool wait, int severity, int facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
@@ -422,7 +455,11 @@ bool logger::compose_message(message_data& msg, std::size_t cch, int severity, i
     msg.severity = severity;
     msg.facility = facility;
 
-    if(args == nullptr)
+    if(format == nullptr)
+    {
+        msg.messageLen = unsigned(std::strlen(msg.buffer));
+    }
+    else if(args == nullptr)
     {
         std::strncpy(msg.buffer, format, cch);
 
@@ -524,7 +561,7 @@ void logger::consume_message(const message_data& msg)
 
 bool logger::process_next_message()
 {
-    auto element = m_log_queue.start_pop();
+    auto element = m_log_queue.try_start_pop();
 
     if(!element.pop_in_progress()) return false;
 

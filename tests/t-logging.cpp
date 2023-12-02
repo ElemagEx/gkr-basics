@@ -1,4 +1,5 @@
-#include <plog/Logger.h>
+//#include <plog/Logger.h>
+#include <gkr/log/logging.hpp>
 
 #include <gkr/log/consumer.h>
 #include <gkr/log/message.h>
@@ -55,7 +56,7 @@ public:
 
 #include <gkr/log/logging.h>
 
-constexpr gkr::log::name_id_pair g_severities[] = {
+constexpr gkr::log::name_id_pair g_severities_infos[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -63,7 +64,7 @@ constexpr gkr::log::name_id_pair g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-constexpr gkr::log::name_id_pair g_facilities[] = {
+constexpr gkr::log::name_id_pair g_facilities_infos[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},
@@ -75,7 +76,7 @@ constexpr gkr::log::name_id_pair g_facilities[] = {
 
 TEST_CASE("logging.logger. main")
 {
-    gkr_log_init(g_severities, g_facilities, 16, 1024);
+    gkr_log_init(g_severities_infos, g_facilities_infos, 16, 1024);
 
     gkr_log_add_consumer(std::make_shared<console_consumer>());
 
@@ -88,6 +89,11 @@ TEST_CASE("logging.logger. main")
     t.join();
 
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
+
+    gkr::log::ostream(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO)
+        << "hello" << ' '
+        << "world" << '!'
+        << std::endl;
 
     gkr_log_done();
 }

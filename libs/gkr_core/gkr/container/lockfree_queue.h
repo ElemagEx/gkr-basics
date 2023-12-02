@@ -113,14 +113,14 @@ public:
     {
         if(push_in_progress())
         {
-            m_queue->template release_producer_element_ownership<true>(std::exchange(m_element, nullptr));
+            m_queue->release_producer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
     void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
     {
         if(push_in_progress())
         {
-            m_queue->template release_producer_element_ownership<false>(std::exchange(m_element, nullptr));
+            m_queue->cancel_producer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
 
@@ -215,14 +215,14 @@ public:
     {
         if(push_in_progress())
         {
-            m_queue->template release_producer_element_ownership<true>(std::exchange(m_element, nullptr));
+            m_queue->release_producer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
     void cancel_push() noexcept(DIAG_NOEXCEPT)
     {
         if(push_in_progress())
         {
-            m_queue->template release_producer_element_ownership<false>(std::exchange(m_element, nullptr));
+            m_queue->cancel_producer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
 
@@ -343,14 +343,14 @@ public:
     {
         if(pop_in_progress())
         {
-            m_queue->template release_consumer_element_ownership<true>(std::exchange(m_element, nullptr));
+            m_queue->release_consumer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
     void cancel_pop() noexcept(DIAG_NOEXCEPT)
     {
         if(pop_in_progress())
         {
-            m_queue->template release_consumer_element_ownership<false>(std::exchange(m_element, nullptr));
+            m_queue->cancel_consumer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
 
@@ -445,14 +445,14 @@ public:
     {
         if(pop_in_progress())
         {
-            m_queue->template release_consumer_element_ownership<true>(std::exchange(m_element, nullptr));
+            m_queue->release_consumer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
     void cancel_pop() noexcept(DIAG_NOEXCEPT)
     {
         if(pop_in_progress())
         {
-            m_queue->template release_consumer_element_ownership<false>(std::exchange(m_element, nullptr));
+            m_queue->cancel_consumer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
 
@@ -2039,39 +2039,38 @@ private:
     }
 
 public:
-    template<bool push>
-    bool release_producer_element_ownership(element_t* element) noexcept(
-        DIAG_NOEXCEPT &&
-        (push || std::is_nothrow_destructible<element_t>::value)
-        )
+    bool release_producer_element_ownership(element_t* element) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t index = index_of_element(element);
 
-        if_constexpr(!push)
-        {
-            if(index != queue_npos)
-            {
-                destroy_element(index);
-            }
-        }
-        return base_t::template drop_producer_element_ownership<push>(index);
+        return base_t::template drop_producer_element_ownership<true>(index);
     }
-    template<bool pop>
-    bool release_consumer_element_ownership(element_t* element) noexcept(
-        DIAG_NOEXCEPT &&
-        (!pop || std::is_nothrow_destructible<element_t>::value)
-        )
+    bool cancel_producer_element_ownership(element_t* element) noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<element_t>::value)
     {
         const std::size_t index = index_of_element(element);
 
-        if_constexpr(pop)
+        if(index != queue_npos)
         {
-            if(index != queue_npos)
-            {
-                destroy_element(index);
-            }
+            destroy_element(index);
         }
-        return base_t::template drop_consumer_element_ownership<pop>(index);
+        return base_t::template drop_producer_element_ownership<false>(index);
+    }
+
+    bool release_consumer_element_ownership(element_t* element) noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<element_t>::value)
+    {
+        const std::size_t index = index_of_element(element);
+
+        if(index != queue_npos)
+        {
+            destroy_element(index);
+        }
+        return base_t::template drop_consumer_element_ownership<true>(index);
+    }
+    bool cancel_consumer_element_ownership(element_t* element) noexcept(DIAG_NOEXCEPT)
+    {
+        const std::size_t index = index_of_element(element);
+
+        return base_t::template drop_consumer_element_ownership<false>(index);
     }
 
 public:
@@ -2940,23 +2939,38 @@ private:
     }
 
 public:
-    template<bool push>
     bool release_producer_element_ownership(void* element) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(m_stride > 0, false);
 
         const std::size_t index = index_of_element(element);
 
-        return base_t::template drop_producer_element_ownership<push>(index);
+        return base_t::template drop_producer_element_ownership<true>(index);
     }
-    template<bool pop>
+    bool cancel_producer_element_ownership(void* element) noexcept(DIAG_NOEXCEPT)
+    {
+        Check_ValidState(m_stride > 0, false);
+
+        const std::size_t index = index_of_element(element);
+
+        return base_t::template drop_producer_element_ownership<false>(index);
+    }
+
     bool release_consumer_element_ownership(void* element) noexcept(DIAG_NOEXCEPT)
     {
         Check_ValidState(m_stride > 0, false);
 
         const std::size_t index = index_of_element(element);
 
-        return base_t::template drop_consumer_element_ownership<pop>(index);
+        return base_t::template drop_consumer_element_ownership<true>(index);
+    }
+    bool cancel_consumer_element_ownership(void* element) noexcept(DIAG_NOEXCEPT)
+    {
+        Check_ValidState(m_stride > 0, false);
+
+        const std::size_t index = index_of_element(element);
+
+        return base_t::template drop_consumer_element_ownership<false>(index);
     }
 
 public:
@@ -3023,7 +3037,15 @@ public:
     }
     void* acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_producer_element_ownership(std::chrono::nanoseconds::max());
+        Check_ValidState(m_stride > 0, nullptr);
+
+        const std::size_t index = base_t::take_producer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        void* element = m_elements + m_stride * index;
+
+        return element;
     }
 
     template<typename Element, typename Rep, typename Period>
@@ -3032,12 +3054,15 @@ public:
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
 
-        return static_cast<Element*>(acquire_producer_element(timeout));
+        return static_cast<Element*>(acquire_producer_element_ownership(timeout));
     }
     template<typename Element>
     Element* acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_producer_element_ownership<Element>(std::chrono::nanoseconds::max());
+        Assert_Check(alignof(Element) <= m_alignment);
+        Assert_Check( sizeof(Element) <= m_size     );
+
+        return static_cast<Element*>(acquire_producer_element_ownership());
     }
 
 public:
@@ -3056,7 +3081,15 @@ public:
     }
     void* acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_consumer_element_ownership(std::chrono::nanoseconds::max());
+        Check_ValidState(m_stride > 0, nullptr);
+
+        const std::size_t index = base_t::take_consumer_element_ownership();
+
+        if(index == queue_npos) return nullptr;
+
+        void* element = m_elements + m_stride * index;
+
+        return element;
     }
 
     template<typename Element, typename Rep, typename Period>
@@ -3065,12 +3098,15 @@ public:
         Assert_Check(alignof(Element) <= m_alignment);
         Assert_Check( sizeof(Element) <= m_size     );
 
-        return static_cast<Element*>(acquire_consumer_element(timeout));
+        return static_cast<Element*>(acquire_consumer_element_ownership(timeout));
     }
     template<typename Element>
     Element* acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        return acquire_consumer_element_ownership<Element>(std::chrono::nanoseconds::max());
+        Assert_Check(alignof(Element) <= m_alignment);
+        Assert_Check( sizeof(Element) <= m_size     );
+
+        return static_cast<Element*>(acquire_consumer_element_ownership());
     }
 
 public:
@@ -3083,7 +3119,9 @@ public:
     }
     queue_producer_element_t start_push() noexcept(DIAG_NOEXCEPT)
     {
-        return start_push(std::chrono::nanoseconds::max());
+        void* element = acquire_producer_element_ownership();
+
+        return queue_producer_element_t(*this, element);
     }
 
     template<typename Rep, typename Period>
@@ -3095,7 +3133,9 @@ public:
     }
     queue_consumer_element_t start_pop() noexcept(DIAG_NOEXCEPT)
     {
-        return start_pop(std::chrono::nanoseconds::max());
+        void* element = acquire_consumer_element_ownership();
+
+        return queue_consumer_element_t(*this, element);
     }
 
 public:
@@ -3118,7 +3158,19 @@ public:
     }
     bool push(const void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
-        return push(std::chrono::nanoseconds::max(), data, size);
+        auto producer_element = start_push();
+
+        if(!producer_element.push_in_progress()) return false;
+
+        if(data != nullptr)
+        {
+            size = (size == queue_npos)
+                ? m_size
+                : std::min(size, m_size)
+                ;
+            std::memcpy(producer_element.data(), data, size);
+        }
+        return true;
     }
 
     template<typename Rep, typename Period>
@@ -3140,7 +3192,19 @@ public:
     }
     bool pop(void* data = nullptr, std::size_t size = queue_npos) noexcept(DIAG_NOEXCEPT)
     {
-        return pop(std::chrono::nanoseconds::max(), data, size);
+        auto producer_element = start_pop();
+
+        if(!producer_element.pop_in_progress()) return false;
+
+        if(data != nullptr)
+        {
+            size = (size == queue_npos)
+                ? m_size
+                : std::min(size, m_size)
+                ;
+            std::memcpy(data, producer_element.data(), size);
+        }
+        return true;
     }
 #endif
 };

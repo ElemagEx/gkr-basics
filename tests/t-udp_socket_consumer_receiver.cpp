@@ -5,7 +5,7 @@
 #include <gkr/stamp.h>
 #include <gkr/net/lib.h>
 #include <gkr/net/address.h>
-#include <gkr/log/logging.h>
+#include <gkr/log/logging.hpp>
 #include <gkr/concurency/worker_thread.h>
 
 #include <catch2/catch_test_macros.hpp>

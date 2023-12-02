@@ -1,4 +1,4 @@
-#include <gkr/log/logging.h>
+#include <gkr/log/logging.hpp>
 #include <gkr/log/consumers/text_file_consumer.h>
 
 #include <gkr/testing/log_defs.h>

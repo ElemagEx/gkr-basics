@@ -5,6 +5,7 @@ target_include_directories(gkr_log PUBLIC ".")
 
 set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 
+# C INTERFACE
 target_sources(
     gkr_log
     INTERFACE
@@ -18,11 +19,24 @@ target_sources(
     "gkr/log/consumers/android_log_consumer.h"
     "gkr/log/consumers/app_console_consumer.h"
     "gkr/log/consumers/windows_debugger_consumer.h"
-    )
+)
+# C++ INTERFACE
+target_sources(
+    gkr_log
+    INTERFACE
+    "gkr/log/log.hpp"
+    "gkr/log/logging.hpp"
+)
+# Headers
 target_sources(
     gkr_log
     PRIVATE
-    "gkr/log/logger.h"
+    "gkr/log/logger.hpp"
+)
+# Sources
+target_sources(
+    gkr_log
+    PRIVATE
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
     "gkr/log/consumers/text_file_consumer.cpp"
@@ -30,7 +44,7 @@ target_sources(
     "gkr/log/consumers/android_log_consumer.cpp"
     "gkr/log/consumers/app_console_consumer.cpp"
     "gkr/log/consumers/windows_debugger_consumer.cpp"
-    )
+)
 
 if(GKR_BASICS_TESTS)
 add_subdirectory(tests)

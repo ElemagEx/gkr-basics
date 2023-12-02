@@ -12,12 +12,11 @@ struct gkr_log_name_id_pair
     const char* name;
     int         id;
 };
-
 struct gkr_log_functions;
 
 GKR_LOG_API int gkr_log_init(
-    const struct gkr_log_name_id_pair* severities,
-    const struct gkr_log_name_id_pair* facilities,
+    const struct gkr_log_name_id_pair* severities_infos,
+    const struct gkr_log_name_id_pair* facilities_infos,
     unsigned max_queue_entries,
     unsigned max_message_chars
     );
@@ -39,60 +38,4 @@ GKR_LOG_API int gkr_log_del_all_consumers();
 
 #ifdef __cplusplus
 }
-
-#include <memory>
-#include <sstream>
-
-namespace gkr
-{
-namespace log
-{
-
-using name_id_pair = gkr_log_name_id_pair;
-class consumer;
-
-struct logging final
-{
-    const bool initialized;
-
-    logging(
-        const name_id_pair* severities_infos = nullptr,
-        const name_id_pair* facilities_infos = nullptr,
-        unsigned max_queue_entries = 16,
-        unsigned max_message_chars = 968 // 1024 - sizeof(log::message)
-        )
-        : initialized(0 != gkr_log_init(severities_infos, facilities_infos, max_queue_entries, max_message_chars))
-    {
-    }
-    ~logging()
-    {
-        gkr_log_done();
-    }
-
-    logging           (const logging& other) noexcept : initialized(other.initialized) {}
-    logging& operator=(const logging&      ) noexcept { return *this; }
-
-    logging           (logging&& other) noexcept : initialized(other.initialized) {}
-    logging& operator=(logging&&      ) noexcept { return *this; }
-};
-
-class stream_sink
-{
-    stream_sink           (const stream_sink&) noexcept = delete;
-    stream_sink& operator=(const stream_sink&) noexcept = delete;
-
-    stream_sink           (stream_sink&&) noexcept = delete;
-    stream_sink& operator=(stream_sink&&) noexcept = delete;
-
-public:
-    GKR_LOG_API  stream_sink();
-    GKR_LOG_API ~stream_sink();
-};
-
-}
-}
-
-GKR_LOG_API int gkr_log_add_consumer(std::shared_ptr<gkr::log::consumer> consumer);
-GKR_LOG_API int gkr_log_del_consumer(std::shared_ptr<gkr::log::consumer> consumer);
-
 #endif

@@ -1,7 +1,7 @@
 //#include <plog/Logger.h>
 #include <gkr/log/logging.hpp>
 
-#include <gkr/log/consumer.h>
+#include <gkr/log/consumer.hpp>
 #include <gkr/log/message.h>
 #include <gkr/stamp.h>
 

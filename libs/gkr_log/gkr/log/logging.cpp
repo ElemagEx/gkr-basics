@@ -134,22 +134,22 @@ int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info)
     return true;
 }
 
-int gkr_log_add_functions(gkr_log_functions* functions, void* param)
+int gkr_log_add_callbacks(gkr_log_callbacks* callbacks, void* param)
 {
-    Check_Arg_NotNull(functions, false);
+    Check_Arg_NotNull(callbacks, false);
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->add_functions(functions, param);
+    return s_logger->add_callbacks(callbacks, param);
 }
 
-int gkr_log_del_functions(gkr_log_functions* functions, void* param)
+int gkr_log_del_callbacks(gkr_log_callbacks* callbacks, void* param)
 {
-    Check_Arg_NotNull(functions, false);
+    Check_Arg_NotNull(callbacks, false);
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->del_functions(functions, param);
+    return s_logger->del_callbacks(callbacks, param);
 }
 
 int gkr_log_del_all_consumers()
@@ -274,12 +274,14 @@ ostream::ostream(int wait, int severity, int facility) : m_wait(wait), m_severit
 }
 ostream::~ostream()
 {
+    if(m_ostream.eof()) return;
+
     if(!m_ostream.bad())
     {
         auto len = m_ostream.tellp();
 
         Assert_Check(len >= 0);
-        Assert_Check(len <  thread_local_buffer.size);
+        Assert_Check(std::size_t(len) < thread_local_buffer.size);
 
         static_cast<char*>(thread_local_buffer.ptr)[std::size_t(len)] = 0;
 

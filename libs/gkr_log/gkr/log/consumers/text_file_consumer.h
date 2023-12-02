@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/consumer.h>
+#include <gkr/log/consumer.hpp>
 #include <gkr/log/api.h>
 
 enum

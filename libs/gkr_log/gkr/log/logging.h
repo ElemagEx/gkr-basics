@@ -12,7 +12,7 @@ struct gkr_log_name_id_pair
     const char* name;
     int         id;
 };
-struct gkr_log_functions;
+struct gkr_log_callbacks;
 
 GKR_LOG_API int gkr_log_init(
     const struct gkr_log_name_id_pair* severities_infos,
@@ -31,8 +31,8 @@ GKR_LOG_API int gkr_log_set_facilities(int clear_existing, const struct gkr_log_
 GKR_LOG_API int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity_info);
 GKR_LOG_API int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info);
 
-GKR_LOG_API int gkr_log_add_functions(struct gkr_log_functions* functions, void* param);
-GKR_LOG_API int gkr_log_del_functions(struct gkr_log_functions* functions, void* param);
+GKR_LOG_API int gkr_log_add_callbacks(struct gkr_log_callbacks* callbacks, void* param);
+GKR_LOG_API int gkr_log_del_callbacks(struct gkr_log_callbacks* callbacks, void* param);
 
 GKR_LOG_API int gkr_log_del_all_consumers();
 

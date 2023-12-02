@@ -1,7 +1,8 @@
 #pragma once
 
 #include <gkr/log/message.h>
-#include <gkr/log/consumer.h>
+#include <gkr/log/callbacks.h>
+#include <gkr/log/consumer.hpp>
 
 #include <gkr/concurency/worker_thread.h>
 #include <gkr/concurency/events_waiting.h>
@@ -63,10 +64,10 @@ public:
     void set_facility(const name_id_pair& facility_info);
 
 public:
-    using functions_t = gkr_log_functions;
+    using callbacks_t = gkr_log_callbacks;
 
-    bool add_functions(functions_t* functions, void* param);
-    bool del_functions(functions_t* functions, void* param);
+    bool add_callbacks(callbacks_t* callbacks, void* param);
+    bool del_callbacks(callbacks_t* callbacks, void* param);
 
     using consumer_ptr_t = std::shared_ptr<consumer>;
 
@@ -122,8 +123,8 @@ private:
         ACTION_SET_FACILITY     ,
         ACTION_ADD_CONSUMER     ,
         ACTION_DEL_CONSUMER     ,
-        ACTION_ADD_FUNCTIONS    ,
-        ACTION_DEL_FUNCTIONS    ,
+        ACTION_ADD_CALLBACKS    ,
+        ACTION_DEL_CALLBACKS    ,
         ACTION_DEL_ALL_CONSUMERS,
         ACTION_SET_THREAD_NAME  ,
         ACTION_SYNC_LOG_MESSAGE ,
@@ -134,7 +135,7 @@ private:
     struct consumer_data_t
     {
         consumer_ptr_t consumer;
-        functions_t    functions {nullptr, nullptr, nullptr, nullptr};
+        callbacks_t    callbacks {nullptr, nullptr, nullptr, nullptr};
         void*          param     {nullptr};
         bool           reentry_guard {false};
     };

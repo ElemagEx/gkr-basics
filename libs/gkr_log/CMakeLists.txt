@@ -13,7 +13,7 @@ target_sources(
     "gkr/log/log.h"
     "gkr/log/logging.h"
     "gkr/log/message.h"
-    "gkr/log/consumer.h"
+    "gkr/log/callbacks.h"
     "gkr/log/consumers/text_file_consumer.h"
     "gkr/log/consumers/udp_socket_consumer.h"
     "gkr/log/consumers/android_log_consumer.h"
@@ -26,6 +26,7 @@ target_sources(
     INTERFACE
     "gkr/log/log.hpp"
     "gkr/log/logging.hpp"
+    "gkr/log/consumer.hpp"
 )
 # Headers
 target_sources(

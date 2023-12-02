@@ -1,8 +1,8 @@
 #include <gkr/log/logger.hpp>
 
+#include <gkr/log/consumer.hpp>
 #include <gkr/log/logging.h>
 #include <gkr/log/message.h>
-#include <gkr/log/consumer.h>
 #include <gkr/stamp.h>
 
 #include <gkr/misc/union_cast.h>
@@ -14,13 +14,13 @@ namespace gkr
 namespace log
 {
 
-inline bool are_equals(const logger::functions_t& functions1, const logger::functions_t& functions2)
+inline bool are_equals(const logger::callbacks_t& callbacks1, const logger::callbacks_t& callbacks2)
 {
     return (
-        (functions1.init_logging == functions2.init_logging) &&
-        (functions1.done_logging == functions2.done_logging) &&
-        (functions1. filter_log_message == functions2. filter_log_message) &&
-        (functions1.consume_log_message == functions2.consume_log_message) );
+        (callbacks1.init_logging == callbacks2.init_logging) &&
+        (callbacks1.done_logging == callbacks2.done_logging) &&
+        (callbacks1. filter_log_message == callbacks2. filter_log_message) &&
+        (callbacks1.consume_log_message == callbacks2.consume_log_message) );
 }
 
 logger::logger() : m_msg_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
@@ -75,8 +75,8 @@ void logger::on_cross_action(action_id_t action, void* param, void* result)
         case ACTION_SET_FACILITY     : call_action_method(&logger::set_facility     , param); break;
         case ACTION_ADD_CONSUMER     : call_action_method(&logger::add_consumer     , param, result); break;
         case ACTION_DEL_CONSUMER     : call_action_method(&logger::del_consumer     , param, result); break;
-        case ACTION_ADD_FUNCTIONS    : call_action_method(&logger::add_functions    , param, result); break;
-        case ACTION_DEL_FUNCTIONS    : call_action_method(&logger::del_functions    , param, result); break;
+        case ACTION_ADD_CALLBACKS    : call_action_method(&logger::add_callbacks    , param, result); break;
+        case ACTION_DEL_CALLBACKS    : call_action_method(&logger::del_callbacks    , param, result); break;
         case ACTION_DEL_ALL_CONSUMERS: call_action_method(&logger::del_all_consumers, param); break;
         case ACTION_SET_THREAD_NAME  : call_action_method(&logger::set_thread_name  , param); break;
         case ACTION_SYNC_LOG_MESSAGE : call_action_method(&logger::sync_log_message , param); break;
@@ -212,60 +212,60 @@ void logger::set_facility(const name_id_pair& facility_info)
     }
 }
 
-bool logger::add_functions(functions_t* functions, void* param)
+bool logger::add_callbacks(callbacks_t* callbacks, void* param)
 {
     Check_ValidState(running(), false);
 
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_ADD_FUNCTIONS, functions, param);
+        return execute_action_method<bool>(ACTION_ADD_CALLBACKS, callbacks, param);
     }
-    Check_Arg_NotNull(functions, false);
-    Check_Arg_NotNull(functions->init_logging, false);
-    Check_Arg_NotNull(functions->done_logging, false);
-    Check_Arg_NotNull(functions-> filter_log_message, false);
-    Check_Arg_NotNull(functions->consume_log_message, false);
+    Check_Arg_NotNull(callbacks, false);
+    Check_Arg_NotNull(callbacks->init_logging, false);
+    Check_Arg_NotNull(callbacks->done_logging, false);
+    Check_Arg_NotNull(callbacks-> filter_log_message, false);
+    Check_Arg_NotNull(callbacks->consume_log_message, false);
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
-        if(are_equals(it->functions, *functions) && (it->param == param))
+        if(are_equals(it->callbacks, *callbacks) && (it->param == param))
         {
             Check_Arg_Invalid(consumer, false);
         }
     }
-    if(!(*functions->init_logging)(param))
+    if(!(*callbacks->init_logging)(param))
     {
-        (*functions->done_logging)(param);
+        (*callbacks->done_logging)(param);
         Check_Failure(false);
     }
     m_consumers.emplace_back();
 
     consumer_data_t& data = m_consumers.back();
-    data.functions = *functions;
+    data.callbacks = *callbacks;
     data.param     = param;
     return true;
 }
 
-bool logger::del_functions(functions_t* functions, void* param)
+bool logger::del_callbacks(callbacks_t* callbacks, void* param)
 {
     Check_ValidState(running(), false);
 
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_DEL_FUNCTIONS, functions, param);
+        return execute_action_method<bool>(ACTION_DEL_CALLBACKS, callbacks, param);
     }
-    Check_Arg_NotNull(functions, false);
+    Check_Arg_NotNull(callbacks, false);
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
-        if(are_equals(it->functions, *functions) && (it->param == param))
+        if(are_equals(it->callbacks, *callbacks) && (it->param == param))
         {
             m_consumers.erase(it);
-            (*functions->done_logging)(param);
+            (*callbacks->done_logging)(param);
             return true;
         }
     }
-    Check_Arg_Invalid(functions && param, false);
+    Check_Arg_Invalid(callbacks && param, false);
 }
 
 bool logger::add_consumer(consumer_ptr_t consumer)
@@ -537,9 +537,9 @@ void logger::consume_message(const message_data& msg)
                 }
                 else
                 {
-                    if(!(*data.functions.filter_log_message)(data.param, &msg))
+                    if(!(*data.callbacks.filter_log_message)(data.param, &msg))
                     {
-                        (*data.functions.consume_log_message)(data.param, &msg);
+                        (*data.callbacks.consume_log_message)(data.param, &msg);
                     }
                 }
                 data.reentry_guard = false;

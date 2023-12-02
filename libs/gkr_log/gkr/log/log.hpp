@@ -7,14 +7,6 @@
 #include <memory>
 #include <sstream>
 
-#ifndef if_constexpr
-#ifdef __cpp_if_constexpr
-#define if_constexpr if constexpr
-#else
-#define if_constexpr if
-#endif
-#endif
-
 namespace gkr
 {
 namespace log
@@ -77,6 +69,7 @@ public:
         , m_severity(std::exchange(other.m_severity, 0))
         , m_facility(std::exchange(other.m_facility, 0))
     {
+        other.m_ostream.setstate(std::ios_base::eofbit);
     }
     ostream& operator=(ostream&& other) noexcept
     {
@@ -84,6 +77,8 @@ public:
         m_wait     = std::exchange(other.m_wait    , 0);
         m_severity = std::exchange(other.m_severity, 0);
         m_facility = std::exchange(other.m_facility, 0);
+
+        other.m_ostream.setstate(std::ios_base::eofbit);
         return *this;
     }
     ostream& operator<<(std::ostream& (*data)(std::ostream&))

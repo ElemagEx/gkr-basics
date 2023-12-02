@@ -19,13 +19,4 @@ struct gkr_log_message
 
 #ifdef __cplusplus
 }
-
-namespace gkr
-{
-namespace log
-{
-using message = gkr_log_message;
-}
-}
-
 #endif

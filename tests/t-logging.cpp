@@ -26,8 +26,6 @@ class console_consumer : public gkr::log::consumer
         struct tm tm;
         int ns = gkr::stamp_decompose(true, msg.stamp, tm);
 
-        using ulonglong = unsigned long long;
-
         std::printf("[%02i:%02i:%02i.%03d] (Thread (%lld): %s) | (Severity: %s) | (Facility: %s) - %s\n",
             tm.tm_hour,
             tm.tm_min,

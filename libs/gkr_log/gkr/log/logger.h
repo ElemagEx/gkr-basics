@@ -56,11 +56,11 @@ public:
     bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
 public:
-    void set_severities(bool clear_existing, const name_id_pair* severities);
-    void set_facilities(bool clear_existing, const name_id_pair* facilities);
+    void set_severities(bool clear_existing, const name_id_pair* severities_infos);
+    void set_facilities(bool clear_existing, const name_id_pair* facilities_infos);
 
-    void set_severity(const name_id_pair& severity);
-    void set_facility(const name_id_pair& facility);
+    void set_severity(const name_id_pair& severity_info);
+    void set_facility(const name_id_pair& facility_info);
 
 public:
     using functions_t = gkr_log_functions;

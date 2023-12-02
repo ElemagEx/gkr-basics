@@ -95,12 +95,12 @@ class receiver : public gkr::worker_thread
                     char host[80];
                     addr.host(host);
 
-                    using ulonglong = unsigned long long;
+                    //using longlong = long long;
                     char str[256];
                     std::snprintf(
                         str,
                         256,
-                        "[%02i:%02i:%02i.%03d] (Host: %s [%s])(Process: %s [%u])(Thread: %s [%lld])(Severity: %s)(Facility: %s) - ",
+                        "[%02i:%02i:%02i.%03d] (Host: %s [%s])(Process: %s [%u])(Thread: %s [%jd])(Severity: %s)(Facility: %s) - ",
                         tm.tm_hour,
                         tm.tm_min,
                         tm.tm_sec,

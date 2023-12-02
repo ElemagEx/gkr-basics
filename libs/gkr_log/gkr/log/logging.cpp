@@ -24,8 +24,8 @@ extern "C"
 //NOTE:Initialization/deinitialization is not thread safe yet
 //
 int gkr_log_init(
-    const struct gkr_log_name_id_pair* severities, // = nullptr - no severity names
-    const struct gkr_log_name_id_pair* facilities, // = nullptr - no facility names
+    const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
+    const struct gkr_log_name_id_pair* facilities_infos, // = nullptr - no facility names
     unsigned max_queue_entries, // = 16
     unsigned max_message_chars  // = 968 [1024 - sizeof(gkr_log_message)]
     )
@@ -46,8 +46,8 @@ int gkr_log_init(
         gkr_log_done();
         return false;
     }
-    s_logger->set_severities(false, severities);
-    s_logger->set_facilities(false, facilities);
+    s_logger->set_severities(false, severities_infos);
+    s_logger->set_facilities(false, facilities_infos);
 
     if(!s_logger->change_log_queue(max_queue_entries, max_message_chars))
     {
@@ -88,42 +88,42 @@ int gkr_log_set_max_message_chars(unsigned max_message_chars)
     return s_logger->change_log_queue(std::size_t(-1), max_message_chars);
 }
 
-int gkr_log_set_severities(int clear_existing, const struct gkr_log_name_id_pair* severities)
+int gkr_log_set_severities(int clear_existing, const struct gkr_log_name_id_pair* severities_infos)
 {
     if(s_logger == nullptr) return false;
 
-    s_logger->set_severities(I2B(clear_existing), severities);
+    s_logger->set_severities(I2B(clear_existing), severities_infos);
 
     return true;
 }
 
-int gkr_log_set_facilities(int clear_existing, const struct gkr_log_name_id_pair* facilities)
+int gkr_log_set_facilities(int clear_existing, const struct gkr_log_name_id_pair* facilities_infos)
 {
     if(s_logger == nullptr) return false;
 
-    s_logger->set_facilities(I2B(clear_existing), facilities);
+    s_logger->set_facilities(I2B(clear_existing), facilities_infos);
 
     return true;
 }
 
-int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity)
+int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity_info)
 {
-    Check_Arg_NotNull(severity, false);
+    Check_Arg_NotNull(severity_info, false);
 
     if(s_logger == nullptr) return false;
 
-    s_logger->set_severity(*severity);
+    s_logger->set_severity(*severity_info);
 
     return true;
 }
 
-int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility)
+int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info)
 {
-    Check_Arg_NotNull(facility, false);
+    Check_Arg_NotNull(facility_info, false);
 
     if(s_logger == nullptr) return false;
 
-    s_logger->set_facility(*facility);
+    s_logger->set_facility(*facility_info);
 
     return true;
 }

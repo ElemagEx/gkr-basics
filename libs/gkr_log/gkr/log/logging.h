@@ -26,11 +26,11 @@ GKR_LOG_API int gkr_log_done();
 GKR_LOG_API int gkr_log_set_max_queue_entries(unsigned max_queue_entries);
 GKR_LOG_API int gkr_log_set_max_message_chars(unsigned max_message_chars);
 
-GKR_LOG_API int gkr_log_set_severities(int clear_existing, const struct gkr_log_name_id_pair* severities);
-GKR_LOG_API int gkr_log_set_facilities(int clear_existing, const struct gkr_log_name_id_pair* facilities);
+GKR_LOG_API int gkr_log_set_severities(int clear_existing, const struct gkr_log_name_id_pair* severities_infos);
+GKR_LOG_API int gkr_log_set_facilities(int clear_existing, const struct gkr_log_name_id_pair* facilities_infos);
 
-GKR_LOG_API int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity);
-GKR_LOG_API int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility);
+GKR_LOG_API int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity_info);
+GKR_LOG_API int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info);
 
 GKR_LOG_API int gkr_log_add_functions(struct gkr_log_functions* functions, void* param);
 GKR_LOG_API int gkr_log_del_functions(struct gkr_log_functions* functions, void* param);
@@ -41,6 +41,7 @@ GKR_LOG_API int gkr_log_del_all_consumers();
 }
 
 #include <memory>
+#include <sstream>
 
 namespace gkr
 {
@@ -55,12 +56,12 @@ struct logging final
     const bool initialized;
 
     logging(
-        const name_id_pair* severities = nullptr,
-        const name_id_pair* facilities = nullptr,
+        const name_id_pair* severities_infos = nullptr,
+        const name_id_pair* facilities_infos = nullptr,
         unsigned max_queue_entries = 16,
         unsigned max_message_chars = 968 // 1024 - sizeof(log::message)
         )
-        : initialized(0 != gkr_log_init(severities, facilities, max_queue_entries, max_message_chars))
+        : initialized(0 != gkr_log_init(severities_infos, facilities_infos, max_queue_entries, max_message_chars))
     {
     }
     ~logging()
@@ -73,6 +74,19 @@ struct logging final
 
     logging           (logging&& other) noexcept : initialized(other.initialized) {}
     logging& operator=(logging&&      ) noexcept { return *this; }
+};
+
+class stream_sink
+{
+    stream_sink           (const stream_sink&) noexcept = delete;
+    stream_sink& operator=(const stream_sink&) noexcept = delete;
+
+    stream_sink           (stream_sink&&) noexcept = delete;
+    stream_sink& operator=(stream_sink&&) noexcept = delete;
+
+public:
+    GKR_LOG_API  stream_sink();
+    GKR_LOG_API ~stream_sink();
 };
 
 }

@@ -140,75 +140,75 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     }
 }
 
-void logger::set_severities(bool clear_existing, const name_id_pair* severities)
+void logger::set_severities(bool clear_existing, const name_id_pair* severities_infos)
 {
     Check_ValidState(running(), );
 
     if(!in_worker_thread())
     {
-        return execute_action_method<void>(ACTION_SET_SEVERITIES, clear_existing, severities);
+        return execute_action_method<void>(ACTION_SET_SEVERITIES, clear_existing, severities_infos);
     }
     if(clear_existing)
     {
         m_severities.clear();
     }
-    if(severities != nullptr) for( ; severities->name != nullptr; ++severities)
+    if(severities_infos != nullptr) for( ; severities_infos->name != nullptr; ++severities_infos)
     {
-        m_severities[severities->id] = severities->name;
+        m_severities[severities_infos->id] = severities_infos->name;
     }
 }
 
-void logger::set_facilities(bool clear_existing, const name_id_pair* facilities)
+void logger::set_facilities(bool clear_existing, const name_id_pair* facilities_infos)
 {
     Check_ValidState(running(), );
 
     if(!in_worker_thread())
     {
-        return execute_action_method<void>(ACTION_SET_FACILITIES, clear_existing, facilities);
+        return execute_action_method<void>(ACTION_SET_FACILITIES, clear_existing, facilities_infos);
     }
     if(clear_existing)
     {
         m_facilities.clear();
     }
-    if(facilities != nullptr) for( ; facilities->name != nullptr; ++facilities)
+    if(facilities_infos != nullptr) for( ; facilities_infos->name != nullptr; ++facilities_infos)
     {
-        m_facilities[facilities->id] = facilities->name;
+        m_facilities[facilities_infos->id] = facilities_infos->name;
     }
 }
 
-void logger::set_severity(const name_id_pair& severity)
+void logger::set_severity(const name_id_pair& severity_info)
 {
     Check_ValidState(running(), );
 
     if(!in_worker_thread())
     {
-        return execute_action_method<void>(ACTION_SET_SEVERITY, severity);
+        return execute_action_method<void>(ACTION_SET_SEVERITY, severity_info);
     }
-    if(severity.name == nullptr)
+    if(severity_info.name == nullptr)
     {
-        m_severities.erase(severity.id);
+        m_severities.erase(severity_info.id);
     }
     else
     {
-        m_severities[severity.id] = severity.name;
+        m_severities[severity_info.id] = severity_info.name;
     }
 }
 
-void logger::set_facility(const name_id_pair& facility)
+void logger::set_facility(const name_id_pair& facility_info)
 {
     Check_ValidState(running(), );
 
     if(!in_worker_thread())
     {
-        return execute_action_method<void>(ACTION_SET_FACILITY, facility);
+        return execute_action_method<void>(ACTION_SET_FACILITY, facility_info);
     }
-    if(facility.name == nullptr)
+    if(facility_info.name == nullptr)
     {
-        m_facilities.erase(facility.id);
+        m_facilities.erase(facility_info.id);
     }
     else
     {
-        m_facilities[facility.id] = facility.name;
+        m_facilities[facility_info.id] = facility_info.name;
     }
 }
 

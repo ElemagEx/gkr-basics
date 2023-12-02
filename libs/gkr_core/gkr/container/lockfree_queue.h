@@ -739,20 +739,14 @@ protected:
     }
 
 protected:
-    class [[nodiscard]] prevent_pause_sentry
+    class prevent_pause_sentry
     {
         prevent_pause_sentry           (const prevent_pause_sentry&) noexcept = delete;
         prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
 
-#ifdef __cpp_guaranteed_copy_elision
-    private:
         prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
         prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
-#else
-    public:
-        prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = default;
-        prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = default;
-#endif
+
     public:
         [[nodiscard]] explicit
         prevent_pause_sentry(self_t& qp) {}
@@ -851,53 +845,33 @@ private:
     friend class pause_resume_sentry;
 
 protected:
-    class [[nodiscard]] prevent_pause_sentry
+    class prevent_pause_sentry
     {
         prevent_pause_sentry           (const prevent_pause_sentry&) noexcept = delete;
         prevent_pause_sentry& operator=(const prevent_pause_sentry&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-        queue_pausing& m_qp;
-    private:
+
         prevent_pause_sentry           (prevent_pause_sentry&&) noexcept = delete;
         prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
+
+        queue_pausing& m_qp;
     public:
         [[nodiscard]] explicit
         prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_pause_prevention(); }
        ~prevent_pause_sentry()                             { m_qp.leave_pause_prevention(); }
-#else
-        queue_pausing* m_qp;
-    public:
-        prevent_pause_sentry           (prevent_pause_sentry&& other) noexcept : m_qp(std::exchange(other.m_qp, nullptr)) {}
-        prevent_pause_sentry& operator=(prevent_pause_sentry&& other) noexcept { m_qp=std::exchange(other.m_qp, nullptr);  }
-    public:
-        [[nodiscard]] explicit
-        prevent_pause_sentry(queue_pausing& qp) : m_qp(&qp) { m_qp->enter_pause_prevention(); }
-       ~prevent_pause_sentry()          { if(m_qp != nullptr) m_qp->leave_pause_prevention(); }
-#endif
     };
-    class [[nodiscard]] pause_resume_sentry
+    class pause_resume_sentry
     {
         pause_resume_sentry           (const pause_resume_sentry&) noexcept = delete;
         pause_resume_sentry& operator=(const pause_resume_sentry&) noexcept = delete;
-#ifdef __cpp_guaranteed_copy_elision
-        queue_pausing& m_qp;
-    private:
+
         pause_resume_sentry           (pause_resume_sentry&&) noexcept = delete;
         pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
+
+        queue_pausing& m_qp;
     public:
         [[nodiscard]] explicit
         pause_resume_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.pause (); }
        ~pause_resume_sentry()                             { m_qp.resume(); }
-#else
-        queue_pausing* m_qp;
-    public:
-        pause_resume_sentry           (pause_resume_sentry&& other) noexcept : m_qp(std::exchange(other.m_qp, nullptr)) {}
-        pause_resume_sentry& operator=(pause_resume_sentry&& other) noexcept { m_qp=std::exchange(other.m_qp, nullptr);  }
-    public:
-        [[nodiscard]] explicit
-        pause_resume_sentry(queue_pausing& qp) : m_qp(&qp) { m_qp->pause (); }
-       ~pause_resume_sentry()          { if(m_qp != nullptr) m_qp->resume(); }
-#endif
     };
 
 public:
@@ -1069,8 +1043,7 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         if(!can_take_producer_element_ownership()) return queue_npos;
 
@@ -1090,8 +1063,7 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
@@ -1120,8 +1092,7 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         if(!can_take_consumer_element_ownership()) return queue_npos;
 
@@ -1141,8 +1112,7 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
@@ -1544,8 +1514,7 @@ private:
 protected:
     std::size_t try_take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         if(!can_take_producer_element_ownership()) return queue_npos;
 
@@ -1566,8 +1535,7 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
@@ -1602,8 +1570,7 @@ protected:
 protected:
     std::size_t try_take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         if(!can_take_consumer_element_ownership()) return queue_npos;
 
@@ -1624,8 +1591,7 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::prevent_pause_sentry(*this);
+        typename base_t::prevent_pause_sentry sentry(*this);
 
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
@@ -1966,8 +1932,7 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::pause_resume_sentry(*this);
+        typename base_t::pause_resume_sentry sentry(*this);
 
         if(capacity <= base_t::count()) return false;
 
@@ -2825,8 +2790,7 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::pause_resume_sentry(*this);
+        typename base_t::pause_resume_sentry sentry(*this);
 
         if(capacity <= base_t::count()) return false;
 
@@ -2862,8 +2826,7 @@ public:
     {
         static_assert(Pausable, "Cannot change element size of not pausable queue");
 
-        [[maybe_unused]] //todo:remove this line
-        auto sentry = typename base_t::pause_resume_sentry(*this);
+        typename base_t::pause_resume_sentry sentry(*this);
 
         if(size <= m_size) return false;
 

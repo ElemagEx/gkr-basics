@@ -359,7 +359,7 @@ void logger::set_thread_name(const char* name, tid_t tid)
     }
 }
 
-bool logger::log_message(bool wait, id_t severity, id_t facility, const char* format, va_list args)
+bool logger::log_message(bool wait, int severity, int facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
 
@@ -415,7 +415,7 @@ void logger::sync_log_message(message_data& msg)
     process_message(msg);
 }
 
-bool logger::compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, va_list args)
+bool logger::compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, va_list args)
 {
     msg.tid      = misc::union_cast<long long>(std::this_thread::get_id());
     msg.stamp    = stamp_now();

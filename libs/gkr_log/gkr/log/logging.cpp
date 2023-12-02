@@ -5,7 +5,8 @@
 
 using logger = gkr::log::logger;
 
-static logger* s_logger = nullptr;
+static logger*  s_logger = nullptr;
+static unsigned s_refCnt = 0;
 
 alignas(logger)
 static char s_storage_for_logger[sizeof(logger)] {0};
@@ -19,7 +20,9 @@ inline bool I2B(int val)
 
 extern "C"
 {
-
+//
+//NOTE:Initialization/deinitialization is not thread safe yet
+//
 int gkr_log_init(
     const struct gkr_log_name_id_pair* severities, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities, // = nullptr - no facility names
@@ -30,9 +33,13 @@ int gkr_log_init(
     Check_Arg_IsValid(max_queue_entries > 0, false);
     Check_Arg_IsValid(max_message_chars > 0, false);
 
-    Check_ValidState(s_logger == nullptr, false);
-
+    if(s_logger != nullptr)
+    {
+        ++s_refCnt;
+        return true;
+    }
     s_logger = new (s_storage_for_logger) logger();
+    s_refCnt = 1;
 
     if(!s_logger->run())
     {
@@ -53,6 +60,8 @@ int gkr_log_init(
 int gkr_log_done()
 {
     if(s_logger == nullptr) return true;
+
+    if(--s_refCnt > 1) return true;
 
     s_logger->~logger();
 
@@ -155,7 +164,7 @@ int gkr_log_set_this_thread_name(const char* name)
     return true;
 }
 
-int gkr_log_simple_message(int wait, gkr_log_id_t severity, gkr_log_id_t facility, const char* text)
+int gkr_log_simple_message(int wait, int severity, int facility, const char* text)
 {
     Check_Arg_NotNull(text, false);
 
@@ -166,7 +175,7 @@ int gkr_log_simple_message(int wait, gkr_log_id_t severity, gkr_log_id_t facilit
     return s_logger->log_message(I2B(wait), severity, facility, text, nullptr);
 }
 
-int gkr_log_printf_message(int wait, gkr_log_id_t severity, gkr_log_id_t facility, const char* format, ...)
+int gkr_log_printf_message(int wait, int severity, int facility, const char* format, ...)
 {
     Check_Arg_NotNull(format, false);
 
@@ -183,7 +192,7 @@ int gkr_log_printf_message(int wait, gkr_log_id_t severity, gkr_log_id_t facilit
     return result;
 }
 
-int gkr_log_valist_message(int wait, gkr_log_id_t severity, gkr_log_id_t facility, const char* format, va_list args)
+int gkr_log_valist_message(int wait, int severity, int facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
 

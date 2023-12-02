@@ -81,9 +81,7 @@ public:
     void set_thread_name(const char* name, tid_t tid = 0);
 
 public:
-    using id_t = unsigned short;
-
-    bool log_message(bool wait, id_t severity, id_t facility, const char* format, va_list args);
+    bool log_message(bool wait, int severity, int facility, const char* format, va_list args);
 
 private:
     struct message_data : public message
@@ -97,7 +95,7 @@ private:
 private:
     void sync_log_message(message_data& msg);
 
-    bool compose_message(message_data& msg, std::size_t cch, id_t severity, id_t facility, const char* format, va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, va_list args);
 
     void process_message(message_data& msg);
     void prepare_message(message_data& msg);
@@ -144,8 +142,8 @@ private:
 
     std::vector<consumer_data_t> m_consumers;
 
-    std::unordered_map<unsigned short, const char*> m_severities;
-    std::unordered_map<unsigned short, const char*> m_facilities;
+    std::unordered_map<int, const char*> m_severities;
+    std::unordered_map<int, const char*> m_facilities;
 
     std::unordered_map<tid_t, const char*> m_thread_ids;
 };

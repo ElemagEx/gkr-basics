@@ -1,3 +1,5 @@
+#include <plog/Logger.h>
+
 #include <gkr/log/consumer.h>
 #include <gkr/log/message.h>
 #include <gkr/stamp.h>
@@ -26,12 +28,12 @@ class console_consumer : public gkr::log::consumer
 
         using ulonglong = unsigned long long;
 
-        std::printf("[%02i:%02i:%02i.%03d] (Thread (%llu): %s) | (Severity: %s) | (Facility: %s) - %s\n",
+        std::printf("[%02i:%02i:%02i.%03d] (Thread (%lld): %s) | (Severity: %s) | (Facility: %s) - %s\n",
             tm.tm_hour,
             tm.tm_min,
             tm.tm_sec,
             ns / 1000000,
-            ulonglong(msg.tid),
+            msg.tid,
             msg.threadName,
             msg.severityName,
             msg.facilityName,

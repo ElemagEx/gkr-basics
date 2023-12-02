@@ -9,8 +9,8 @@ extern "C" {
 
 struct gkr_log_name_id_pair
 {
-    const char*  name;
-    gkr_log_id_t id;
+    const char* name;
+    int         id;
 };
 
 struct gkr_log_functions;

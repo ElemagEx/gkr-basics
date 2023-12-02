@@ -100,7 +100,7 @@ class receiver : public gkr::worker_thread
                     std::snprintf(
                         str,
                         256,
-                        "[%02i:%02i:%02i.%03d] (Host: %s [%s])(Process: %s [%u])(Thread: %s [%llu])(Severity: %s)(Facility: %s) - ",
+                        "[%02i:%02i:%02i.%03d] (Host: %s [%s])(Process: %s [%u])(Thread: %s [%lld])(Severity: %s)(Facility: %s) - ",
                         tm.tm_hour,
                         tm.tm_min,
                         tm.tm_sec,
@@ -110,7 +110,7 @@ class receiver : public gkr::worker_thread
                         base + msg.offset_to_process,
                         msg.pid,
                         base + msg.offset_to_thread,
-                        ulonglong(msg.tid),
+                        msg.tid,
                         base + msg.offset_to_severity,
                         base + msg.offset_to_facility
                         );

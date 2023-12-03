@@ -27,7 +27,7 @@ inline bool I2B(int val)
 extern "C"
 {
 //
-//NOTE:Initialization/deinitialization is not thread safe yet
+//TODO:Made initialization/deinitialization thread-safe
 //
 int gkr_log_init(
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
@@ -209,6 +209,25 @@ int gkr_log_valist_message(int wait, int severity, int facility, const char* for
     return s_logger->log_message(I2B(wait), severity, facility, format, args);
 }
 
+int gkr_log_message_start(char** buf, unsigned* cch)
+{
+    Check_Arg_NotNull(buf, nullptr);
+    Check_Arg_NotNull(cch, nullptr);
+
+    if(s_logger == nullptr) return false;
+
+    return s_logger->start_log_message(*buf, *cch);
+}
+
+int gkr_log_message_finish(int wait, int severity, int facility)
+{
+    if(s_logger == nullptr) return false;
+
+    check_thread_name(nullptr);
+
+    return s_logger->finish_log_message(I2B(wait), severity, facility);
+}
+
 }
 
 int gkr_log_add_consumer(std::shared_ptr<gkr::log::consumer> consumer)
@@ -229,14 +248,6 @@ int gkr_log_del_consumer(std::shared_ptr<gkr::log::consumer> consumer)
     return s_logger->del_consumer(consumer);
 }
 
-struct buffer_t
-{
-    void*       id   = nullptr;
-    void*       ptr  = nullptr;
-    std::size_t size = 0;
-};
-static thread_local buffer_t thread_local_buffer;
-
 namespace gkr
 {
 namespace log
@@ -244,52 +255,43 @@ namespace log
 namespace impl
 {
 
+struct buffer_t
+{
+    char*       ptr = nullptr;
+    std::size_t cch = 0;
+};
+static thread_local buffer_t thread_local_buffer;
+
+void init_ostringstream_allocator(char* buf, std::size_t cch)
+{
+    Assert_NotNullPtr(buf);
+    Assert_Check(cch > 0);
+
+    thread_local_buffer.ptr = buf;
+    thread_local_buffer.cch = cch;
+}
+void done_ostringstream_allocator(std::size_t len)
+{
+    Assert_Check(len < thread_local_buffer.cch);
+
+    thread_local_buffer.ptr[len] = 0;
+
+    thread_local_buffer.ptr = nullptr;
+    thread_local_buffer.cch = 0;
+}
 void* allocate_bytes(std::size_t& cb)
 {
     Assert_NotNullPtr(thread_local_buffer.ptr);
 
-    if(cb > thread_local_buffer.size) throw std::bad_alloc();
+    if(cb > thread_local_buffer.cch) throw std::bad_alloc();
 
-    cb = thread_local_buffer.size;
+    cb = thread_local_buffer.cch;
 
     return thread_local_buffer.ptr;
 }
-void deallocate_bytes(void* p, std::size_t n)
+void deallocate_bytes(void* p, std::size_t cb)
 {
 }
-}
-ostream::ostream(int wait, int severity, int facility) : m_wait(wait), m_severity(severity), m_facility(facility)
-{
-    if(thread_local_buffer.id != nullptr)
-    {
-        throw std::bad_alloc();
-    }
-    Assert_Check(thread_local_buffer.ptr  == nullptr);
-    Assert_Check(thread_local_buffer.size == 0);
-
-    if(!s_logger->start_log_message(thread_local_buffer.id, thread_local_buffer.ptr, thread_local_buffer.size))
-    {
-        m_ostream.setstate(std::ios_base::badbit);
-    }
-}
-ostream::~ostream()
-{
-    if(m_ostream.eof()) return;
-
-    if(!m_ostream.bad())
-    {
-        auto len = m_ostream.tellp();
-
-        Assert_Check(len >= 0);
-        Assert_Check(std::size_t(len) < thread_local_buffer.size);
-
-        static_cast<char*>(thread_local_buffer.ptr)[std::size_t(len)] = 0;
-
-        s_logger->finish_log_message(thread_local_buffer.id, I2B(m_wait), m_severity, m_facility);
-    }
-    thread_local_buffer.id   = nullptr;
-    thread_local_buffer.ptr  = nullptr;
-    thread_local_buffer.size = 0;
 }
 }
 }

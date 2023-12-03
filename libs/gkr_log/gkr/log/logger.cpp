@@ -359,37 +359,51 @@ void logger::set_thread_name(const char* name, tid_t tid)
     }
 }
 
-bool logger::start_log_message(void*& id, void*& buf, std::size_t& cch)
+static thread_local void* thead_local_element = nullptr;
+
+bool logger::start_log_message(char*& buf, unsigned& cch)
 {
+    Check_ValidState(thead_local_element == nullptr, false);
+
     Check_ValidState(running(), false);
 
     Check_ValidState(!in_worker_thread(), false);
 
-    id = m_log_queue.acquire_producer_element_ownership();
+    thead_local_element = m_log_queue.acquire_producer_element_ownership();
 
     Assert_Check(m_log_queue.element_size() > sizeof(message));
 
-    cch = m_log_queue.element_size() - sizeof(message);
+    cch = unsigned(m_log_queue.element_size() - sizeof(message));
 
-    buf = static_cast<char*>(id) + sizeof(message);
+    buf = static_cast<char*>(thead_local_element) + sizeof(message);
+
     return true;
 }
 
-bool logger::finish_log_message(void* id, bool wait, int severity, int facility)
+bool logger::finish_log_message(bool wait, int severity, int facility)
 {
-    message_data& msg = *static_cast<message_data*>(id);
+    Check_NotNullPtr(thead_local_element, false);
+
+    message_data& msg = *static_cast<message_data*>(thead_local_element);
+
+    bool result;
 
     if(!compose_message(msg, 0, severity, facility, nullptr, nullptr))
     {
-        m_log_queue.cancel_producer_element_ownership(id);
-        return false;
+        m_log_queue.cancel_producer_element_ownership(thead_local_element);
+        result = false;
     }
-    if(wait)
+    else if(wait)
     {
         sync_log_message(msg);
-        m_log_queue.cancel_producer_element_ownership(id);
+        result = m_log_queue.cancel_producer_element_ownership(thead_local_element);
     }
-    return m_log_queue.release_producer_element_ownership(id);
+    else
+    {
+        result = m_log_queue.release_producer_element_ownership(thead_local_element);
+    }
+    thead_local_element = nullptr;
+    return result;
 }
 
 bool logger::log_message(bool wait, int severity, int facility, const char* format, va_list args)

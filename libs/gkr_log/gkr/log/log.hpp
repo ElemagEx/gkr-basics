@@ -13,6 +13,8 @@ namespace log
 {
 namespace impl
 {
+GKR_LOG_API void init_ostringstream_allocator(char* buf, std::size_t cch);
+GKR_LOG_API void done_ostringstream_allocator(std::size_t len);
 GKR_LOG_API void* allocate_bytes(std::size_t& cb);
 GKR_LOG_API void deallocate_bytes(void* ptr, std::size_t cb);
 
@@ -36,8 +38,7 @@ struct allocator
 
 #ifdef __cpp_lib_allocate_at_least
     [[nodiscard]]
-    constexpr
-    std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n)
+    constexpr std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n)
     {
         std::size_t cb = n * sizeof(T);
         T* p = static_cast<T*>(allocate_bytes(cb));
@@ -60,28 +61,67 @@ struct allocator
 
 class ostream
 {
+    using ostringstream = std::basic_ostringstream<char, std::char_traits<char>, impl::allocator<char>>;
+
+    ostringstream m_ostream;
+    int m_wait;
+    int m_severity;
+    int m_facility;
+
+private:
     ostream           (const ostream&) noexcept = delete;
     ostream& operator=(const ostream&) noexcept = delete;
 
 public:
     ostream(ostream&& other) noexcept
-        : m_ostream (std::move(other.m_ostream ))
-        , m_wait    (std::move(other.m_wait    ))
-        , m_severity(std::move(other.m_severity))
-        , m_facility(std::move(other.m_facility))
+        : m_ostream (std::move(other.m_ostream))
+        , m_wait    (other.m_wait    )
+        , m_severity(other.m_severity)
+        , m_facility(other.m_facility)
     {
         other.m_ostream.setstate(std::ios_base::eofbit);
     }
     ostream& operator=(ostream&& other) noexcept
     {
         m_ostream  = std::move(other.m_ostream );
-        m_wait     = std::move(other.m_wait    );
-        m_severity = std::move(other.m_severity);
-        m_facility = std::move(other.m_facility);
+        m_wait     = other.m_wait    ;
+        m_severity = other.m_severity;
+        m_facility = other.m_facility;
 
         other.m_ostream.setstate(std::ios_base::eofbit);
         return *this;
     }
+    ostream(int wait, int severity, int facility)
+        : m_ostream()
+        , m_wait(wait)
+        , m_severity(severity)
+        , m_facility(facility)
+    {
+        char* buf;
+        unsigned cch;
+        if(gkr_log_message_start(&buf, &cch))
+        {
+            impl::init_ostringstream_allocator(buf, cch);
+        }
+        else
+        {
+            m_ostream.setstate(std::ios_base::badbit);
+        }
+    }
+    ~ostream()
+    {
+        if(m_ostream.bad() || m_ostream.eof()) return;
+
+        const auto pos = m_ostream.tellp();
+
+        const std::size_t len = (pos < 0) ? 0 : std::size_t(pos);
+
+        impl::done_ostringstream_allocator(std::size_t(len));
+
+        gkr_log_message_finish(m_wait, m_severity, m_facility);
+    }
+
+public:
     ostream& operator<<(std::ostream& (*data)(std::ostream&))
     {
         m_ostream << data;
@@ -93,19 +133,27 @@ public:
         m_ostream << data;
         return *this;
     }
-
-    GKR_LOG_API  ostream(int wait, int severity, int facility);
-    GKR_LOG_API ~ostream();
-
-private:
-    using ostringstream = std::basic_ostringstream<char, std::char_traits<char>, impl::allocator<char>>;
-    ostringstream m_ostream;
-    int m_wait;
-    int m_severity;
-    int m_facility;
 };
 
 }
 }
 
+#endif
+
+#ifndef GKR_NO_FORMAT_LOGGING
+#ifdef __cpp_lib_format
+
+#include <format>
+
+namespace gkr
+{
+namespace log
+{
+
+
+
+}
+}
+
+#endif
 #endif

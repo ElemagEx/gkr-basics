@@ -82,9 +82,8 @@ public:
     void set_thread_name(const char* name, tid_t tid = 0);
 
 public:
-    bool start_log_message(void*& id, void*& buf, std::size_t& cch);
-
-    bool finish_log_message(void* id, bool wait, int severity, int facility);
+    bool start_log_message(char*& buf, unsigned& cch);
+    bool finish_log_message(bool wait, int severity, int facility);
 
     bool log_message(bool wait, int severity, int facility, const char* format, va_list args);
 

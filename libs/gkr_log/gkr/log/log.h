@@ -14,6 +14,9 @@ GKR_LOG_API int gkr_log_simple_message(int wait, int severity, int facility, con
 GKR_LOG_API int gkr_log_printf_message(int wait, int severity, int facility, const char* format, ...);
 GKR_LOG_API int gkr_log_valist_message(int wait, int severity, int facility, const char* format, va_list args);
 
+GKR_LOG_API int gkr_log_message_start(char** buf, unsigned* cch);
+GKR_LOG_API int gkr_log_message_finish(int wait, int severity, int facility);
+
 #ifdef __cplusplus
 }
 #endif

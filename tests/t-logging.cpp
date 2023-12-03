@@ -91,7 +91,7 @@ TEST_CASE("logging.logger. main")
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
     gkr::log::ostream(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO)
-        << "hello" << ' '
+        << "Hello" << ' '
         << "world" << '!'
         << std::endl;
 

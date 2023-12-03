@@ -24,6 +24,7 @@ struct allocator
     using  diff_type = std::ptrdiff_t;
 
     bool operator==(const allocator&) const noexcept { return true; }
+    bool operator!=(const allocator&) const noexcept { return false; }
 
     template<class U>
     allocator(const allocator<U>&) noexcept {}
@@ -64,19 +65,19 @@ class ostream
 
 public:
     ostream(ostream&& other) noexcept
-        : m_ostream(std::move(other.m_ostream))
-        , m_wait    (std::exchange(other.m_wait    , 0))
-        , m_severity(std::exchange(other.m_severity, 0))
-        , m_facility(std::exchange(other.m_facility, 0))
+        : m_ostream (std::move(other.m_ostream ))
+        , m_wait    (std::move(other.m_wait    ))
+        , m_severity(std::move(other.m_severity))
+        , m_facility(std::move(other.m_facility))
     {
         other.m_ostream.setstate(std::ios_base::eofbit);
     }
     ostream& operator=(ostream&& other) noexcept
     {
-        m_ostream  = std::move(other.m_ostream);
-        m_wait     = std::exchange(other.m_wait    , 0);
-        m_severity = std::exchange(other.m_severity, 0);
-        m_facility = std::exchange(other.m_facility, 0);
+        m_ostream  = std::move(other.m_ostream );
+        m_wait     = std::move(other.m_wait    );
+        m_severity = std::move(other.m_severity);
+        m_facility = std::move(other.m_facility);
 
         other.m_ostream.setstate(std::ios_base::eofbit);
         return *this;

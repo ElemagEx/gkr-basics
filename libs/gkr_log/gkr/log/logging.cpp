@@ -235,7 +235,7 @@ struct buffer_t
     void*       ptr  = nullptr;
     std::size_t size = 0;
 };
-thread_local buffer_t thread_local_buffer;
+static thread_local buffer_t thread_local_buffer;
 
 namespace gkr
 {

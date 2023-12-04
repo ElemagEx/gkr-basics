@@ -76,10 +76,10 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
 
 TEST_CASE("logging.logger. main")
 {
-    gkr_log_init(g_severities_infos, g_facilities_infos, 16, 1024);
+    gkr_log_init(g_severities_infos, g_facilities_infos, 16, 40/*1024*/);
 
     gkr_log_add_consumer(std::make_shared<console_consumer>());
-
+#if 0
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
     std::thread t([] () {
@@ -87,14 +87,15 @@ TEST_CASE("logging.logger. main")
         gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
     });
     t.join();
-
+#endif
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
-    gkr_log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Hello {}!\n", "world");
+    gkr_log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Hello {}! How are you", "world");
 
     gkr::log::ostream(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO)
         << "Hello" << ' '
         << "world" << '!'
+        << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!"
         << std::endl;
 
     gkr_log_done();

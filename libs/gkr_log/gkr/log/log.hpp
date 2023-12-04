@@ -95,12 +95,12 @@ public:
         }
         else
         {
-            m_ostream.setstate(std::ios_base::badbit);
+            m_ostream.setstate(std::ios_base::eofbit);
         }
     }
     ~ostream()
     {
-        if(m_ostream.bad() || m_ostream.eof()) return;
+        if(m_ostream.eof()) return;
 
         const auto pos = m_ostream.tellp();
 
@@ -148,17 +148,17 @@ public:
     container           (container&& other) noexcept : m_ptr(other.m_ptr), m_end(other.m_end) {}
     container& operator=(container&& other) noexcept { m_ptr=other.m_ptr;  m_end=other.m_end; return *this; }
 
-    container(T* ptr, const size_t cap) noexcept : m_ptr(ptr), m_end(m_ptr+cap)
-    {
-    }
-    ~container() noexcept
-    {
-        if(m_ptr < m_end) *m_ptr = 0; else *(m_end - 1) = 0;
-    }
+    container(T* ptr, const size_t cap) noexcept : m_ptr(ptr), m_end(m_ptr+cap) {}
+   ~container() noexcept = default;
+
     void push_back(const T& value) noexcept
     {
         if(m_ptr < m_end) *m_ptr = value;
         ++m_ptr;
+    }
+    void seal()
+    {
+        if(m_ptr < m_end) *m_ptr = 0; else *(m_end - 1) = 0;
     }
 private:
     T* m_ptr = nullptr;
@@ -174,12 +174,14 @@ bool gkr_log_format_message(int wait, int severity, int facility, std::format_st
     if(!gkr_log_custom_message_start(&buf, &cch)) return false;
 
     using container_t = gkr::log::impl::container<char>;
-
+    
     container_t container(buf, cch);
 
     auto out = std::back_inserter(container);
 
-    auto result = std::vformat_to(std::move(out), fmt.get(), std::make_format_args(args...));
+    std::vformat_to(std::move(out), fmt.get(), std::make_format_args(args...));
+
+    container.seal();
 
     return !!gkr_log_custom_message_finish(wait, severity, facility);
 }
@@ -196,7 +198,9 @@ bool gkr_log_format_message(int wait, int severity, int facility, const std::loc
 
     auto out = std::back_inserter(container);
 
-    auto result = std::vformat_to(std::move(out), loc, fmt.get(), std::make_format_args(args...));
+    std::vformat_to(std::move(out), loc, fmt.get(), std::make_format_args(args...));
+
+    container.seal();
 
     return !!gkr_log_custom_message_finish(wait, severity, facility);
 }

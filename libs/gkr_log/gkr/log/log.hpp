@@ -91,6 +91,14 @@ public:
         other.m_ostream.setstate(std::ios_base::eofbit);
         return *this;
     }
+    ostream(void*)
+        : m_ostream()
+        , m_wait(0)
+        , m_severity(0)
+        , m_facility(0)
+    {
+        m_ostream.setstate(std::ios_base::eofbit);
+    }
     ostream(int wait, int severity, int facility)
         : m_ostream()
         , m_wait(wait)

@@ -1,4 +1,7 @@
-//#include <plog/Logger.h>
+#include <plog/Logger.h>
+#include <plog/Formatters/MessageOnlyFormatter.h>
+#include <plog/Initializers/ConsoleInitializer.h>
+
 #include <gkr/log/logging.hpp>
 
 #include <gkr/log/consumer.hpp>
@@ -78,7 +81,7 @@ TEST_CASE("logging.logger. main")
     gkr_log_init(g_severities_infos, g_facilities_infos, 16, 1023/*63*/);
 
     gkr_log_add_consumer(std::make_shared<console_consumer>());
-#if 0
+
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
     std::thread t([] () {
@@ -86,12 +89,10 @@ TEST_CASE("logging.logger. main")
         gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
     });
     t.join();
-#endif
+
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
 //  gkr_log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Hello {}! How are you", "world");
-
-
 
     gkr::log::ostream(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO)
         << "abcdefghijklmnopqrstuvwxyz" << " + "
@@ -99,4 +100,15 @@ TEST_CASE("logging.logger. main")
         << "0123456789";
 
     gkr_log_done();
+}
+
+TEST_CASE("logging.imposter.plog. main")
+{
+    plog::init<plog::MessageOnlyFormatter>(plog::debug, plog::streamStdOut);
+
+    (*plog::get<PLOG_DEFAULT_INSTANCE_ID>()) +=
+        plog::Record(plog::verbose, nullptr, 0, nullptr, nullptr, PLOG_DEFAULT_INSTANCE_ID).ref()
+             << "Hello there!";
+
+//TODO:Decrement logging refCount
 }

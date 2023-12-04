@@ -2,6 +2,7 @@ add_library(gkr_log SHARED)
 
 target_link_libraries(gkr_log PRIVATE gkr_core gkr_data)
 target_include_directories(gkr_log PUBLIC ".")
+target_include_directories(gkr_log PUBLIC "gkr/log/imposters")
 
 set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 
@@ -49,6 +50,40 @@ target_sources(
     "gkr/log/consumers/android_log_consumer.cpp"
     "gkr/log/consumers/app_console_consumer.cpp"
     "gkr/log/consumers/windows_debugger_consumer.cpp"
+)
+
+# plog imposter INTERFACE
+target_sources(
+    gkr_log
+    INTERFACE
+    "gkr/log/imposters/plog/Init.h"
+    "gkr/log/imposters/plog/Logger.h"
+    "gkr/log/imposters/plog/Record.h"
+    "gkr/log/imposters/plog/Severity.h"
+    "gkr/log/imposters/plog/Util.h"
+    "gkr/log/imposters/plog/WinApi.h"
+    "gkr/log/imposters/plog/Wrapper.h"
+    "gkr/log/imposters/plog/Appenders/IAppender.h"
+    "gkr/log/imposters/plog/Appenders/AndroidAppender.h"
+    "gkr/log/imposters/plog/Appenders/ArduinoAppender.h"
+    "gkr/log/imposters/plog/Appenders/ColorConsoleAppender.h"
+    "gkr/log/imposters/plog/Appenders/ConsoleAppender.h"
+    "gkr/log/imposters/plog/Appenders/DebugOutputAppender.h"
+    "gkr/log/imposters/plog/Appenders/DynamicAppender.h"
+    "gkr/log/imposters/plog/Appenders/EventLogAppender.h"
+    "gkr/log/imposters/plog/Formatters/CsvFormatter.h"
+    "gkr/log/imposters/plog/Formatters/FuncMessageFormatter.h"
+    "gkr/log/imposters/plog/Formatters/MessageOnlyFormatter.h"
+    "gkr/log/imposters/plog/Formatters/TxtFormatter.h"
+    "gkr/log/imposters/plog/Initializers/ConsoleInitializer.h"
+    "gkr/log/imposters/plog/Initializers/RollingFileInitializer.h"
+)
+
+# plog imposter source
+target_sources(
+    gkr_log
+    PRIVATE
+    "gkr/log/imposters/plog/Wrapper.cpp"
 )
 
 if(GKR_BASICS_TESTS)

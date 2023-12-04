@@ -10,9 +10,9 @@ enum
     gkr_log_appConsoleWriteMethod_fputs2stderr,
     gkr_log_appConsoleWriteMethod_fputs2stdout,
 #ifdef __cplusplus
+    gkr_log_appConsoleWriteMethod_stream2cout,
     gkr_log_appConsoleWriteMethod_stream2cerr,
     gkr_log_appConsoleWriteMethod_stream2clog,
-    gkr_log_appConsoleWriteMethod_stream2cout,
 #endif
 };
 

@@ -24,9 +24,9 @@ static void outputToConsole(int method, const char* text)
             std::fputs("\n", stdout);
             break;
 
+        case gkr_log_appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
         case gkr_log_appConsoleWriteMethod_stream2cerr: std::cerr << text << std::endl; break;
         case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
-        case gkr_log_appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
     }
 }
 

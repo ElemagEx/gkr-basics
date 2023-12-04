@@ -36,7 +36,6 @@ catch_discover_tests  (t-socket)
 add_executable        (t-logging t-logging.cpp)
 target_link_libraries (t-logging PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_log)
 target_compile_options(t-logging PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-target_include_directories(t-logging PRIVATE "${CMAKE_CURRENT_DIR}../libs/gkr_log/gkr/log/imposters")
 catch_discover_tests  (t-logging)
 
 add_executable        (t-udp_socket_consumer_receiver t-udp_socket_consumer_receiver.cpp)

@@ -1,7 +1,6 @@
-#include <gkr/log/consumers/android_log_consumer.h>
+#include <gkr/log/consumers/android_log_consumer.hpp>
 
 #include <gkr/diagnostics.h>
-#include <gkr/log/message.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -20,7 +19,7 @@ static void writeToAndroidLog(int priority, const char* tag, const char* text)
 
 extern "C" {
 
-int gkr_log_androidLog_GetPriority(const struct gkr_log_message* msg)
+int gkr_log_androidLog_getPriority(const struct gkr_log_message* msg)
 {
 #ifdef __ANDROID__
     return ANDROID_LOG_VERBOSE;
@@ -29,14 +28,14 @@ int gkr_log_androidLog_GetPriority(const struct gkr_log_message* msg)
 #endif
 }
 
-const char* gkr_log_androidLog_GetTag(const struct gkr_log_message* msg)
+const char* gkr_log_androidLog_getTag(const struct gkr_log_message* msg)
 {
     return "";
 }
 
-void gkr_log_androidLog_FormatText(char* buf, unsigned cch, const struct gkr_log_message* msg)
+unsigned gkr_log_androidLog_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
-    std::snprintf(
+    const int len = std::snprintf(
         buf,
         cch,
         "[%s][%s][%s] - %s",
@@ -45,42 +44,43 @@ void gkr_log_androidLog_FormatText(char* buf, unsigned cch, const struct gkr_log
         msg->threadName,
         msg->messageText
         );
+    return unsigned(len);
 }
 
 struct data_t
 {
     int         (*get_priority)(const struct gkr_log_message*);
     const char* (*get_tag)(const struct gkr_log_message*);
-    void        (*format_text)(char*, unsigned, const struct gkr_log_message*);
+    unsigned    (*compose_output)(char*, unsigned, const struct gkr_log_message*);
     unsigned    cch;
     char        buf[1];
 };
 
-void* gkr_log_androidLog_CreateConsumerParam(
+void* gkr_log_androidLog_createConsumerParam(
     unsigned buffer_capacity,
     int (*get_priority)(const struct gkr_log_message*),
     const char* (*get_tag)(const struct gkr_log_message*),
-    void (*format_text)(char*, unsigned, const struct gkr_log_message*)
+    unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
     )
 {
     Check_Arg_IsValid(buffer_capacity > 0, NULL);
     Check_Arg_NotNull(get_priority, NULL);
     Check_Arg_NotNull(get_tag, NULL);
-    Check_Arg_NotNull(format_text, NULL);
+    Check_Arg_NotNull(compose_output, NULL);
 
     data_t* data = static_cast<data_t*>(std::malloc(sizeof(data_t) + buffer_capacity - 1));
 
     if(data != nullptr)
     {
-        data->get_priority = get_priority;
-        data->get_tag      = get_tag;
-        data->format_text  = format_text;
-        data->cch          = buffer_capacity;
+        data->get_priority   = get_priority;
+        data->get_tag        = get_tag;
+        data->compose_output = compose_output;
+        data->cch            = buffer_capacity;
     }
     return data;
 }
 
-int gkr_log_androidLog_InitLogging(void* param)
+int gkr_log_androidLog_initLogging(void* param)
 {
 #ifdef __ANDROID__
     return (param != nullptr);
@@ -89,7 +89,7 @@ int gkr_log_androidLog_InitLogging(void* param)
 #endif
 }
 
-void gkr_log_androidLog_DoneLogging(void* param)
+void gkr_log_androidLog_doneLogging(void* param)
 {
     if(param != nullptr)
     {
@@ -97,16 +97,16 @@ void gkr_log_androidLog_DoneLogging(void* param)
     }
 }
 
-int gkr_log_androidLog_FilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_androidLog_filterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     return false;
 }
 
-void gkr_log_androidLog_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_androidLog_consumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     data_t* data = static_cast<data_t*>(param);
 
-    (*data->format_text)(data->buf, data->cch, msg);
+    (*data->compose_output)(data->buf, data->cch, msg);
 
     data->buf[data->cch - 1] = 0;
 
@@ -160,7 +160,7 @@ bool android_log_consumer::filter_log_message(const message& msg)
 
 void android_log_consumer::consume_log_message(const message& msg)
 {
-    format_text(m_buf, m_cch, msg);
+    compose_output(m_buf, m_cch, msg);
 
     m_buf[m_cch - 1] = 0;
 
@@ -172,17 +172,17 @@ void android_log_consumer::consume_log_message(const message& msg)
 
 int android_log_consumer::get_priority(const message& msg)
 {
-    return gkr_log_androidLog_GetPriority(&msg);
+    return gkr_log_androidLog_getPriority(&msg);
 }
 
 const char* android_log_consumer::get_tag(const message& msg)
 {
-    return gkr_log_androidLog_GetTag(&msg);
+    return gkr_log_androidLog_getTag(&msg);
 }
 
-void android_log_consumer::format_text(char* buf, unsigned cch, const message& msg)
+unsigned android_log_consumer::compose_output(char* buf, unsigned cch, const message& msg)
 {
-    gkr_log_androidLog_FormatText(buf, cch, &msg);
+    return gkr_log_androidLog_composeOutput(buf, cch, &msg);
 }
 
 }

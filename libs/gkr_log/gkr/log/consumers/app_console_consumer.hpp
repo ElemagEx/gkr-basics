@@ -1,42 +1,8 @@
 #pragma once
 
-#include <gkr/log/consumer.hpp>
 #include <gkr/log/api.h>
-
-enum
-{
-    gkr_log_appConsoleWriteMethod_printf,
-    gkr_log_appConsoleWriteMethod_fputs2stderr,
-    gkr_log_appConsoleWriteMethod_fputs2stdout,
-#ifdef __cplusplus
-    gkr_log_appConsoleWriteMethod_stream2cerr,
-    gkr_log_appConsoleWriteMethod_stream2clog,
-    gkr_log_appConsoleWriteMethod_stream2cout,
-#endif
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GKR_LOG_API unsigned gkr_log_appConsole_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
-
-GKR_LOG_API void* gkr_log_appConsole_CreateConsumerParam(
-    int method,
-    unsigned bufferCapacity,
-    unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
-    );
-
-GKR_LOG_API int gkr_log_appConsole_InitLogging(void* param);
-
-GKR_LOG_API void gkr_log_appConsole_DoneLogging(void* param);
-
-GKR_LOG_API int gkr_log_appConsole_FilterLogMessage(void* param, const struct gkr_log_message* msg);
-
-GKR_LOG_API void gkr_log_appConsole_ConsumeLogMessage(void* param, const struct gkr_log_message* msg);
-
-#ifdef __cplusplus
-}
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/consumers/app_console_callbacks.h>
 
 namespace gkr
 {
@@ -92,5 +58,3 @@ protected:
 
 }
 }
-
-#endif

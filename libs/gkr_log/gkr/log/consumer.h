@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct gkr_log_message
 {
     long long   tid;
@@ -15,6 +11,20 @@ struct gkr_log_message
     const char* threadName;
     const char* severityName;
     const char* facilityName;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct gkr_log_consumer_callbacks
+{
+    int  (*init_logging)(void*);
+    void (*done_logging)(void*);
+
+    int  (*filter_log_message)(void*, const struct gkr_log_message*);
+
+    void (*consume_log_message)(void*, const struct gkr_log_message*);
 };
 
 #ifdef __cplusplus

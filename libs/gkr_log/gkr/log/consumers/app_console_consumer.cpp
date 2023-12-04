@@ -1,8 +1,7 @@
-#include <gkr/log/consumers/app_console_consumer.h>
+#include <gkr/log/consumers/app_console_consumer.hpp>
+#include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>
-#include <gkr/log/message.h>
-#include <gkr/stamp.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -33,7 +32,7 @@ static void outputToConsole(int method, const char* text)
 
 extern "C" {
 
-unsigned gkr_log_appConsole_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
+unsigned gkr_log_appConsole_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
     int ns = gkr::stamp_decompose(true, msg->stamp, tm);
@@ -62,7 +61,7 @@ struct data_t
     char     buf[1];
 };
 
-void* gkr_log_appConsole_CreateConsumerParam(
+void* gkr_log_appConsole_createConsumerParam(
     int method,
     unsigned bufferCapacity,
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
@@ -82,12 +81,12 @@ void* gkr_log_appConsole_CreateConsumerParam(
     return data;
 }
 
-int gkr_log_appConsole_InitLogging(void* param)
+int gkr_log_appConsole_initLogging(void* param)
 {
     return (param != nullptr);
 }
 
-void gkr_log_appConsole_DoneLogging(void* param)
+void gkr_log_appConsole_doneLogging(void* param)
 {
     if(param != nullptr)
     {
@@ -95,12 +94,12 @@ void gkr_log_appConsole_DoneLogging(void* param)
     }
 }
 
-int gkr_log_appConsole_FilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_appConsole_filterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     return false;
 }
 
-void gkr_log_appConsole_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_appConsole_consumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     data_t* data = static_cast<data_t*>(param);
 
@@ -165,7 +164,7 @@ void app_console_consumer::consume_log_message(const message& msg)
 
 unsigned app_console_consumer::compose_output(char* buf, unsigned cch, const message& msg)
 {
-    return gkr_log_appConsole_ComposeOutput(m_buf, m_cch, &msg);
+    return gkr_log_appConsole_composeOutput(m_buf, m_cch, &msg);
 }
 
 }

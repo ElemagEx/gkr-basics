@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gkr/log/message.h>
-#include <gkr/log/callbacks.h>
 #include <gkr/log/consumer.hpp>
 
 #include <gkr/concurency/worker_thread.h>
@@ -64,7 +62,7 @@ public:
     void set_facility(const name_id_pair& facility_info);
 
 public:
-    using callbacks_t = gkr_log_callbacks;
+    using callbacks_t = gkr_log_consumer_callbacks;
 
     bool add_callbacks(callbacks_t* callbacks, void* param);
     bool del_callbacks(callbacks_t* callbacks, void* param);

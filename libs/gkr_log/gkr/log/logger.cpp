@@ -1,9 +1,8 @@
 #include <gkr/log/logger.hpp>
 
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/logging.h>
-#include <gkr/log/message.h>
-#include <gkr/stamp.h>
+#include <gkr/log/logging.hpp>
+#include <gkr/stamp.hpp>
 
 #include <gkr/misc/union_cast.h>
 

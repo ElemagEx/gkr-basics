@@ -1,33 +1,8 @@
 #pragma once
 
-#include <gkr/log/consumer.hpp>
 #include <gkr/log/api.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GKR_LOG_API int gkr_log_androidLog_GetPriority(const struct gkr_log_message* msg);
-GKR_LOG_API const char* gkr_log_androidLog_GetTag(const struct gkr_log_message* msg);
-GKR_LOG_API void gkr_log_androidLog_FormatText(char* buf, unsigned cch, const struct gkr_log_message* msg);
-
-GKR_LOG_API void* gkr_log_androidLog_CreateConsumerParam(
-    unsigned buffer_capacity,
-    int (*get_priority)(const struct gkr_log_message*),
-    const char* (*get_tag)(const struct gkr_log_message*),
-    void (*format_text)(char*, unsigned, const struct gkr_log_message*)
-    );
-
-GKR_LOG_API int gkr_log_androidLog_InitLogging(void* param);
-
-GKR_LOG_API void gkr_log_androidLog_DoneLogging(void* param);
-
-GKR_LOG_API int gkr_log_androidLog_FilterLogMessage(void* param, const struct gkr_log_message* msg);
-
-GKR_LOG_API void gkr_log_androidLog_ConsumeLogMessage(void* param, const struct gkr_log_message* msg);
-
-#ifdef __cplusplus
-}
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/consumers/android_log_callbacks.h>
 
 namespace gkr
 {
@@ -77,10 +52,8 @@ protected:
 
     GKR_LOG_API virtual const char* get_tag(const message& msg);
 
-    GKR_LOG_API virtual void format_text(char* buf, unsigned cch, const message& msg);
+    GKR_LOG_API virtual unsigned compose_output(char* buf, unsigned cch, const message& msg);
 };
 
 }
 }
-
-#endif

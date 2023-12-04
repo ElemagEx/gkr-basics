@@ -1,8 +1,7 @@
-#include <gkr/log/consumers/windows_debugger_consumer.h>
+#include <gkr/log/consumers/windows_debugger_consumer.hpp>
+#include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>
-#include <gkr/log/message.h>
-#include <gkr/stamp.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -23,7 +22,7 @@ static void outputToWindowsDebugger(const char* text)
 
 extern "C" {
 
-unsigned gkr_log_windowsDebugger_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
+unsigned gkr_log_windowsDebugger_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
     int ns = gkr::stamp_decompose(true, msg->stamp, tm);
@@ -51,7 +50,7 @@ struct data_t
     char     buf[1];
 };
 
-void* gkr_log_windowsDebugger_CreateConsumerParam(
+void* gkr_log_windowsDebugger_createConsumerParam(
     unsigned buffer_capacity,
     unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
     )
@@ -69,7 +68,7 @@ void* gkr_log_windowsDebugger_CreateConsumerParam(
     return data;
 }
 
-int gkr_log_windowsDebugger_InitLogging(void* param)
+int gkr_log_windowsDebugger_initLogging(void* param)
 {
 #ifdef _WIN32
     return (param != nullptr);
@@ -78,7 +77,7 @@ int gkr_log_windowsDebugger_InitLogging(void* param)
 #endif
 }
 
-void gkr_log_windowsDebugger_DoneLogging(void* param)
+void gkr_log_windowsDebugger_doneLogging(void* param)
 {
     if(param != nullptr)
     {
@@ -86,12 +85,12 @@ void gkr_log_windowsDebugger_DoneLogging(void* param)
     }
 }
 
-int gkr_log_windowsDebugger_FilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_windowsDebugger_filterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     return false;
 }
 
-void gkr_log_windowsDebugger_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_windowsDebugger_consumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     data_t* data = static_cast<data_t*>(param);
 
@@ -155,7 +154,7 @@ void windows_debugger_consumer::consume_log_message(const message& msg)
 
 unsigned windows_debugger_consumer::compose_output(char* buf, unsigned cch, const message& msg)
 {
-    return gkr_log_windowsDebugger_ComposeOutput(m_buf, m_cch, &msg);
+    return gkr_log_windowsDebugger_composeOutput(m_buf, m_cch, &msg);
 }
 
 }

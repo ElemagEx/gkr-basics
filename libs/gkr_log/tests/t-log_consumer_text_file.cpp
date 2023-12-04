@@ -1,12 +1,12 @@
 #include <gkr/log/logging.hpp>
-#include <gkr/log/consumers/text_file_consumer.h>
+#include <gkr/log/consumers/text_file_consumer.hpp>
 
 #include <gkr/testing/log_defs.h>
 
 #include <catch2/catch_test_macros.hpp>
 
-constexpr gkr::log::name_id_pair g_severities[] = COMMON_SEVERITIES;
-constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES;
+constexpr gkr::log::name_id_pair g_severities[] = COMMON_SEVERITIES_INFOS;
+constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES_INFOS;
 
 static gkr::log::logging logging(g_severities, g_facilities);
 

@@ -10,12 +10,20 @@ endif()
 target_include_directories(gkr_core PUBLIC ".")
 set_target_properties(gkr_core PROPERTIES DEFINE_SYMBOL BUILDING_GKR_CORE)
 
+# C INTERFACE
 target_sources(
     gkr_core
     INTERFACE
     "gkr/api.h"
     "gkr/stamp.h"
     "gkr/diagnostics.h"
+)
+
+# C++ INTERFACE
+target_sources(
+    gkr_core
+    INTERFACE
+    "gkr/stamp.hpp"
     "gkr/container/raw_buffer.h"
     "gkr/container/lockfree_queue.h"
     "gkr/container/lockfree_grow_only_bag.h"

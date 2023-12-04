@@ -1,9 +1,8 @@
-#include <gkr/log/consumers/text_file_consumer.h>
+#include <gkr/log/consumers/text_file_consumer.hpp>
+#include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>
-#include <gkr/log/message.h>
 #include <gkr/sys/process_name.h>
-#include <gkr/stamp.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -36,7 +35,7 @@ unsigned gkr_log_textFile_makeFilePath(char* buf, unsigned cch)
     gkr::sys::get_current_process_path(path, 260);
 
     struct tm tm;
-    gkr::stamp_decompose(true, gkr::stamp_now(), tm);
+    gkr_stamp_decompose(true, gkr_stamp_now(), &tm);
 
     const int len = std::snprintf(
         buf,
@@ -53,7 +52,7 @@ unsigned gkr_log_textFile_makeFilePath(char* buf, unsigned cch)
     return unsigned(len);
 }
 
-unsigned gkr_log_textFile_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
+unsigned gkr_log_textFile_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
 {
     struct tm tm;
     int ns = gkr::stamp_decompose(true, msg->stamp, tm);
@@ -84,7 +83,7 @@ struct data_t
     char       buf[1];
 };
 
-void* gkr_log_textFile_CreateConsumerParam(
+void* gkr_log_textFile_createConsumerParam(
     int eoln,
     unsigned buffer_capacity,
     unsigned (*make_file_path)(char*, unsigned),
@@ -112,7 +111,7 @@ void* gkr_log_textFile_CreateConsumerParam(
     return data;
 }
 
-int gkr_log_textFile_InitLogging(void* param)
+int gkr_log_textFile_initLogging(void* param)
 {
     if(param == nullptr) return false;
 
@@ -130,7 +129,7 @@ int gkr_log_textFile_InitLogging(void* param)
     return true;
 }
 
-void gkr_log_textFile_DoneLogging(void* param)
+void gkr_log_textFile_doneLogging(void* param)
 {
     if(param == nullptr) return;
 
@@ -144,12 +143,12 @@ void gkr_log_textFile_DoneLogging(void* param)
     std::free(param);
 }
 
-int gkr_log_textFile_FilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_textFile_filterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     return false;
 }
 
-void gkr_log_textFile_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_textFile_consumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     data_t* data = static_cast<data_t*>(param);
 
@@ -236,7 +235,7 @@ unsigned text_file_consumer::make_file_path(char* buf, unsigned cch)
 
 unsigned text_file_consumer::compose_output(char* buf, unsigned cch, const message& msg)
 {
-    return gkr_log_textFile_ComposeOutput(m_buf, m_cch, &msg);
+    return gkr_log_textFile_composeOutput(m_buf, m_cch, &msg);
 }
 
 void text_file_consumer::close_file()

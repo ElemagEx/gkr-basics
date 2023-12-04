@@ -1,11 +1,13 @@
-#include <gkr/log/consumers/udp_socket_consumer.h>
+#include <gkr/log/consumers/udp_socket_consumer.hpp>
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/logging.hpp>
+#include <gkr/stamp.hpp>
+
 #include <gkr/comm/udpSocketReceiver.h>
 #include <gkr/data/log_message.h>
 
-#include <gkr/stamp.h>
 #include <gkr/net/lib.h>
 #include <gkr/net/address.h>
-#include <gkr/log/logging.hpp>
 #include <gkr/concurency/worker_thread.h>
 
 #include <catch2/catch_test_macros.hpp>
@@ -24,7 +26,7 @@
 #define FACILITY_FILESYS 2
 #define FACILITY_SYNCHRO 3
 
-constexpr gkr::log::name_id_pair g_severities[] = {
+constexpr gkr::log::name_id_pair g_severities_infos[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
     {"Warning", SEVERITY_WARNING},
@@ -32,7 +34,7 @@ constexpr gkr::log::name_id_pair g_severities[] = {
     {"Verbose", SEVERITY_VERBOSE},
     {nullptr  , 0               }
 };
-constexpr gkr::log::name_id_pair g_facilities[] = {
+constexpr gkr::log::name_id_pair g_facilities_infos[] = {
     {"General", FACILITY_GENERAL},
     {"Network", FACILITY_NETWORK},
     {"FileSys", FACILITY_FILESYS},
@@ -41,7 +43,7 @@ constexpr gkr::log::name_id_pair g_facilities[] = {
 };
 
 static gkr::net::lib     networking;
-static gkr::log::logging logging(g_severities, g_facilities);
+static gkr::log::logging logging(g_severities_infos, g_facilities_infos);
 
 constexpr unsigned short UDP_COMM_PORT = 12345;
 

@@ -1,46 +1,8 @@
 #pragma once
 
-#include <gkr/log/consumer.hpp>
 #include <gkr/log/api.h>
-
-enum
-{
-    gkr_log_textFileEoln_LF,
-    gkr_log_textFileEoln_CR,
-    gkr_log_textFileEoln_CRLF,
-#if   defined(_WIN32)
-    gkr_log_textFileEoln_Default = gkr_log_textFileEoln_CRLF
-#elif defined(__APPLE__)
-    gkr_log_textFileEoln_Default = gkr_log_textFileEoln_CR
-#else
-    gkr_log_textFileEoln_Default = gkr_log_textFileEoln_LF
-#endif
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GKR_LOG_API unsigned gkr_log_textFile_makeFilePath(char* buf, unsigned cch);
-GKR_LOG_API unsigned gkr_log_textFile_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
-
-GKR_LOG_API void* gkr_log_textFile_CreateConsumerParam(
-    int eoln,
-    unsigned buffer_capacity,
-    unsigned (*make_file_path)(char*, unsigned),
-    unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
-    );
-
-GKR_LOG_API int gkr_log_textFile_InitLogging(void* param);
-
-GKR_LOG_API void gkr_log_textFile_DoneLogging(void* param);
-
-GKR_LOG_API int gkr_log_textFile_FilterLogMessage(void* param, const struct gkr_log_message* msg);
-
-GKR_LOG_API void gkr_log_textFile_ConsumeLogMessage(void* param, const struct gkr_log_message* msg);
-
-#ifdef __cplusplus
-}
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/consumers/text_file_callbacks.h>
 
 namespace gkr
 {
@@ -74,6 +36,7 @@ public:
     {
         m_buf  = other.m_buf;
         m_cch  = other.m_cch;
+
         m_eoln = other.m_eoln;
         m_file = other.m_file;
         other.m_buf  = nullptr;
@@ -105,4 +68,3 @@ private:
 
 }
 }
-#endif

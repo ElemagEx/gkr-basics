@@ -2,8 +2,7 @@
 #include <gkr/log/logging.hpp>
 
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/message.h>
-#include <gkr/stamp.h>
+#include <gkr/stamp.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

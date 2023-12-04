@@ -33,7 +33,7 @@ int gkr_log_init(
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities_infos, // = nullptr - no facility names
     unsigned max_queue_entries, // = 16
-    unsigned max_message_chars  // = 968 [1024 - sizeof(gkr_log_message)]
+    unsigned max_message_chars  // = 967 [1024 - sizeof(gkr_log_message) - 1] //1 for null terminated character
     )
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);
@@ -134,7 +134,7 @@ int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info)
     return true;
 }
 
-int gkr_log_add_callbacks(gkr_log_callbacks* callbacks, void* param)
+int gkr_log_add_consumer_callbacks(gkr_log_consumer_callbacks* callbacks, void* param)
 {
     Check_Arg_NotNull(callbacks, false);
 
@@ -143,7 +143,7 @@ int gkr_log_add_callbacks(gkr_log_callbacks* callbacks, void* param)
     return s_logger->add_callbacks(callbacks, param);
 }
 
-int gkr_log_del_callbacks(gkr_log_callbacks* callbacks, void* param)
+int gkr_log_del_consumer_callbacks(gkr_log_consumer_callbacks* callbacks, void* param)
 {
     Check_Arg_NotNull(callbacks, false);
 

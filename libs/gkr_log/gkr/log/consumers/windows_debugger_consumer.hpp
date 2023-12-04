@@ -1,29 +1,8 @@
 #pragma once
 
-#include <gkr/log/consumer.hpp>
 #include <gkr/log/api.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GKR_LOG_API unsigned gkr_log_windowsDebugger_ComposeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
-
-GKR_LOG_API void* gkr_log_windowsDebugger_CreateConsumerParam(
-    unsigned buffer_capacity,
-    unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
-    );
-
-GKR_LOG_API int gkr_log_windowsDebugger_InitLogging(void* param);
-
-GKR_LOG_API void gkr_log_windowsDebugger_DoneLogging(void* param);
-
-GKR_LOG_API int gkr_log_windowsDebugger_FilterLogMessage(void* param, const struct gkr_log_message* msg);
-
-GKR_LOG_API void gkr_log_windowsDebugger_ConsumeLogMessage(void* param, const struct gkr_log_message* msg);
-
-#ifdef __cplusplus
-}
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/consumers/windows_debugger_callbacks.h>
 
 namespace gkr
 {
@@ -74,4 +53,3 @@ protected:
 
 }
 }
-#endif

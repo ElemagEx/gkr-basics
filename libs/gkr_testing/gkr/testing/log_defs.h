@@ -11,7 +11,7 @@
 #define FACILITY_FILESYS 2
 #define FACILITY_SYNCHRO 3
 
-#define COMMON_SEVERITIES { \
+#define COMMON_SEVERITIES_INFOS { \
     {"Fatal"  , SEVERITY_FATAL  }, \
     {"Error"  , SEVERITY_ERROR  }, \
     {"Warning", SEVERITY_WARNING}, \
@@ -19,7 +19,7 @@
     {"Verbose", SEVERITY_VERBOSE}, \
     {nullptr  , 0               }}
 
-#define COMMON_FACILITIES { \
+#define COMMON_FACILITIES_INFOS { \
     {"General", FACILITY_GENERAL}, \
     {"Network", FACILITY_NETWORK}, \
     {"FileSys", FACILITY_FILESYS}, \

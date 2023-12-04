@@ -1,6 +1,6 @@
 #pragma once
 
-struct gkr_log_message;
+#include <gkr/log/consumer.h>
 
 namespace gkr
 {

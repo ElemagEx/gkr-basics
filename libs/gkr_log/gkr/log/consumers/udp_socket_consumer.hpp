@@ -1,29 +1,8 @@
 #pragma once
 
-#include <gkr/log/consumer.hpp>
 #include <gkr/log/api.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GKR_LOG_API void* gkr_log_udpSocket_CreateConsumerParam(
-    const char*    remoteHost,
-    unsigned short remotePort,
-    unsigned maxPacketSize,
-    unsigned bufferCapacity
-    );
-
-GKR_LOG_API int gkr_log_udpSocket_InitLogging(void* param);
-
-GKR_LOG_API void gkr_log_udpSocket_DoneLogging(void* param);
-
-GKR_LOG_API int gkr_log_udpSocket_FilterLogMessage(void* param, const struct gkr_log_message* msg);
-
-GKR_LOG_API void gkr_log_udpSocket_ConsumeLogMessage(void* param, const struct gkr_log_message* msg);
-
-#ifdef __cplusplus
-}
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/consumers/udp_socket_callbacks.h>
 
 #include <gkr/net/socket.h>
 #include <gkr/net/address.h>
@@ -122,5 +101,3 @@ private:
 
 }
 }
-
-#endif

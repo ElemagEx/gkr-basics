@@ -75,7 +75,7 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
 
 TEST_CASE("logging.logger. main")
 {
-    gkr_log_init(g_severities_infos, g_facilities_infos, 16, 40/*1024*/);
+    gkr_log_init(g_severities_infos, g_facilities_infos, 16, 1023/*63*/);
 
     gkr_log_add_consumer(std::make_shared<console_consumer>());
 #if 0
@@ -89,13 +89,14 @@ TEST_CASE("logging.logger. main")
 #endif
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
-    gkr_log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Hello {}! How are you", "world");
+//  gkr_log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Hello {}! How are you", "world");
+
+
 
     gkr::log::ostream(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO)
-        << "Hello" << ' '
-        << "world" << '!'
-        << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!" << "Hello world!"
-        << std::endl;
+        << "abcdefghijklmnopqrstuvwxyz" << " + "
+        << "ABCDEFGHIJKLMNOPQRSTUVWXYZ" << " + "
+        << "0123456789";
 
     gkr_log_done();
 }

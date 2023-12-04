@@ -279,11 +279,13 @@ void done_ostringstream_allocator(std::size_t len)
     thread_local_buffer.ptr = nullptr;
     thread_local_buffer.cch = 0;
 }
-void* allocate_bytes(std::size_t cb)
+void* allocate_bytes(std::size_t& cb)
 {
     Assert_NotNullPtr(thread_local_buffer.ptr);
 
     if(cb > thread_local_buffer.cch) throw std::bad_alloc();
+
+    cb = thread_local_buffer.cch;
 
     return thread_local_buffer.ptr;
 }

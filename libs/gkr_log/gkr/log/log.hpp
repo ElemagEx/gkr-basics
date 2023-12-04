@@ -15,7 +15,7 @@ namespace impl
 {
 GKR_LOG_API void init_ostringstream_allocator(char* buf, std::size_t cch);
 GKR_LOG_API void done_ostringstream_allocator(std::size_t len);
-GKR_LOG_API void* allocate_bytes(std::size_t cb);
+GKR_LOG_API void* allocate_bytes(std::size_t& cb);
 GKR_LOG_API void deallocate_bytes(void* ptr, std::size_t cb);
 
 template<typename T>
@@ -36,9 +36,19 @@ struct allocator
     allocator() noexcept = default;
    ~allocator() noexcept = default;
 
+#ifdef __cpp_lib_allocate_at_least
+    [[nodiscard]]
+    constexpr std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n)
+    {
+        std::size_t cb = n * sizeof(T);
+        T* p = static_cast<T*>(allocate_bytes(cb));
+        n = cb / sizeof(T);
+        return std::allocation_result{p, cb};
+    }
+#endif
     T* allocate(std::size_t n, const void* = nullptr)
     {
-        const std::size_t cb = n * sizeof(T);
+        std::size_t cb = n * sizeof(T);
         return static_cast<T*>(allocate_bytes(cb));
     }
     void deallocate(T* p, std::size_t n)
@@ -148,7 +158,7 @@ public:
     container           (container&& other) noexcept : m_ptr(other.m_ptr), m_end(other.m_end) {}
     container& operator=(container&& other) noexcept { m_ptr=other.m_ptr;  m_end=other.m_end; return *this; }
 
-    container(T* ptr, const size_t cap) noexcept : m_ptr(ptr), m_end(m_ptr+cap) {}
+    container(T* ptr, const std::size_t cap) noexcept : m_ptr(ptr), m_end(m_ptr+cap) {}
    ~container() noexcept = default;
 
     void push_back(const T& value) noexcept
@@ -174,12 +184,12 @@ bool gkr_log_format_message(int wait, int severity, int facility, std::format_st
     if(!gkr_log_custom_message_start(&buf, &cch)) return false;
 
     using container_t = gkr::log::impl::container<char>;
-    
+
     container_t container(buf, cch);
 
-    auto out = std::back_inserter(container);
+    auto it = std::back_inserter(container);
 
-    std::vformat_to(std::move(out), fmt.get(), std::make_format_args(args...));
+    std::vformat_to(std::move(it), fmt.get(), std::make_format_args(args...));
 
     container.seal();
 
@@ -196,9 +206,9 @@ bool gkr_log_format_message(int wait, int severity, int facility, const std::loc
 
     container_t container(buf, cch);
 
-    auto out = std::back_inserter(container);
+    auto it = std::back_inserter(container);
 
-    std::vformat_to(std::move(out), loc, fmt.get(), std::make_format_args(args...));
+    std::vformat_to(std::move(it), loc, fmt.get(), std::make_format_args(args...));
 
     container.seal();
 

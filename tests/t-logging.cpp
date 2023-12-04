@@ -90,6 +90,8 @@ TEST_CASE("logging.logger. main")
 
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 
+    gkr_log_format_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Hello {}!\n", "world");
+
     gkr::log::ostream(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO)
         << "Hello" << ' '
         << "world" << '!'

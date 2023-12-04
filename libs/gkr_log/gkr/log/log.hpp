@@ -15,7 +15,7 @@ namespace impl
 {
 GKR_LOG_API void init_ostringstream_allocator(char* buf, std::size_t cch);
 GKR_LOG_API void done_ostringstream_allocator(std::size_t len);
-GKR_LOG_API void* allocate_bytes(std::size_t& cb);
+GKR_LOG_API void* allocate_bytes(std::size_t cb);
 GKR_LOG_API void deallocate_bytes(void* ptr, std::size_t cb);
 
 template<typename T>
@@ -36,24 +36,14 @@ struct allocator
     allocator() noexcept = default;
    ~allocator() noexcept = default;
 
-#ifdef __cpp_lib_allocate_at_least
-    [[nodiscard]]
-    constexpr std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n)
-    {
-        std::size_t cb = n * sizeof(T);
-        T* p = static_cast<T*>(allocate_bytes(cb));
-        n = cb / sizeof(T);
-        return std::allocation_result{p, cb};
-    }
-#endif
     T* allocate(std::size_t n, const void* = nullptr)
     {
-        std::size_t cb = n * sizeof(T);
+        const std::size_t cb = n * sizeof(T);
         return static_cast<T*>(allocate_bytes(cb));
     }
     void deallocate(T* p, std::size_t n)
     {
-        std::size_t cb = n * sizeof(T);
+        const std::size_t cb = n * sizeof(T);
         deallocate_bytes(p, cb);
     }
 };
@@ -99,7 +89,7 @@ public:
     {
         char* buf;
         unsigned cch;
-        if(gkr_log_message_start(&buf, &cch))
+        if(gkr_log_custom_message_start(&buf, &cch))
         {
             impl::init_ostringstream_allocator(buf, cch);
         }
@@ -118,7 +108,7 @@ public:
 
         impl::done_ostringstream_allocator(std::size_t(len));
 
-        gkr_log_message_finish(m_wait, m_severity, m_facility);
+        gkr_log_custom_message_finish(m_wait, m_severity, m_facility);
     }
 
 public:
@@ -145,14 +135,70 @@ public:
 
 #include <format>
 
-namespace gkr
+namespace gkr::log::impl
 {
-namespace log
+template<typename T>
+class container
 {
+    container           (const container&) noexcept = delete;
+    container& operator=(const container&) noexcept = delete;
+public:
+    using value_type = T;
 
+    container           (container&& other) noexcept : m_ptr(other.m_ptr), m_end(other.m_end) {}
+    container& operator=(container&& other) noexcept { m_ptr=other.m_ptr;  m_end=other.m_end; return *this; }
 
-
+    container(T* ptr, const size_t cap) noexcept : m_ptr(ptr), m_end(m_ptr+cap)
+    {
+    }
+    ~container() noexcept
+    {
+        if(m_ptr < m_end) *m_ptr = 0; else *(m_end - 1) = 0;
+    }
+    void push_back(const T& value) noexcept
+    {
+        if(m_ptr < m_end) *m_ptr = value;
+        ++m_ptr;
+    }
+private:
+    T* m_ptr = nullptr;
+    T* m_end = nullptr;
+};
 }
+
+template<typename... Args>
+bool gkr_log_format_message(int wait, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
+{
+    char* buf;
+    unsigned cch;
+    if(!gkr_log_custom_message_start(&buf, &cch)) return false;
+
+    using container_t = gkr::log::impl::container<char>;
+
+    container_t container(buf, cch);
+
+    auto out = std::back_inserter(container);
+
+    auto result = std::vformat_to(std::move(out), fmt.get(), std::make_format_args(args...));
+
+    return !!gkr_log_custom_message_finish(wait, severity, facility);
+}
+template<typename... Args>
+bool gkr_log_format_message(int wait, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
+{
+    char* buf;
+    unsigned cch;
+    if(!gkr_log_custom_message_start(&buf, &cch)) return false;
+
+    using container_t = gkr::log::impl::container<char>;
+
+    container_t container(buf, cch);
+
+    auto out = std::back_inserter(container);
+
+    auto result = std::vformat_to(std::move(out), loc, fmt.get(), std::make_format_args(args...));
+
+    return !!gkr_log_custom_message_finish(wait, severity, facility);
 }
 
 #endif

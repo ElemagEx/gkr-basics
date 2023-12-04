@@ -209,7 +209,7 @@ int gkr_log_valist_message(int wait, int severity, int facility, const char* for
     return s_logger->log_message(I2B(wait), severity, facility, format, args);
 }
 
-int gkr_log_message_start(char** buf, unsigned* cch)
+int gkr_log_custom_message_start(char** buf, unsigned* cch)
 {
     Check_Arg_NotNull(buf, nullptr);
     Check_Arg_NotNull(cch, nullptr);
@@ -219,7 +219,7 @@ int gkr_log_message_start(char** buf, unsigned* cch)
     return s_logger->start_log_message(*buf, *cch);
 }
 
-int gkr_log_message_finish(int wait, int severity, int facility)
+int gkr_log_custom_message_finish(int wait, int severity, int facility)
 {
     if(s_logger == nullptr) return false;
 
@@ -279,13 +279,11 @@ void done_ostringstream_allocator(std::size_t len)
     thread_local_buffer.ptr = nullptr;
     thread_local_buffer.cch = 0;
 }
-void* allocate_bytes(std::size_t& cb)
+void* allocate_bytes(std::size_t cb)
 {
     Assert_NotNullPtr(thread_local_buffer.ptr);
 
     if(cb > thread_local_buffer.cch) throw std::bad_alloc();
-
-    cb = thread_local_buffer.cch;
 
     return thread_local_buffer.ptr;
 }

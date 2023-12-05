@@ -33,7 +33,7 @@ int gkr_log_init(
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities_infos, // = nullptr - no facility names
     unsigned max_queue_entries, // = 16
-    unsigned max_message_chars  // = 967 [1024 - sizeof(gkr_log_message) - 1] //1 for null terminated character
+    unsigned max_message_chars  // = 959 [1024 - sizeof(gkr_log_message) - 1] //1 for null terminated character
     )
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);
@@ -178,7 +178,7 @@ int gkr_log_simple_message(int wait, int severity, int facility, const char* tex
 
     check_thread_name(nullptr);
 
-    return s_logger->log_message(I2B(wait), severity, facility, text, nullptr);
+    return s_logger->log_message(nullptr, I2B(wait), severity, facility, text, nullptr);
 }
 
 int gkr_log_printf_message(int wait, int severity, int facility, const char* format, ...)
@@ -192,7 +192,7 @@ int gkr_log_printf_message(int wait, int severity, int facility, const char* for
     va_list args;
     va_start(args, format);
 
-    const bool result = s_logger->log_message(I2B(wait), severity, facility, format, args);
+    const bool result = s_logger->log_message(nullptr, I2B(wait), severity, facility, format, args);
 
     va_end(args);
     return result;
@@ -206,7 +206,52 @@ int gkr_log_valist_message(int wait, int severity, int facility, const char* for
 
     check_thread_name(nullptr);
 
-    return s_logger->log_message(I2B(wait), severity, facility, format, args);
+    return s_logger->log_message(nullptr, I2B(wait), severity, facility, format, args);
+}
+
+int gkr_log_simple_message_ex(const char* func, const char* file, unsigned line, int wait, int severity, int facility, const char* text)
+{
+    Check_Arg_NotNull(text, false);
+
+    if(s_logger == nullptr) return false;
+
+    check_thread_name(nullptr);
+
+    const gkr::log::source_location location{func, file, line};
+
+    return s_logger->log_message(&location, I2B(wait), severity, facility, text, nullptr);
+}
+
+int gkr_log_printf_message_ex(const char* func, const char* file, unsigned line, int wait, int severity, int facility, const char* format, ...)
+{
+    Check_Arg_NotNull(format, false);
+
+    if(s_logger == nullptr) return false;
+
+    check_thread_name(nullptr);
+
+    va_list args;
+    va_start(args, format);
+
+    const gkr::log::source_location location{func, file, line};
+
+    const bool result = s_logger->log_message(&location, I2B(wait), severity, facility, format, args);
+
+    va_end(args);
+    return result;
+}
+
+int gkr_log_valist_message_ex(const char* func, const char* file, unsigned line, int wait, int severity, int facility, const char* format, va_list args)
+{
+    Check_Arg_NotNull(format, false);
+
+    if(s_logger == nullptr) return false;
+
+    check_thread_name(nullptr);
+
+    const gkr::log::source_location location{func, file, line};
+
+    return s_logger->log_message(&location, I2B(wait), severity, facility, format, args);
 }
 
 int gkr_log_custom_message_start(char** buf, unsigned* cch)
@@ -225,8 +270,20 @@ int gkr_log_custom_message_finish(int wait, int severity, int facility)
 
     check_thread_name(nullptr);
 
-    return s_logger->finish_log_message(I2B(wait), severity, facility);
+    return s_logger->finish_log_message(nullptr, I2B(wait), severity, facility);
 }
+
+int gkr_log_custom_message_finish_ex(const char* func, const char* file, unsigned line, int wait, int severity, int facility)
+{
+    if(s_logger == nullptr) return false;
+
+    check_thread_name(nullptr);
+
+    const gkr::log::source_location location{func, file, line};
+
+    return s_logger->finish_log_message(&location, I2B(wait), severity, facility);
+}
+
 
 }
 

@@ -6,6 +6,9 @@ struct gkr_log_message
     long long   stamp;
     int         severity;
     int         facility;
+    const char* sourceFunc;
+    const char* sourceFile;
+    unsigned    sourceLine;
     unsigned    messageLen;
     const char* messageText;
     const char* threadName;

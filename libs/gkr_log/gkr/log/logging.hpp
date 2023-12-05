@@ -21,7 +21,7 @@ struct logging final
         const name_id_pair* severities_infos = nullptr,
         const name_id_pair* facilities_infos = nullptr,
         unsigned max_queue_entries = 16,
-        unsigned max_message_chars = 967 // = 967 [1024 - sizeof(gkr_log_message) - 1] //1 for null terminated character
+        unsigned max_message_chars = 959 // = 959 [1024 - sizeof(gkr_log_message) - 1] //1 for null terminated character
         )
         : initialized(0 != gkr_log_init(severities_infos, facilities_infos, max_queue_entries, max_message_chars))
     {

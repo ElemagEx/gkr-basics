@@ -61,8 +61,8 @@ using consumer_t = std::shared_ptr<gkr::log::consumer>;
 GKR_LOG_API consumer_t makeColorConsoleAppenderWrapper(formatter_t& formatter, int outStream);
 GKR_LOG_API consumer_t makeConsoleAppenderWrapper     (formatter_t& formatter, int outStream);
 GKR_LOG_API consumer_t makeAndroidAppenderWrapper     (formatter_t& formatter, const char* tag);
-GKR_LOG_API consumer_t makeArduinoAppenderWrapper     (formatter_t& formatter);
-GKR_LOG_API consumer_t makeEventLogAppenderWrapper    (formatter_t& formatter);
+GKR_LOG_API consumer_t makeArduinoAppenderWrapper     (formatter_t& formatter, const Stream& stream);
+GKR_LOG_API consumer_t makeEventLogAppenderWrapper    (formatter_t& formatter, const char* sourceName);
 
 template<template<class> class Appender, class Formatter>
 consumer_t makePlogConsumerWrapper(int instanceId, Appender<Formatter>* appender)
@@ -80,13 +80,16 @@ consumer_t makePlogConsumerWrapper(int instanceId, Appender<Formatter>* appender
         formatter.header = &Formatter::header;
         formatter.format = &Formatter::format;
     }
-    if_constexpr(std::is_same<Appender<Formatter>, plog::ColorConsoleAppender<Formatter>>::value) return makeColorConsoleAppenderWrapper(formatter, *static_cast<const int *>(appender->data()));
-    if_constexpr(std::is_same<Appender<Formatter>, plog::ConsoleAppender     <Formatter>>::value) return makeConsoleAppenderWrapper     (formatter, *static_cast<const int *>(appender->data()));
-    if_constexpr(std::is_same<Appender<Formatter>, plog::AndroidAppender     <Formatter>>::value) return makeAndroidAppenderWrapper     (formatter,  static_cast<const char*>(appender->data()));
-    if_constexpr(std::is_same<Appender<Formatter>, plog::EventLogAppender    <Formatter>>::value) return makeArduinoAppenderWrapper     (formatter);
-    if_constexpr(std::is_same<Appender<Formatter>, plog::ArduinoAppender     <Formatter>>::value) return makeEventLogAppenderWrapper    (formatter);
-
-    return nullptr;
+    consumer_t consumer;
+    if_constexpr(std::is_same<Appender<Formatter>, plog::ColorConsoleAppender<Formatter>>::value) consumer = makeColorConsoleAppenderWrapper(formatter, *static_cast<const int *>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::ConsoleAppender     <Formatter>>::value) consumer = makeConsoleAppenderWrapper     (formatter, *static_cast<const int *>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::AndroidAppender     <Formatter>>::value) consumer = makeAndroidAppenderWrapper     (formatter,  static_cast<const char*>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::ArduinoAppender     <Formatter>>::value) consumer = makeArduinoAppenderWrapper     (formatter, *static_cast<Stream    *>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::EventLogAppender    <Formatter>>::value) consumer = makeEventLogAppenderWrapper    (formatter,  static_cast<const char*>(appender->data())); else
+    {
+        consumer = nullptr;
+    }
+    return consumer;
 }
 
 }

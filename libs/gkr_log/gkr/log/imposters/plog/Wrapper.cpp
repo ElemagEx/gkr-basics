@@ -153,12 +153,12 @@ consumer_t makeAndroidAppenderWrapper(formatter_t& formatter, const char* tag)
     return std::make_shared<AndroidAppenderWrapper>(formatter, tag);
 }
 
-consumer_t makeArduinoAppenderWrapper(formatter_t& formatter)
+consumer_t makeArduinoAppenderWrapper(formatter_t& formatter, const Stream& stream)
 {
     return nullptr;
 }
 
-consumer_t makeEventLogAppenderWrapper(formatter_t& formatter)
+consumer_t makeEventLogAppenderWrapper(formatter_t& formatter, const char* sourceName)
 {
     return nullptr;
 }

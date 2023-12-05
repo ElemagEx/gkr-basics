@@ -379,7 +379,7 @@ bool logger::start_log_message(char*& buf, unsigned& cch)
     return true;
 }
 
-bool logger::finish_log_message(bool wait, int severity, int facility)
+bool logger::finish_log_message(const source_location* location, bool wait, int severity, int facility)
 {
     Check_NotNullPtr(thead_local_element, false);
 
@@ -387,7 +387,7 @@ bool logger::finish_log_message(bool wait, int severity, int facility)
 
     bool result;
 
-    if(!compose_message(msg, 0, severity, facility, nullptr, nullptr))
+    if(!compose_message(msg, 0, location, severity, facility, nullptr, nullptr))
     {
         m_log_queue.cancel_producer_element_ownership(thead_local_element);
         result = false;
@@ -405,7 +405,7 @@ bool logger::finish_log_message(bool wait, int severity, int facility)
     return result;
 }
 
-bool logger::log_message(bool wait, int severity, int facility, const char* format, va_list args)
+bool logger::log_message(const source_location* location, bool wait, int severity, int facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
 
@@ -438,7 +438,7 @@ bool logger::log_message(bool wait, int severity, int facility, const char* form
 
         message_data& msg = element.value<message_data>();
 
-        if(!compose_message(msg, cch, severity, facility, format, args))
+        if(!compose_message(msg, cch, location, severity, facility, format, args))
         {
             element.cancel_push();
             return false;
@@ -461,13 +461,25 @@ void logger::sync_log_message(message_data& msg)
     process_message(msg);
 }
 
-bool logger::compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, va_list args)
+bool logger::compose_message(message_data& msg, std::size_t cch, const source_location* location, int severity, int facility, const char* format, va_list args)
 {
     msg.tid      = misc::union_cast<long long>(std::this_thread::get_id());
     msg.stamp    = stamp_now();
     msg.severity = severity;
     msg.facility = facility;
 
+    if(location == nullptr)
+    {
+        msg.sourceFunc = nullptr;
+        msg.sourceFile = nullptr;
+        msg.sourceLine = 0;
+    }
+    else
+    {
+        msg.sourceFunc = location->func;
+        msg.sourceFile = location->file;
+        msg.sourceLine = location->line;
+    }
     if(format == nullptr)
     {
         msg.messageLen = unsigned(std::strlen(msg.buffer));

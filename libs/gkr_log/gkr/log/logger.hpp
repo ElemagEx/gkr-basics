@@ -17,6 +17,13 @@ namespace gkr
 namespace log
 {
 
+struct source_location
+{
+    const char* func;
+    const char* file;
+    unsigned    line;
+};
+
 using name_id_pair = gkr_log_name_id_pair;
 
 class consumer;
@@ -81,9 +88,9 @@ public:
 
 public:
     bool start_log_message(char*& buf, unsigned& cch);
-    bool finish_log_message(bool wait, int severity, int facility);
+    bool finish_log_message(const source_location* location, bool wait, int severity, int facility);
 
-    bool log_message(bool wait, int severity, int facility, const char* format, va_list args);
+    bool log_message(const source_location* location, bool wait, int severity, int facility, const char* format, va_list args);
 
 private:
     struct message_data : public message
@@ -97,7 +104,7 @@ private:
 private:
     void sync_log_message(message_data& msg);
 
-    bool compose_message(message_data& msg, std::size_t cch, int severity, int facility, const char* format, va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, const source_location* location, int severity, int facility, const char* format, va_list args);
 
     void process_message(message_data& msg);
     void prepare_message(message_data& msg);

@@ -10,7 +10,7 @@ set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 target_sources(
     gkr_log
     INTERFACE
-    "gkr/log/api.h"
+    "gkr/log/ids.h"
     "gkr/log/log.h"
     "gkr/log/logging.h"
     "gkr/log/consumer.h"
@@ -45,6 +45,7 @@ target_sources(
     PRIVATE
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
+    "gkr/log/consumer.cpp"
     "gkr/log/consumers/text_file_consumer.cpp"
     "gkr/log/consumers/udp_socket_consumer.cpp"
     "gkr/log/consumers/android_log_consumer.cpp"

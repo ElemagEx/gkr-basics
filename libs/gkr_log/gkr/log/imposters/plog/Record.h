@@ -4,26 +4,37 @@
 #include <plog/Util.h>
 
 #include <gkr/log/log.hpp>
+#include <gkr/log/consumer.hpp>
 
 namespace plog
 {
 class Record : public gkr::log::ostream
 {
-    Record           (Record&&) noexcept = delete;
-    Record& operator=(Record&&) noexcept = delete;
+    using base_t = gkr::log::ostream;
 
     Record           (const Record&) noexcept = delete;
     Record& operator=(const Record&) noexcept = delete;
 
-    using base_t = gkr::log::ostream;
+private:
+    const gkr::log::message* m_message = nullptr;
+
 public:
-    Record(Severity severity, const char* func, size_t line, const char* file, const void* object, int instanceId)
-        : base_t(false, severity, instanceId), m_instanceId(instanceId), m_severity(severity), m_line(line), m_file(file), m_func(func)
+    Record(Record&& other) noexcept : base_t(std::move(other)), m_message(other.m_message)
     {
     }
-    Record& ref()
+    Record& operator=(Record&& other) noexcept
     {
+        base_t::operator=(std::move(other));
+        m_message = other.m_message;
         return *this;
+    }
+
+    Record(Severity severity, const char* func, size_t line, const char* file, const void* object, int instanceId)
+        : base_t(func, file, unsigned(line), false, severity, instanceId)
+    {
+    }
+    Record(const gkr::log::message& message) : base_t(nullptr), m_message(&message)
+    {
     }
     template<typename T>
     Record& operator<<(const T& data)
@@ -36,11 +47,5 @@ public:
         static_cast<base_t&>(*this) << data;
         return *this;
     }
-private:
-    const int         m_instanceId;
-    const Severity    m_severity;
-    const std::size_t m_line;
-    const char* const m_file;
-    const char* const m_func;
 };
 }

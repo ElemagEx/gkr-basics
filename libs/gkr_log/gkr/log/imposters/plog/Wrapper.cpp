@@ -5,6 +5,8 @@
 #include <gkr/log/consumers/text_file_consumer.hpp>
 #include <gkr/log/consumers/windows_debugger_callbacks.h>
 
+#include <gkr/log/ids.h>
+
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
@@ -24,18 +26,18 @@ static constexpr int calcMethod(int outStream)
         ;
 }
 
-unsigned format_output(formatter_t& formatter, char* buf, unsigned cch, const gkr::log::message& msg)
+static unsigned format_output(formatter_t& formatter, char* buf, unsigned cch, const gkr::log::message& msg)
 {
-    const plog::Record& record = *reinterpret_cast<const plog::Record*>(&msg); //HACK
+    const plog::Record record(msg);
 
     switch(formatter.type)
     {
-        case formatter_CsvFormatter        : break;
-        case formatter_CsvFormatterUtcTime : break;
-        case formatter_TxtFormatter        : break;
-        case formatter_TxtFormatterUtcTime : break;
-        case formatter_FuncMessageFormatter: break;
-        case formatter_MessageOnlyFormatter: break;
+        case formatter_CsvFormatter        : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_CSV_TEXT    , 0, msg);
+        case formatter_CsvFormatterUtcTime : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_CSV_TEXT_UTC, 0, msg);
+        case formatter_TxtFormatter        : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_TEXT    , 0, msg);
+        case formatter_TxtFormatterUtcTime : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_TEXT_UTC, 0, msg);
+        case formatter_FuncMessageFormatter: return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_FUNC    , 0, msg);
+        case formatter_MessageOnlyFormatter: return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_ONLY    , 0, msg);
 
         default:
         case formatter_Other:
@@ -43,14 +45,10 @@ unsigned format_output(formatter_t& formatter, char* buf, unsigned cch, const gk
             buf[cch - 1] = 0;
             return unsigned(std::strlen(buf));
     }
-    return 0;
 }
 
 class ColorConsoleAppenderWrapper : public app_console_consumer
 {
-    ColorConsoleAppenderWrapper           (ColorConsoleAppenderWrapper&&) noexcept = delete;
-    ColorConsoleAppenderWrapper& operator=(ColorConsoleAppenderWrapper&&) noexcept = delete;
-
     ColorConsoleAppenderWrapper           (const ColorConsoleAppenderWrapper&) noexcept = delete;
     ColorConsoleAppenderWrapper& operator=(const ColorConsoleAppenderWrapper&) noexcept = delete;
 
@@ -71,9 +69,6 @@ protected:
 };
 class ConsoleAppenderWrapper : public app_console_consumer
 {
-    ConsoleAppenderWrapper           (ConsoleAppenderWrapper&&) noexcept = delete;
-    ConsoleAppenderWrapper& operator=(ConsoleAppenderWrapper&&) noexcept = delete;
-
     ConsoleAppenderWrapper           (const ConsoleAppenderWrapper&) noexcept = delete;
     ConsoleAppenderWrapper& operator=(const ConsoleAppenderWrapper&) noexcept = delete;
 
@@ -94,9 +89,6 @@ protected:
 };
 class AndroidAppenderWrapper : public android_log_consumer
 {
-    AndroidAppenderWrapper           (AndroidAppenderWrapper&&) noexcept = delete;
-    AndroidAppenderWrapper& operator=(AndroidAppenderWrapper&&) noexcept = delete;
-
     AndroidAppenderWrapper           (const AndroidAppenderWrapper&) noexcept = delete;
     AndroidAppenderWrapper& operator=(const AndroidAppenderWrapper&) noexcept = delete;
 

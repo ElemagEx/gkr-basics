@@ -15,7 +15,7 @@ enum Severity
 inline constexpr const char* severityToString(Severity severity) noexcept
 {
     constexpr const char* const SEVERITIES[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
-    return (int(severity) < int(sizeof(SEVERITIES)/sizeof(char*)))
+    return (unsigned(severity) < unsigned(sizeof(SEVERITIES)/sizeof(char*)))
         ?  SEVERITIES[severity]
         : *SEVERITIES;
 }

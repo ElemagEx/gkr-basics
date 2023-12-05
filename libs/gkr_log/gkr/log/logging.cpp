@@ -2,10 +2,10 @@
 #undef GKR_NO_OSTREAM_LOGGING
 #endif
 
-#include <gkr/log/logging.hpp>
+#include "logging.hpp"
+#include "logger.hpp"
 
-#include <gkr/log/logger.hpp>
-#include <gkr/sys/thread_name.h>
+#include <gkr/sys/thread.hpp>
 
 #include <exception>
 

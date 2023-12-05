@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/api.h>
+#include <gkr/api.h>
 
 #include <stdarg.h>
 

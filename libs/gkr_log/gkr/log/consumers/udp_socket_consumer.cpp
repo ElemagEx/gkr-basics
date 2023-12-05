@@ -2,7 +2,7 @@
 
 #include <gkr/data/log_message.h>
 
-#include <gkr/sys/process_name.h>
+#include <gkr/sys/process.hpp>
 #include <gkr/net/lib.h>
 
 #include <gkr/diagnostics.h>
@@ -11,7 +11,7 @@
 
 extern "C" {
 
-void* gkr_log_udpSocket_CreateConsumerParam(
+void* gkr_log_udpSocket_createConsumerParam(
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
@@ -21,7 +21,7 @@ void* gkr_log_udpSocket_CreateConsumerParam(
     return new gkr::log::udp_socket_consumer(remoteHost, remotePort, maxPacketSize, bufferCapacity);
 }
 
-int gkr_log_udpSocket_InitLogging(void* param)
+int gkr_log_udpSocket_initLogging(void* param)
 {
     if(param == nullptr) return false;
 
@@ -30,7 +30,7 @@ int gkr_log_udpSocket_InitLogging(void* param)
     return consumer->init_logging();
 }
 
-void gkr_log_udpSocket_DoneLogging(void* param)
+void gkr_log_udpSocket_doneLogging(void* param)
 {
     if(param == nullptr) return;
 
@@ -41,14 +41,14 @@ void gkr_log_udpSocket_DoneLogging(void* param)
     delete consumer;
 }
 
-int gkr_log_udpSocket_FilterLogMessage(void* param, const struct gkr_log_message* msg)
+int gkr_log_udpSocket_filterLogMessage(void* param, const struct gkr_log_message* msg)
 {
     gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 
     return consumer->filter_log_message(*msg);
 }
 
-void gkr_log_udpSocket_ConsumeLogMessage(void* param, const struct gkr_log_message* msg)
+void gkr_log_udpSocket_consumeLogMessage(void* param, const struct gkr_log_message* msg)
 {
     gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
 

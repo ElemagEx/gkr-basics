@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/api.h>
+#include <gkr/api.h>
 #include <gkr/log/consumer.hpp>
 #include <gkr/log/consumers/app_console_callbacks.h>
 

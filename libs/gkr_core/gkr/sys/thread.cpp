@@ -1,4 +1,4 @@
-#include <gkr/sys/thread_name.h>
+#include "thread.hpp"
 
 #include <gkr/diagnostics.h>
 

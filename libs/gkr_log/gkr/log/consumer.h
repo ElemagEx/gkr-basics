@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gkr/api.h>
+
 struct gkr_log_message
 {
     long long   tid;
@@ -25,10 +27,11 @@ struct gkr_log_consumer_callbacks
     int  (*init_logging)(void*);
     void (*done_logging)(void*);
 
-    int  (*filter_log_message)(void*, const struct gkr_log_message*);
-
+    int  (* filter_log_message)(void*, const struct gkr_log_message*);
     void (*consume_log_message)(void*, const struct gkr_log_message*);
 };
+
+GKR_LOG_API unsigned gkr_log_format_output(char* buf, unsigned cch, int type, int color_scheme, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }

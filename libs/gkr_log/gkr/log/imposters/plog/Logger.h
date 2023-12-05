@@ -96,4 +96,11 @@ inline Logger<PLOG_DEFAULT_INSTANCE_ID>* get()
     return impl::getLoggerInstance<PLOG_DEFAULT_INSTANCE_ID>();
 }
 
+template<int instanceId>
+inline bool skipSeverity(Severity severity)
+{
+    Logger<instanceId>* logger = get<instanceId>();
+    return (!logger || !logger->checkSeverity(severity));
+}
+
 }

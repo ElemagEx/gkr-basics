@@ -2,7 +2,7 @@
 #include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>
-#include <gkr/sys/process_name.h>
+#include <gkr/sys/process.hpp>
 
 #include <cstdio>
 #include <cstdlib>

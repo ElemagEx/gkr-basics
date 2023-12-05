@@ -9,6 +9,6 @@ class ColorConsoleAppender : public ConsoleAppender<Formatter>
 {
 public:
     ColorConsoleAppender(OutputStream = streamStdOut) : ConsoleAppender<Formatter>(streamStdOut) {}
-    virtual void write(const Record& record) {}
+    virtual void write(const Record& record) override {}
 };
 }

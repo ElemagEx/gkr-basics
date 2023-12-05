@@ -7,7 +7,7 @@ template<int instanceId, template<class> class Appender, class Formatter>
 inline Logger<instanceId>& init(Severity maxSeverity = none, Appender<Formatter>* appender = nullptr)
 {
     auto& logger = *impl::getLoggerInstance<instanceId>(maxSeverity);
-    return logger.addAppender<Appender, Formatter>(appender);
+    return logger.addAppender(appender);
 }
 template<int instanceId>
 inline Logger<instanceId>& init(Severity maxSeverity = none, IAppender* appender = nullptr)

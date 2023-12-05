@@ -1,4 +1,4 @@
-add_library(gkr_core SHARED "gkr/libmain.cpp")
+add_library(gkr_core SHARED)
 
 if(MSVC)
 target_sources(gkr_core PUBLIC "gkr/gkr.natvis")
@@ -36,8 +36,9 @@ target_sources(
     "gkr/cpp/lib_exchange_function.h"
     "gkr/cpp/lib_raw_memory_algorithms.h"
     "gkr/sys/stack_alloc.h"
-    "gkr/sys/thread_name.h"
-    "gkr/sys/process_name.h"
+    "gkr/sys/file.hpp"
+    "gkr/sys/thread.hpp"
+    "gkr/sys/process.hpp"
     "gkr/net/lib.h"
     "gkr/net/address.h"
     "gkr/net/socket.h"
@@ -47,8 +48,9 @@ target_sources(
     PRIVATE
     "gkr/stamp.cpp"
     "gkr/concurency/worker_thread.cpp"
-    "gkr/sys/thread_name.cpp"
-    "gkr/sys/process_name.cpp"
+    "gkr/sys/file.cpp"
+    "gkr/sys/thread.cpp"
+    "gkr/sys/process.cpp"
     "gkr/net/lib.cpp"
     "gkr/net/address.cpp"
     "gkr/net/socket.cpp"

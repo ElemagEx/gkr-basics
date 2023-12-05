@@ -64,6 +64,8 @@ class ostream
     using ostringstream = std::basic_ostringstream<char, std::char_traits<char>, impl::allocator<char>>;
 
     ostringstream m_ostream;
+
+protected:
     const char*   m_func     = nullptr;
     const char*   m_file     = nullptr;
     unsigned      m_line     = 0;

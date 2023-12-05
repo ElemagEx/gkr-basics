@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/api.h>
+#include <gkr/api.h>
 
 enum
 {
@@ -31,7 +31,7 @@ GKR_LOG_API void* gkr_log_textFile_createConsumerParam(
     );
 
 GKR_LOG_API int  gkr_log_textFile_initLogging(void* param);
-GKR_LOG_API void gkr_log_textFile_DoneLogging(void* param);
+GKR_LOG_API void gkr_log_textFile_doneLogging(void* param);
 
 GKR_LOG_API int  gkr_log_textFile_filterLogMessage (void* param, const struct gkr_log_message* msg);
 GKR_LOG_API void gkr_log_textFile_consumeLogMessage(void* param, const struct gkr_log_message* msg);

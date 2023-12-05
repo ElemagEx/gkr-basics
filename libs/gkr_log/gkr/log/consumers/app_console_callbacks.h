@@ -2,7 +2,7 @@
 
 //TODO:Check for tty
 
-#include <gkr/log/api.h>
+#include <gkr/api.h>
 
 enum
 {

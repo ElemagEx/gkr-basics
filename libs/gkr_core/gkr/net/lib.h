@@ -7,10 +7,10 @@ namespace gkr
 namespace net
 {
 
-GKR_CORE_API bool startup();
-GKR_CORE_API void shutdown();
+GKR_INNER_API bool startup();
+GKR_INNER_API void shutdown();
 
-GKR_CORE_API int get_hostname(char* buffer, unsigned cch);
+GKR_INNER_API int get_hostname(char* buffer, unsigned cch);
 
 struct lib
 {

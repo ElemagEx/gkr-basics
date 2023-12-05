@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/api.h>
+#include <gkr/api.h>
 #include <gkr/log/log.h>
 
 #ifdef __cplusplus

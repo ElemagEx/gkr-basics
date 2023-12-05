@@ -1,4 +1,4 @@
-#include <gkr/sys/process_name.h>
+#include "process.hpp"
 
 #include <gkr/diagnostics.h>
 

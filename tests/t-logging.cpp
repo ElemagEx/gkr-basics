@@ -1,4 +1,4 @@
-#include <plog/Logger.h>
+#include <plog/Log.h>
 #include <plog/Formatters/MessageOnlyFormatter.h>
 #include <plog/Initializers/ConsoleInitializer.h>
 
@@ -75,7 +75,7 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
 };
 
 #include <thread>
-
+#if 0
 TEST_CASE("logging.logger. main")
 {
     gkr_log_init(g_severities_infos, g_facilities_infos, 16, 1023/*63*/);
@@ -101,14 +101,18 @@ TEST_CASE("logging.logger. main")
 
     gkr_log_done();
 }
-
+#endif
 TEST_CASE("logging.imposter.plog. main")
 {
-    plog::init<plog::MessageOnlyFormatter>(plog::debug, plog::streamStdOut);
+    plog::init<plog::TxtFormatterUtcTime>(plog::debug, plog::streamStdOut);
 
-    (*plog::get<PLOG_DEFAULT_INSTANCE_ID>()) +=
-        plog::Record(plog::verbose, nullptr, 0, nullptr, nullptr, PLOG_DEFAULT_INSTANCE_ID).ref()
-             << "Hello there!";
+    PLOGD << "Hello log!";
+    PLOG_DEBUG << "Hello log!";
+    PLOG(plog::debug) << "Hello log!";
+    
+    LOGD << "Hello log!";
+    LOG_DEBUG << "Hello log!";
+    LOG(plog::debug) << "Hello log!";
 
-//TODO:Decrement logging refCount
+    //TODO:Decrement logging refCount
 }

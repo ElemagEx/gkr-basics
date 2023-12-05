@@ -1,6 +1,6 @@
 #include <gkr/concurency/worker_thread.h>
 
-#include <gkr/sys/thread_name.h>
+#include <gkr/sys/thread.hpp>
 
 namespace gkr
 {

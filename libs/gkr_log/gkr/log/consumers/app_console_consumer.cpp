@@ -1,14 +1,15 @@
 #include "app_console_consumer.hpp"
-#include <gkr/stamp.hpp>
 
+#include <gkr/stamp.hpp>
 #include <gkr/diagnostics.h>
+#include <gkr/log/logging.hpp>
 #include <gkr/sys/file.hpp>
 
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
-static void outputToConsole(int method, const char* text)
+inline void outputToConsole(int method, const char* text)
 {
     switch(method)
     {
@@ -30,7 +31,8 @@ static void outputToConsole(int method, const char* text)
         case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
     }
 }
-static bool isOutputAtty(int method)
+
+inline bool isOutputAtty(int method)
 {
     switch(method)
     {
@@ -46,86 +48,66 @@ static bool isOutputAtty(int method)
     }
 }
 
+namespace gkr
+{
+namespace log
+{
+class c_app_console_consumer : public app_console_consumer
+{
+    c_app_console_consumer           (const c_app_console_consumer&) noexcept = delete;
+    c_app_console_consumer& operator=(const c_app_console_consumer&) noexcept = delete;
+
+    gkr_log_app_console_consumer_callbacks m_callbacks {};
+
+public:
+    c_app_console_consumer(c_app_console_consumer&& other) noexcept
+        : app_console_consumer(std::move(other))
+        , m_callbacks(other.m_callbacks)
+    {
+        other.m_callbacks = gkr_log_app_console_consumer_callbacks();
+    }
+    c_app_console_consumer& operator=(c_app_console_consumer&& other) noexcept
+    {
+        app_console_consumer::operator=(std::move(other));
+        m_callbacks = other.m_callbacks;
+        other.m_callbacks = gkr_log_app_console_consumer_callbacks();
+        return *this;
+    }
+    c_app_console_consumer(
+        gkr_log_app_console_consumer_callbacks* callbacks,
+        unsigned bufferCapacity
+        )
+        : app_console_consumer(bufferCapacity)
+    {
+        if(callbacks != nullptr) {
+            m_callbacks = *callbacks;
+        }
+    }
+    virtual ~c_app_console_consumer() override
+    {
+    }
+
+protected:
+    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
+    {
+        if(m_callbacks.compose_output != nullptr) {
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, buf, cch);
+        } else {
+            return app_console_consumer::compose_output(msg, buf, cch);
+        }
+    }
+};
+}
+}
+
 extern "C" {
 
-unsigned gkr_log_appConsole_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
-{
-    struct tm tm;
-    int ns = gkr::stamp_decompose(true, msg->stamp, tm);
-
-    const int len = std::snprintf(
-        buf,
-        cch,
-        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
-        tm.tm_hour,
-        tm.tm_min,
-        tm.tm_sec,
-        ns / 1000000,
-        msg->severityName,
-        msg->facilityName,
-        msg->threadName,
-        msg->messageText
-        );
-    return unsigned(len);
-}
-
-struct data_t
-{
-    unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*);
-    int      method;
-    bool     isAtty;
-    unsigned cch;
-    char     buf[1];
-};
-
-void* gkr_log_appConsole_createConsumerParam(
-    int method,
-    unsigned bufferCapacity,
-    unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
+int gkr_log_add_app_console_consumer(
+    gkr_log_app_console_consumer_callbacks* callbacks,
+    unsigned bufferCapacity
     )
 {
-    Check_Arg_IsValid(bufferCapacity > 0, nullptr);
-    Check_Arg_NotNull(composeOutput, nullptr);
-
-    data_t* data = static_cast<data_t*>(std::malloc(sizeof(data_t) + bufferCapacity - 1));
-
-    if(data != nullptr)
-    {
-        data->composeOutput = composeOutput;
-        data->method        = method;
-        data->isAtty        = isOutputAtty(method);
-        data->cch           = bufferCapacity;
-    }
-    return data;
-}
-
-int gkr_log_appConsole_initLogging(void* param)
-{
-    return (param != nullptr);
-}
-
-void gkr_log_appConsole_doneLogging(void* param)
-{
-    if(param != nullptr)
-    {
-        std::free(param);
-    }
-}
-
-int gkr_log_appConsole_filterLogMessage(void* param, const struct gkr_log_message* msg)
-{
-    return false;
-}
-
-void gkr_log_appConsole_consumeLogMessage(void* param, const struct gkr_log_message* msg)
-{
-    data_t* data = static_cast<data_t*>(param);
-
-    (*data->composeOutput)(data->buf, data->cch, msg);
-
-    data->buf[data->cch - 1] = 0;
-
-    outputToConsole(data->method, data->buf);
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_app_console_consumer>(callbacks, bufferCapacity));
 }
 
 }
@@ -174,16 +156,32 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    compose_output(m_buf, m_cch, msg);
+    compose_output(msg, m_buf, m_cch);
 
     m_buf[m_cch - 1] = 0;
 
     outputToConsole(m_method, m_buf);
 }
 
-unsigned app_console_consumer::compose_output(char* buf, unsigned cch, const message& msg)
+unsigned app_console_consumer::compose_output(const message& msg, char* buf, unsigned cch)
 {
-    return gkr_log_appConsole_composeOutput(m_buf, m_cch, &msg);
+    struct tm tm;
+    int ns = stamp_decompose(true, msg.stamp, tm);
+
+    const int len = std::snprintf(
+        buf,
+        cch,
+        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
+        tm.tm_hour,
+        tm.tm_min,
+        tm.tm_sec,
+        ns / 1000000,
+        msg.severityName,
+        msg.facilityName,
+        msg.threadName,
+        msg.messageText
+        );
+    return unsigned(len);
 }
 
 }

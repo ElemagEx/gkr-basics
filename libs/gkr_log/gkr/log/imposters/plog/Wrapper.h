@@ -73,8 +73,18 @@ GKR_LOG_API consumer_t makeEventLogAppenderWrapper    (formatter_t& formatter, c
 
 GKR_LOG_API consumer_t makeRollingFileAppenderWrapper(formatter_t& formatter1, formatter_t& formatter2, const plog::RollingFileData& rollingData);
 
+consumer_t makePlogConsumerWrapper0(int instanceId, int instanceIdAppender)
+{
+    return nullptr;
+}
+
+consumer_t makePlogConsumerWrapper1(int instanceId, plog::DynamicAppender* appender)
+{
+    return nullptr;
+}
+
 template<template<class> class Appender, class Formatter>
-consumer_t makePlogConsumerWrapper1(int instanceId, Appender<Formatter>* appender)
+consumer_t makePlogConsumerWrapper2(int instanceId, Appender<Formatter>* appender)
 {
     Check_Arg_NotNull(appender, nullptr);
 
@@ -101,7 +111,7 @@ consumer_t makePlogConsumerWrapper1(int instanceId, Appender<Formatter>* appende
     return consumer;
 }
 template<class Formatter, class Converter>
-consumer_t makePlogConsumerWrapper2(int instanceId, plog::RollingFileAppender<Formatter, Converter>* appender)
+consumer_t makePlogConsumerWrapper3(int instanceId, plog::RollingFileAppender<Formatter, Converter>* appender)
 {
     Check_Arg_NotNull(appender, nullptr);
 
@@ -125,6 +135,12 @@ consumer_t makePlogConsumerWrapper2(int instanceId, plog::RollingFileAppender<Fo
     }
     return makeRollingFileAppenderWrapper(formatter1, formatter2, *static_cast<const plog::RollingFileData*>(appender->data()));
 }
+
+consumer_t makePlogConsumerWrapper4(int instanceId, plog::IAppender* appender)
+{
+    return nullptr;
+}
+
 }
 }
 }

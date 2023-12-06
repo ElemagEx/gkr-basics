@@ -2,8 +2,7 @@
 
 #include <gkr/api.h>
 
-enum
-{
+enum {
     gkr_log_textFileEoln_LF,
     gkr_log_textFileEoln_CR,
     gkr_log_textFileEoln_CRLF,
@@ -20,21 +19,22 @@ enum
 extern "C" {
 #endif
 
-GKR_LOG_API unsigned gkr_log_textFile_makeFilePath(char* buf, unsigned cch);
-GKR_LOG_API unsigned gkr_log_textFile_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
+struct gkr_log_text_file_consumer_callbacks
+{
+    void      *param;
+    unsigned (*compose_output     )(void*, const struct gkr_log_message*, char*, unsigned);
+    void     (*on_file_opened     )(void*);
+    void     (*on_file_closing    )(void*);
+    void     (*on_enter_file_write)(void*);
+    void     (*on_leave_file_write)(void*);
+};
 
-GKR_LOG_API void* gkr_log_textFile_createConsumerParam(
+GKR_LOG_API int gkr_log_add_text_file_consumer(
+    gkr_log_text_file_consumer_callbacks* callbacks,
+    const char* filepath,
     int eoln,
-    unsigned buffer_capacity,
-    unsigned (*make_file_path)(char*, unsigned),
-    unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
+    unsigned bufferCapacity
     );
-
-GKR_LOG_API int  gkr_log_textFile_initLogging(void* param);
-GKR_LOG_API void gkr_log_textFile_doneLogging(void* param);
-
-GKR_LOG_API int  gkr_log_textFile_filterLogMessage (void* param, const struct gkr_log_message* msg);
-GKR_LOG_API void gkr_log_textFile_consumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }

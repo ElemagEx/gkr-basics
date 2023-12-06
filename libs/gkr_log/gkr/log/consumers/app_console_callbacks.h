@@ -1,11 +1,8 @@
 #pragma once
 
-//TODO:Check for tty
-
 #include <gkr/api.h>
 
-enum
-{
+enum {
     gkr_log_appConsoleWriteMethod_printf,
     gkr_log_appConsoleWriteMethod_fputs2stderr,
     gkr_log_appConsoleWriteMethod_fputs2stdout,
@@ -20,19 +17,15 @@ enum
 extern "C" {
 #endif
 
-GKR_LOG_API unsigned gkr_log_appConsole_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
+struct gkr_log_app_console_consumer_callbacks {
+    void      *param;
+    unsigned (*compose_output)(void*, const struct gkr_log_message*, char*, unsigned);
+};
 
-GKR_LOG_API void* gkr_log_appConsole_createConsumerParam(
-    int method,
-    unsigned bufferCapacity,
-    unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*)
+GKR_LOG_API int gkr_log_add_app_console_consumer(
+    gkr_log_app_console_consumer_callbacks* callbacks,
+    unsigned bufferCapacity
     );
-
-GKR_LOG_API int  gkr_log_appConsole_initLogging(void* param);
-GKR_LOG_API void gkr_log_appConsole_doneLogging(void* param);
-
-GKR_LOG_API int  gkr_log_appConsole_filterLogMessage (void* param, const struct gkr_log_message* msg);
-GKR_LOG_API void gkr_log_appConsole_consumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }

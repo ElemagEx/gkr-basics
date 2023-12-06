@@ -21,10 +21,5 @@ public:
     virtual void consume_log_message(const message& msg) = 0;
 };
 
-inline unsigned format_output(char* buf, unsigned cch, int type, int color_scheme, const message& msg)
-{
-    return gkr_log_format_output(buf, cch, type, color_scheme, &msg);
-}
-
 }
 }

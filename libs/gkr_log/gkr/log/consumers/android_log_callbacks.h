@@ -6,22 +6,17 @@
 extern "C" {
 #endif
 
-GKR_LOG_API int gkr_log_androidLog_getPriority(const struct gkr_log_message* msg);
-GKR_LOG_API const char* gkr_log_androidLog_getTag(const struct gkr_log_message* msg);
-GKR_LOG_API unsigned gkr_log_androidLog_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg);
+struct gkr_log_android_log_consumer_callbacks {
+    void         *param;
+    int         (*get_priority  )(void*, const struct gkr_log_message*);
+    const char* (*get_tag       )(void*, const struct gkr_log_message*);
+    unsigned    (*compose_output)(void*, const struct gkr_log_message*, char*, unsigned);
+};
 
-GKR_LOG_API void* gkr_log_androidLog_createConsumerParam(
-    unsigned buffer_capacity,
-    int (*get_priority)(const struct gkr_log_message*),
-    const char* (*get_tag)(const struct gkr_log_message*),
-    unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
+GKR_LOG_API int gkr_log_add_android_log_consumer(
+    gkr_log_android_log_consumer_callbacks* callbacks,
+    unsigned bufferCapacity
     );
-
-GKR_LOG_API int  gkr_log_androidLog_initLogging(void* param);
-GKR_LOG_API void gkr_log_androidLog_doneLogging(void* param);
-
-GKR_LOG_API int  gkr_log_androidLog_filterLogMessage (void* param, const struct gkr_log_message* msg);
-GKR_LOG_API void gkr_log_androidLog_consumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }

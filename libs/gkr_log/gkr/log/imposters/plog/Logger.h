@@ -1,5 +1,6 @@
 #pragma once
 #include <plog/Appenders/IAppender.h>
+#include <plog/Appenders/DynamicAppender.h>
 #include <plog/Appenders/RollingFileAppender.h>
 #include <plog/Wrapper.h>
 #include <plog/Util.h>
@@ -41,11 +42,24 @@ public:
         gkr_log_done();
     }
 
+    template<int instanceIdAppender>
+    Logger& addAppender(Logger<instanceIdAppender>* appender)
+    {
+        if(appender == nullptr) return *this;
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper0(instanceId, instanceIdAppender);
+        return *this;
+    }
+    Logger& addAppender(DynamicAppender* appender)
+    {
+        if(appender == nullptr) return *this;
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper1(instanceId, appender);
+        return *this;
+    }
     template<template<class> class Appender, class Formatter>
     Logger& addAppender(Appender<Formatter>* appender)
     {
         if(appender == nullptr) return *this;
-        auto consumer = gkr::log::impl::makePlogConsumerWrapper1(instanceId, appender);
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper2(instanceId, appender);
         gkr_log_add_consumer(consumer);
         return *this;
     }
@@ -53,15 +67,17 @@ public:
     Logger& addAppender(RollingFileAppender<Formatter, Converter>* appender)
     {
         if(appender == nullptr) return *this;
-        auto consumer = gkr::log::impl::makePlogConsumerWrapper2(instanceId, appender);
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper3(instanceId, appender);
         gkr_log_add_consumer(consumer);
         return *this;
     }
-//  Logger& addAppender(IAppender* appender)
-//  {
-//      gkr_log_add_consumer();
-//      return *this;
-//  }
+    Logger& addAppender(IAppender* appender)
+    {
+        if(appender == nullptr) return *this;
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper4(instanceId, appender);
+        gkr_log_add_consumer(consumer);
+        return *this;
+    }
     Severity getMaxSeverity() const noexcept
     {
         return m_maxSeverity;

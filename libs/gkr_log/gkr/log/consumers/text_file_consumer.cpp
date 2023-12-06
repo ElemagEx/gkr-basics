@@ -1,164 +1,135 @@
 #include "text_file_consumer.hpp"
-#include <gkr/stamp.hpp>
 
+#include <gkr/stamp.hpp>
 #include <gkr/diagnostics.h>
+#include <gkr/log/logging.hpp>
 #include <gkr/sys/process.hpp>
 
 #include <cstdio>
 #include <cstdlib>
 
-static bool setEoln(int eoln, char* buf)
+inline int calcEoln(int eoln)
 {
+    int   res = 0;
+    char* buf = reinterpret_cast<char*>(&res);
+
     buf[1] = buf[2] = 0;
 
     switch(eoln)
     {
-        default: buf[0] = 0; return false;
-
+        default:
         case gkr_log_textFileEoln_LF  : buf[0] = '\n'; break;
         case gkr_log_textFileEoln_CR  : buf[0] = '\r'; break;
         case gkr_log_textFileEoln_CRLF: buf[0] = '\r'; buf[1] = '\n'; break;
     }
-    return true;
+    return res;
 }
-static void outputToTextFile(std::FILE* file, const char* text, unsigned len, const char* eoln, unsigned cch)
+inline unsigned getEolnLen(int eoln)
+{
+    return (reinterpret_cast<const char*>(&eoln)[1] == 0) ? 1U : 2U;
+}
+inline void outputToTextFile(std::FILE* file, const char* text, unsigned len, const char* eoln, unsigned cch)
 {
     std::fwrite(text, sizeof(char), len, file);
     std::fwrite(eoln, sizeof(char), cch, file);
 }
 
-extern "C" {
-
-unsigned gkr_log_textFile_makeFilePath(char* buf, unsigned cch)
+namespace gkr
 {
-    char path[260];
-    gkr::sys::get_current_process_path(path, 260);
-
-    struct tm tm;
-    gkr_stamp_decompose(true, gkr_stamp_now(), &tm);
-
-    const int len = std::snprintf(
-        buf,
-        cch,
-        "%s_%04d%02d%02d_%02d%02d%02d.txt",
-        path,
-        tm.tm_year + 1900,
-        tm.tm_mon  + 1,
-        tm.tm_mday,
-        tm.tm_hour,
-        tm.tm_min,
-        tm.tm_sec
-        );
-    return unsigned(len);
-}
-
-unsigned gkr_log_textFile_composeOutput(char* buf, unsigned cch, const struct gkr_log_message* msg)
+namespace log
 {
-    struct tm tm;
-    int ns = gkr::stamp_decompose(true, msg->stamp, tm);
-
-    const int len = std::snprintf(
-        buf,
-        cch,
-        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
-        tm.tm_hour,
-        tm.tm_min,
-        tm.tm_sec,
-        ns / 1000000,
-        msg->severityName,
-        msg->facilityName,
-        msg->threadName,
-        msg->messageText
-        );
-    return unsigned(len);
-}
-
-struct data_t
+class c_text_file_consumer : public text_file_consumer
 {
-    unsigned   (*make_file_path)(char*, unsigned);
-    unsigned   (*compose_output)(char*, unsigned, const struct gkr_log_message*);
-    std::FILE* file;
-    char       eoln[4];
-    unsigned   cch;
-    char       buf[1];
-};
+    c_text_file_consumer           (const c_text_file_consumer&) noexcept = delete;
+    c_text_file_consumer& operator=(const c_text_file_consumer&) noexcept = delete;
 
-void* gkr_log_textFile_createConsumerParam(
-    int eoln,
-    unsigned buffer_capacity,
-    unsigned (*make_file_path)(char*, unsigned),
-    unsigned (*compose_output)(char*, unsigned, const struct gkr_log_message*)
-    )
-{
-    Check_Arg_IsValid(buffer_capacity > 0, nullptr);
-    Check_Arg_NotNull(make_file_path, nullptr);
-    Check_Arg_NotNull(compose_output, nullptr);
+    gkr_log_text_file_consumer_callbacks m_callbacks {};
 
-    data_t* data = static_cast<data_t*>(std::malloc(sizeof(data_t) + buffer_capacity - 1));
-
-    if(data != nullptr)
+public:
+    c_text_file_consumer(c_text_file_consumer&& other) noexcept
+        : text_file_consumer(std::move(other))
+        , m_callbacks(other.m_callbacks)
     {
-        data->make_file_path = make_file_path;
-        data->compose_output = compose_output;
-        data->file           = nullptr;
-        data->cch            = buffer_capacity;
-
-        if(!setEoln(eoln, data->eoln))
-        {
-            Check_Arg_Invalid(eoln, nullptr);
+        other.m_callbacks = gkr_log_text_file_consumer_callbacks();
+    }
+    c_text_file_consumer& operator=(c_text_file_consumer&& other) noexcept
+    {
+        text_file_consumer::operator=(std::move(other));
+        m_callbacks = other.m_callbacks;
+        other.m_callbacks = gkr_log_text_file_consumer_callbacks();
+        return *this;
+    }
+    c_text_file_consumer(
+        gkr_log_text_file_consumer_callbacks* callbacks,
+        const char* filepath = nullptr,
+        int eoln = gkr_log_textFileEoln_Default,
+        unsigned bufferCapacity = 2 * 1024
+        )
+        : text_file_consumer(filepath, eoln, bufferCapacity)
+    {
+        if(callbacks != nullptr) {
+            m_callbacks = *callbacks;
         }
     }
-    return data;
-}
-
-int gkr_log_textFile_initLogging(void* param)
-{
-    if(param == nullptr) return false;
-
-    char buf[260];
-    gkr_log_textFile_makeFilePath(buf, 260);
-
-    data_t* data = static_cast<data_t*>(param);
-
-    data->file = std::fopen(buf, "wb");
-
-    if(data->file == nullptr)
+    virtual ~c_text_file_consumer() override
     {
-        Check_Failure(false);
     }
-    return true;
-}
 
-void gkr_log_textFile_doneLogging(void* param)
-{
-    if(param == nullptr) return;
-
-    data_t* data = static_cast<data_t*>(param);
-
-    if(data->file != nullptr)
+protected:
+    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
     {
-        std::fclose(data->file);
-        data->file = nullptr;
+        if(m_callbacks.compose_output != nullptr) {
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, buf, cch);
+        } else {
+            return text_file_consumer::compose_output(msg, buf, cch);
+        }
     }
-    std::free(param);
+    virtual void on_file_opened() override
+    {
+        if(m_callbacks.on_file_opened != nullptr) {
+            return (*m_callbacks.on_file_opened)(m_callbacks.param);
+        } else {
+            return text_file_consumer::on_file_opened();
+        }
+    }
+    virtual void on_file_closing() override
+    {
+        if(m_callbacks.on_file_closing != nullptr) {
+            return (*m_callbacks.on_file_closing)(m_callbacks.param);
+        } else {
+            return text_file_consumer::on_file_closing();
+        }
+    }
+    virtual void on_enter_file_write() override
+    {
+        if(m_callbacks.on_enter_file_write != nullptr) {
+            return (*m_callbacks.on_enter_file_write)(m_callbacks.param);
+        } else {
+            return text_file_consumer::on_enter_file_write();
+        }
+    }
+    virtual void on_leave_file_write() override
+    {
+        if(m_callbacks.on_leave_file_write != nullptr) {
+            return (*m_callbacks.on_leave_file_write)(m_callbacks.param);
+        } else {
+            return text_file_consumer::on_leave_file_write();
+        }
+    }
+};
+}
 }
 
-int gkr_log_textFile_filterLogMessage(void* param, const struct gkr_log_message* msg)
+extern "C" {
+
+int gkr_log_add_text_file_consumer(
+    gkr_log_text_file_consumer_callbacks* callbacks,
+    const char* filepath,
+    int eoln,
+    unsigned bufferCapacity
+    )
 {
-    return false;
-}
-
-void gkr_log_textFile_consumeLogMessage(void* param, const struct gkr_log_message* msg)
-{
-    data_t* data = static_cast<data_t*>(param);
-
-    const unsigned len = (*data->compose_output)(data->buf, data->cch, msg);
-
-    data->buf[data->cch - 1] = 0;
-
-    const unsigned cch = (data->eoln[1] == 0) ? 1U : 2U;
-
-    outputToTextFile(data->file, data->buf, len, data->eoln, cch);
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_text_file_consumer>(callbacks, filepath, eoln, bufferCapacity));
 }
 
 }
@@ -168,44 +139,58 @@ namespace gkr
 namespace log
 {
 
-text_file_consumer::text_file_consumer(int eoln, unsigned buffer_capacity)
+text_file_consumer::text_file_consumer(
+    const char* filepath,
+    int eoln,
+    unsigned bufferCapacity
+    )
     : m_buf(nullptr)
-    , m_cch(buffer_capacity)
-    , m_eoln(0)
+    , m_cch(bufferCapacity)
+    , m_eoln(calcEoln(eoln))
     , m_file(nullptr)
 {
-    Check_Arg_IsValid(buffer_capacity > 0, );
+    Check_Arg_IsValid(bufferCapacity > 0, );
 
-    m_buf = new char[buffer_capacity];
-
-    if(!setEoln(eoln, reinterpret_cast<char*>(&m_eoln)))
-    {
-        Check_Arg_Invalid(eoln, );
-    }
+    m_buf = new char[bufferCapacity];
 }
 
 text_file_consumer::~text_file_consumer()
 {
     close_file();
-
-    if(m_buf != nullptr)
-    {
+    if(m_buf != nullptr) {
         delete [] m_buf;
     }
 }
 
 bool text_file_consumer::init_logging()
 {
-    if(m_eoln == 0) return false;
-
     if(m_buf == nullptr) return false;
 
-    char buf[260];
-    gkr_log_textFile_makeFilePath(buf, 260);
+    const int head_len = sys::get_current_process_path(m_buf, m_cch);
 
-    m_file = std::fopen(buf, "wb");
+    if(head_len >= m_cch) {
+        return false;
+    }
+    struct tm tm;
+    stamp_decompose(true, stamp_now(), tm);
 
-    return (m_file != nullptr);
+    const int tail_len = std::snprintf(
+        m_buf + head_len,
+        m_cch - head_len,
+        "_%04i%02i%02i_%02i%02i%02i.log",
+        tm.tm_year + 1900,
+        tm.tm_mon  + 1,
+        tm.tm_mday,
+        tm.tm_hour,
+        tm.tm_min,
+        tm.tm_sec
+        );
+    if(tail_len <= 0) {
+        return false;
+    }
+    m_name = m_buf;
+
+    return open_file();
 }
 
 void text_file_consumer::done_logging()
@@ -220,28 +205,69 @@ bool text_file_consumer::filter_log_message(const message& msg)
 
 void text_file_consumer::consume_log_message(const message& msg)
 {
-    const unsigned len = compose_output(m_buf, m_cch, msg);
+    const unsigned len = compose_output(msg, m_buf, m_cch);
 
     m_buf[m_cch - 1] = 0;
 
-    const unsigned cch = (reinterpret_cast<char*>(&m_eoln)[1] == 0) ? 1U : 2U;
-    outputToTextFile(static_cast<std::FILE*>(m_file), m_buf, len, reinterpret_cast<char*>(&m_eoln), cch);
+    on_enter_file_write();
+    outputToTextFile(static_cast<std::FILE*>(m_file), m_buf, len, reinterpret_cast<const char*>(&m_eoln), getEolnLen(m_eoln));
+    on_leave_file_write();
 }
 
-unsigned text_file_consumer::make_file_path(char* buf, unsigned cch)
+unsigned text_file_consumer::compose_output(const message& msg, char* buf, unsigned cch)
 {
-    return gkr_log_textFile_makeFilePath(buf, cch);
+    struct tm tm;
+    int ns = stamp_decompose(true, msg.stamp, tm);
+
+    const int len = std::snprintf(
+        buf,
+        cch,
+        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
+        tm.tm_hour,
+        tm.tm_min,
+        tm.tm_sec,
+        ns / 1000000,
+        msg.severityName,
+        msg.facilityName,
+        msg.threadName,
+        msg.messageText
+        );
+    return unsigned(len);
 }
 
-unsigned text_file_consumer::compose_output(char* buf, unsigned cch, const message& msg)
+void text_file_consumer::on_file_opened()
 {
-    return gkr_log_textFile_composeOutput(m_buf, m_cch, &msg);
+}
+
+void text_file_consumer::on_file_closing()
+{
+}
+
+void text_file_consumer::on_enter_file_write()
+{
+}
+
+void text_file_consumer::on_leave_file_write()
+{
+}
+
+bool text_file_consumer::open_file()
+{
+    m_file = std::fopen(m_buf, "wb");
+
+    if(m_file != nullptr)
+    {
+        return false;
+    }
+    on_file_opened();
+    return true;
 }
 
 void text_file_consumer::close_file()
 {
     if(m_file != nullptr)
     {
+        on_file_closing();
         std::fclose(static_cast<std::FILE*>(m_file));
         m_file = nullptr;
     }

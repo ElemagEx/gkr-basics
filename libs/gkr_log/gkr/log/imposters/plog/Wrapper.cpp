@@ -5,7 +5,7 @@
 #include <gkr/log/consumers/text_file_consumer.hpp>
 #include <gkr/log/consumers/windows_debugger_callbacks.h>
 
-#include <gkr/log/ids.h>
+#include <gkr/log/galery.hpp>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -26,7 +26,7 @@ static constexpr int calcMethod(int outStream)
         ;
 }
 
-static unsigned format_output(bool colored, formatter_t& formatter, char* buf, unsigned cch, const gkr::log::message& msg)
+static unsigned format_output(bool colored, formatter_t& formatter, const message& msg, char* buf, unsigned cch)
 {
     const int color_scheme = !colored
         ? (COLOR_SCHEME_NONE)
@@ -34,12 +34,12 @@ static unsigned format_output(bool colored, formatter_t& formatter, char* buf, u
         ;
     switch(formatter.type)
     {
-        case formatter_CsvFormatter        : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_CSV_TEXT    , color_scheme, msg);
-        case formatter_CsvFormatterUtcTime : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_CSV_TEXT_UTC, color_scheme, msg);
-        case formatter_TxtFormatter        : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_TEXT    , color_scheme, msg);
-        case formatter_TxtFormatterUtcTime : return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_TEXT_UTC, color_scheme, msg);
-        case formatter_FuncMessageFormatter: return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_FUNC    , color_scheme, msg);
-        case formatter_MessageOnlyFormatter: return gkr::log::format_output(buf, cch, FMT_TYPE_PLOG_MSG_ONLY    , color_scheme, msg);
+        case formatter_CsvFormatter        : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_CSV_TEXT    , color_scheme);
+        case formatter_CsvFormatterUtcTime : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_CSV_TEXT_UTC, color_scheme);
+        case formatter_TxtFormatter        : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_TEXT    , color_scheme);
+        case formatter_TxtFormatterUtcTime : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_TEXT_UTC, color_scheme);
+        case formatter_FuncMessageFormatter: return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_FUNC    , color_scheme);
+        case formatter_MessageOnlyFormatter: return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_ONLY    , color_scheme);
     }
     const plog::Record record(msg);
     std::strncpy(buf, (*formatter.format)(record).c_str(), cch);
@@ -62,9 +62,9 @@ protected:
     {
         return (msg.facility != m_formatter.instanceId);
     }
-    virtual unsigned compose_output(char* buf, unsigned cch, const gkr::log::message& msg) override
+    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
     {
-        return format_output(outputIsAtty(), m_formatter, buf, cch, msg);
+        return format_output(outputIsAtty(), m_formatter, msg, buf, cch);
     }
 };
 class ConsoleAppenderWrapper : public app_console_consumer
@@ -82,9 +82,9 @@ protected:
     {
         return (msg.facility != m_formatter.instanceId);
     }
-    virtual unsigned compose_output(char* buf, unsigned cch, const gkr::log::message& msg) override
+    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
     {
-        return format_output(false, m_formatter, buf, cch, msg);
+        return format_output(false, m_formatter, msg, buf, cch);
     }
 };
 class AndroidAppenderWrapper : public android_log_consumer
@@ -124,9 +124,9 @@ protected:
     {
         return m_tag;
     }
-    virtual unsigned compose_output(char* buf, unsigned cch, const gkr::log::message& msg) override
+    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
     {
-        return format_output(false, m_formatter, buf, cch, msg);
+        return format_output(false, m_formatter, msg, buf, cch);
     }
 };
 

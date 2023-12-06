@@ -6,18 +6,17 @@
 extern "C" {
 #endif
 
-GKR_LOG_API void* gkr_log_udpSocket_createConsumerParam(
+struct gkr_log_udp_socket_consumer_callbacks {
+    void *param;
+};
+
+GKR_LOG_API int gkr_log_add_udp_socket_consumer(
+    gkr_log_udp_socket_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
     unsigned bufferCapacity
     );
-
-GKR_LOG_API int  gkr_log_udpSocket_initLogging(void* param);
-GKR_LOG_API void gkr_log_udpSocket_doneLogging(void* param);
-
-GKR_LOG_API int  gkr_log_udpSocket_filterLogMessage (void* param, const struct gkr_log_message* msg);
-GKR_LOG_API void gkr_log_udpSocket_consumeLogMessage(void* param, const struct gkr_log_message* msg);
 
 #ifdef __cplusplus
 }

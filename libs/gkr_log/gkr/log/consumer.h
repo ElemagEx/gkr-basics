@@ -24,14 +24,16 @@ extern "C" {
 
 struct gkr_log_consumer_callbacks
 {
+    void* param;
+
     int  (*init_logging)(void*);
     void (*done_logging)(void*);
 
     int  (* filter_log_message)(void*, const struct gkr_log_message*);
     void (*consume_log_message)(void*, const struct gkr_log_message*);
-};
 
-GKR_LOG_API unsigned gkr_log_format_output(char* buf, unsigned cch, int type, int color_scheme, const struct gkr_log_message* msg);
+    void (*destruct)(void*);
+};
 
 #ifdef __cplusplus
 }

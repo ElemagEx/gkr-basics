@@ -1,5 +1,6 @@
 #include "consumer.hpp"
-#include "ids.h"
+#include "galery.hpp"
+#include "consumer.hpp"
 
 #include <gkr/diagnostics.h>
 #include <gkr/stamp.h>
@@ -108,7 +109,7 @@ static fmt_func_t format_function[] = {
 
 extern "C" {
 
-unsigned gkr_log_format_output(char* buf, unsigned cch, int type, int color_scheme, const struct gkr_log_message* msg)
+unsigned gkr_log_format_output(const struct gkr_log_message* msg, char* buf, unsigned cch, int type, int color_scheme)
 {
     constexpr unsigned functions_count = sizeof(format_function)/sizeof(*format_function);
 

@@ -47,7 +47,7 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual unsigned compose_output(char* buf, unsigned cch, const message& msg);
+    GKR_LOG_API virtual unsigned compose_output(const message& msg, char* buf, unsigned cch);
 };
 
 }

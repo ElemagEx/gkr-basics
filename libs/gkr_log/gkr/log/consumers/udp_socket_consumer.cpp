@@ -3,6 +3,7 @@
 #include <gkr/comm/udp_socket_sender.hpp>
 
 #include <gkr/data/log_message.hpp>
+#include <gkr/log/logging.hpp>
 #include <gkr/sys/process.hpp>
 #include <gkr/net/lib.hpp>
 
@@ -10,50 +11,62 @@
 
 #include <cstring>
 
+namespace gkr
+{
+namespace log
+{
+class c_udp_socket_consumer : public udp_socket_consumer
+{
+    c_udp_socket_consumer           (const c_udp_socket_consumer&) noexcept = delete;
+    c_udp_socket_consumer& operator=(const c_udp_socket_consumer&) noexcept = delete;
+
+    gkr_log_udp_socket_consumer_callbacks m_callbacks {};
+
+public:
+    c_udp_socket_consumer(c_udp_socket_consumer&& other) noexcept
+        : udp_socket_consumer(std::move(other))
+        , m_callbacks(other.m_callbacks)
+    {
+        other.m_callbacks = gkr_log_udp_socket_consumer_callbacks();
+    }
+    c_udp_socket_consumer& operator=(c_udp_socket_consumer&& other) noexcept
+    {
+        udp_socket_consumer::operator=(std::move(other));
+        m_callbacks = other.m_callbacks;
+        other.m_callbacks = gkr_log_udp_socket_consumer_callbacks();
+        return *this;
+    }
+    c_udp_socket_consumer(
+        gkr_log_udp_socket_consumer_callbacks* callbacks,
+        const char*    remoteHost,
+        unsigned short remotePort,
+        unsigned maxPacketSize,
+        unsigned bufferCapacity
+        )
+        : udp_socket_consumer(remoteHost, remotePort, maxPacketSize, bufferCapacity)
+    {
+        if(callbacks != nullptr) {
+            m_callbacks = *callbacks;
+        }
+    }
+    virtual ~c_udp_socket_consumer() override
+    {
+    }
+};
+}
+}
+
 extern "C" {
 
-void* gkr_log_udpSocket_createConsumerParam(
+int gkr_log_add_udp_socket_consumer(
+    gkr_log_udp_socket_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
     unsigned bufferCapacity
     )
 {
-    return new gkr::log::udp_socket_consumer(remoteHost, remotePort, maxPacketSize, bufferCapacity);
-}
-
-int gkr_log_udpSocket_initLogging(void* param)
-{
-    if(param == nullptr) return false;
-
-    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
-
-    return consumer->init_logging();
-}
-
-void gkr_log_udpSocket_doneLogging(void* param)
-{
-    if(param == nullptr) return;
-
-    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
-
-    consumer->done_logging();
-
-    delete consumer;
-}
-
-int gkr_log_udpSocket_filterLogMessage(void* param, const struct gkr_log_message* msg)
-{
-    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
-
-    return consumer->filter_log_message(*msg);
-}
-
-void gkr_log_udpSocket_consumeLogMessage(void* param, const struct gkr_log_message* msg)
-{
-    gkr::log::udp_socket_consumer* consumer = static_cast<gkr::log::udp_socket_consumer*>(param);
-
-    consumer->consume_log_message(*msg);
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_udp_socket_consumer>(callbacks, remoteHost, remotePort, maxPacketSize, bufferCapacity));
 }
 
 }

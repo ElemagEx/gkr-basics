@@ -52,7 +52,10 @@ public:
     }
 
 public:
-    GKR_LOG_API app_console_consumer(int method = gkr_log_appConsoleWriteMethod_stream2cout, unsigned bufferCapacity = 2*1024);
+    GKR_LOG_API app_console_consumer(
+        int method = gkr_log_appConsoleWriteMethod_stream2cout,
+        unsigned bufferCapacity = 2*1024
+        );
     GKR_LOG_API virtual ~app_console_consumer() override;
 
 protected:
@@ -63,7 +66,7 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual unsigned compose_output(char* buf, unsigned cch, const gkr::log::message& msg);
+    GKR_LOG_API virtual unsigned compose_output(const message& msg, char* buf, unsigned cch);
 };
 
 }

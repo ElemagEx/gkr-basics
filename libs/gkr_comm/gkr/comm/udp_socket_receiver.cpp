@@ -1,11 +1,13 @@
-#include "udpSocketReceiver.h"
+#include "udp_socket_receiver.hpp"
 
-#include <gkr/data/split_packet.h>
+#include <gkr/data/split_packet.hpp>
 
 namespace gkr
 {
+namespace comm
+{
 
-udpSocketReceiver::udpSocketReceiver(
+udp_socket_receiver::udp_socket_receiver(
     std::size_t maxPacketSize,
     bool useIPv6
     )
@@ -15,30 +17,30 @@ udpSocketReceiver::udpSocketReceiver(
     m_socket.open_as_udp(useIPv6);
 }
 
-udpSocketReceiver::~udpSocketReceiver()
+udp_socket_receiver::~udp_socket_receiver()
 {
     m_socket.close();
 }
 
-bool udpSocketReceiver::setWaitPacketTimeout(unsigned waitPacketTimeout)
+bool udp_socket_receiver::setWaitPacketTimeout(unsigned waitPacketTimeout)
 {
     return m_socket.set_receive_timeout(waitPacketTimeout);
 }
 
-bool udpSocketReceiver::startReceivingPackets(unsigned short port)
+bool udp_socket_receiver::startReceivingPackets(unsigned short port)
 {
     return m_socket.bind(port);
 }
 
-void udpSocketReceiver::stopReceivingPackets()
+void udp_socket_receiver::stopReceivingPackets()
 {
     m_socket.reopen();
 }
 
-bool udpSocketReceiver::receivePacket()
+bool udp_socket_receiver::receivePacket()
 {
     m_offset = 0;
-    m_packet.set_size(0);
+    m_packet.change_size(0);
 
     unsigned errors = net::socket::error_timeout;
 
@@ -48,7 +50,7 @@ bool udpSocketReceiver::receivePacket()
 
     Assert_Check(received <= m_packet.capacity());
 
-    m_packet.set_size(received);
+    m_packet.change_size(received);
 
     const data::split_packet_head& packetHead = m_packet.as<const data::split_packet_head>();
 
@@ -78,7 +80,7 @@ bool udpSocketReceiver::receivePacket()
     return true;
 }
 
-bool udpSocketReceiver::getReadyPacketData(net::address& addr, const void*& data, std::size_t& size)
+bool udp_socket_receiver::getReadyPacketData(net::address& addr, const void*& data, std::size_t& size)
 {
     if(m_offset > 0)
     {
@@ -89,7 +91,7 @@ bool udpSocketReceiver::getReadyPacketData(net::address& addr, const void*& data
         size = m_packet.size() - m_offset;
 
         m_addr  .reset();
-        m_packet.set_size(0);
+        m_packet.change_size(0);
         m_offset = 0;
         return true;
     }
@@ -100,13 +102,13 @@ bool udpSocketReceiver::getReadyPacketData(net::address& addr, const void*& data
         size = m_buffer.size() - m_offset;
 
         //todo
-        m_buffer.set_size(0);
+        m_buffer.change_size(0);
         return true;
     }
     return false;
 }
 
-void udpSocketReceiver::handleUnsplittedPacket()
+void udp_socket_receiver::handleUnsplittedPacket()
 {
     const data::split_packet_head&      packetHead = m_packet.as<const data::split_packet_head>();
     const data::split_packet_data_head& packetData = m_packet.as<const data::split_packet_data_head>(packetHead.data_offset);
@@ -129,7 +131,7 @@ void udpSocketReceiver::handleUnsplittedPacket()
     }
 }
 
-void udpSocketReceiver::handlePartialPacket()
+void udp_socket_receiver::handlePartialPacket()
 {
     const data::split_packet_head& packetHead = m_packet.as<const data::split_packet_head>();
 
@@ -149,7 +151,7 @@ void udpSocketReceiver::handlePartialPacket()
     }
 }
 
-udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const data::split_packet_head& packetHead, std::size_t& partialDataSize)
+udp_socket_receiver::partial_packet_t& udp_socket_receiver::findPartialPacket(const data::split_packet_head& packetHead, std::size_t& partialDataSize)
 {
     partialDataSize = std::size_t(packetHead.packet_size) - std::size_t(packetHead.data_offset);
     Assert_Check(packetHead.packet_count > 0);
@@ -198,4 +200,5 @@ udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const 
     return partialPacket;
 }
 
+}
 }

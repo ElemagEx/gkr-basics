@@ -76,7 +76,14 @@ int get_current_process_path(char* path, unsigned cch)
 #include <unistd.h>
 #include <linux/limits.h>
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+#endif
 extern char *__progname;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 namespace gkr
 {

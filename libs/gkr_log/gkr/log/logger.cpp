@@ -4,7 +4,7 @@
 
 #include <gkr/stamp.hpp>
 
-#include <gkr/misc/union_cast.h>
+#include <gkr/misc/union_cast.hpp>
 
 #include <cstring>
 

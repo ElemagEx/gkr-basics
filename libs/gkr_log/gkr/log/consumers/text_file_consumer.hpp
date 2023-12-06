@@ -54,8 +54,7 @@ protected:
     GKR_LOG_API virtual bool init_logging() override;
     GKR_LOG_API virtual void done_logging() override;
 
-    GKR_LOG_API virtual bool filter_log_message(const message& msg) override;
-
+    GKR_LOG_API virtual bool  filter_log_message(const message& msg) override;
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:

@@ -12,14 +12,18 @@ enum Severity
     debug   = 5,
     verbose = 6
 };
+namespace impl
+{
+constexpr const char* SEVERITIES[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
+}
 inline constexpr const char* severityToString(Severity severity) noexcept
 {
-    constexpr const char* const SEVERITIES[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
-    return (unsigned(severity) < unsigned(sizeof(SEVERITIES)/sizeof(char*)))
-        ?  SEVERITIES[severity]
-        : *SEVERITIES;
+    return (unsigned(severity) < unsigned(sizeof(impl::SEVERITIES)/sizeof(char*)))
+        ?  impl::SEVERITIES[severity]
+        : *impl::SEVERITIES
+        ;
 }
-inline constexpr Severity severityFromString(const char* str)
+inline Severity severityFromString(const char* str)
 {
     if(str) switch(*str)
     {

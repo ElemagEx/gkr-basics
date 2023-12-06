@@ -1,13 +1,13 @@
-#ifdef GKR_NO_OSTREAM_LOGGING
-#undef GKR_NO_OSTREAM_LOGGING
-#endif
-
 #include "logging.hpp"
 #include "logger.hpp"
 
 #include <gkr/sys/thread.hpp>
 
 #include <exception>
+
+#ifdef GKR_NO_OSTREAM_LOGGING
+#error This project must be compiled w.out this define
+#endif
 
 using logger = gkr::log::logger;
 

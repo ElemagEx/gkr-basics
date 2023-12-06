@@ -11,7 +11,7 @@
 #include <gkr/diagnostics.h>
 
 #ifndef __cpp_lib_exchange_function
-#include <gkr/cpp/lib_exchange_function.h>
+#include <gkr/cpp/lib_exchange_function.hpp>
 #endif
 
 #else
@@ -28,8 +28,8 @@
 #ifndef Assert_NotNullPtr
 #define Assert_NotNullPtr(cond) assert(cond)
 #endif
-#ifndef Check_ValidState
-#define Check_ValidState(cond, ...)  if(!(cond)) return __VA_ARGS__
+#ifndef Check_Arg_IsValid
+#define Check_Arg_IsValid(check, ...) if(!(check)) return __VA_ARGS__
 #endif
 
 #endif
@@ -51,22 +51,22 @@
 
 namespace gkr
 {
-using a = std::max_align_t;
+
 template<typename Allocator=std::allocator<char>>
 class raw_buffer
 {
     using allocator_traits = std::allocator_traits<Allocator>;
 
-    using value_t = typename allocator_traits::value_type;
+    using allocator_value_t = typename allocator_traits::value_type;
 
-    static constexpr std::size_t granularity = (sizeof(value_t) >= alignof(value_t))
-        ?  sizeof(value_t)
-        : alignof(value_t)
+    static constexpr std::size_t granularity = (sizeof(allocator_value_t) >= alignof(allocator_value_t))
+        ?  sizeof(allocator_value_t)
+        : alignof(allocator_value_t)
         ;
 public:
-    static constexpr std::size_t alignment = (alignof(std::max_align_t) >= alignof(value_t))
+    static constexpr std::size_t alignment = (alignof(std::max_align_t) >= alignof(allocator_value_t))
         ? alignof(std::max_align_t)
-        : alignof(value_t)
+        : alignof(allocator_value_t)
         ;
 
     static constexpr bool move_constructor_is_nothrow = (
@@ -294,7 +294,7 @@ public:
         {
             const std::size_t count = m_capacity / granularity;
 
-            m_allocator.deallocate(reinterpret_cast<value_t*>(m_data), count);
+            m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_data), count);
 
             m_data     = nullptr;
             m_size     = 0;
@@ -328,10 +328,11 @@ public:
         }
         m_size = size;
     }
-    void set_size(std::size_t size)
+    bool change_size(std::size_t size)
     {
-        Check_ValidState(size <= m_capacity, );
+        Check_Arg_IsValid(size <= m_capacity, false);
         m_size = size;
+        return true;
     }
 
 public:

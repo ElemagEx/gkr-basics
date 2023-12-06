@@ -14,10 +14,10 @@
 #include <gkr/diagnostics.h>
 
 #ifndef __cpp_lib_is_swappable
-#include <gkr/cpp/lib_is_swappable.h>
+#include <gkr/cpp/lib_is_swappable.hpp>
 #endif
 #ifndef __cpp_lib_exchange_function
-#include <gkr/cpp/lib_exchange_function.h>
+#include <gkr/cpp/lib_exchange_function.hpp>
 #endif
 
 #else

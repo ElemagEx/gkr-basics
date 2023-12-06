@@ -1,4 +1,4 @@
-#include <gkr/container/raw_buffer.h>
+#include <gkr/container/raw_buffer.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -8,7 +8,7 @@ TEST_CASE("container.raw_buffer. main")
 
     b1.reserve(256);
 
-    b1.set_size(16);
+    b1.change_size(16);
 
     b1.data();
 }

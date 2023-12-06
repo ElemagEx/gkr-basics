@@ -1,4 +1,4 @@
-#include <gkr/data/split_packet.h>
+#include <gkr/data/split_packet.hpp>
 
 namespace gkr
 {

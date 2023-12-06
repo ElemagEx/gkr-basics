@@ -7,6 +7,10 @@
 #include <cstdio>
 #include <cstring>
 
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wunused-macros"
+#endif
+
 #define STYLE_START                 "\033["
 #define STYLE_RESET                 "0"
 #define STYLE_END                   "m"
@@ -150,14 +154,14 @@ static unsigned seal_buffer(char* buf, unsigned cch)
 #define CMD_PLOG_STYLE_DEBUG STYLE_START STYLE_TEXT_COLOR_CYAN   STYLE_END
 #define CMD_PLOG_STYLE_VERB  STYLE_START STYLE_TEXT_COLOR_CYAN   STYLE_END
 
-inline constexpr const char* plog_severity2string(int severity) noexcept
+inline const char* plog_severity2string(int severity) noexcept
 {
     constexpr const char* const SEVERITIES[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
     return (unsigned(severity) < unsigned(sizeof(SEVERITIES)/sizeof(char*)))
         ?  SEVERITIES[severity]
         : *SEVERITIES;
 }
-inline constexpr const char* plog_severity2style(int severity) noexcept
+inline const char* plog_severity2style(int severity) noexcept
 {
     constexpr const char* const STYLES[] = {CMD_PLOG_STYLE_NONE, CMD_PLOG_STYLE_FATAL, CMD_PLOG_STYLE_ERROR, CMD_PLOG_STYLE_WARN, CMD_PLOG_STYLE_INFO, CMD_PLOG_STYLE_DEBUG, CMD_PLOG_STYLE_VERB};
     return (unsigned(severity) < unsigned(sizeof(STYLES)/sizeof(char*)))

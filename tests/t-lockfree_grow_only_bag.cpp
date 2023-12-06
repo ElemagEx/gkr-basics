@@ -1,6 +1,6 @@
-#include <gkr/container/lockfree_grow_only_bag.h>
+#include <gkr/container/lockfree_grow_only_bag.hpp>
 
-#include <gkr/testing/allocator.h>
+#include <gkr/testing/allocator.hpp>
 
 #include <catch2/catch_template_test_macros.hpp>
 

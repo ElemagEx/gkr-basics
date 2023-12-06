@@ -1,6 +1,6 @@
 add_library(gkr_log SHARED)
 
-target_link_libraries(gkr_log PRIVATE gkr_core gkr_data)
+target_link_libraries(gkr_log PRIVATE gkr_core gkr_data gkr_comm)
 target_include_directories(gkr_log PUBLIC ".")
 target_include_directories(gkr_log PUBLIC "gkr/log/imposters")
 

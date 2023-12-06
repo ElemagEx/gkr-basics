@@ -3,8 +3,8 @@
 #include <gkr/log/logging.hpp>
 #include <gkr/stamp.hpp>
 
-#include <gkr/comm/udpSocketReceiver.h>
-#include <gkr/data/log_message.h>
+#include <gkr/comm/udp_socket_receiver.hpp>
+#include <gkr/data/log_message.hpp>
 
 #include <gkr/net/lib.hpp>
 #include <gkr/net/address.hpp>
@@ -131,7 +131,7 @@ class receiver : public gkr::worker_thread
     }
 
 private:
-    gkr::udpSocketReceiver m_receiver;
+    gkr::comm::udp_socket_receiver m_receiver;
     unsigned m_count;
 
 public:

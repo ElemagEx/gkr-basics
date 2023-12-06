@@ -9,10 +9,12 @@ target_sources(
     gkr_comm
     INTERFACE
     "gkr/comm/api.h"
-    "gkr/comm/udpSocketReceiver.h"
-    )
+    "gkr/comm/udp_socket_sender.hpp"
+    "gkr/comm/udp_socket_receiver.hpp"
+)
 target_sources(
     gkr_comm
     PRIVATE
-    "gkr/comm/udpSocketReceiver.cpp"
-    )
+    "gkr/comm/udp_socket_sender.cpp"
+    "gkr/comm/udp_socket_receiver.cpp"
+)

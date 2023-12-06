@@ -155,7 +155,7 @@ consumer_t makeEventLogAppenderWrapper(formatter_t& formatter, const char* sourc
     return nullptr;
 }
 
-consumer_t makeRollingFileAppenderWrapper(formatter_t& formatter1, formatter_t& formatter2, const plog::RollingFileData* sourceName)
+consumer_t makeRollingFileAppenderWrapper(formatter_t& formatter1, formatter_t& formatter2, const plog::RollingFileData& rollingData)
 {
     return nullptr;
 }

@@ -16,33 +16,41 @@ target_sources(
     INTERFACE
     "gkr/api.h"
     "gkr/stamp.h"
+    "gkr/stack_alloc.h"
     "gkr/diagnostics.h"
 )
 
-# C++ INTERFACE
+# C++ INTERFACE PUBLIC
 target_sources(
     gkr_core
     INTERFACE
     "gkr/stamp.hpp"
-    "gkr/container/raw_buffer.h"
-    "gkr/container/lockfree_queue.h"
-    "gkr/container/lockfree_grow_only_bag.h"
+    "gkr/container/raw_buffer.hpp"
+    "gkr/container/lockfree_queue.hpp"
+    "gkr/container/lockfree_grow_only_bag.hpp"
     "gkr/concurency/worker_thread.hpp"
     "gkr/concurency/events_waiting.hpp"
     "gkr/concurency/waitable_lockfree_queue.hpp"
-    "gkr/misc/union_cast.h"
-    "gkr/misc/stack_args_order.h"
-    "gkr/cpp/lib_is_swappable.h"
-    "gkr/cpp/lib_exchange_function.h"
-    "gkr/cpp/lib_raw_memory_algorithms.h"
-    "gkr/sys/stack_alloc.h"
+    "gkr/cpp/lib_is_swappable.hpp"
+    "gkr/cpp/lib_exchange_function.hpp"
+    "gkr/cpp/lib_raw_memory_algorithms.hpp"
+)
+
+# C++ INTERFACE INTERNAL
+target_sources(
+    gkr_core
+    INTERFACE
+    "gkr/misc/union_cast.hpp"
+    "gkr/misc/stack_args_order.hpp"
     "gkr/sys/file.hpp"
     "gkr/sys/thread.hpp"
     "gkr/sys/process.hpp"
     "gkr/net/lib.hpp"
     "gkr/net/address.hpp"
     "gkr/net/socket.hpp"
-    )
+)
+
+# C++ PRIVATE sources
 target_sources(
     gkr_core
     PRIVATE
@@ -54,4 +62,4 @@ target_sources(
     "gkr/net/lib.cpp"
     "gkr/net/address.cpp"
     "gkr/net/socket.cpp"
-    )
+)

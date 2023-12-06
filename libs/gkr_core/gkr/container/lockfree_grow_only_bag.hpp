@@ -10,7 +10,7 @@
 #include <gkr/diagnostics.h>
 
 #ifndef __cpp_lib_exchange_function
-#include <gkr/cpp/lib_exchange_function.h>
+#include <gkr/cpp/lib_exchange_function.hpp>
 #endif
 
 #else

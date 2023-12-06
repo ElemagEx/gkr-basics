@@ -2,7 +2,7 @@
 
 #include <gkr/comm/api.h>
 
-#include <gkr/container/raw_buffer.h>
+#include <gkr/container/raw_buffer.hpp>
 #include <gkr/net/address.hpp>
 #include <gkr/net/socket.hpp>
 
@@ -11,23 +11,27 @@
 
 namespace gkr
 {
-
-namespace data { struct split_packet_head; }
-
-class udpSocketReceiver
+namespace data
 {
-    udpSocketReceiver           (const udpSocketReceiver&) noexcept = delete;
-    udpSocketReceiver& operator=(const udpSocketReceiver&) noexcept = delete;
+    struct split_packet_head;
+}
+namespace comm
+{
+
+class udp_socket_receiver
+{
+    udp_socket_receiver           (const udp_socket_receiver&) noexcept = delete;
+    udp_socket_receiver& operator=(const udp_socket_receiver&) noexcept = delete;
 
 public:
-    udpSocketReceiver(udpSocketReceiver&& other) noexcept(
+    udp_socket_receiver(udp_socket_receiver&& other) noexcept(
         std::is_nothrow_move_assignable<raw_buffer_t>::value
         )
         : m_socket(std::move(other.m_socket))
         , m_packet(std::move(other.m_packet))
     {
     }
-    udpSocketReceiver& operator=(udpSocketReceiver&& other) noexcept(
+    udp_socket_receiver& operator=(udp_socket_receiver&& other) noexcept(
         std::is_nothrow_move_assignable<raw_buffer_t>::value
         )
     {
@@ -37,11 +41,8 @@ public:
     }
 
 public:
-    GKR_COMM_API udpSocketReceiver(
-        std::size_t maxPacketSize = 2*1024,
-        bool useIPv6 = false
-        );
-    GKR_COMM_API ~udpSocketReceiver();
+    GKR_COMM_API  udp_socket_receiver(std::size_t maxPacketSize = 2*1024, bool useIPv6 = false);
+    GKR_COMM_API ~udp_socket_receiver();
 
 public:
     GKR_COMM_API bool setWaitPacketTimeout(unsigned waitPacketTimeout);
@@ -87,4 +88,5 @@ private:
     std::vector<partial_packet_t> m_partialPackets;
 };
 
+}
 }

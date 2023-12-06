@@ -71,6 +71,8 @@ GKR_LOG_API consumer_t makeAndroidAppenderWrapper     (formatter_t& formatter, c
 GKR_LOG_API consumer_t makeArduinoAppenderWrapper     (formatter_t& formatter, const Stream& stream);
 GKR_LOG_API consumer_t makeEventLogAppenderWrapper    (formatter_t& formatter, const char* sourceName);
 
+GKR_LOG_API consumer_t makeRollingFileAppenderWrapper(formatter_t& formatter1, formatter_t& formatter2, const plog::RollingFileData& rollingData);
+
 template<template<class> class Appender, class Formatter>
 consumer_t makePlogConsumerWrapper1(int instanceId, Appender<Formatter>* appender)
 {
@@ -121,7 +123,7 @@ consumer_t makePlogConsumerWrapper2(int instanceId, plog::RollingFileAppender<Fo
         formatter2.header = &Converter::header;
         formatter2.format = &Converter::format;
     }
-    return makeRollingFileAppenderWrapper(formatter1, formatter2, *static_cast<plog::RollingFileData>(appender->data()));
+    return makeRollingFileAppenderWrapper(formatter1, formatter2, *static_cast<const plog::RollingFileData*>(appender->data()));
 }
 }
 }

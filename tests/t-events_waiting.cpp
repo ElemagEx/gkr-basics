@@ -1,10 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <gkr/testing/diag_undefs.h>
+#include <gkr/testing/diag_undefs.hpp>
 #define DIAG_EXTERNAL_API
 #define DIAG_HALT           my_halt_proc
 #define DIAG_WARN           my_warn_proc
 #define DIAG_NOEXCEPT       false
+#define DIAG_MODE           DIAG_MODE_NOISY
 #include <gkr/diagnostics.h>
 
 [[noreturn]]

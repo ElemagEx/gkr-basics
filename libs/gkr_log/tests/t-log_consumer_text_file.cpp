@@ -1,7 +1,7 @@
 #include <gkr/log/logging.hpp>
 #include <gkr/log/consumers/text_file_consumer.hpp>
 
-#include <gkr/testing/log_defs.h>
+#include <gkr/testing/log_defs.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

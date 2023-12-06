@@ -45,6 +45,8 @@ public:
     virtual ~console_consumer() override = default;
 };
 
+#include <gkr/log/logging.h>
+#if 0
 #define SEVERITY_FATAL   0
 #define SEVERITY_ERROR   1
 #define SEVERITY_WARNING 2
@@ -56,8 +58,6 @@ public:
 #define FACILITY_FILESYS 2
 #define FACILITY_SYNCHRO 3
 
-#include <gkr/log/logging.h>
-#if 0
 constexpr gkr::log::name_id_pair g_severities_infos[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },

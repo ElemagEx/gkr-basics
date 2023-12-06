@@ -1,4 +1,4 @@
-#include <gkr/log/consumers/windows_debugger_consumer.hpp>
+#include "windows_debugger_consumer.hpp"
 #include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>

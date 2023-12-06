@@ -27,9 +27,9 @@ target_sources(
     "gkr/container/raw_buffer.h"
     "gkr/container/lockfree_queue.h"
     "gkr/container/lockfree_grow_only_bag.h"
-    "gkr/concurency/worker_thread.h"
-    "gkr/concurency/events_waiting.h"
-    "gkr/concurency/waitable_lockfree_queue.h"
+    "gkr/concurency/worker_thread.hpp"
+    "gkr/concurency/events_waiting.hpp"
+    "gkr/concurency/waitable_lockfree_queue.hpp"
     "gkr/misc/union_cast.h"
     "gkr/misc/stack_args_order.h"
     "gkr/cpp/lib_is_swappable.h"
@@ -39,9 +39,9 @@ target_sources(
     "gkr/sys/file.hpp"
     "gkr/sys/thread.hpp"
     "gkr/sys/process.hpp"
-    "gkr/net/lib.h"
-    "gkr/net/address.h"
-    "gkr/net/socket.h"
+    "gkr/net/lib.hpp"
+    "gkr/net/address.hpp"
+    "gkr/net/socket.hpp"
     )
 target_sources(
     gkr_core

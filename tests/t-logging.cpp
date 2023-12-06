@@ -57,7 +57,7 @@ public:
 #define FACILITY_SYNCHRO 3
 
 #include <gkr/log/logging.h>
-
+#if 0
 constexpr gkr::log::name_id_pair g_severities_infos[] = {
     {"Fatal"  , SEVERITY_FATAL  },
     {"Error"  , SEVERITY_ERROR  },
@@ -73,7 +73,7 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
     {"Synchro", FACILITY_SYNCHRO},
     {nullptr  , 0               }
 };
-
+#endif
 #include <thread>
 #if 0
 TEST_CASE("logging.logger. main")
@@ -104,15 +104,23 @@ TEST_CASE("logging.logger. main")
 #endif
 TEST_CASE("logging.imposter.plog. main")
 {
-    plog::init<plog::TxtFormatterUtcTime>(plog::debug, plog::streamStdOut);
+    //plog::init(); // 0 args
+    //plog::init(plog::debug); // 1 args
+    //static plog::ConsoleAppender<plog::MessageOnlyFormatter> appender;
+    //plog::init(plog::debug, &appender); // 2 args
 
-    PLOGD << "Hello log!";
+    //plog::init<plog::FuncMessageFormatter>(plog::debug, plog::streamStdOut);
+
+
+    PLOGV << "Hello log!";
     PLOG_DEBUG << "Hello log!";
-    PLOG(plog::debug) << "Hello log!";
+    PLOG(plog::info) << "Hello log!";
     
-    LOGD << "Hello log!";
-    LOG_DEBUG << "Hello log!";
-    LOG(plog::debug) << "Hello log!";
+    LOGW << "Hello log!";
+    LOG_ERROR << "Hello log!";
+    LOG(plog::fatal) << "Hello log!";
+
+    PLOG_NONE << "Hello log!";
 
     //TODO:Decrement logging refCount
 }

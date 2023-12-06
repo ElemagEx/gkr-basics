@@ -1,4 +1,4 @@
-#include <gkr/log/consumers/text_file_consumer.hpp>
+#include "text_file_consumer.hpp"
 #include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>
@@ -156,7 +156,7 @@ void gkr_log_textFile_consumeLogMessage(void* param, const struct gkr_log_messag
 
     data->buf[data->cch - 1] = 0;
 
-    const unsigned cch = (data->eoln[1] == 0) ? 1 : 2;
+    const unsigned cch = (data->eoln[1] == 0) ? 1U : 2U;
 
     outputToTextFile(data->file, data->buf, len, data->eoln, cch);
 }
@@ -224,7 +224,7 @@ void text_file_consumer::consume_log_message(const message& msg)
 
     m_buf[m_cch - 1] = 0;
 
-    const unsigned cch = (reinterpret_cast<char*>(&m_eoln)[1] == 0) ? 1 : 2;
+    const unsigned cch = (reinterpret_cast<char*>(&m_eoln)[1] == 0) ? 1U : 2U;
     outputToTextFile(static_cast<std::FILE*>(m_file), m_buf, len, reinterpret_cast<char*>(&m_eoln), cch);
 }
 

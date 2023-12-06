@@ -1,5 +1,7 @@
 #pragma once
 
+#include <plog/Converters/NativeEOLConverter.h>
+#include <plog/Converters/UTF8Converter.h>
 #include <plog/Formatters/CsvFormatter.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Formatters/FuncMessageFormatter.h>
@@ -10,6 +12,7 @@
 #include <plog/Appenders/ArduinoAppender.h>
 #include <plog/Appenders/EventLogAppender.h>
 #include <plog/Appenders/DynamicAppender.h>
+#include <plog/Appenders/RollingFileAppender.h>
 
 #include <gkr/diagnostics.h>
 #include <gkr/log/logging.hpp>
@@ -48,6 +51,10 @@ enum
     formatter_FuncMessageFormatter,
     formatter_MessageOnlyFormatter,
     formatter_Other               ,
+
+    converter_Utf8Converter                   ,
+    converter_NativeEOLConverter_UTF8Converter,
+    converter_Other               ,
 };
 struct formatter_t
 {
@@ -65,7 +72,7 @@ GKR_LOG_API consumer_t makeArduinoAppenderWrapper     (formatter_t& formatter, c
 GKR_LOG_API consumer_t makeEventLogAppenderWrapper    (formatter_t& formatter, const char* sourceName);
 
 template<template<class> class Appender, class Formatter>
-consumer_t makePlogConsumerWrapper(int instanceId, Appender<Formatter>* appender)
+consumer_t makePlogConsumerWrapper1(int instanceId, Appender<Formatter>* appender)
 {
     Check_Arg_NotNull(appender, nullptr);
 
@@ -81,17 +88,41 @@ consumer_t makePlogConsumerWrapper(int instanceId, Appender<Formatter>* appender
         formatter.format = &Formatter::format;
     }
     consumer_t consumer;
-    if_constexpr(std::is_same<Appender<Formatter>, plog::ColorConsoleAppender<Formatter>>::value) consumer = makeColorConsoleAppenderWrapper(formatter, *static_cast<const int *>(appender->data())); else
-    if_constexpr(std::is_same<Appender<Formatter>, plog::ConsoleAppender     <Formatter>>::value) consumer = makeConsoleAppenderWrapper     (formatter, *static_cast<const int *>(appender->data())); else
-    if_constexpr(std::is_same<Appender<Formatter>, plog::AndroidAppender     <Formatter>>::value) consumer = makeAndroidAppenderWrapper     (formatter,  static_cast<const char*>(appender->data())); else
-    if_constexpr(std::is_same<Appender<Formatter>, plog::ArduinoAppender     <Formatter>>::value) consumer = makeArduinoAppenderWrapper     (formatter, *static_cast<Stream    *>(appender->data())); else
-    if_constexpr(std::is_same<Appender<Formatter>, plog::EventLogAppender    <Formatter>>::value) consumer = makeEventLogAppenderWrapper    (formatter,  static_cast<const char*>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::ColorConsoleAppender<Formatter> >::value) consumer = makeColorConsoleAppenderWrapper(formatter, *static_cast<const int *>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::ConsoleAppender     <Formatter> >::value) consumer = makeConsoleAppenderWrapper     (formatter, *static_cast<const int *>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::AndroidAppender     <Formatter> >::value) consumer = makeAndroidAppenderWrapper     (formatter,  static_cast<const char*>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::ArduinoAppender     <Formatter> >::value) consumer = makeArduinoAppenderWrapper     (formatter, *static_cast<Stream    *>(appender->data())); else
+    if_constexpr(std::is_same<Appender<Formatter>, plog::EventLogAppender    <Formatter> >::value) consumer = makeEventLogAppenderWrapper    (formatter,  static_cast<const char*>(appender->data())); else
     {
         consumer = nullptr;
     }
     return consumer;
 }
+template<class Formatter, class Converter>
+consumer_t makePlogConsumerWrapper2(int instanceId, plog::RollingFileAppender<Formatter, Converter>* appender)
+{
+    Check_Arg_NotNull(appender, nullptr);
 
+    formatter_t formatter1 {nullptr, nullptr, formatter_Other, instanceId};
+    if_constexpr(std::is_same<Formatter, plog::CsvFormatter        >::value) formatter1.type = formatter_CsvFormatter        ; else
+    if_constexpr(std::is_same<Formatter, plog::CsvFormatterUtcTime >::value) formatter1.type = formatter_CsvFormatterUtcTime ; else
+    if_constexpr(std::is_same<Formatter, plog::TxtFormatter        >::value) formatter1.type = formatter_TxtFormatter        ; else
+    if_constexpr(std::is_same<Formatter, plog::TxtFormatterUtcTime >::value) formatter1.type = formatter_TxtFormatterUtcTime ; else
+    if_constexpr(std::is_same<Formatter, plog::FuncMessageFormatter>::value) formatter1.type = formatter_FuncMessageFormatter; else
+    if_constexpr(std::is_same<Formatter, plog::MessageOnlyFormatter>::value) formatter1.type = formatter_MessageOnlyFormatter; else
+    {
+        formatter1.header = &Formatter::header;
+        formatter1.format = &Formatter::format;
+    }
+    formatter_t formatter2 {nullptr, nullptr, converter_Other, instanceId};
+    if(std::is_same<Converter, plog::UTF8Converter                           >::value) formatter2.type = converter_Utf8Converter; else
+    if(std::is_same<Converter, plog::NativeEOLConverter<plog::UTF8Converter> >::value) formatter2.type = converter_NativeEOLConverter_UTF8Converter; else
+    {
+        formatter2.header = &Converter::header;
+        formatter2.format = &Converter::format;
+    }
+    return makeRollingFileAppenderWrapper(formatter1, formatter2, *static_cast<plog::RollingFileData>(appender->data()));
+}
 }
 }
 }

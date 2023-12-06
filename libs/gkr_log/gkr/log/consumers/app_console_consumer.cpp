@@ -1,7 +1,8 @@
-#include <gkr/log/consumers/app_console_consumer.hpp>
+#include "app_console_consumer.hpp"
 #include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.h>
+#include <gkr/sys/file.hpp>
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,6 +28,21 @@ static void outputToConsole(int method, const char* text)
         case gkr_log_appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
         case gkr_log_appConsoleWriteMethod_stream2cerr: std::cerr << text << std::endl; break;
         case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
+    }
+}
+static bool isOutputAtty(int method)
+{
+    switch(method)
+    {
+        case gkr_log_appConsoleWriteMethod_fputs2stderr:
+        case gkr_log_appConsoleWriteMethod_stream2cerr:
+        case gkr_log_appConsoleWriteMethod_stream2clog:
+            return gkr::sys::file_is_atty(stderr);
+
+        case gkr_log_appConsoleWriteMethod_fputs2stdout:
+        case gkr_log_appConsoleWriteMethod_stream2cout:
+        default:
+            return gkr::sys::file_is_atty(stdout);
     }
 }
 
@@ -57,6 +73,7 @@ struct data_t
 {
     unsigned (*composeOutput)(char*, unsigned, const struct gkr_log_message*);
     int      method;
+    bool     isAtty;
     unsigned cch;
     char     buf[1];
 };
@@ -76,6 +93,7 @@ void* gkr_log_appConsole_createConsumerParam(
     {
         data->composeOutput = composeOutput;
         data->method        = method;
+        data->isAtty        = isOutputAtty(method);
         data->cch           = bufferCapacity;
     }
     return data;
@@ -120,7 +138,8 @@ namespace log
 app_console_consumer::app_console_consumer(int method, unsigned bufferCapacity)
     : m_buf(nullptr)
     , m_cch(bufferCapacity)
-    , m_mth(method)
+    , m_method(method)
+    , m_isAtty(isOutputAtty(method))
 {
     Check_Arg_IsValid(bufferCapacity > 0, );
 
@@ -159,7 +178,7 @@ void app_console_consumer::consume_log_message(const message& msg)
 
     m_buf[m_cch - 1] = 0;
 
-    outputToConsole(m_mth, m_buf);
+    outputToConsole(m_method, m_buf);
 }
 
 unsigned app_console_consumer::compose_output(char* buf, unsigned cch, const message& msg)

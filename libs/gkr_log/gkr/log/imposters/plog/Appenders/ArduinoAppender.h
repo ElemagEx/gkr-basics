@@ -13,8 +13,8 @@ class ArduinoAppender : public IAppender
 {
     Stream& m_stream;
 public:
-    ArduinoAppender(Stream &stream) : m_stream(stream) {}
-    virtual void write(const Record &record) {}
+    ArduinoAppender(Stream& stream) : m_stream(stream) {}
+    virtual void write(const Record& record) {}
     const void* data() const { return &m_stream; }
 };
 }

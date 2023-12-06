@@ -1,4 +1,4 @@
-#include <gkr/stamp.hpp>
+#include "stamp.hpp"
 
 #include <gkr/diagnostics.h>
 

@@ -1,5 +1,5 @@
-#include <gkr/net/socket.h>
-#include <gkr/net/lib.h>
+#include <gkr/net/socket.hpp>
+#include <gkr/net/lib.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

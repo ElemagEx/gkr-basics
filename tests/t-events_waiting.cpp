@@ -17,7 +17,7 @@ static int my_warn_proc(int id, const char* msg DIAG_SRC_PROTOTYPE) noexcept(DIA
     return 1;
 }
 
-#include <gkr/concurency/events_waiting.h>
+#include <gkr/concurency/events_waiting.hpp>
 
 #include <thread>
 

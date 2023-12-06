@@ -3,8 +3,8 @@
 #include <gkr/comm/api.h>
 
 #include <gkr/container/raw_buffer.h>
-#include <gkr/net/address.h>
-#include <gkr/net/socket.h>
+#include <gkr/net/address.hpp>
+#include <gkr/net/socket.hpp>
 
 #include <vector>
 #include <chrono>

@@ -8,7 +8,7 @@ namespace plog
 class IAppender
 {
 public:
-    virtual ~IAppender() = default;
+    virtual ~IAppender() {}
     virtual void write(const Record& record) = 0;
 };
 }

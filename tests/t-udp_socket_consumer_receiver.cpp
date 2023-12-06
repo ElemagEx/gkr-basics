@@ -6,9 +6,9 @@
 #include <gkr/comm/udpSocketReceiver.h>
 #include <gkr/data/log_message.h>
 
-#include <gkr/net/lib.h>
-#include <gkr/net/address.h>
-#include <gkr/concurency/worker_thread.h>
+#include <gkr/net/lib.hpp>
+#include <gkr/net/address.hpp>
+#include <gkr/concurency/worker_thread.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

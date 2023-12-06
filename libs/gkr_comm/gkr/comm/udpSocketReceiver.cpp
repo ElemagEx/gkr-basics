@@ -111,7 +111,7 @@ void udpSocketReceiver::handleUnsplittedPacket()
     const data::split_packet_head&      packetHead = m_packet.as<const data::split_packet_head>();
     const data::split_packet_data_head& packetData = m_packet.as<const data::split_packet_data_head>(packetHead.data_offset);
 
-    const std::size_t data_size = (packetHead.packet_size - packetHead.data_offset);
+    const std::size_t data_size = std::size_t(packetHead.packet_size) - std::size_t(packetHead.data_offset);
 
     if((data_size != packetHead.data_size) || (0 != packetHead.data_sent))
     {
@@ -151,7 +151,7 @@ void udpSocketReceiver::handlePartialPacket()
 
 udpSocketReceiver::partial_packet_t& udpSocketReceiver::findPartialPacket(const data::split_packet_head& packetHead, std::size_t& partialDataSize)
 {
-    partialDataSize = (packetHead.packet_size - packetHead.data_offset);
+    partialDataSize = std::size_t(packetHead.packet_size) - std::size_t(packetHead.data_offset);
     Assert_Check(packetHead.packet_count > 0);
 
     partial_packet_t* unused = nullptr;

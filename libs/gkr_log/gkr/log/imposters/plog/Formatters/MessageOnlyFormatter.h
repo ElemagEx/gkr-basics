@@ -5,10 +5,5 @@
 
 namespace plog
 {
-class MessageOnlyFormatter
-{
-public:
-    static std::string header(){return"";}
-    static std::string format(const Record& record){return"";}
-};
+class MessageOnlyFormatter {};
 }

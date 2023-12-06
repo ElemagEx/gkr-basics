@@ -1,4 +1,4 @@
-#include <gkr/log/consumers/android_log_consumer.hpp>
+#include "android_log_consumer.hpp"
 
 #include <gkr/diagnostics.h>
 

@@ -1,9 +1,9 @@
-#include <gkr/log/consumers/udp_socket_consumer.hpp>
+#include "udp_socket_consumer.hpp"
 
 #include <gkr/data/log_message.h>
 
 #include <gkr/sys/process.hpp>
-#include <gkr/net/lib.h>
+#include <gkr/net/lib.hpp>
 
 #include <gkr/diagnostics.h>
 

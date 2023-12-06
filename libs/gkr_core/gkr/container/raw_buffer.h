@@ -193,8 +193,8 @@ public:
         : m_allocator(std::move(other.m_allocator))
     {
         m_data     = std::exchange(other.m_data    , nullptr);
-        m_size     = std::exchange(other.m_size    , 0);
-        m_capacity = std::exchange(other.m_capacity, 0);
+        m_size     = std::exchange(other.m_size    , 0U);
+        m_capacity = std::exchange(other.m_capacity, 0U);
     }
 
     raw_buffer& operator=(raw_buffer&& other) noexcept(move_assignment_is_nothrow)
@@ -206,20 +206,20 @@ public:
                 m_allocator = std::move(other.m_allocator);
 
                 m_data     = std::exchange(other.m_data    , nullptr);
-                m_size     = std::exchange(other.m_size    , 0);
-                m_capacity = std::exchange(other.m_capacity, 0);
+                m_size     = std::exchange(other.m_size    , 0U);
+                m_capacity = std::exchange(other.m_capacity, 0U);
             }
             else if_constexpr(allocator_traits::is_always_equal::value)
             {
                 m_data     = std::exchange(other.m_data    , nullptr);
-                m_size     = std::exchange(other.m_size    , 0);
-                m_capacity = std::exchange(other.m_capacity, 0);
+                m_size     = std::exchange(other.m_size    , 0U);
+                m_capacity = std::exchange(other.m_capacity, 0U);
             }
             else if(m_allocator == other.m_allocator)
             {
                 m_data     = std::exchange(other.m_data    , nullptr);
-                m_size     = std::exchange(other.m_size    , 0);
-                m_capacity = std::exchange(other.m_capacity, 0);
+                m_size     = std::exchange(other.m_size    , 0U);
+                m_capacity = std::exchange(other.m_capacity, 0U);
             }
             else
             {

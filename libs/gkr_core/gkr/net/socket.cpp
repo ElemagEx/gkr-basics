@@ -1,6 +1,6 @@
-#include <gkr/net/socket.h>
+#include "socket.hpp"
 
-#include <gkr/net/address.h>
+#include <gkr/net/address.hpp>
 
 #include <gkr/diagnostics.h>
 
@@ -26,7 +26,7 @@ static std::string get_net_error_text(int error)
     const unsigned len = FormatMessageA(
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
         nullptr,
-        error,
+        DWORD(error),
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         (char*)&buffer,
         128,

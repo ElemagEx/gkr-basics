@@ -1,4 +1,4 @@
-#include <gkr/net/lib.h>
+#include "lib.hpp"
 
 #include <gkr/diagnostics.h>
 

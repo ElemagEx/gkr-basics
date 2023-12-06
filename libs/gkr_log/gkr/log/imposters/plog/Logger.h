@@ -1,10 +1,9 @@
 #pragma once
 #include <plog/Appenders/IAppender.h>
+#include <plog/Appenders/RollingFileAppender.h>
 #include <plog/Wrapper.h>
 #include <plog/Util.h>
 #include <vector>
-
-#include <gkr/diagnostics.h>
 
 #ifdef  PLOG_DEFAULT_INSTANCE
 #define PLOG_DEFAULT_INSTANCE_ID PLOG_DEFAULT_INSTANCE
@@ -45,14 +44,21 @@ public:
     template<template<class> class Appender, class Formatter>
     Logger& addAppender(Appender<Formatter>* appender)
     {
-        Check_Arg_NotNull(appender, *this);
-        auto consumer = gkr::log::impl::makePlogConsumerWrapper<Appender, Formatter>(instanceId, appender);
+        if(appender == nullptr) return *this;
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper1(instanceId, appender);
+        gkr_log_add_consumer(consumer);
+        return *this;
+    }
+    template<class Formatter, class Converter>
+    Logger& addAppender(RollingFileAppender<Formatter, Converter>* appender)
+    {
+        if(appender == nullptr) return *this;
+        auto consumer = gkr::log::impl::makePlogConsumerWrapper2(instanceId, appender);
         gkr_log_add_consumer(consumer);
         return *this;
     }
 //  Logger& addAppender(IAppender* appender)
 //  {
-//      Check_Arg_NotNull(appender, *this);
 //      gkr_log_add_consumer();
 //      return *this;
 //  }

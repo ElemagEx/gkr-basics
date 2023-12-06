@@ -4,8 +4,8 @@
 #include <gkr/log/consumer.hpp>
 #include <gkr/log/consumers/udp_socket_callbacks.h>
 
-#include <gkr/net/socket.h>
-#include <gkr/net/address.h>
+#include <gkr/net/socket.hpp>
+#include <gkr/net/address.hpp>
 #include <gkr/container/raw_buffer.h>
 
 #include <string>
@@ -32,8 +32,8 @@ public:
         , m_buffer     (std::move(other.m_buffer))
         , m_socket     (std::move(other.m_socket))
         , m_remoteAddr (std::move(other.m_remoteAddr))
-        , m_processId  (std::exchange(other.m_processId, 0))
-        , m_packetId   (std::exchange(other.m_packetId , 0))
+        , m_processId  (std::exchange(other.m_processId, 0U))
+        , m_packetId   (std::exchange(other.m_packetId , 0U))
     {
     }
     udp_socket_consumer& operator=(udp_socket_consumer&& other) noexcept(
@@ -47,8 +47,8 @@ public:
         m_socket      = std::move(other.m_socket);
         m_remoteAddr  = std::move(other.m_remoteAddr);
 
-        m_processId   = std::exchange(other.m_processId, 0);
-        m_packetId    = std::exchange(other.m_packetId , 0);
+        m_processId   = std::exchange(other.m_processId, 0U);
+        m_packetId    = std::exchange(other.m_packetId , 0U);
         return *this;
     }
 

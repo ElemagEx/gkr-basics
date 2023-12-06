@@ -36,11 +36,11 @@ int get_current_process_name(char* name, unsigned cch)
     if((name != nullptr) && (len < cch))
     {
         std::strncpy(name, file, cch);
-        return len;
+        return int(len);
     }
     else
     {
-        return (len + 1);
+        return int(len + 1);
     }
 }
 int get_current_process_path(char* path, unsigned cch)
@@ -61,11 +61,11 @@ int get_current_process_path(char* path, unsigned cch)
     if((path != nullptr) && (len < cch))
     {
         std::strncpy(path, file, cch);
-        return len;
+        return int(len);
     }
     else
     {
-        return (len + 1);
+        return int(len + 1);
     }
 }
 }

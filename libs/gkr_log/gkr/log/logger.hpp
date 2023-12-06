@@ -2,9 +2,9 @@
 
 #include <gkr/log/consumer.hpp>
 
-#include <gkr/concurency/worker_thread.h>
-#include <gkr/concurency/events_waiting.h>
-#include <gkr/concurency/waitable_lockfree_queue.h>
+#include <gkr/concurency/worker_thread.hpp>
+#include <gkr/concurency/events_waiting.hpp>
+#include <gkr/concurency/waitable_lockfree_queue.hpp>
 
 #include <memory>
 #include <vector>

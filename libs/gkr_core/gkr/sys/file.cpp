@@ -17,7 +17,7 @@ bool file_is_atty(void* file)
 #ifdef _WIN32
     const int fd = _fileno(static_cast<FILE*>(file));
 
-    return _isatty(fd);
+    return _isatty(fd)?true:false;
 #else
     const int fd = fileno(static_cast<FILE*>(file));
 

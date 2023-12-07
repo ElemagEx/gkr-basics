@@ -30,7 +30,7 @@ struct gkr_log_text_file_consumer_callbacks
 };
 
 GKR_LOG_API int gkr_log_add_text_file_consumer(
-    gkr_log_text_file_consumer_callbacks* callbacks,
+    const gkr_log_text_file_consumer_callbacks* callbacks,
     const char* filepath,
     int eoln,
     unsigned bufferCapacity

@@ -2,6 +2,8 @@
 
 #include <gkr/log/galery.h>
 
+struct gkr_log_message;
+
 namespace gkr
 {
 namespace log

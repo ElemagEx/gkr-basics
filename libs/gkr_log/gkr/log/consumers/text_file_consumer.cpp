@@ -60,7 +60,7 @@ public:
         return *this;
     }
     c_text_file_consumer(
-        gkr_log_text_file_consumer_callbacks* callbacks,
+        const gkr_log_text_file_consumer_callbacks* callbacks,
         const char* filepath = nullptr,
         int eoln = gkr_log_textFileEoln_Default,
         unsigned bufferCapacity = 2 * 1024
@@ -123,7 +123,7 @@ protected:
 extern "C" {
 
 int gkr_log_add_text_file_consumer(
-    gkr_log_text_file_consumer_callbacks* callbacks,
+    const gkr_log_text_file_consumer_callbacks* callbacks,
     const char* filepath,
     int eoln,
     unsigned bufferCapacity
@@ -166,7 +166,7 @@ bool text_file_consumer::init_logging()
 {
     if(m_buf == nullptr) return false;
 
-    const int head_len = sys::get_current_process_path(m_buf, m_cch);
+    const unsigned head_len = unsigned(sys::get_current_process_path(m_buf, m_cch));
 
     if(head_len >= m_cch) {
         return false;

@@ -23,7 +23,8 @@ struct gkr_log_app_console_consumer_callbacks {
 };
 
 GKR_LOG_API int gkr_log_add_app_console_consumer(
-    gkr_log_app_console_consumer_callbacks* callbacks,
+    const gkr_log_app_console_consumer_callbacks* callbacks,
+    int method,
     unsigned bufferCapacity
     );
 

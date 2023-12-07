@@ -45,7 +45,7 @@ public:
         return *this;
     }
     c_android_log_consumer(
-        gkr_log_android_log_consumer_callbacks* callbacks,
+        const gkr_log_android_log_consumer_callbacks* callbacks,
         unsigned bufferCapacity
         )
         : android_log_consumer(bufferCapacity)
@@ -90,7 +90,7 @@ protected:
 extern "C" {
 
 int gkr_log_add_android_log_consumer(
-    gkr_log_android_log_consumer_callbacks* callbacks,
+    const gkr_log_android_log_consumer_callbacks* callbacks,
     unsigned bufferCapacity
     )
 {

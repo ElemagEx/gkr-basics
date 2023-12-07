@@ -154,15 +154,15 @@ TEST_CASE("logging.consumer.udp_socket. Simple packet")
 
     REQUIRE(gkr_log_set_this_thread_name("thread-0"));
 
-    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First simple log message"));
+    REQUIRE(gkr_log_simple_message(SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First simple log message"));
 
     std::thread t([] () {
         gkr_log_set_this_thread_name("thread-1");
-        gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread simple log message");
+        gkr_log_simple_message(SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread simple log message");
     });
     t.join();
 
-    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second simple log message"));
+    REQUIRE(gkr_log_simple_message(SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second simple log message"));
 
     recv.join(false);
 }
@@ -177,15 +177,15 @@ TEST_CASE("logging.consumer.udp_socket. Splitted packet")
 
     REQUIRE(gkr_log_set_this_thread_name("thread-A"));
 
-    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First splitted log message"));
+    REQUIRE(gkr_log_simple_message(SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First splitted log message"));
 
     std::thread t([] () {
         gkr_log_set_this_thread_name("thread-B");
-        gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread splitted log message");
+        gkr_log_simple_message(SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread splitted log message");
     });
     t.join();
 
-    REQUIRE(gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second splitted log message"));
+    REQUIRE(gkr_log_simple_message(SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second splitted log message"));
 
     recv.join(false);
 }

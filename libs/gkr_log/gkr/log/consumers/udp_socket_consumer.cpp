@@ -37,7 +37,7 @@ public:
         return *this;
     }
     c_udp_socket_consumer(
-        gkr_log_udp_socket_consumer_callbacks* callbacks,
+        const gkr_log_udp_socket_consumer_callbacks* callbacks,
         const char*    remoteHost,
         unsigned short remotePort,
         unsigned maxPacketSize,
@@ -59,7 +59,7 @@ public:
 extern "C" {
 
 int gkr_log_add_udp_socket_consumer(
-    gkr_log_udp_socket_consumer_callbacks* callbacks,
+    const gkr_log_udp_socket_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize,
@@ -164,6 +164,8 @@ bool udp_socket_consumer::retrieve_host_name()
 
 bool udp_socket_consumer::construct_data(const message& msg)
 {
+    const std::size_t nameLenFunc     = std::strlen(msg.sourceFunc);
+    const std::size_t nameLenFile     = std::strlen(msg.sourceFile);
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
     const std::size_t nameLenSeverity = std::strlen(msg.severityName);
@@ -172,6 +174,8 @@ bool udp_socket_consumer::construct_data(const message& msg)
         sizeof(data::log_message)
         + m_hostName   .size() + 1
         + m_processName.size() + 1
+        + nameLenFunc     + 1
+        + nameLenFile     + 1
         + nameLenThread   + 1
         + nameLenFacility + 1
         + nameLenSeverity + 1
@@ -192,6 +196,8 @@ bool udp_socket_consumer::construct_data(const message& msg)
 
     std::size_t offsetToStr = sizeof(data::log_message);
 
+    messageData.offset_to_func     = std::uint16_t(offsetToStr); offsetToStr += nameLenFunc     + 1;
+    messageData.offset_to_file     = std::uint16_t(offsetToStr); offsetToStr += nameLenFile     + 1;
     messageData.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_hostName   .size() + 1;
     messageData.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_processName.size() + 1;
     messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread   + 1;
@@ -203,6 +209,8 @@ bool udp_socket_consumer::construct_data(const message& msg)
 
     char* strBase = reinterpret_cast<char*>(&messageData);
 
+    std::strncpy(strBase + messageData.offset_to_func    , msg.threadName       , nameLenFunc     + 1);
+    std::strncpy(strBase + messageData.offset_to_file    , msg.threadName       , nameLenFile     + 1);
     std::strncpy(strBase + messageData.offset_to_host    , m_hostName   .c_str(), m_hostName   .size() + 1); 
     std::strncpy(strBase + messageData.offset_to_process , m_processName.c_str(), m_processName.size() + 1);
     std::strncpy(strBase + messageData.offset_to_thread  , msg.threadName       , nameLenThread   + 1);

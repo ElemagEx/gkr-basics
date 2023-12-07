@@ -69,11 +69,6 @@ public:
     void set_facility(const name_id_pair& facility_info);
 
 public:
-    using callbacks_t = gkr_log_consumer_callbacks;
-
-    bool add_callbacks(callbacks_t* callbacks, void* param);
-    bool del_callbacks(callbacks_t* callbacks, void* param);
-
     using consumer_ptr_t = std::shared_ptr<consumer>;
 
     bool add_consumer(consumer_ptr_t consumer);
@@ -88,9 +83,9 @@ public:
 
 public:
     bool start_log_message(char*& buf, unsigned& cch);
-    bool finish_log_message(const source_location* location, bool wait, int severity, int facility);
+    bool finish_log_message(const source_location* location, int severity, int facility);
 
-    bool log_message(const source_location* location, bool wait, int severity, int facility, const char* format, va_list args);
+    bool log_message(const source_location* location, int severity, int facility, const char* format, va_list args);
 
 private:
     struct message_data : public message
@@ -127,8 +122,6 @@ private:
         ACTION_SET_FACILITY     ,
         ACTION_ADD_CONSUMER     ,
         ACTION_DEL_CONSUMER     ,
-        ACTION_ADD_CALLBACKS    ,
-        ACTION_DEL_CALLBACKS    ,
         ACTION_DEL_ALL_CONSUMERS,
         ACTION_SET_THREAD_NAME  ,
         ACTION_SYNC_LOG_MESSAGE ,
@@ -139,8 +132,6 @@ private:
     struct consumer_data_t
     {
         consumer_ptr_t consumer;
-        callbacks_t    callbacks {nullptr, nullptr, nullptr, nullptr};
-        void*          param     {nullptr};
         bool           reentry_guard {false};
     };
 

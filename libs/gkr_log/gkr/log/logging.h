@@ -31,9 +31,6 @@ GKR_LOG_API int gkr_log_set_facilities(int clear_existing, const struct gkr_log_
 GKR_LOG_API int gkr_log_set_severity(const struct gkr_log_name_id_pair* severity_info);
 GKR_LOG_API int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info);
 
-GKR_LOG_API int gkr_log_add_consumer_callbacks(struct gkr_log_consumer_callbacks* callbacks, void* param);
-GKR_LOG_API int gkr_log_del_consumer_callbacks(struct gkr_log_consumer_callbacks* callbacks, void* param);
-
 GKR_LOG_API int gkr_log_del_all_consumers();
 
 #ifdef __cplusplus

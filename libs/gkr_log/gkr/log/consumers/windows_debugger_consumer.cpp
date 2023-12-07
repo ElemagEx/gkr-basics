@@ -47,7 +47,7 @@ public:
         return *this;
     }
     c_windows_debugger_consumer(
-        gkr_log_windows_debugger_consumer_callbacks* callbacks,
+        const gkr_log_windows_debugger_consumer_callbacks* callbacks,
         unsigned bufferCapacity
         )
         : windows_debugger_consumer(bufferCapacity)
@@ -76,7 +76,7 @@ protected:
 extern "C" {
 
 int gkr_log_add_windows_debugger_consumer(
-    gkr_log_windows_debugger_consumer_callbacks* callbacks,
+    const gkr_log_windows_debugger_consumer_callbacks* callbacks,
     unsigned bufferCapacity
     )
 {

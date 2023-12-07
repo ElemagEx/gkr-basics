@@ -10,8 +10,11 @@ struct log_message : split_packet_data_head
     std:: int64_t stamp;
     std:: int64_t tid;
     std::uint32_t pid;
+    std::uint32_t line;
     std:: int32_t severity;
     std:: int32_t facility;
+    std::uint16_t offset_to_func;
+    std::uint16_t offset_to_file;
     std::uint16_t offset_to_host;
     std::uint16_t offset_to_process;
     std::uint16_t offset_to_thread;

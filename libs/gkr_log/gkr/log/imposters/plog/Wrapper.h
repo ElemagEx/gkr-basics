@@ -73,12 +73,12 @@ GKR_LOG_API consumer_t makeEventLogAppenderWrapper    (formatter_t& formatter, c
 
 GKR_LOG_API consumer_t makeRollingFileAppenderWrapper(formatter_t& formatter1, formatter_t& formatter2, const plog::RollingFileData& rollingData);
 
-consumer_t makePlogConsumerWrapper0(int instanceId, int instanceIdAppender)
+inline consumer_t makePlogConsumerWrapper0(int instanceId, int instanceIdAppender)
 {
     return nullptr;
 }
 
-consumer_t makePlogConsumerWrapper1(int instanceId, plog::DynamicAppender* appender)
+inline consumer_t makePlogConsumerWrapper1(int instanceId, plog::DynamicAppender* appender)
 {
     return nullptr;
 }
@@ -136,7 +136,7 @@ consumer_t makePlogConsumerWrapper3(int instanceId, plog::RollingFileAppender<Fo
     return makeRollingFileAppenderWrapper(formatter1, formatter2, *static_cast<const plog::RollingFileData*>(appender->data()));
 }
 
-consumer_t makePlogConsumerWrapper4(int instanceId, plog::IAppender* appender)
+inline consumer_t makePlogConsumerWrapper4(int instanceId, plog::IAppender* appender)
 {
     return nullptr;
 }

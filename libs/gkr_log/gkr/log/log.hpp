@@ -2,7 +2,7 @@
 
 #include <gkr/log/log.h>
 
-#ifndef GKR_NO_OSTREAM_LOGGING
+#ifndef GKR_NO_STREAM_LOGGING
 
 #include <memory>
 #include <sstream>
@@ -66,12 +66,11 @@ class ostream
     ostringstream m_ostream;
 
 protected:
-    const char*   m_func     = nullptr;
-    const char*   m_file     = nullptr;
-    unsigned      m_line     = 0;
-    int           m_wait     = 0;
-    int           m_severity = 0;
-    int           m_facility = 0;
+    const char* m_func     = nullptr;
+    const char* m_file     = nullptr;
+    unsigned    m_line     = 0;
+    int         m_severity = 0;
+    int         m_facility = 0;
 
 private:
     ostream           (const ostream&) noexcept = delete;
@@ -83,7 +82,6 @@ public:
         , m_func    (other.m_func)
         , m_file    (other.m_file)
         , m_line    (other.m_line)
-        , m_wait    (other.m_wait)
         , m_severity(other.m_severity)
         , m_facility(other.m_facility)
     {
@@ -95,7 +93,6 @@ public:
         m_func     = other.m_func;
         m_file     = other.m_file;
         m_line     = other.m_line;
-        m_wait     = other.m_wait;
         m_severity = other.m_severity;
         m_facility = other.m_facility;
 
@@ -106,9 +103,8 @@ public:
     {
         m_ostream.setstate(std::ios_base::eofbit);
     }
-    ostream(int wait, int severity, int facility)
+    ostream(int severity, int facility)
         : m_ostream()
-        , m_wait(wait)
         , m_severity(severity)
         , m_facility(facility)
     {
@@ -123,12 +119,11 @@ public:
             m_ostream.setstate(std::ios_base::eofbit);
         }
     }
-    ostream(const char* func, const char* file, unsigned line, int wait, int severity, int facility)
+    ostream(const char* func, const char* file, unsigned line, int severity, int facility)
         : m_ostream()
         , m_func(func)
         , m_file(file)
         , m_line(line)
-        , m_wait(wait)
         , m_severity(severity)
         , m_facility(facility)
     {
@@ -153,7 +148,7 @@ public:
 
         impl::done_ostringstream_allocator(std::size_t(len));
 
-        gkr_log_custom_message_finish_ex(m_func, m_file, m_line, m_wait, m_severity, m_facility);
+        gkr_log_custom_message_finish_ex(m_func, m_file, m_line, m_severity, m_facility);
     }
 
 public:
@@ -173,7 +168,7 @@ public:
 }
 }
 
-#endif
+#endif /*GKR_NO_STREAM_LOGGING*/
 
 #ifndef GKR_NO_FORMAT_LOGGING
 #ifdef __cpp_lib_format
@@ -212,7 +207,7 @@ private:
 }
 
 template<typename... Args>
-bool gkr_log_format_message(int wait, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
+bool gkr_log_format_message(int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
 {
     char* buf;
     unsigned cch;
@@ -228,10 +223,10 @@ bool gkr_log_format_message(int wait, int severity, int facility, std::format_st
 
     container.seal();
 
-    return !!gkr_log_custom_message_finish(wait, severity, facility);
+    return !!gkr_log_custom_message_finish(severity, facility);
 }
 template<typename... Args>
-bool gkr_log_format_message_ex(const char* func, const char* file, unsigned line, int wait, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
+bool gkr_log_format_message_ex(const char* func, const char* file, unsigned line, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
 {
     char* buf;
     unsigned cch;
@@ -247,10 +242,10 @@ bool gkr_log_format_message_ex(const char* func, const char* file, unsigned line
 
     container.seal();
 
-    return !!gkr_log_custom_message_finish_ex(func, file, line, wait, severity, facility);
+    return !!gkr_log_custom_message_finish_ex(func, file, line, severity, facility);
 }
 template<typename... Args>
-bool gkr_log_format_message(int wait, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
+bool gkr_log_format_message(int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
 {
     char* buf;
     unsigned cch;
@@ -266,10 +261,10 @@ bool gkr_log_format_message(int wait, int severity, int facility, const std::loc
 
     container.seal();
 
-    return !!gkr_log_custom_message_finish(wait, severity, facility);
+    return !!gkr_log_custom_message_finish(severity, facility);
 }
 template<typename... Args>
-bool gkr_log_format_message(const char* func, const char* file, unsigned line, int wait, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
+bool gkr_log_format_message(const char* func, const char* file, unsigned line, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
 {
     char* buf;
     unsigned cch;
@@ -285,8 +280,8 @@ bool gkr_log_format_message(const char* func, const char* file, unsigned line, i
 
     container.seal();
 
-    return !!gkr_log_custom_message_finish_ex(func, file, line, wait, severity, facility);
+    return !!gkr_log_custom_message_finish_ex(func, file, line, severity, facility);
 }
 
-#endif
-#endif
+#endif /*__cpp_lib_format*/
+#endif /*GKR_NO_FORMAT_LOGGING*/

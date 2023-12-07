@@ -74,10 +74,11 @@ public:
         return *this;
     }
     c_app_console_consumer(
-        gkr_log_app_console_consumer_callbacks* callbacks,
+        const gkr_log_app_console_consumer_callbacks* callbacks,
+        int method,
         unsigned bufferCapacity
         )
-        : app_console_consumer(bufferCapacity)
+        : app_console_consumer(method, bufferCapacity)
     {
         if(callbacks != nullptr) {
             m_callbacks = *callbacks;
@@ -103,11 +104,12 @@ protected:
 extern "C" {
 
 int gkr_log_add_app_console_consumer(
-    gkr_log_app_console_consumer_callbacks* callbacks,
+    const gkr_log_app_console_consumer_callbacks* callbacks,
+    int method,
     unsigned bufferCapacity
     )
 {
-    return gkr_log_add_consumer(std::make_shared<gkr::log::c_app_console_consumer>(callbacks, bufferCapacity));
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_app_console_consumer>(callbacks, method, bufferCapacity));
 }
 
 }

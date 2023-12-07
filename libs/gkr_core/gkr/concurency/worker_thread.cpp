@@ -267,7 +267,7 @@ void worker_thread::safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
 
         if(!element.pop_in_progress()) break;
 
-        actions_queue_element_header_t& header = element.value<actions_queue_element_header_t>();
+        actions_queue_element_header_t& header = element.as<actions_queue_element_header_t>();
 
         switch(header.id)
         {

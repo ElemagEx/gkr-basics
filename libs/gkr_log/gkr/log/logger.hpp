@@ -103,7 +103,7 @@ private:
        ~message_data() = delete;
 
         int  id;
-        char buffer[1];
+        char buf[1];
     };
 
 private:

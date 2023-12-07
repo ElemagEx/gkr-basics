@@ -169,7 +169,7 @@ protected:
 
         Check_ValidState(element.push_in_progress(), false);
 
-        element.value<actions_queue_element_header_t>().id = id;
+        element.as<actions_queue_element_header_t>().id = id;
         return true;
     }
     template<typename T>
@@ -186,7 +186,7 @@ protected:
 
         new (element.data()) T(std::move(data));
 
-        element.value<actions_queue_element_header_t>().id = id;
+        element.as<actions_queue_element_header_t>().id = id;
         return true;
     }
     template<typename T>
@@ -203,7 +203,7 @@ protected:
 
         new (element.data()) T(data);
 
-        element.value<actions_queue_element_header_t>().id = id;
+        element.as<actions_queue_element_header_t>().id = id;
         return true;
     }
 

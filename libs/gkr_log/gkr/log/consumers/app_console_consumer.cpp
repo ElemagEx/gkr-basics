@@ -157,7 +157,7 @@ unsigned app_console_consumer::compose_output(const message& msg, char* buf, uns
     const int len = std::snprintf(
         buf,
         cch,
-        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
+        "[%02d:%02d:%02d.%03d][%-7s][%s][%s] - %s",
         tm.tm_hour,
         tm.tm_min,
         tm.tm_sec,

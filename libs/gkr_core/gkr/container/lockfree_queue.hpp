@@ -69,464 +69,254 @@ namespace gkr
 
 constexpr std::size_t queue_npos = std::size_t(-1);
 
-
-template<typename Queue, typename Element>
-class queue_producer_element
+namespace impl
 {
-    queue_producer_element           (const queue_producer_element&) noexcept = delete;
-    queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
+template<typename Queue, typename Element>
+class queue_element
+{
+    queue_element           (const queue_element&) noexcept = delete;
+    queue_element& operator=(const queue_element&) noexcept = delete;
 
-private:
+protected:
     Queue*   m_queue;
     Element* m_element;
 
-public:
-    queue_producer_element(queue_producer_element&& other) noexcept
+protected:
+    queue_element(queue_element&& other) noexcept
         : m_queue  (std::exchange(other.m_queue  , nullptr))
-        , m_element(std::exchange(other.m_element, nullptr))
-    {
+        , m_element(std::exchange(other.m_element, nullptr)) {
     }
-    queue_producer_element& operator=(queue_producer_element&& other) noexcept
-    {
+    queue_element& operator=(queue_element&& other) noexcept {
         m_queue   = std::exchange(other.m_queue  , nullptr);
         m_element = std::exchange(other.m_element, nullptr);
         return *this;
     }
 
 public:
-    queue_producer_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element)
-    {
+    queue_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element) {
     }
-    ~queue_producer_element() noexcept(DIAG_NOEXCEPT)
-    {
-        finish_push();
+    ~queue_element() noexcept {
     }
 
 public:
-    bool push_in_progress() const noexcept
-    {
-        return (m_element != nullptr);
-    }
-
-public:
-    void finish_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->release_producer_element_ownership(std::exchange(m_element, nullptr));
-        }
-    }
-    void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
-    {
-        if(push_in_progress())
-        {
-            m_queue->cancel_producer_element_ownership(std::exchange(m_element, nullptr));
-        }
-    }
-
-public:
-    const Element* data() const noexcept
-    {
+    const Element* data() const noexcept {
         return m_element;
     }
-    const Element& value() const noexcept(DIAG_NOEXCEPT)
-    {
+    Element* data() noexcept {
+        return m_element;
+    }
+
+public:
+    const Element& value() const noexcept(DIAG_NOEXCEPT) {
         Assert_NotNullPtr(m_element);
         return *m_element;
     }
-    const Element& operator*() const noexcept(DIAG_NOEXCEPT)
-    {
+    Element& value() noexcept(DIAG_NOEXCEPT) {
         Assert_NotNullPtr(m_element);
         return *m_element;
     }
-    const Element* operator->() const noexcept(DIAG_NOEXCEPT)
-    {
+
+    const Element& operator*() const noexcept(DIAG_NOEXCEPT) {
+        Assert_NotNullPtr(m_element);
+        return *m_element;
+    }
+    Element& operator*() noexcept(DIAG_NOEXCEPT) {
+        Assert_NotNullPtr(m_element);
+        return *m_element;
+    }
+
+    const Element* operator->() const noexcept(DIAG_NOEXCEPT) {
+        Assert_NotNullPtr(m_element);
+        return m_element;
+    }
+    Element* operator->() noexcept(DIAG_NOEXCEPT) {
         Assert_NotNullPtr(m_element);
         return m_element;
     }
 
 public:
-    Element* data() noexcept
-    {
-        return m_element;
-    }
-    Element& value() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return *m_element;
-    }
-    Element& operator*() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return *m_element;
-    }
-    Element* operator->() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return m_element;
-    }
-
-public:
-    Element* detach() noexcept
-    {
+    Element* detach() noexcept(DIAG_NOEXCEPT) {
+        Check_NotNullPtr(m_element, nullptr);
         return std::exchange(m_element, nullptr);
     }
 };
 template<typename Queue>
-class queue_producer_element<Queue, void>
+class queue_element<Queue, void>
 {
-    queue_producer_element           (const queue_producer_element&) noexcept = delete;
-    queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
+    queue_element           (const queue_element&) noexcept = delete;
+    queue_element& operator=(const queue_element&) noexcept = delete;
 
-private:
+protected:
     Queue* m_queue;
     void*  m_element;
 
-public:
-    queue_producer_element(queue_producer_element&& other) noexcept
+protected:
+    queue_element(queue_element&& other) noexcept
         : m_queue  (std::exchange(other.m_queue  , nullptr))
-        , m_element(std::exchange(other.m_element, nullptr))
-    {
+        , m_element(std::exchange(other.m_element, nullptr)) {
     }
-    queue_producer_element& operator=(queue_producer_element&& other) noexcept
-    {
+    queue_element& operator=(queue_element&& other) noexcept {
         m_queue   = std::exchange(other.m_queue  , nullptr);
         m_element = std::exchange(other.m_element, nullptr);
         return *this;
     }
 
-public:
-    queue_producer_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element)
-    {
+protected:
+    queue_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element) {
+        Check_ValidState(((std::size_t(element) & (element_alignment() - 1)) == 0), );
     }
-    ~queue_producer_element() noexcept(DIAG_NOEXCEPT)
-    {
-        finish_push();
+    ~queue_element() noexcept {
     }
 
 public:
-    bool push_in_progress() const noexcept
-    {
-        return (m_element != nullptr);
-    }
-
-public:
-    void finish_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->release_producer_element_ownership(std::exchange(m_element, nullptr));
-        }
-    }
-    void cancel_push() noexcept(DIAG_NOEXCEPT)
-    {
-        if(push_in_progress())
-        {
-            m_queue->cancel_producer_element_ownership(std::exchange(m_element, nullptr));
-        }
-    }
-
-public:
-    const void* data() const noexcept
-    {
+    const void* data() const noexcept {
         return m_element;
     }
-    template<typename T>
-    const T* data() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+    void* data() noexcept {
+        return m_element;
+    }
 
+public:
+    template<typename T>
+    const T* data() const noexcept(DIAG_NOEXCEPT) {
+        static_assert(alignof(T) <= element_alignment(), "The alignment of the type T must be less or equal of the alignment of the queue");
+        Assert_Check(  sizeof(T) <=  get_element_size());
         return static_cast<const T*>(m_element);
     }
     template<typename T>
-    const T& value() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
+    T* data() noexcept(DIAG_NOEXCEPT) {
+        static_assert(alignof(T) <= element_alignment(), "The alignment of the type T must be less or equal of the alignment of the queue");
+        Assert_Check(  sizeof(T) <=  get_element_size());
+        return static_cast<T*>(m_element);
+    }
 
+    template<typename T>
+    const T& as() const noexcept(DIAG_NOEXCEPT) {
+        static_assert(alignof(T) <= element_alignment(), "The alignment of the type T must be less or equal of the alignment of the queue");
+        Assert_Check(  sizeof(T) <=  get_element_size());
         Assert_NotNullPtr(m_element);
         return *static_cast<const T*>(m_element);
     }
-
-public:
-    void* data() noexcept
-    {
-        return m_element;
-    }
     template<typename T>
-    T* data() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
-
-        return static_cast<T*>(m_element);
-    }
-    template<typename T>
-    T& value() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
-
+    T& as() noexcept(DIAG_NOEXCEPT) {
+        static_assert(alignof(T) <= element_alignment(), "The alignment of the type T must be less or equal of the alignment of the queue");
+        Assert_Check(  sizeof(T) <=  get_element_size());
         Assert_NotNullPtr(m_element);
         return *static_cast<T*>(m_element);
     }
 
 public:
-    std::size_t get_element_alignment() const noexcept
-    {
-        return m_queue->element_alignment();
+    static constexpr std::size_t element_alignment() noexcept {
+        return Queue::element_alignment0();
     }
-    std::size_t get_element_size() const noexcept
-    {
+    std::size_t get_element_size() const noexcept {
         return m_queue->element_size();
     }
-    bool set_element_size(std::size_t size) noexcept(false)
-    {
-        if(push_in_progress())
-        {
+    bool set_element_size(std::size_t size) noexcept(false) {
+        if(m_element != nullptr) {
             return m_queue->change_element_size(size, &m_element);
-        }
-        else
-        {
+        } else {
             return false;
         }
     }
 
 public:
-    void* detach() noexcept
-    {
+    void* detach() noexcept(DIAG_NOEXCEPT) {
+        Check_NotNullPtr(m_element, nullptr);
         return std::exchange(m_element, nullptr);
     }
 };
+}
 
-template<typename Queue, typename Element>
-class queue_consumer_element
+
+template<typename Queue>
+class queue_producer_element : public impl::queue_element<Queue, typename Queue::element_t>
 {
-    queue_consumer_element           (const queue_consumer_element&) noexcept = delete;
-    queue_consumer_element& operator=(const queue_consumer_element&) noexcept = delete;
+    queue_producer_element           (const queue_producer_element&) noexcept = delete;
+    queue_producer_element& operator=(const queue_producer_element&) noexcept = delete;
 
-private:
-    Queue*   m_queue;
-    Element* m_element;
+    using base_t = impl::queue_element<Queue, typename Queue::element_t>;
+
+    using base_t::m_queue;
+    using base_t::m_element;
 
 public:
-    queue_consumer_element(queue_consumer_element&& other) noexcept
-        : m_queue  (std::exchange(other.m_queue  , nullptr))
-        , m_element(std::exchange(other.m_element, nullptr))
-    {
+    queue_producer_element(queue_producer_element&& other) noexcept : base_t(std::move(other)) {
     }
-    queue_consumer_element& operator=(queue_consumer_element&& other) noexcept
-    {
-        m_queue   = std::exchange(other.m_queue  , nullptr);
-        m_element = std::exchange(other.m_element, nullptr);
+    queue_producer_element& operator=(queue_producer_element&& other) noexcept {
+        base_t::operator=(std::move(other));
         return *this;
     }
 
 public:
-    queue_consumer_element(Queue& queue, Element* element) noexcept : m_queue(&queue), m_element(element)
-    {
+    using Element = typename Queue::element_t;
+
+    queue_producer_element(Queue& queue, Element* element) noexcept : base_t(queue, element) {
     }
-    ~queue_consumer_element() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
-    {
-        finish_pop();
+    ~queue_producer_element() noexcept(DIAG_NOEXCEPT) {
+        finish_push();
     }
 
 public:
-    bool pop_in_progress() const noexcept
-    {
+    bool push_in_progress() const noexcept {
         return (m_element != nullptr);
     }
 
 public:
-    void finish_pop() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->release_consumer_element_ownership(std::exchange(m_element, nullptr));
+    void finish_push() noexcept(DIAG_NOEXCEPT) {
+        if(push_in_progress()) {
+            m_queue->release_producer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
-    void cancel_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
-            m_queue->cancel_consumer_element_ownership(std::exchange(m_element, nullptr));
+    void cancel_push() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value) {
+        if(push_in_progress()) {
+            m_queue->cancel_producer_element_ownership(std::exchange(m_element, nullptr));
         }
-    }
-
-public:
-    const Element* data() const noexcept
-    {
-        return m_element;
-    }
-    const Element& value() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return *m_element;
-    }
-    const Element& operator*() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return *m_element;
-    }
-    const Element* operator->() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return m_element;
-    }
-
-public:
-    Element* data() noexcept
-    {
-        return m_element;
-    }
-    Element& value() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return *m_element;
-    }
-    Element& operator*() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return *m_element;
-    }
-    Element* operator->() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_NotNullPtr(m_element);
-        return m_element;
-    }
-
-public:
-    Element* detach() noexcept
-    {
-        return std::exchange(m_element, nullptr);
     }
 };
 template<typename Queue>
-class queue_consumer_element<Queue, void>
+class queue_consumer_element : public impl::queue_element<Queue, typename Queue::element_t>
 {
     queue_consumer_element           (const queue_consumer_element&) noexcept = delete;
     queue_consumer_element& operator=(const queue_consumer_element&) noexcept = delete;
 
-private:
-    Queue* m_queue;
-    void*  m_element;
+    using base_t = impl::queue_element<Queue, typename Queue::element_t>;
+
+    using base_t::m_queue;
+    using base_t::m_element;
 
 public:
-    queue_consumer_element(queue_consumer_element&& other) noexcept
-        : m_queue  (std::exchange(other.m_queue  , nullptr))
-        , m_element(std::exchange(other.m_element, nullptr))
-    {
+    queue_consumer_element(queue_consumer_element&& other) noexcept : base_t(std::move(other)) {
     }
-    queue_consumer_element& operator=(queue_consumer_element&& other) noexcept
-    {
-        m_queue   = std::exchange(other.m_queue  , nullptr);
-        m_element = std::exchange(other.m_element, nullptr);
+    queue_consumer_element& operator=(queue_consumer_element&& other) noexcept {
+        base_t::operator=(std::move(other));
         return *this;
     }
 
 public:
-    queue_consumer_element(Queue& queue, void* element) noexcept : m_queue(&queue), m_element(element)
-    {
+    using Element = typename Queue::element_t;
+
+    queue_consumer_element(Queue& queue, Element* element) noexcept : base_t(queue, element) {
     }
-    ~queue_consumer_element() noexcept(DIAG_NOEXCEPT)
-    {
+    ~queue_consumer_element() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value) {
         finish_pop();
     }
 
 public:
-    bool pop_in_progress() const noexcept
-    {
+    bool pop_in_progress() const noexcept {
         return (m_element != nullptr);
     }
 
 public:
-    void finish_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
+    void finish_pop() noexcept(DIAG_NOEXCEPT && std::is_nothrow_destructible<Element>::value) {
+        if(pop_in_progress()) {
             m_queue->release_consumer_element_ownership(std::exchange(m_element, nullptr));
         }
     }
-    void cancel_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        if(pop_in_progress())
-        {
+    void cancel_pop() noexcept(DIAG_NOEXCEPT) {
+        if(pop_in_progress()) {
             m_queue->cancel_consumer_element_ownership(std::exchange(m_element, nullptr));
         }
-    }
-
-public:
-    const void* data() const noexcept
-    {
-        return m_element;
-    }
-    template<typename T>
-    const T* data() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
-
-        return static_cast<T*>(m_element);
-    }
-    template<typename T>
-    const T& value() const noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
-
-        Assert_NotNullPtr(m_element);
-        return *static_cast<T*>(m_element);
-    }
-
-public:
-    void* data() noexcept
-    {
-        return m_element;
-    }
-    template<typename T>
-    T* data() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
-
-        return static_cast<T*>(m_element);
-    }
-    template<typename T>
-    T& value() noexcept(DIAG_NOEXCEPT)
-    {
-        Assert_Check(alignof(T) <= m_queue->element_alignment());
-        Assert_Check( sizeof(T) <= m_queue->element_size     ());
-
-        Assert_NotNullPtr(m_element);
-        return *static_cast<T*>(m_element);
-    }
-
-public:
-    std::size_t get_element_alignment() const noexcept
-    {
-        return m_queue->element_alignment();
-    }
-    std::size_t get_element_size() const noexcept
-    {
-        return m_queue->element_size();
-    }
-    bool set_element_size(std::size_t size) noexcept(false)
-    {
-        if(pop_in_progress())
-        {
-            return m_queue->change_element_size(size, &m_element);
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-public:
-    void* detach() noexcept
-    {
-        return std::exchange(m_element, nullptr);
     }
 };
 
@@ -1735,8 +1525,8 @@ private:
 public:
     using element_t = T;
 
-    using queue_producer_element_t = queue_producer_element<self_t, element_t>;
-    using queue_consumer_element_t = queue_consumer_element<self_t, element_t>;
+    using queue_producer_element_t = queue_producer_element<self_t>;
+    using queue_consumer_element_t = queue_consumer_element<self_t>;
 
     using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<T>;
 
@@ -1891,6 +1681,11 @@ private:
     }
 
 public:
+    static constexpr std::size_t element_alignment0() noexcept
+    {
+        return alignof(element_t);
+    }
+
     std::size_t element_alignment() const noexcept
     {
         return alignof(element_t);
@@ -2490,8 +2285,10 @@ private:
     using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
 
 public:
-    using queue_producer_element_t = queue_producer_element<self_t, void>;
-    using queue_consumer_element_t = queue_consumer_element<self_t, void>;
+    using element_t = void;
+
+    using queue_producer_element_t = queue_producer_element<self_t>;
+    using queue_consumer_element_t = queue_consumer_element<self_t>;
 
 private:
     using alloc_value_t = std::max_align_t;
@@ -2718,6 +2515,11 @@ private:
     }
 
 public:
+    static constexpr std::size_t element_alignment0() noexcept
+    {
+        return alignof(std::max_align_t);
+    }
+
     std::size_t element_alignment() const noexcept
     {
         return m_alignment;

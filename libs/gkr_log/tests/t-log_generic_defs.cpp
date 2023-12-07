@@ -19,6 +19,8 @@ constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES_INFOS;
 
 static gkr::log::logging logging(g_severities, g_facilities);
 
+#include <thread>
+
 TEST_CASE("logging.logger. main")
 {
     gkr_log_del_all_consumers();
@@ -40,4 +42,6 @@ int flag = 1;
     LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
 #endif
 #endif
+
+    std::this_thread::yield();
 }

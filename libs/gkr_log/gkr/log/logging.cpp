@@ -33,7 +33,7 @@ int gkr_log_init(
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities_infos, // = nullptr - no facility names
     unsigned max_queue_entries, // = 16
-    unsigned max_message_chars  // = 959 [1024 - sizeof(gkr_log_message) - 1] //1 for null terminated character
+    unsigned max_message_chars  // = 955 [1024 - sizeof(gkr_log_message) - 1] //1 for NTS and 4 for msg id (64bit)
     )
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);

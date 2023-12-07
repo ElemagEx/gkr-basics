@@ -111,18 +111,18 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     {
         bool result = true;
 
-        if(max_queue_entries != std::size_t(-1)) result = m_log_queue.resize             (max_queue_entries                      ) && result;
-        if(max_message_chars != std::size_t(-1)) result = m_log_queue.change_element_size(max_message_chars + 1 + sizeof(message)) && result;
+        if(max_queue_entries != std::size_t(-1)) result = m_log_queue.resize             (max_queue_entries                       ) && result;
+        if(max_message_chars != std::size_t(-1)) result = m_log_queue.change_element_size(max_message_chars + sizeof(message_data)) && result;
 
         return result;
     }
     else
     {
-        m_log_queue.reset(max_queue_entries, max_message_chars + 1 + sizeof(message), alignof(message));
+        m_log_queue.reset(max_queue_entries, max_message_chars + sizeof(message_data), alignof(message_data));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
 
-        Check_ValidState(m_log_queue.element_size() > sizeof(message), false);
+        Check_ValidState(m_log_queue.element_size() > sizeof(message_data), false);
 
         return true;
     }
@@ -299,16 +299,20 @@ bool logger::start_log_message(int severity, char*& buf, unsigned& cch)
 
     Check_ValidState(running(), false);
 
-    Check_ValidState(!in_worker_thread(), false);
+    Check_ValidState(!in_worker_thread(), false);//???
 
-    thead_local_element = m_log_queue.acquire_producer_element_ownership();
+    auto element = m_log_queue.start_push();
 
-    Assert_Check(m_log_queue.element_size() > sizeof(message));
+    Check_ValidState(element.push_in_progress());
 
-    cch = unsigned(m_log_queue.element_size() - sizeof(message));
+    Assert_Check(m_log_queue.element_size() > sizeof(message_data));
 
-    buf = static_cast<char*>(thead_local_element) + sizeof(message);
+    message_data& msg = element.as<message_data>();
 
+    buf = msg.buf;
+    cch = unsigned(msg.buf - element.data<char>());
+
+    thead_local_element = element.detach();
     return true;
 }
 
@@ -326,11 +330,11 @@ int logger::finish_log_message(const source_location* location, int severity, in
 {
     Check_NotNullPtr(thead_local_element, 0);
 
-    queue_producer_element<log_queue_t, void> element(m_log_queue, thead_local_element);
+    queue_producer_element<log_queue_t> element(m_log_queue, thead_local_element);
 
     thead_local_element = nullptr;
 
-    message_data& msg = element.value<message_data>();
+    message_data& msg = element.as<message_data>();
 
     if(!compose_message(msg, 0, location, severity, facility, nullptr, nullptr))
     {
@@ -367,13 +371,11 @@ int logger::log_message(const source_location* location, int severity, int facil
             Check_Failure(0);
         }
 
-        const std::size_t size = element.get_element_size();
+        Assert_Check(m_log_queue.element_size() > sizeof(message_data));
 
-        Assert_Check(size > sizeof(message));
+        message_data& msg = element.as<message_data>();
 
-        const std::size_t cch = size - sizeof(message);
-
-        message_data& msg = element.value<message_data>();
+        const std::size_t cch = (msg.buf - element.data<char>());
 
         if(!compose_message(msg, cch, location, severity, facility, format, args))
         {
@@ -415,19 +417,19 @@ bool logger::compose_message(message_data& msg, std::size_t cch, const source_lo
     }
     if(format == nullptr)
     {
-        msg.messageLen = unsigned(std::strlen(msg.buffer));
+        msg.messageLen = unsigned(std::strlen(msg.buf));
     }
     else if(args == nullptr)
     {
-        std::strncpy(msg.buffer, format, cch);
+        std::strncpy(msg.buf, format, cch);
 
-        msg.buffer[cch - 1] = 0;
+        msg.buf[cch - 1] = 0;
 
-        msg.messageLen = unsigned(std::strlen(msg.buffer));
+        msg.messageLen = unsigned(std::strlen(msg.buf));
     }
     else
     {
-        const int len = std::vsnprintf(msg.buffer, cch, format, args);
+        const int len = std::vsnprintf(msg.buf, cch, format, args);
 
         Check_ValidState(len >= 0, false);
 
@@ -444,7 +446,7 @@ void logger::process_message(message_data& msg)
 
 void logger::prepare_message(message_data& msg)
 {
-    msg.messageText = msg.buffer;
+    msg.messageText = msg.buf;
 
     auto itThreadId = m_thread_ids.find(msg.tid);
     auto itSeverity = m_severities.find(msg.severity);
@@ -513,7 +515,7 @@ bool logger::process_next_message()
 
     if(!element.pop_in_progress()) return false;
 
-    message_data& msg = element.value<message_data>();
+    message_data& msg = element.as<message_data>();
 
     process_message(msg);
 

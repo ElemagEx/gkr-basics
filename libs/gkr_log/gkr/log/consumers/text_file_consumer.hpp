@@ -13,44 +13,11 @@ namespace log
 
 class text_file_consumer : public consumer
 {
-    text_file_consumer           (const text_file_consumer&) noexcept = delete;
-    text_file_consumer& operator=(const text_file_consumer&) noexcept = delete;
-
-private:
     char*       m_buf;
     unsigned    m_cch;
     int         m_eoln;
     void*       m_file;
     std::string m_name;
-
-public:
-    text_file_consumer(text_file_consumer&& other) noexcept
-        : m_buf (other.m_buf)
-        , m_cch (other.m_cch)
-        , m_eoln(other.m_eoln)
-        , m_file(other.m_file)
-        , m_name(std::move(other.m_name))
-    {
-        other.m_buf  = nullptr;
-        other.m_cch  = 0;
-        other.m_eoln = m_eoln;
-        other.m_file = m_file;
-    }
-    text_file_consumer& operator=(text_file_consumer&& other) noexcept
-    {
-        m_buf  = other.m_buf;
-        m_cch  = other.m_cch;
-        m_eoln = other.m_eoln;
-        m_file = other.m_file;
-
-        m_name = std::move(other.m_name);
-
-        other.m_buf  = nullptr;
-        other.m_cch  = 0;
-        other.m_eoln = m_eoln;
-        other.m_file = m_file;
-        return *this;
-    }
 
 public:
     GKR_LOG_API text_file_consumer(

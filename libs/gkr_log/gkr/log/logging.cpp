@@ -76,6 +76,22 @@ int gkr_log_done()
     return true;
 }
 
+int gkr_log_get_severity_threshold()
+{
+    if(s_logger == nullptr) return 0;
+
+    return s_logger->get_severity_threshold();
+}
+
+int gkr_log_set_severity_threshold(int threshold)
+{
+    if(s_logger == nullptr) return false;
+
+    s_logger->set_severity_threshold(threshold);
+
+    return true;
+}
+
 int gkr_log_set_max_queue_entries(unsigned max_queue_entries)
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);
@@ -174,10 +190,10 @@ int gkr_log_printf_message(int severity, int facility, const char* format, ...)
     va_list args;
     va_start(args, format);
 
-    const bool result = s_logger->log_message(nullptr, severity, facility, format, args);
+    const int id = s_logger->log_message(nullptr, severity, facility, format, args);
 
     va_end(args);
-    return result;
+    return id;
 }
 
 int gkr_log_valist_message(int severity, int facility, const char* format, va_list args)
@@ -217,10 +233,10 @@ int gkr_log_printf_message_ex(const char* func, const char* file, unsigned line,
 
     const gkr::log::source_location location{func, file, line};
 
-    const bool result = s_logger->log_message(&location, severity, facility, format, args);
+    const int id = s_logger->log_message(&location, severity, facility, format, args);
 
     va_end(args);
-    return result;
+    return id;
 }
 
 int gkr_log_valist_message_ex(const char* func, const char* file, unsigned line, int severity, int facility, const char* format, va_list args)
@@ -236,19 +252,26 @@ int gkr_log_valist_message_ex(const char* func, const char* file, unsigned line,
     return s_logger->log_message(&location, severity, facility, format, args);
 }
 
-int gkr_log_custom_message_start(char** buf, unsigned* cch)
+int gkr_log_custom_message_start(int severity, char** buf, unsigned* cch)
 {
     Check_Arg_NotNull(buf, nullptr);
     Check_Arg_NotNull(cch, nullptr);
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->start_log_message(*buf, *cch);
+    return s_logger->start_log_message(severity, *buf, *cch);
+}
+
+int gkr_log_custom_message_cancel()
+{
+    if(s_logger == nullptr) return -1;
+
+    return s_logger->cancel_log_message();
 }
 
 int gkr_log_custom_message_finish(int severity, int facility)
 {
-    if(s_logger == nullptr) return false;
+    if(s_logger == nullptr) return 0;
 
     check_thread_name(nullptr);
 
@@ -257,7 +280,7 @@ int gkr_log_custom_message_finish(int severity, int facility)
 
 int gkr_log_custom_message_finish_ex(const char* func, const char* file, unsigned line, int severity, int facility)
 {
-    if(s_logger == nullptr) return false;
+    if(s_logger == nullptr) return 0;
 
     check_thread_name(nullptr);
 

@@ -10,31 +10,16 @@ namespace log
 
 class c_consumer : public consumer
 {
-    c_consumer           (const c_consumer&) noexcept = delete;
-    c_consumer& operator=(const c_consumer&) noexcept = delete;
-
-private:
     gkr_log_consumer_callbacks m_callbacks;
 
 public:
-    c_consumer(c_consumer&& other) noexcept : m_callbacks(other.m_callbacks)
-    {
-        other.m_callbacks.destruct = nullptr;
-    }
-    c_consumer& operator=(c_consumer&& other) noexcept
-    {
-        m_callbacks = other.m_callbacks;
-        other.m_callbacks.destruct = nullptr;
-        return *this;
-    }
-
     c_consumer(const struct gkr_log_consumer_callbacks& callbacks) : m_callbacks(callbacks)
     {
     }
     virtual ~c_consumer() override
     {
-        if(m_callbacks.destruct == nullptr) return;
-        ( *m_callbacks.destruct)(m_callbacks.param);
+        Assert_NotNullPtr(m_callbacks.destruct);
+        (*m_callbacks.destruct)(m_callbacks.param);
     }
 
 protected:

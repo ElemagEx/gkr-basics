@@ -11,29 +11,8 @@ namespace log
 
 class windows_debugger_consumer : public consumer
 {
-    windows_debugger_consumer           (const windows_debugger_consumer&) noexcept = delete;
-    windows_debugger_consumer& operator=(const windows_debugger_consumer&) noexcept = delete;
-
-private:
     char*    m_buf;
     unsigned m_cch;
-
-public:
-    windows_debugger_consumer(windows_debugger_consumer&& other) noexcept
-        : m_buf(other.m_buf)
-        , m_cch(other.m_cch)
-    {
-        other.m_buf = nullptr;
-        other.m_cch = 0;
-    }
-    windows_debugger_consumer& operator=(windows_debugger_consumer&& other) noexcept
-    {
-        m_buf = other.m_buf;
-        m_cch = other.m_cch;
-        other.m_buf = nullptr;
-        other.m_cch = 0;
-        return *this;
-    }
 
 public:
     GKR_LOG_API windows_debugger_consumer(unsigned buffer_capacity = 2*1024);

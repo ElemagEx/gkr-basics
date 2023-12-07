@@ -17,12 +17,6 @@ namespace log
 
 class udp_socket_consumer : public consumer
 {
-    udp_socket_consumer() noexcept = delete;
-
-    udp_socket_consumer           (const udp_socket_consumer&) noexcept = delete;
-    udp_socket_consumer& operator=(const udp_socket_consumer&) noexcept = delete;
-
-private:
     std::string m_hostName;
     std::string m_processName;
 
@@ -32,36 +26,6 @@ private:
     std::size_t m_bufferCap;
 
     unsigned m_processId {0};
-
-public:
-    udp_socket_consumer(udp_socket_consumer&& other) noexcept
-        : m_hostName   (std::move(other.m_hostName))
-        , m_processName(std::move(other.m_processName))
-        , m_sender     (other.m_sender)
-        , m_bufferPtr  (other.m_bufferPtr)
-        , m_bufferCap  (other.m_bufferCap)
-        , m_processId  (other.m_processId)
-    {
-        other.m_sender    = nullptr;
-        other.m_bufferPtr = nullptr;
-        other.m_bufferCap = m_bufferCap;
-        other.m_processId = m_processId;
-    }
-    udp_socket_consumer& operator=(udp_socket_consumer&& other) noexcept
-    {
-        m_hostName    = std::move(other.m_hostName);
-        m_processName = std::move(other.m_processName);
-        m_sender      = other.m_sender;
-        m_bufferPtr   = other.m_bufferPtr;
-        m_bufferCap   = other.m_bufferCap;
-        m_processId   = other.m_processId;
-
-        other.m_sender    = nullptr;
-        other.m_bufferPtr = nullptr;
-        other.m_bufferCap = m_bufferCap;
-        other.m_processId = m_processId;
-        return *this;
-    }
 
 public:
     static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;

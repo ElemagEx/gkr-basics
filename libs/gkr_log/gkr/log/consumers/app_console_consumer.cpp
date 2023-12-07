@@ -54,25 +54,9 @@ namespace log
 {
 class c_app_console_consumer : public app_console_consumer
 {
-    c_app_console_consumer           (const c_app_console_consumer&) noexcept = delete;
-    c_app_console_consumer& operator=(const c_app_console_consumer&) noexcept = delete;
-
     gkr_log_app_console_consumer_callbacks m_callbacks {};
 
 public:
-    c_app_console_consumer(c_app_console_consumer&& other) noexcept
-        : app_console_consumer(std::move(other))
-        , m_callbacks(other.m_callbacks)
-    {
-        other.m_callbacks = gkr_log_app_console_consumer_callbacks();
-    }
-    c_app_console_consumer& operator=(c_app_console_consumer&& other) noexcept
-    {
-        app_console_consumer::operator=(std::move(other));
-        m_callbacks = other.m_callbacks;
-        other.m_callbacks = gkr_log_app_console_consumer_callbacks();
-        return *this;
-    }
     c_app_console_consumer(
         const gkr_log_app_console_consumer_callbacks* callbacks,
         int method,

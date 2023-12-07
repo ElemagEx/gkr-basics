@@ -17,25 +17,9 @@ namespace log
 {
 class c_udp_socket_consumer : public udp_socket_consumer
 {
-    c_udp_socket_consumer           (const c_udp_socket_consumer&) noexcept = delete;
-    c_udp_socket_consumer& operator=(const c_udp_socket_consumer&) noexcept = delete;
-
     gkr_log_udp_socket_consumer_callbacks m_callbacks {};
 
 public:
-    c_udp_socket_consumer(c_udp_socket_consumer&& other) noexcept
-        : udp_socket_consumer(std::move(other))
-        , m_callbacks(other.m_callbacks)
-    {
-        other.m_callbacks = gkr_log_udp_socket_consumer_callbacks();
-    }
-    c_udp_socket_consumer& operator=(c_udp_socket_consumer&& other) noexcept
-    {
-        udp_socket_consumer::operator=(std::move(other));
-        m_callbacks = other.m_callbacks;
-        other.m_callbacks = gkr_log_udp_socket_consumer_callbacks();
-        return *this;
-    }
     c_udp_socket_consumer(
         const gkr_log_udp_socket_consumer_callbacks* callbacks,
         const char*    remoteHost,

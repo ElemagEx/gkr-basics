@@ -18,7 +18,8 @@ GKR_LOG_API int gkr_log_simple_message_ex(const char* func, const char* file, un
 GKR_LOG_API int gkr_log_printf_message_ex(const char* func, const char* file, unsigned line, int severity, int facility, const char* format, ...);
 GKR_LOG_API int gkr_log_valist_message_ex(const char* func, const char* file, unsigned line, int severity, int facility, const char* format, va_list args);
 
-GKR_LOG_API int gkr_log_custom_message_start(char** buf, unsigned* cch);
+GKR_LOG_API int gkr_log_custom_message_start(int severity, char** buf, unsigned* cch);
+GKR_LOG_API int gkr_log_custom_message_cancel();
 GKR_LOG_API int gkr_log_custom_message_finish(int severity, int facility);
 GKR_LOG_API int gkr_log_custom_message_finish_ex(const char* func, const char* file, unsigned line, int severity, int facility);
 

@@ -25,25 +25,9 @@ namespace log
 {
 class c_android_log_consumer : public android_log_consumer
 {
-    c_android_log_consumer           (const c_android_log_consumer&) noexcept = delete;
-    c_android_log_consumer& operator=(const c_android_log_consumer&) noexcept = delete;
-
     gkr_log_android_log_consumer_callbacks m_callbacks {};
 
 public:
-    c_android_log_consumer(c_android_log_consumer&& other) noexcept
-        : android_log_consumer(std::move(other))
-        , m_callbacks(other.m_callbacks)
-    {
-        other.m_callbacks = gkr_log_android_log_consumer_callbacks();
-    }
-    c_android_log_consumer& operator=(c_android_log_consumer&& other) noexcept
-    {
-        android_log_consumer::operator=(std::move(other));
-        m_callbacks = other.m_callbacks;
-        other.m_callbacks = gkr_log_android_log_consumer_callbacks();
-        return *this;
-    }
     c_android_log_consumer(
         const gkr_log_android_log_consumer_callbacks* callbacks,
         unsigned bufferCapacity

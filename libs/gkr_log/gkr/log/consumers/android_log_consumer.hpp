@@ -11,29 +11,8 @@ namespace log
 
 class android_log_consumer : public consumer
 {
-    android_log_consumer           (const android_log_consumer&) noexcept = delete;
-    android_log_consumer& operator=(const android_log_consumer&) noexcept = delete;
-
-private:
     char*    m_buf;
     unsigned m_cch;
-
-public:
-    android_log_consumer(android_log_consumer&& other) noexcept
-        : m_buf(other.m_buf)
-        , m_cch(other.m_cch)
-    {
-        other.m_buf = nullptr;
-        other.m_cch = 0;
-    }
-    android_log_consumer& operator=(android_log_consumer&& other) noexcept
-    {
-        m_buf = other.m_buf;
-        m_cch = other.m_cch;
-        other.m_buf = nullptr;
-        other.m_cch = 0;
-        return *this;
-    }
 
 public:
     GKR_LOG_API android_log_consumer(

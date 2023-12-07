@@ -293,7 +293,7 @@ void logger::set_thread_name(const char* name, tid_t tid)
 
 static thread_local void* thead_local_element = nullptr;
 
-bool logger::start_log_message(char*& buf, unsigned& cch)
+bool logger::start_log_message(int severity, char*& buf, unsigned& cch)
 {
     Check_ValidState(thead_local_element == nullptr, false);
 
@@ -312,38 +312,41 @@ bool logger::start_log_message(char*& buf, unsigned& cch)
     return true;
 }
 
-bool logger::finish_log_message(const source_location* location, int severity, int facility)
+int logger::cancel_log_message()
 {
-    Check_NotNullPtr(thead_local_element, false);
+    Check_NotNullPtr(thead_local_element, -1);
 
-    message_data& msg = *static_cast<message_data*>(thead_local_element);
+    m_log_queue.cancel_producer_element_ownership(thead_local_element);
 
-    bool result;
+    thead_local_element = nullptr;
+    return 0;
+}
+
+int logger::finish_log_message(const source_location* location, int severity, int facility)
+{
+    Check_NotNullPtr(thead_local_element, 0);
+
+    queue_producer_element<log_queue_t, void> element(m_log_queue, thead_local_element);
+
+    thead_local_element = nullptr;
+
+    message_data& msg = element.value<message_data>();
 
     if(!compose_message(msg, 0, location, severity, facility, nullptr, nullptr))
     {
-        m_log_queue.cancel_producer_element_ownership(thead_local_element);
-        result = false;
+        element.cancel_push();
+        return 0;
     }
-//TODO:reimplement
-//  else if(wait)
-//  {
-//      sync_log_message(msg);
-//      result = m_log_queue.cancel_producer_element_ownership(thead_local_element);
-//  }
-    else
-    {
-        result = m_log_queue.release_producer_element_ownership(thead_local_element);
-    }
-    thead_local_element = nullptr;
-    return result;
+    return msg.id;
 }
 
-bool logger::log_message(const source_location* location, int severity, int facility, const char* format, va_list args)
+int logger::log_message(const source_location* location, int severity, int facility, const char* format, va_list args)
 {
-    Check_Arg_NotNull(format, false);
+    Check_Arg_NotNull(format, 0);
 
-    Check_ValidState(running(), false);
+    Check_ValidState(running(), 0);
+
+    if(severity >= m_severity_threshold) return 0;
 
     const bool logging_inside_logger = in_worker_thread();
 
@@ -358,10 +361,10 @@ bool logger::log_message(const source_location* location, int severity, int faci
             if(logging_inside_logger)
             {
                 [[maybe_unused]] bool processed = process_next_message();
-                Check_ValidState(processed, false);
+                Check_ValidState(processed, 0);
                 continue;
             }
-            Check_Failure(false);
+            Check_Failure(0);
         }
 
         const std::size_t size = element.get_element_size();
@@ -375,15 +378,9 @@ bool logger::log_message(const source_location* location, int severity, int faci
         if(!compose_message(msg, cch, location, severity, facility, format, args))
         {
             element.cancel_push();
-            return false;
+            return 0;
         }
-    //TODO:reimplement
-    //  if(wait)
-    //  {
-    //      sync_log_message(msg);
-    //      element.cancel_push();
-    //  }
-        return true;
+        return msg.id;
     }
 }
 
@@ -398,6 +395,7 @@ void logger::sync_log_message(message_data& msg)
 
 bool logger::compose_message(message_data& msg, std::size_t cch, const source_location* location, int severity, int facility, const char* format, va_list args)
 {
+    msg.id       = ++m_msg_id;
     msg.tid      = misc::union_cast<long long>(std::this_thread::get_id());
     msg.stamp    = stamp_now();
     msg.severity = severity;

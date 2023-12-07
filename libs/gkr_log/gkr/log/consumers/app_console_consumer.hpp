@@ -11,39 +11,10 @@ namespace log
 
 class app_console_consumer : public consumer
 {
-    app_console_consumer           (const app_console_consumer&) noexcept = delete;
-    app_console_consumer& operator=(const app_console_consumer&) noexcept = delete;
-
-private:
     char*    m_buf;
     unsigned m_cch;
     int      m_method;
     bool     m_isAtty;
-
-public:
-    app_console_consumer(app_console_consumer&& other) noexcept
-        : m_buf(other.m_buf)
-        , m_cch(other.m_cch)
-        , m_method(other.m_method)
-        , m_isAtty(other.m_isAtty)
-    {
-        other.m_buf    = nullptr;
-        other.m_cch    = 0;
-        other.m_method = 0;
-        other.m_isAtty = false;
-    }
-    app_console_consumer& operator=(app_console_consumer&& other) noexcept
-    {
-        m_buf    = other.m_buf;
-        m_cch    = other.m_cch;
-        m_method = other.m_method;
-        m_isAtty = other.m_isAtty;
-        other.m_buf    = nullptr;
-        other.m_cch    = 0;
-        other.m_method = 0;
-        other.m_isAtty = false;
-        return *this;
-    }
 
 public:
     bool outputIsAtty() const

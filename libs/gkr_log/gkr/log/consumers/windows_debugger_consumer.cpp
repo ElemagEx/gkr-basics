@@ -27,25 +27,9 @@ namespace log
 {
 class c_windows_debugger_consumer : public windows_debugger_consumer
 {
-    c_windows_debugger_consumer           (const c_windows_debugger_consumer&) noexcept = delete;
-    c_windows_debugger_consumer& operator=(const c_windows_debugger_consumer&) noexcept = delete;
-
     gkr_log_windows_debugger_consumer_callbacks m_callbacks {};
 
 public:
-    c_windows_debugger_consumer(c_windows_debugger_consumer&& other) noexcept
-        : windows_debugger_consumer(std::move(other))
-        , m_callbacks(other.m_callbacks)
-    {
-        other.m_callbacks = gkr_log_windows_debugger_consumer_callbacks();
-    }
-    c_windows_debugger_consumer& operator=(c_windows_debugger_consumer&& other) noexcept
-    {
-        windows_debugger_consumer::operator=(std::move(other));
-        m_callbacks = other.m_callbacks;
-        other.m_callbacks = gkr_log_windows_debugger_consumer_callbacks();
-        return *this;
-    }
     c_windows_debugger_consumer(
         const gkr_log_windows_debugger_consumer_callbacks* callbacks,
         unsigned bufferCapacity

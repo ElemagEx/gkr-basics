@@ -40,25 +40,9 @@ namespace log
 {
 class c_text_file_consumer : public text_file_consumer
 {
-    c_text_file_consumer           (const c_text_file_consumer&) noexcept = delete;
-    c_text_file_consumer& operator=(const c_text_file_consumer&) noexcept = delete;
-
     gkr_log_text_file_consumer_callbacks m_callbacks {};
 
 public:
-    c_text_file_consumer(c_text_file_consumer&& other) noexcept
-        : text_file_consumer(std::move(other))
-        , m_callbacks(other.m_callbacks)
-    {
-        other.m_callbacks = gkr_log_text_file_consumer_callbacks();
-    }
-    c_text_file_consumer& operator=(c_text_file_consumer&& other) noexcept
-    {
-        text_file_consumer::operator=(std::move(other));
-        m_callbacks = other.m_callbacks;
-        other.m_callbacks = gkr_log_text_file_consumer_callbacks();
-        return *this;
-    }
     c_text_file_consumer(
         const gkr_log_text_file_consumer_callbacks* callbacks,
         const char* filepath = nullptr,

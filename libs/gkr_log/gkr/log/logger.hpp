@@ -40,6 +40,14 @@ public:
     logger();
     virtual ~logger() noexcept(DIAG_NOEXCEPT) override;
 
+public:
+    int get_severity_threshold() const {
+        return m_severity_threshold;
+    }
+    void set_severity_threshold(int severity_threshold) {
+        m_severity_threshold = severity_threshold;
+    }
+
 private:
     virtual const char* get_name() noexcept override;
 
@@ -82,10 +90,11 @@ public:
     void set_thread_name(const char* name, tid_t tid = 0);
 
 public:
-    bool start_log_message(char*& buf, unsigned& cch);
-    bool finish_log_message(const source_location* location, int severity, int facility);
+    bool start_log_message(int severity, char*& buf, unsigned& cch);
+    int cancel_log_message();
+    int finish_log_message(const source_location* location, int severity, int facility);
 
-    bool log_message(const source_location* location, int severity, int facility, const char* format, va_list args);
+    int log_message(const source_location* location, int severity, int facility, const char* format, va_list args);
 
 private:
     struct message_data : public message
@@ -93,6 +102,7 @@ private:
         message_data() = delete;
        ~message_data() = delete;
 
+        int  id;
         char buffer[1];
     };
 
@@ -146,6 +156,10 @@ private:
     std::unordered_map<int, const char*> m_facilities;
 
     std::unordered_map<tid_t, const char*> m_thread_ids;
+
+    std::atomic<int> m_msg_id {0};
+
+    int m_severity_threshold  {100};
 };
 
 }

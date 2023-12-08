@@ -8,9 +8,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#ifdef _WIN32
 //#define WIN32_LEAN_AND_MEAN
 //#include <Windows.h>
 #include <winerror.h>
+#endif
 #include <gkr/log/formatters/win32_format_message.h>
 
 #define COMMON_SEVERITIES_INFOS LOG_SEVERITIES_INFOS
@@ -26,7 +28,9 @@ TEST_CASE("logging.logger. main")
     gkr_log_del_all_consumers();
     gkr_log_add_consumer(std::make_shared<gkr::log::app_console_consumer>());
 
+#ifdef _WIN32
     gkr_log_win32_format_message(ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error: ");
+#endif
 
     LOGV(FACILITY_NETWORK, "Hello There!");
 

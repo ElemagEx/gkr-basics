@@ -303,7 +303,7 @@ bool logger::start_log_message(int severity, char*& buf, unsigned& cch)
 
     auto element = m_log_queue.start_push();
 
-    Check_ValidState(element.push_in_progress());
+    Check_ValidState(element.push_in_progress(), );
 
     Assert_Check(m_log_queue.element_size() > sizeof(message_data));
 
@@ -375,7 +375,7 @@ int logger::log_message(const source_location* location, int severity, int facil
 
         message_data& msg = element.as<message_data>();
 
-        const std::size_t cch = (msg.buf - element.data<char>());
+        const std::size_t cch = std::size_t(msg.buf - element.data<char>());
 
         if(!compose_message(msg, cch, location, severity, facility, format, args))
         {

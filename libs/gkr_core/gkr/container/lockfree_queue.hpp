@@ -228,7 +228,6 @@ public:
 };
 }
 
-
 template<typename Queue>
 class queue_producer_element : public impl::queue_element<Queue, typename Queue::element_t>
 {
@@ -942,7 +941,7 @@ protected:
     {
         return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
     }
-    bool some_thread_owns_elements(std::size_t count) const noexcept //implementation must be tested
+    bool some_thread_owns_elements(std::size_t count) const noexcept //TODO:implementation must be tested
     {
         switch(count)
         {
@@ -1001,7 +1000,7 @@ protected:
 
             if(index != queue_npos) return index;
 
-            base_t::consumer_wait(std::chrono::high_resolution_clock::now());
+            base_t::consumer_wait();
         }
     }
 #endif
@@ -1030,8 +1029,18 @@ private:
 
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
-    static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
-    static constexpr bool swap_is_noexcept = std::is_nothrow_swappable      <base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap           ::value);
+    static constexpr bool move_is_noexcept = (
+        std::is_nothrow_move_assignable<base_t>::value && (
+            AllocatorTraits::is_always_equal::value || (
+                AllocatorTraits::propagate_on_container_move_assignment::value &&
+                std::is_nothrow_move_assignable<TypeAllocator>::value
+                )));
+    static constexpr bool swap_is_noexcept = (
+        std::is_nothrow_swappable<base_t>::value && (
+            AllocatorTraits::is_always_equal::value || (
+                AllocatorTraits::propagate_on_container_swap::value &&
+                std::is_nothrow_swappable<TypeAllocator>::value
+                )));
 
     gkr_attr_no_unique_address TypeAllocator m_allocator;
 
@@ -1121,7 +1130,7 @@ protected:
         m_busy_tail = other.m_busy_tail.exchange(m_busy_tail);
         m_busy_head = other.m_busy_head.exchange(m_busy_head);
 
-        swap_entries(std::move(other));
+        swap_entries(other);
 
         std::swap(m_capacity, other.m_capacity);
     }
@@ -1184,7 +1193,7 @@ private:
                     " this case is undefined behaviour."
                     " Recovery code follows"
                     );
-                dequeues_entry* entries = nullptr;
+                dequeues_entry* entries;
 
                 this->relocate_entries(  entries, other.m_allocator);
                 other.relocate_entries(m_entries,       m_allocator);
@@ -1218,8 +1227,8 @@ protected:
     bool element_has_value(std::size_t index, std::size_t& pos) const noexcept
     {
         if(index >= m_capacity) return false;
-        //implementation must be tested
-        for(std::size_t busy_pos = m_busy_head; busy_pos < m_busy_tail; ++busy_pos)
+        //TODO:implementation must be tested
+        for(std::size_t busy_pos = m_busy_head, busy_end = m_busy_tail; busy_pos < busy_end; ++busy_pos)
         {
             if(index == m_entries[busy_pos % m_capacity].busy_index)
             {
@@ -1437,7 +1446,7 @@ protected:
 
         const std::size_t idle_count = busy_count + free_count;
 
-        return ((m_capacity - idle_count) == 0);
+        return ((m_capacity - idle_count) != 0);
     }
     bool some_thread_owns_elements(std::size_t count) const noexcept
     {
@@ -1533,8 +1542,18 @@ public:
 private:
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
-    static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
-    static constexpr bool swap_is_noexcept = std::is_nothrow_swappable      <base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap           ::value);
+    static constexpr bool move_is_noexcept = (
+        std::is_nothrow_move_assignable<base_t>::value && (
+            AllocatorTraits::is_always_equal::value || (
+                AllocatorTraits::propagate_on_container_move_assignment::value &&
+                std::is_nothrow_move_assignable<TypeAllocator>::value
+                )));
+    static constexpr bool swap_is_noexcept = (
+        std::is_nothrow_swappable<base_t>::value && (
+            AllocatorTraits::is_always_equal::value || (
+                AllocatorTraits::propagate_on_container_swap::value &&
+                std::is_nothrow_swappable<TypeAllocator>::value
+                )));
 
     gkr_attr_no_unique_address TypeAllocator m_allocator;
 
@@ -1548,6 +1567,12 @@ public:
         : base_t     (allocator)
         , m_allocator(allocator)
     {
+    }
+    lockfree_queue(std::size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+        : base_t     (allocator)
+        , m_allocator(allocator)
+    {
+        reset(capacity);
     }
     ~lockfree_queue() noexcept(
         std::is_nothrow_destructible<element_t    >::value &&
@@ -1668,7 +1693,7 @@ private:
                     " this case is undefined behaviour."
                     " Recovery code follows"
                     );
-                element_t* elements = nullptr;
+                element_t* elements;
 
                 this->relocate_elements(  elements, other.m_allocator);
                 other.relocate_elements(m_elements,       m_allocator);
@@ -1936,7 +1961,7 @@ public:
     }
     bool try_push(element_t&& value) noexcept(
         DIAG_NOEXCEPT &&
-        std::is_nothrow_copy_constructible<element_t>::value
+        std::is_nothrow_move_constructible<element_t>::value
         )
     {
         return try_start_push(std::move(value)).push_in_progress();
@@ -1988,7 +2013,10 @@ public:
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 public:
     template<typename Rep, typename Period, typename... Args>
-    element_t* acquire_producer_element_ownership_ex(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership_ex(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_constructible<element_t, Args...>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -1999,7 +2027,10 @@ public:
         return new (element) element_t(std::forward<Args>(args)...);
     }
     template<typename... Args>
-    element_t* acquire_producer_element_ownership_ex(Args&&... args) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership_ex(Args&&... args) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_constructible<element_t, Args...>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership();
 
@@ -2011,7 +2042,10 @@ public:
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_default_constructible<element_t>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -2021,7 +2055,10 @@ public:
 
         return new (element) element_t();
     }
-    element_t* acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership() noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_default_constructible<element_t>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership();
 
@@ -2033,7 +2070,10 @@ public:
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_constructible<element_t>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -2043,7 +2083,10 @@ public:
 
         return new (element) element_t(std::move(value));
     }
-    element_t* acquire_producer_element_ownership(element_t&& value) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership(element_t&& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_constructible<element_t>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership();
 
@@ -2055,7 +2098,10 @@ public:
     }
 
     template<typename Rep, typename Period>
-    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_constructible<element_t>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership(timeout);
 
@@ -2065,7 +2111,10 @@ public:
 
         return new (element) element_t(value);
     }
-    element_t* acquire_producer_element_ownership(const element_t& value) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_producer_element_ownership(const element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_constructible<element_t>::value
+        )
     {
         const std::size_t index = base_t::take_producer_element_ownership();
 
@@ -2100,14 +2149,20 @@ public:
 
 public:
     template<typename Rep, typename Period, typename... Args>
-    element_t* start_emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(DIAG_NOEXCEPT)
+    element_t* start_emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_constructible<element_t, Args...>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership_ex(timeout, std::forward<Args>(args)...);
 
         return queue_producer_element_t(*this, element);
     }
     template<typename... Args>
-    element_t* start_emplace(Args&&... args) noexcept(DIAG_NOEXCEPT)
+    element_t* start_emplace(Args&&... args) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_constructible<element_t, Args...>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership_ex(std::forward<Args>(args)...);
 
@@ -2115,13 +2170,19 @@ public:
     }
 
     template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_default_constructible<element_t>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership(timeout);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push() noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push() noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_default_constructible<element_t>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership();
 
@@ -2129,13 +2190,19 @@ public:
     }
 
     template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_constructible<element_t>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership(timeout, std::move(value));
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(element_t&& value) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push(element_t&& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_constructible<element_t>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership(std::move(value));
 
@@ -2143,13 +2210,19 @@ public:
     }
 
     template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_constructible<element_t>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership(timeout, value);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(const element_t& value)
+    queue_producer_element_t start_push(const element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_constructible<element_t>::value
+        )
     {
         element_t* element = acquire_producer_element_ownership(value);
 
@@ -2163,7 +2236,7 @@ public:
 
         return queue_consumer_element_t(*this, element);
     }
-    queue_consumer_element_t start_pop()
+    queue_consumer_element_t start_pop() noexcept(DIAG_NOEXCEPT)
     {
         element_t* element = acquire_consumer_element_ownership();
 
@@ -2172,59 +2245,93 @@ public:
 
 public:
     template<typename Rep, typename Period, typename... Args>
-    bool emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(DIAG_NOEXCEPT)
+    bool emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_constructible<element_t, Args...>::value
+        )
     {
         return start_emplace(timeout, std::forward<Args>(args)...).push_in_progress();
     }
     template<typename... Args>
-    bool emplace(Args&&... args) noexcept(DIAG_NOEXCEPT)
+    bool emplace(Args&&... args) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_constructible<element_t, Args...>::value
+        )
     {
         return start_emplace(std::forward<Args>(args)...).push_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    bool push(std::chrono::duration<Rep, Period> timeout) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_default_constructible<element_t>::value
+        )
     {
         return start_push(timeout).push_in_progress();
     }
-    bool push() noexcept(DIAG_NOEXCEPT)
+    bool push() noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_default_constructible<element_t>::value
+        )
     {
         return start_push().push_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(DIAG_NOEXCEPT)
+    bool push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_constructible<element_t>::value
+        )
     {
         return start_push(timeout, std::move(value)).push_in_progress();
     }
-    bool push(element_t&& value) noexcept(DIAG_NOEXCEPT)
+    bool push(element_t&& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_constructible<element_t>::value
+        )
     {
         return start_push(std::move(value)).push_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(DIAG_NOEXCEPT)
+    bool push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_constructible<element_t>::value
+        )
     {
         return start_push(timeout, value).push_in_progress();
     }
-    bool push(const element_t& value) noexcept(DIAG_NOEXCEPT)
+    bool push(const element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_constructible<element_t>::value
+        )
     {
         return start_push(value).push_in_progress();
     }
 
 public:
     template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    bool pop(std::chrono::duration<Rep, Period> timeout) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_destructible<element_t>::value
+        )
     {
         return start_pop(timeout).pop_in_progress();
     }
-    bool pop() noexcept(DIAG_NOEXCEPT)
+    bool pop() noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_destructible<element_t>::value
+        )
     {
         return start_pop().pop_in_progress();
     }
 
     template<typename Rep, typename Period>
-    bool copy_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(DIAG_NOEXCEPT)
+    bool copy_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_assignable<element_t>::value &&
+        std::is_nothrow_destructible   <element_t>::value
+        )
     {
         auto consumer_element = start_pop(timeout);
 
@@ -2234,7 +2341,11 @@ public:
 
         return true;
     }
-    bool copy_and_pop(element_t& value) noexcept(DIAG_NOEXCEPT)
+    bool copy_and_pop(element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_copy_assignable<element_t>::value &&
+        std::is_nothrow_destructible   <element_t>::value
+        )
     {
         auto consumer_element = start_pop();
 
@@ -2246,7 +2357,11 @@ public:
     }
 
     template<typename Rep, typename Period>
-    bool move_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(DIAG_NOEXCEPT)
+    bool move_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_assignable<element_t>::value &&
+        std::is_nothrow_destructible   <element_t>::value
+        )
     {
         auto consumer_element = start_pop(timeout);
 
@@ -2256,7 +2371,11 @@ public:
 
         return true;
     }
-    bool move_and_pop(element_t& value) noexcept(DIAG_NOEXCEPT)
+    bool move_and_pop(element_t& value) noexcept(
+        DIAG_NOEXCEPT &&
+        std::is_nothrow_move_assignable<element_t>::value &&
+        std::is_nothrow_destructible   <element_t>::value
+        )
     {
         auto consumer_element = start_pop();
 
@@ -2296,8 +2415,18 @@ private:
 
     using AllocatorTraits = std::allocator_traits<TypeAllocator>;
 
-    static constexpr bool move_is_noexcept = std::is_nothrow_move_assignable<base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_move_assignment::value);
-    static constexpr bool swap_is_noexcept = std::is_nothrow_swappable      <base_t>::value && (AllocatorTraits::is_always_equal::value || AllocatorTraits::propagate_on_container_swap           ::value);
+    static constexpr bool move_is_noexcept = (
+        std::is_nothrow_move_assignable<base_t>::value && (
+            AllocatorTraits::is_always_equal::value || (
+                AllocatorTraits::propagate_on_container_move_assignment::value &&
+                std::is_nothrow_move_assignable<TypeAllocator>::value
+                )));
+    static constexpr bool swap_is_noexcept = (
+        std::is_nothrow_swappable<base_t>::value && (
+            AllocatorTraits::is_always_equal::value || (
+                AllocatorTraits::propagate_on_container_swap::value &&
+                std::is_nothrow_swappable<TypeAllocator>::value
+                )));
 
     gkr_attr_no_unique_address TypeAllocator m_allocator;
 
@@ -2317,7 +2446,18 @@ public:
         , m_allocator(allocator)
     {
     }
-
+    lockfree_queue(std::size_t capacity, std::size_t size, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+        : base_t     (allocator)
+        , m_allocator(allocator)
+    {
+        reset(capacity, size, 0);
+    }
+    lockfree_queue(std::size_t capacity, std::size_t size, std::size_t alignment, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+        : base_t     (allocator)
+        , m_allocator(allocator)
+    {
+        reset(capacity, size, alignment);
+    }
     ~lockfree_queue() noexcept(
         std::is_nothrow_destructible<TypeAllocator>::value &&
         std::is_nothrow_destructible<base_t       >::value &&
@@ -2472,6 +2612,7 @@ private:
     {
         if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
         {
+            m_allocator = std::move(other.m_allocator);
         }
         else if_constexpr(!AllocatorTraits::is_always_equal::value)
         {
@@ -2500,8 +2641,8 @@ private:
                     " this case is undefined behaviour."
                     " Recovery code follows"
                     );
-                std::size_t offset = 0;
-                char*     elements = nullptr;
+                std::size_t offset;
+                char*     elements;
 
                 this->relocate_elements(  offset,   elements, other.m_allocator);
                 other.relocate_elements(m_offset, m_elements,       m_allocator);

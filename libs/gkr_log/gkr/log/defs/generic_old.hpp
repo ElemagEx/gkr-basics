@@ -16,13 +16,13 @@ inline int log_simple(int facility, const char* message)
 {
     return gkr_log_simple_message(severity, facility, message);
 }
-template<> inline int log_simple<LOG_SEVERITY_FATAL  ,false>(int, const char*) {}
-template<> inline int log_simple<LOG_SEVERITY_ERROR  ,false>(int, const char*) {}
-template<> inline int log_simple<LOG_SEVERITY_WARN   ,false>(int, const char*) {}
-template<> inline int log_simple<LOG_SEVERITY_INFO   ,false>(int, const char*) {}
-template<> inline int log_simple<LOG_SEVERITY_VERBOSE,false>(int, const char*) {}
-template<> inline int log_simple<LOG_SEVERITY_DEBUG  ,false>(int, const char*) {}
-template<> inline int log_simple<LOG_SEVERITY_TRACE  ,false>(int, const char*) {}
+template<> inline int log_simple<LOG_SEVERITY_FATAL  ,false>(int, const char*) { return 0; }
+template<> inline int log_simple<LOG_SEVERITY_ERROR  ,false>(int, const char*) { return 0; }
+template<> inline int log_simple<LOG_SEVERITY_WARN   ,false>(int, const char*) { return 0; }
+template<> inline int log_simple<LOG_SEVERITY_INFO   ,false>(int, const char*) { return 0; }
+template<> inline int log_simple<LOG_SEVERITY_VERBOSE,false>(int, const char*) { return 0; }
+template<> inline int log_simple<LOG_SEVERITY_DEBUG  ,false>(int, const char*) { return 0; }
+template<> inline int log_simple<LOG_SEVERITY_TRACE  ,false>(int, const char*) { return 0; }
 
 template<int severity, bool>
 inline int log_simple_if(bool condition, int facility, const char* message)
@@ -33,13 +33,13 @@ inline int log_simple_if(bool condition, int facility, const char* message)
         return 0;
     }
 }
-template<> inline int log_simple_if<LOG_SEVERITY_FATAL  ,false>(bool, int, const char*) {}
-template<> inline int log_simple_if<LOG_SEVERITY_ERROR  ,false>(bool, int, const char*) {}
-template<> inline int log_simple_if<LOG_SEVERITY_WARN   ,false>(bool, int, const char*) {}
-template<> inline int log_simple_if<LOG_SEVERITY_INFO   ,false>(bool, int, const char*) {}
-template<> inline int log_simple_if<LOG_SEVERITY_VERBOSE,false>(bool, int, const char*) {}
-template<> inline int log_simple_if<LOG_SEVERITY_DEBUG  ,false>(bool, int, const char*) {}
-template<> inline int log_simple_if<LOG_SEVERITY_TRACE  ,false>(bool, int, const char*) {}
+template<> inline int log_simple_if<LOG_SEVERITY_FATAL  ,false>(bool, int, const char*) { return 0; }
+template<> inline int log_simple_if<LOG_SEVERITY_ERROR  ,false>(bool, int, const char*) { return 0; }
+template<> inline int log_simple_if<LOG_SEVERITY_WARN   ,false>(bool, int, const char*) { return 0; }
+template<> inline int log_simple_if<LOG_SEVERITY_INFO   ,false>(bool, int, const char*) { return 0; }
+template<> inline int log_simple_if<LOG_SEVERITY_VERBOSE,false>(bool, int, const char*) { return 0; }
+template<> inline int log_simple_if<LOG_SEVERITY_DEBUG  ,false>(bool, int, const char*) { return 0; }
+template<> inline int log_simple_if<LOG_SEVERITY_TRACE  ,false>(bool, int, const char*) { return 0; }
 }
 
 template<int severity>

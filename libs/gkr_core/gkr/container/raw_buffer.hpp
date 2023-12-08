@@ -13,9 +13,15 @@
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.hpp>
 #endif
+#ifndef __cpp_lib_is_swappable
+#include <gkr/cpp/lib_is_swappable.hpp>
+#endif
 
 #else
 
+#ifndef __cpp_lib_is_swappable
+#error  You must use C++17 or preinclude implementation of std::is_nothrow_swappable
+#endif
 #ifndef __cpp_lib_exchange_function
 #error  You must use C++14 or preinclude implementation of std::exchange
 #endif
@@ -75,17 +81,12 @@ public:
     static constexpr bool move_assignment_is_nothrow = (
         allocator_traits::is_always_equal::value
         ||
-        (allocator_traits::propagate_on_container_move_assignment::value &&
-        std::is_nothrow_move_constructible<Allocator>::value)
+        (allocator_traits::propagate_on_container_move_assignment::value && std::is_nothrow_move_constructible<Allocator>::value)
         );
     static constexpr bool swap_is_nothrow = (
         allocator_traits::is_always_equal::value
         ||
-        (allocator_traits::propagate_on_container_swap::value &&
-        std::is_nothrow_move_constructible<Allocator>::value &&
-        std::is_nothrow_move_assignable   <Allocator>::value)
-        ||
-        (move_constructor_is_nothrow && move_assignment_is_nothrow)
+        (allocator_traits::propagate_on_container_swap::value && std::is_nothrow_swappable<Allocator>::value)
         );
 
 private:
@@ -116,44 +117,23 @@ public:
     raw_buffer(const raw_buffer& other, const Allocator& allocator)
         : m_allocator(allocator)
     {
-        reserve(other.m_capacity);
-
-        m_size = other.m_size;
-
-        if(m_size > 0)
-        {
-            std::memcpy(m_data, other.m_data, m_size);
-        }
+        copy_data(other.m_data, other.m_size, other.m_capacity);
     }
     raw_buffer(const raw_buffer& other)
         : m_allocator(allocator_traits::select_on_container_copy_construction(other.m_allocator))
     {
-        reserve(other.m_capacity);
-
-        m_size = other.m_size;
-
-        if(m_size > 0)
-        {
-            std::memcpy(m_data, other.m_data, m_size);
-        }
+        copy_data(other.m_data, other.m_size, other.m_capacity);
     }
     raw_buffer& operator=(const raw_buffer& other)
     {
-        if(this != &other)
+        if(this == &other) return *this;
         {
+            clear();
             if_constexpr(allocator_traits::propagate_on_container_copy_assignment::value)
             {
-                clear();
                 m_allocator = other.m_allocator;
             }
-            reserve(other.m_capacity);
-
-            m_size = other.m_size;
-
-            if(m_size > 0)
-            {
-                std::memcpy(m_data, other.m_data, m_size);
-            }
+            copy_data(other.m_data, other.m_size, other.m_capacity);
         }
         return *this;
     }
@@ -164,30 +144,17 @@ public:
         )
         : m_allocator(allocator)
     {
-        if_constexpr(allocator_traits::is_always_equal::value)
+        if_constexpr(!allocator_traits::is_always_equal::value)
         {
-            m_data     = std::exchange(other.m_data    , nullptr);
-            m_size     = std::exchange(other.m_size    , 0);
-            m_capacity = std::exchange(other.m_capacity, 0);
-        }
-        else if(m_allocator == other.m_allocator)
-        {
-            m_data     = std::exchange(other.m_data    , nullptr);
-            m_size     = std::exchange(other.m_size    , 0);
-            m_capacity = std::exchange(other.m_capacity, 0);
-        }
-        else
-        {
-            reserve(other.m_capacity);
-
-            m_size = other.m_size;
-
-            if(m_size > 0)
+            if(m_allocator != other.m_allocator)
             {
-                std::memcpy(m_data, other.m_data, m_size);
+                other.relocate_data(m_data, m_size, m_capacity, m_allocator);
+                return;
             }
-            other.clear();
         }
+        m_data     = std::exchange(other.m_data    , nullptr);
+        m_size     = std::exchange(other.m_size    , 0);
+        m_capacity = std::exchange(other.m_capacity, 0);
     }
     raw_buffer(raw_buffer&& other) noexcept(move_constructor_is_nothrow)
         : m_allocator(std::move(other.m_allocator))
@@ -196,7 +163,6 @@ public:
         m_size     = std::exchange(other.m_size    , 0U);
         m_capacity = std::exchange(other.m_capacity, 0U);
     }
-
     raw_buffer& operator=(raw_buffer&& other) noexcept(move_assignment_is_nothrow)
     {
         if(this != &other)
@@ -204,35 +170,19 @@ public:
             if_constexpr(allocator_traits::propagate_on_container_move_assignment::value)
             {
                 m_allocator = std::move(other.m_allocator);
-
-                m_data     = std::exchange(other.m_data    , nullptr);
-                m_size     = std::exchange(other.m_size    , 0U);
-                m_capacity = std::exchange(other.m_capacity, 0U);
             }
-            else if_constexpr(allocator_traits::is_always_equal::value)
+            else if_constexpr(!allocator_traits::is_always_equal::value)
             {
-                m_data     = std::exchange(other.m_data    , nullptr);
-                m_size     = std::exchange(other.m_size    , 0U);
-                m_capacity = std::exchange(other.m_capacity, 0U);
-            }
-            else if(m_allocator == other.m_allocator)
-            {
-                m_data     = std::exchange(other.m_data    , nullptr);
-                m_size     = std::exchange(other.m_size    , 0U);
-                m_capacity = std::exchange(other.m_capacity, 0U);
-            }
-            else
-            {
-                reserve(other.m_capacity);
-
-                m_size = other.m_size;
-
-                if(m_size > 0)
+                if(m_allocator != other.m_allocator)
                 {
-                    std::memcpy(m_data, other.m_data, m_size);
+                    clear();
+                    other.relocate_data(m_data, m_size, m_capacity, m_allocator);
+                    return *this;
                 }
-                other.clear();
             }
+            m_data     = std::exchange(other.m_data    , nullptr);
+            m_size     = std::exchange(other.m_size    , 0U);
+            m_capacity = std::exchange(other.m_capacity, 0U);
         }
         return *this;
     }
@@ -245,29 +195,65 @@ public:
             if_constexpr(allocator_traits::propagate_on_container_swap::value)
             {
                 std::swap(m_allocator, other.m_allocator);
+            }
+            else if_constexpr(!allocator_traits::is_always_equal::value)
+            {
+                if(m_allocator != other.m_allocator)
+                {
+                    char* data;
+                    std::size_t size;
+                    std::size_t capacity;
 
-                std::swap(m_data    , other.m_data);
-                std::swap(m_size    , other.m_size);
-                std::swap(m_capacity, other.m_capacity);
+                    this->relocate_data(  data,   size,   capacity, other.m_allocator);
+                    other.relocate_data(m_data, m_size, m_capacity,       m_allocator);
+
+                    other.m_data     = data;
+                    other.m_size     = size;
+                    other.m_capacity = capacity;
+                    return;
+                }
             }
-            else if_constexpr(allocator_traits::is_always_equal::value)
+            std::swap(m_data    , other.m_data);
+            std::swap(m_size    , other.m_size);
+            std::swap(m_capacity, other.m_capacity);
+        }
+    }
+
+private:
+    void copy_data(const char* data, std::size_t size, std::size_t capacity, Allocator& allocator)
+    {
+        reserve(capacity);
+
+        m_size = size;
+
+        if(m_size > 0)
+        {
+            std::memcpy(m_data, data, m_size);
+        }
+    }
+    void relocate_data(char*& data, std::size_t& size, std::size_t& capacity, Allocator& allocator)
+    {
+        if(m_capacity == 0)
+        {
+            data     = nullptr;
+            size     = 0;
+            capacity = 0;
+        }
+        else
+        {
+            const std::size_t count = ((m_capacity % granularity) == 0)
+                ? (m_capacity / granularity + 0)
+                : (m_capacity / granularity + 1)
+                ;
+            data     = reinterpret_cast<char*>(allocator.allocate(count));
+            size     = m_size;
+            capacity = count * granularity;
+
+            if(m_size > 0)
             {
-                std::swap(m_data    , other.m_data);
-                std::swap(m_size    , other.m_size);
-                std::swap(m_capacity, other.m_capacity);
+                std::memcpy(data, m_data, m_size);
             }
-            else if(m_allocator == other.m_allocator)
-            {
-                std::swap(m_data    , other.m_data);
-                std::swap(m_size    , other.m_size);
-                std::swap(m_capacity, other.m_capacity);
-            }
-            else
-            {
-                raw_buffer buffer(other);
-                other = std::move(*this);
-                *this = std::move(buffer);
-            }
+            clear();
         }
     }
 
@@ -309,7 +295,6 @@ public:
             ? (capacity / granularity + 0)
             : (capacity / granularity + 1)
             ;
-
         char* data = reinterpret_cast<char*>(m_allocator.allocate(count));
 
         if(m_data != nullptr)

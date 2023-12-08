@@ -1,3 +1,6 @@
+add_executable        (t-tester main.cpp)
+target_link_libraries (t-tester PRIVATE gkr_core)
+
 add_executable        (t-diagnostic t-diagnostic.cpp)
 target_link_libraries (t-diagnostic PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
 target_compile_options(t-diagnostic PRIVATE ${GKR_BASICS_TESTING_WARNINGS})

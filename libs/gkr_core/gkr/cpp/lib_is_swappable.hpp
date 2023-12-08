@@ -4,16 +4,11 @@
 
 #ifndef __cpp_lib_is_swappable
 
-namespace std
-{
-
-//TODO:Change this invalid temp implementation
-
-template<class>
-struct is_nothrow_swappable : true_type
-{
+namespace std {
+template<typename T>
+struct is_nothrow_swappable {
+    static constexpr bool value = std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_assignable<T>::value;
 };
-
 }
 
 #endif

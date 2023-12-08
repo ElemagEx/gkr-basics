@@ -2,42 +2,56 @@
 
 #include <gkr/log/log.h>
 
-namespace gkr
-{
-namespace log
-{
-struct custom_message_t
-{
-    custom_message_t           (const custom_message_t&) noexcept = delete;
-    custom_message_t& operator=(const custom_message_t&) noexcept = delete;
+namespace gkr {
+namespace log {
 
-    custom_message_t           (custom_message_t&) noexcept = delete;
-    custom_message_t& operator=(custom_message_t&) noexcept = delete;
-
+struct custom_message {
     char*    buf = nullptr;
     unsigned cch = 0;
 
-    bool is_started() const
-    {
+    custom_message           (const custom_message&) noexcept = delete;
+    custom_message& operator=(const custom_message&) noexcept = delete;
+
+    custom_message(custom_message&& other) noexcept : buf(other.buf), cch(other.cch) {
+        other.buf = nullptr;
+        other.cch = 0;
+    }
+    custom_message& operator=(custom_message&& other) noexcept {
+        buf = other.buf;
+        cch = other.cch;
+        other.buf = nullptr;
+        other.cch = 0;
+        return *this;
+    }
+    custom_message() noexcept {
+    }
+    custom_message(int severity) {
+        gkr_log_custom_message_start(severity, &buf, &cch);
+    }
+    ~custom_message() {
+        cancel();
+    }
+
+    bool is_started() const {
         return (buf != nullptr);
     }
-    custom_message_t(int severity)
-    {
-        if(!gkr_log_custom_message_start(severity, &buf, &cch)) buf = nullptr;
-    }
-    ~custom_message_t()
-    {
-        if(buf != nullptr) gkr_log_custom_message_cancel();
-    }
-    int finish(int severity, int facility)
-    {
+    int finish(int severity, int facility) {
+        if(!is_started()) return 0;
         buf = nullptr;
+        cch = 0;
         return gkr_log_custom_message_finish(severity, facility);
     }
-    int finish(const char* func, const char* file, unsigned line, int severity, int facility)
-    {
+    int finish(const char* func, const char* file, unsigned line, int severity, int facility) {
+        if(!is_started()) return 0;
         buf = nullptr;
+        cch = 0;
         return gkr_log_custom_message_finish_ex(func, file, line, severity, facility);
+    }
+    int cancel() {
+        if(!is_started()) return -1;
+        buf = nullptr;
+        cch = 0;
+        return gkr_log_custom_message_cancel();
     }
 };
 }
@@ -48,25 +62,22 @@ struct custom_message_t
 #include <memory>
 #include <sstream>
 
-namespace gkr
-{
-namespace log
-{
-namespace impl
-{
+namespace gkr {
+namespace log {
+namespace impl{
+
 GKR_LOG_API void init_ostringstream_allocator(char* buf, std::size_t cch);
 GKR_LOG_API void done_ostringstream_allocator(std::size_t len);
 GKR_LOG_API void* allocate_bytes(std::size_t& cb);
 GKR_LOG_API void deallocate_bytes(void* ptr, std::size_t cb);
 
 template<typename T>
-struct allocator
-{
+struct allocator {
     using value_type = T;
     using  size_type = std::size_t;
     using  diff_type = std::ptrdiff_t;
 
-    bool operator==(const allocator&) const noexcept { return true; }
+    bool operator==(const allocator&) const noexcept { return true ; }
     bool operator!=(const allocator&) const noexcept { return false; }
 
     template<class U>
@@ -79,32 +90,33 @@ struct allocator
 
 #ifdef __cpp_lib_allocate_at_least
     [[nodiscard]]
-    constexpr std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n)
-    {
+    constexpr std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n) {
         std::size_t cb = n * sizeof(T);
         T* p = static_cast<T*>(allocate_bytes(cb));
         n = cb / sizeof(T);
         return std::allocation_result{p, cb};
     }
 #endif
-    T* allocate(std::size_t n, const void* = nullptr)
-    {
+    T* allocate(std::size_t n, const void* = nullptr) {
         std::size_t cb = n * sizeof(T);
         return static_cast<T*>(allocate_bytes(cb));
     }
-    void deallocate(T* p, std::size_t n)
-    {
+    void deallocate(T* p, std::size_t n) {
         const std::size_t cb = n * sizeof(T);
         deallocate_bytes(p, cb);
     }
 };
 }
 
-class ostream
-{
-    using ostringstream = std::basic_ostringstream<char, std::char_traits<char>, impl::allocator<char>>;
+class ostream : protected custom_message {
+    using base_t = custom_message;
 
-    ostringstream m_ostream;
+    using ostringstream_t = std::basic_ostringstream<char, std::char_traits<char>, impl::allocator<char>>;
+
+    ostringstream_t m_ostream;
+
+    ostream           (const ostream&) noexcept = delete;
+    ostream& operator=(const ostream&) noexcept = delete;
 
 protected:
     const char* m_func     = nullptr;
@@ -113,23 +125,20 @@ protected:
     int         m_severity = 0;
     int         m_facility = 0;
 
-private:
-    ostream           (const ostream&) noexcept = delete;
-    ostream& operator=(const ostream&) noexcept = delete;
-
 public:
     ostream(ostream&& other) noexcept
-        : m_ostream (std::move(other.m_ostream))
+        : base_t    (std::move(other))
+        , m_ostream (std::move(other.m_ostream))
         , m_func    (other.m_func)
         , m_file    (other.m_file)
         , m_line    (other.m_line)
         , m_severity(other.m_severity)
-        , m_facility(other.m_facility)
-    {
-        other.m_ostream.setstate(std::ios_base::eofbit);
+        , m_facility(other.m_facility) {
+        other.invalidate();
     }
-    ostream& operator=(ostream&& other) noexcept
-    {
+    ostream& operator=(ostream&& other) noexcept {
+        base_t::operator=(std::move(other));
+
         m_ostream  = std::move(other.m_ostream );
         m_func     = other.m_func;
         m_file     = other.m_file;
@@ -137,27 +146,21 @@ public:
         m_severity = other.m_severity;
         m_facility = other.m_facility;
 
-        other.m_ostream.setstate(std::ios_base::eofbit);
+        other.invalidate();
         return *this;
     }
-    ostream(void*)
-    {
-        m_ostream.setstate(std::ios_base::eofbit);
+    ostream(void*) : base_t() {
+        invalidate();
     }
     ostream(int severity, int facility)
-        : m_ostream()
+        : base_t(severity)
+        , m_ostream()
         , m_severity(severity)
-        , m_facility(facility)
-    {
-        char* buf;
-        unsigned cch;
-        if(gkr_log_custom_message_start(severity, &buf, &cch))
-        {
-            impl::init_ostringstream_allocator(buf, cch);
-        }
-        else
-        {
-            m_ostream.setstate(std::ios_base::eofbit);
+        , m_facility(facility) {
+        if(base_t::is_started()) {
+            impl::init_ostringstream_allocator(base_t::buf, base_t::cch);
+        } else {
+            invalidate();
         }
     }
     ostream(const char* func, const char* file, unsigned line, int severity, int facility)
@@ -166,22 +169,20 @@ public:
         , m_file(file)
         , m_line(line)
         , m_severity(severity)
-        , m_facility(facility)
-    {
-        char* buf;
-        unsigned cch;
-        if(gkr_log_custom_message_start(severity, &buf, &cch))
-        {
-            impl::init_ostringstream_allocator(buf, cch);
-        }
-        else
-        {
-            m_ostream.setstate(std::ios_base::eofbit);
+        , m_facility(facility) {
+        if(base_t::is_started()) {
+            impl::init_ostringstream_allocator(base_t::buf, base_t::cch);
+        } else {
+            invalidate();
         }
     }
-    ~ostream()
-    {
-        if(m_ostream.eof()) return;
+    ~ostream() {
+        finish();
+    }
+
+public:
+    int finish() {
+        if(m_ostream.eof()) return 0;
 
         const auto pos = m_ostream.tellp();
 
@@ -189,22 +190,32 @@ public:
 
         impl::done_ostringstream_allocator(std::size_t(len));
 
-        gkr_log_custom_message_finish_ex(m_func, m_file, m_line, m_severity, m_facility);
+        invalidate();
+        return base_t::finish(m_func, m_file, m_line, m_severity, m_facility);
     }
 
 public:
-    ostream& operator<<(std::ostream& (*data)(std::ostream&))
-    {
+    int operator<<(int (*cmd)(ostream&)) {
+        return (cmd)(*this);
+    }
+    ostream& operator<<(std::ostream& (*data)(std::ostream&)) {
         m_ostream << data;
         return *this;
     }
     template<typename T>
-    ostream& operator<<(const T& data)
-    {
+    ostream& operator<<(const T& data) {
         m_ostream << data;
         return *this;
     }
+
+private:
+    void invalidate() {
+        m_ostream.setstate(std::ios_base::eofbit);
+    }
 };
+inline int finish(ostream& os) {
+    return os.finish();
+}
 
 }
 }
@@ -216,11 +227,10 @@ public:
 
 #include <format>
 
-namespace gkr::log::impl
-{
+namespace gkr::log::impl {
+
 template<typename T>
-class container
-{
+class container {
     container           (const container&) noexcept = delete;
     container& operator=(const container&) noexcept = delete;
 public:
@@ -232,13 +242,11 @@ public:
     container(T* ptr, const std::size_t cap) noexcept : m_ptr(ptr), m_end(m_ptr+cap) {}
    ~container() noexcept = default;
 
-    void push_back(const T& value) noexcept
-    {
+    void push_back(const T& value) noexcept {
         if(m_ptr < m_end) *m_ptr = value;
         ++m_ptr;
     }
-    void seal()
-    {
+    void seal() {
         if(m_ptr < m_end) *m_ptr = 0; else *(m_end - 1) = 0;
     }
 private:
@@ -248,14 +256,13 @@ private:
 }
 
 template<typename... Args>
-int gkr_log_format_message(int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
-{
-    gkr::log::custom_message_t custom_message(severity);
-    if(!custom_message.is_started()) return 0;
+int gkr_log_format_message(int severity, int facility, std::format_string<Args...> fmt, Args&&... args) {
+    gkr::log::custom_message message(severity);
+    if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(custom_message.buf, custom_message.cch);
+    container_t container(message.buf, message.cch);
 
     auto it = std::back_inserter(container);
 
@@ -263,17 +270,16 @@ int gkr_log_format_message(int severity, int facility, std::format_string<Args..
 
     container.seal();
 
-    return custom_message.finish(severity, facility);
+    return message.finish(severity, facility);
 }
 template<typename... Args>
-int gkr_log_format_message_ex(const char* func, const char* file, unsigned line, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
-{
-    gkr::log::custom_message_t custom_message(severity);
-    if(!custom_message.is_started()) return 0;
+int gkr_log_format_message_ex(const char* func, const char* file, unsigned line, int severity, int facility, std::format_string<Args...> fmt, Args&&... args) {
+    gkr::log::custom_message message(severity);
+    if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(custom_message.buf, custom_message.cch);
+    container_t container(message.buf, message.cch);
 
     auto it = std::back_inserter(container);
 
@@ -281,17 +287,16 @@ int gkr_log_format_message_ex(const char* func, const char* file, unsigned line,
 
     container.seal();
 
-    return custom_message.finish(func, file, line, severity, facility);
+    return message.finish(func, file, line, severity, facility);
 }
 template<typename... Args>
-int gkr_log_format_message(int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
-{
-    gkr::log::custom_message_t custom_message(severity);
-    if(!custom_message.is_started()) return 0;
+int gkr_log_format_message(int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) {
+    gkr::log::custom_message message(severity);
+    if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(custom_message.buf, custom_message.cch);
+    container_t container(message.buf, message.cch);
 
     auto it = std::back_inserter(container);
 
@@ -299,17 +304,16 @@ int gkr_log_format_message(int severity, int facility, const std::locale& loc, s
 
     container.seal();
 
-    return custom_message.finish(severity, facility);
+    return message.finish(severity, facility);
 }
 template<typename... Args>
-int gkr_log_format_message(const char* func, const char* file, unsigned line, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
-{
-    gkr::log::custom_message_t custom_message(severity);
-    if(!custom_message.is_started()) return 0;
+int gkr_log_format_message(const char* func, const char* file, unsigned line, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) {
+    gkr::log::custom_message message(severity);
+    if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(custom_message.buf, custom_message.cch);
+    container_t container(message.buf, message.cch);
 
     auto it = std::back_inserter(container);
 
@@ -317,7 +321,7 @@ int gkr_log_format_message(const char* func, const char* file, unsigned line, in
 
     container.seal();
 
-    return custom_message.finish(func, file, line, severity, facility);
+    return message.finish(func, file, line, severity, facility);
 }
 
 #endif /*__cpp_lib_format*/

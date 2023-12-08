@@ -15,6 +15,9 @@ constexpr const char* log_severity_name_by_value(int severity) {
 #ifndef GKR_LOG_THRESHOLD_LEVEL
 #define GKR_LOG_THRESHOLD_LEVEL 100
 #endif
+#ifndef GKR_NO_STREAM_LOGGING
+#define LOG_FINISH gkr::log::finish
+#endif
 
 inline constexpr bool log_threshold(int severity)
 {

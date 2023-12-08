@@ -34,6 +34,8 @@ TEST_CASE("logging.logger. main")
 
     LOGV(FACILITY_NETWORK, "Hello There!");
 
+    LOGV(FACILITY_NETWORK) << "Hello There" << LOG_FINISH;
+
 #if 0
 #ifndef GKR_LOG_USE_C_DEFS
     LOGV(FACILITY_NETWORK) << "Hello There!";

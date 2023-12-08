@@ -291,11 +291,14 @@ void logger::set_thread_name(const char* name, tid_t tid)
     }
 }
 
-static thread_local void* thead_local_element = nullptr;
+static thread_local void* thread_local_element = nullptr;
 
 bool logger::start_log_message(int severity, char*& buf, unsigned& cch)
 {
-    Check_ValidState(thead_local_element == nullptr, false);
+    buf = nullptr;
+    cch = 0;
+
+    Check_ValidState(thread_local_element == nullptr, false);
 
     Check_ValidState(running(), false);
 
@@ -312,27 +315,27 @@ bool logger::start_log_message(int severity, char*& buf, unsigned& cch)
     buf = msg.buf;
     cch = unsigned(msg.buf - element.data<char>());
 
-    thead_local_element = element.detach();
+    thread_local_element = element.detach();
     return true;
 }
 
 int logger::cancel_log_message()
 {
-    Check_NotNullPtr(thead_local_element, -1);
+    Check_NotNullPtr(thread_local_element, -1);
 
-    m_log_queue.cancel_producer_element_ownership(thead_local_element);
+    m_log_queue.cancel_producer_element_ownership(thread_local_element);
 
-    thead_local_element = nullptr;
+    thread_local_element = nullptr;
     return 0;
 }
 
 int logger::finish_log_message(const source_location* location, int severity, int facility)
 {
-    Check_NotNullPtr(thead_local_element, 0);
+    Check_NotNullPtr(thread_local_element, 0);
 
-    queue_producer_element<log_queue_t> element(m_log_queue, thead_local_element);
+    queue_producer_element<log_queue_t> element(m_log_queue, thread_local_element);
 
-    thead_local_element = nullptr;
+    thread_local_element = nullptr;
 
     message_data& msg = element.as<message_data>();
 
@@ -349,6 +352,8 @@ int logger::log_message(const source_location* location, int severity, int facil
     Check_Arg_NotNull(format, 0);
 
     Check_ValidState(running(), 0);
+
+    Check_ValidState(thread_local_element == nullptr, 0);
 
     if(severity >= m_severity_threshold) return 0;
 

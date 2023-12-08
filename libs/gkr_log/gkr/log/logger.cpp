@@ -118,7 +118,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     }
     else
     {
-        m_log_queue.reset(max_queue_entries, max_message_chars + sizeof(message_data), alignof(message_data));
+        m_log_queue.reset(max_queue_entries, max_message_chars + sizeof(message_data));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
 
@@ -410,15 +410,15 @@ bool logger::compose_message(message_data& msg, std::size_t cch, const source_lo
 
     if(location == nullptr)
     {
-        msg.sourceFunc = nullptr;
-        msg.sourceFile = nullptr;
+        msg.sourceFunc = "";
+        msg.sourceFile = "";
         msg.sourceLine = 0;
     }
     else
     {
-        msg.sourceFunc = location->func;
-        msg.sourceFile = location->file;
-        msg.sourceLine = location->line;
+        msg.sourceFunc = (location->func != nullptr) ? location->func : "";
+        msg.sourceFile = (location->file != nullptr) ? location->file : "";
+        msg.sourceLine = (location->line);
     }
     if(format == nullptr)
     {

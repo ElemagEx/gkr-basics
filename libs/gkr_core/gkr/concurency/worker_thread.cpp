@@ -16,11 +16,7 @@ worker_thread::worker_thread(std::size_t initial_actions_queue_capacity, std::si
     m_actions_queue.bind_with_producer_waiter(m_queue_waiter);
     m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
 
-    m_actions_queue.reset(
-        initial_actions_queue_capacity,
-        initial_actions_queue_element_size,
-        alignof(actions_queue_element_header_t)
-        );
+    m_actions_queue.reset(initial_actions_queue_capacity, initial_actions_queue_element_size);
 }
 
 worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)

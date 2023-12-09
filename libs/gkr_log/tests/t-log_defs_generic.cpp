@@ -1,4 +1,5 @@
 #include <gkr/log/logging.hpp>
+#include <gkr/log/consumers/dummy_consumer.hpp>
 #include <gkr/log/consumers/app_console_consumer.hpp>
 
 #include <gkr/testing/log_defs.hpp>
@@ -15,18 +16,22 @@
 #endif
 #include <gkr/log/formatters/win32_format_message.h>
 
+#include <catch2/benchmark/catch_benchmark.hpp>
+
 #define COMMON_SEVERITIES_INFOS LOG_SEVERITIES_INFOS
 constexpr gkr::log::name_id_pair g_severities[] = COMMON_SEVERITIES_INFOS;
 constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES_INFOS;
 
-static gkr::log::logging logging(g_severities, g_facilities);
+static gkr::log::logging logging(g_severities, g_facilities, 256);
 
 #include <thread>
 
-TEST_CASE("logging.logger. main")
+int N = 0;
+
+TEST_CASE("logging.logger.defs.generic. main")
 {
     gkr_log_del_all_consumers();
-    gkr_log_add_consumer(std::make_shared<gkr::log::app_console_consumer>());
+    gkr_log_add_consumer(std::make_shared<gkr::log::dummy_consumer>());
 
 #ifdef _WIN32
     gkr_log_win32_format_message(ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error: ");
@@ -34,7 +39,15 @@ TEST_CASE("logging.logger. main")
 
     LOGV(FACILITY_NETWORK, "Hello There!");
 
-    LOGV(FACILITY_NETWORK) << "Hello There" << LOG_FINISH;
+    BENCHMARK("wait for msg to log") {
+        //int last_msg_id =
+        LOGV(FACILITY_NETWORK) << "Hello There test " << ++N << "!" << LOG_FINISH;
+
+        //gkr_log_get_this_thread_llm_id(last_msg_id);
+        return 0;
+    };
+
+
 
 #if 0
 #ifndef GKR_LOG_USE_C_DEFS
@@ -48,6 +61,8 @@ int flag = 1;
     LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
 #endif
 #endif
+
+    INFO("Number of iterations = " << N);
 
     std::this_thread::yield();
 }

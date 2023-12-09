@@ -333,38 +333,38 @@ public:
     }
 
 public:
-    const void* data(size_t offset = 0) const noexcept
+    const void* data(std::size_t offset = 0) const noexcept
     {
         return (m_data + offset);
     }
-    void* data(size_t offset = 0) noexcept
+    void* data(std::size_t offset = 0) noexcept
     {
         return (m_data + offset);
     }
 
 public:
 	template<typename T>
-    const T* data(size_t offset = 0) const
+    const T* data(std::size_t offset = 0) const
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         return reinterpret_cast<const T*>(m_data + offset);
     }
 	template<typename T>
-    T* data(size_t offset = 0)
+    T* data(std::size_t offset = 0)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         return reinterpret_cast<T*>(m_data + offset);
     }
 
 	template<typename T>
-    const T& as(size_t offset = 0) const
+    const T& as(std::size_t offset = 0) const
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);
         return *reinterpret_cast<const T*>(m_data + offset);
     }
 	template<typename T>
-    T& as(size_t offset = 0)
+    T& as(std::size_t offset = 0)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);
@@ -372,26 +372,26 @@ public:
     }
 
 	template<typename T>
-    const T* ptr(size_t index) const
+    const T* ptr(std::size_t index) const
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         return reinterpret_cast<const T*>(m_data) + index;
     }
 	template<typename T>
-    T* ptr(size_t index)
+    T* ptr(std::size_t index)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         return reinterpret_cast<T*>(m_data) + index;
     }
 	template<typename T>
-    const T& at(size_t index) const
+    const T& at(std::size_t index) const
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);
         return reinterpret_cast<const T*>(m_data)[index];
     }
 	template<typename T>
-    T& at(size_t index)
+    T& at(std::size_t index)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);

@@ -15,11 +15,12 @@ target_sources(
     "gkr/log/logging.h"
     "gkr/log/consumer.h"
     "gkr/log/defs/generic.h"
-    "gkr/log/consumers/text_file_callbacks.h"
-    "gkr/log/consumers/udp_socket_callbacks.h"
-    "gkr/log/consumers/android_log_callbacks.h"
-    "gkr/log/consumers/app_console_callbacks.h"
-    "gkr/log/consumers/windows_debugger_callbacks.h"
+    "gkr/log/consumers/dummy_consumer.h"
+    "gkr/log/consumers/text_file_consumer.h"
+    "gkr/log/consumers/udp_socket_consumer.h"
+    "gkr/log/consumers/android_log_consumer.h"
+    "gkr/log/consumers/app_console_consumer.h"
+    "gkr/log/consumers/windows_debugger_consumer.h"
 )
 # C++ INTERFACE
 target_sources(
@@ -32,6 +33,7 @@ target_sources(
     "gkr/log/defs/generic.hpp"
     "gkr/log/defs/generic_new.hpp"
     "gkr/log/defs/generic_old.hpp"
+    "gkr/log/consumers/dummy_consumer.hpp"
     "gkr/log/consumers/text_file_consumer.hpp"
     "gkr/log/consumers/udp_socket_consumer.hpp"
     "gkr/log/consumers/android_log_consumer.hpp"
@@ -52,6 +54,7 @@ target_sources(
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
     "gkr/log/consumer.cpp"
+    "gkr/log/consumers/dummy_consumer.cpp"
     "gkr/log/consumers/text_file_consumer.cpp"
     "gkr/log/consumers/udp_socket_consumer.cpp"
     "gkr/log/consumers/android_log_consumer.cpp"

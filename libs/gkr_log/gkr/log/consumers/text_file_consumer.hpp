@@ -2,7 +2,7 @@
 
 #include <gkr/api.h>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/consumers/text_file_callbacks.h>
+#include <gkr/log/consumers/text_file_consumer.h>
 
 #include <string>
 

@@ -106,6 +106,14 @@ struct allocator {
         deallocate_bytes(p, cb);
     }
 };
+struct dummy_ostream
+{
+    dummy_ostream(...) {}
+
+    template<typename T>
+    dummy_ostream& operator<<(const T& data) { return *this; }
+    dummy_ostream& operator<<(std::ostream& (*data)(std::ostream&)) { return *this; }
+};
 }
 
 class ostream : protected custom_message {
@@ -164,7 +172,8 @@ public:
         }
     }
     ostream(const char* func, const char* file, unsigned line, int severity, int facility)
-        : m_ostream()
+        : base_t(severity)
+        , m_ostream()
         , m_func(func)
         , m_file(file)
         , m_line(line)

@@ -38,7 +38,7 @@ enum {
     {LOG_STR_VERBOSE, LOG_SEVERITY_VERBOSE}, \
     {LOG_STR_DEBUG  , LOG_SEVERITY_DEBUG  }, \
     {LOG_STR_TRACE  , LOG_SEVERITY_TRACE  }, \
-    {nullptr        , 0                }}
+    {nullptr, 0}}
 
 #if !defined(__cplusplus) || defined(GKR_LOG_USE_C_DEFS)
 

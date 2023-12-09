@@ -17,7 +17,7 @@ static unsigned s_refCnt = 0;
 alignas(logger)
 static char s_storage_for_logger[sizeof(logger)] {0};
 
-static void check_thread_name(const char* name);
+static int check_thread_name(const char* name);
 
 inline bool I2B(int val)
 {
@@ -150,6 +150,13 @@ int gkr_log_set_facility(const struct gkr_log_name_id_pair* facility_info)
     return true;
 }
 
+int gkr_log_del_consumer_by_id(int id)
+{
+    if(s_logger == nullptr) return false;
+
+    return s_logger->del_consumer(nullptr, id);
+}
+
 int gkr_log_del_all_consumers()
 {
     if(s_logger == nullptr) return false;
@@ -166,6 +173,17 @@ int gkr_log_set_this_thread_name(const char* name)
     check_thread_name(name);
 
     return true;
+}
+
+int gkr_log_get_this_thread_llm_id(int id)
+{
+    if(id == 0) return check_thread_name(nullptr);
+
+    while(id != check_thread_name(nullptr))
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return id;
 }
 
 int gkr_log_simple_message(int severity, int facility, const char* text)
@@ -289,7 +307,6 @@ int gkr_log_custom_message_finish_ex(const char* func, const char* file, unsigne
     return s_logger->finish_log_message(&location, severity, facility);
 }
 
-
 }
 
 int gkr_log_add_consumer(std::shared_ptr<gkr::log::consumer> consumer)
@@ -307,7 +324,7 @@ int gkr_log_del_consumer(std::shared_ptr<gkr::log::consumer> consumer)
 
     if(s_logger == nullptr) return false;
 
-    return s_logger->del_consumer(consumer);
+    return s_logger->del_consumer(consumer, 0);
 }
 
 namespace gkr
@@ -360,20 +377,21 @@ void deallocate_bytes(void* p, std::size_t cb)
 
 struct thread_name_t
 {
-    bool registered = false;
-#ifndef NDEBUG
-    char buff[gkr::sys::MAX_THREAD_NAME_CCH] = {0};
-#endif
+    bool registered  = false;
+    int  last_msg_id = 0;
+    char buff[56]    ={0};
+
     ~thread_name_t()
     {
         if(registered && (s_logger != nullptr) && s_logger->running())
         {
-            s_logger->set_thread_name(nullptr);
+            s_logger->set_thread_name(nullptr, nullptr);
         }
     }
 };
+static_assert(sizeof(thread_name_t) == 64, "");
 
-void check_thread_name(const char* name)
+int check_thread_name(const char* name)
 {
     static thread_local thread_name_t thread_name {};
 
@@ -381,25 +399,21 @@ void check_thread_name(const char* name)
     {
         thread_name.registered = true;
 
-        s_logger->set_thread_name(name);
+        constexpr unsigned cch = sizeof(thread_name.buff);
 
-#ifndef NDEBUG
-        std::strncpy(thread_name.buff, name, gkr::sys::MAX_THREAD_NAME_CCH);
+        std::strncpy(thread_name.buff, name, cch);
 
-        thread_name.buff[gkr::sys::MAX_THREAD_NAME_CCH - 1] = 0;
-#endif
-        return;
+        thread_name.buff[cch - 1] = 0;
+
+        s_logger->set_thread_name(&thread_name.last_msg_id, name);
     }
-    thread_name.registered = true;
-
-#ifndef NDEBUG
-    char* buff;
-    buff = thread_name.buff;
-#else
-    char buff[gkr::sys::MAX_THREAD_NAME_CCH] = {0};
-#endif
-    if(gkr::sys::get_current_thread_name(buff))
+    else if(!thread_name.registered)
     {
-        s_logger->set_thread_name(buff);
+        thread_name.registered = true;
+
+        gkr::sys::get_current_thread_name(thread_name.buff);
+
+        s_logger->set_thread_name(&thread_name.last_msg_id, thread_name.buff);
     }
+    return thread_name.last_msg_id;;
 }

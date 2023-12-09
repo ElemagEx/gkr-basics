@@ -2,7 +2,7 @@
 
 #include <gkr/api.h>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/consumers/udp_socket_callbacks.h>
+#include <gkr/log/consumers/udp_socket_consumer.h>
 
 #include <string>
 

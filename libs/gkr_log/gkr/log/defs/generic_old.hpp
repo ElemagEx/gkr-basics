@@ -159,24 +159,18 @@ inline int LOG_TRACE_IF_  (bool condition, int facility, const char* format, ...
 
 namespace GKR_LOG_NS
 {
-struct log_dummy_ostream
-{
-    template<typename T>
-    log_dummy_ostream& operator<<(const T& data) { return *this; }
-    log_dummy_ostream& operator<<(std::ostream& (*data)(std::ostream&)) { return *this; }
-};
 template<int severity, bool>
 inline auto log_stream(int facility)
 {
     return gkr::log::ostream(severity, facility);
 }
-template<> auto log_stream<LOG_SEVERITY_FATAL  ,false>(int) { return log_dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_ERROR  ,false>(int) { return log_dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_WARN   ,false>(int) { return log_dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_INFO   ,false>(int) { return log_dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_VERBOSE,false>(int) { return log_dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_DEBUG  ,false>(int) { return log_dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_TRACE  ,false>(int) { return log_dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_FATAL  ,false>(int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_ERROR  ,false>(int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_WARN   ,false>(int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_INFO   ,false>(int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_VERBOSE,false>(int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_DEBUG  ,false>(int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream<LOG_SEVERITY_TRACE  ,false>(int) { return gkr::log::impl::dummy_ostream(); }
 template<int severity, bool>
 inline auto log_stream_if(bool condition, int facility)
 {
@@ -186,13 +180,13 @@ inline auto log_stream_if(bool condition, int facility)
         return gkr::log::ostream(nullptr);
     }
 }
-template<> auto log_stream_if<LOG_SEVERITY_FATAL  ,false>(bool, int) { return log_dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_ERROR  ,false>(bool, int) { return log_dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_WARN   ,false>(bool, int) { return log_dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_INFO   ,false>(bool, int) { return log_dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_VERBOSE,false>(bool, int) { return log_dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_DEBUG  ,false>(bool, int) { return log_dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_TRACE  ,false>(bool, int) { return log_dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_FATAL  ,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_ERROR  ,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_WARN   ,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_INFO   ,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_VERBOSE,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_DEBUG  ,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto log_stream_if<LOG_SEVERITY_TRACE  ,false>(bool, int) { return gkr::log::impl::dummy_ostream(); }
 }
 
 template<int severity>

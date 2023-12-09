@@ -79,15 +79,15 @@ public:
 public:
     using consumer_ptr_t = std::shared_ptr<consumer>;
 
-    bool add_consumer(consumer_ptr_t consumer);
-    bool del_consumer(consumer_ptr_t consumer);
+    int  add_consumer(consumer_ptr_t consumer);
+    bool del_consumer(consumer_ptr_t consumer, int id);
 
     void del_all_consumers();
 
 public:
     using tid_t = long long;
 
-    void set_thread_name(const char* name, tid_t tid = 0);
+    void set_thread_name(int* ptr, const char* name, tid_t tid = 0);
 
 public:
     bool start_log_message(int severity, char*& buf, unsigned& cch);
@@ -143,6 +143,7 @@ private:
     {
         consumer_ptr_t consumer;
         bool           reentry_guard {false};
+        int            id {0};
     };
 
 private:
@@ -156,10 +157,12 @@ private:
     std::unordered_map<int, const char*> m_facilities;
 
     std::unordered_map<tid_t, const char*> m_thread_ids;
+    std::unordered_map<tid_t, int*>        m_msg_id_ptr;
 
     std::atomic<int> m_msg_id {0};
 
     int m_severity_threshold  {100};
+    int m_consumer_id         {0};
 };
 
 }

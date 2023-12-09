@@ -2,7 +2,7 @@
 
 #include <gkr/api.h>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/consumers/android_log_callbacks.h>
+#include <gkr/log/consumers/android_log_consumer.h>
 
 namespace gkr
 {

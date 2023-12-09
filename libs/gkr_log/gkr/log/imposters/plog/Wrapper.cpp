@@ -3,7 +3,7 @@
 #include <gkr/log/consumers/android_log_consumer.hpp>
 #include <gkr/log/consumers/app_console_consumer.hpp>
 #include <gkr/log/consumers/text_file_consumer.hpp>
-#include <gkr/log/consumers/windows_debugger_callbacks.h>
+#include <gkr/log/consumers/windows_debugger_consumer.h>
 
 #include <gkr/log/galery.hpp>
 

@@ -156,19 +156,13 @@ template<typename... Args> int LOG_TRACE_IF_  (bool condition, int facility, con
 
 namespace GKR_LOG_NS
 {
-struct log_dummy_ostream
-{
-    template<typename T>
-    log_dummy_ostream& operator<<(const T& data) { return *this; }
-    log_dummy_ostream& operator<<(std::ostream& (*data)(std::ostream&)) { return *this; }
-};
 template<int severity>
 inline auto log_stream(int facility)
 {
     if constexpr(log_threshold(severity)) {
         return gkr::log::ostream(severity, facility);
     } else {
-        return log_dummy_ostream();
+        return gkr::log::impl::dummy_ostream();
     }
 }
 template<int severity>
@@ -181,7 +175,7 @@ inline auto log_stream_if(bool condition, int facility)
             return gkr::log::ostream(nullptr);
         }
     } else {
-        return log_dummy_ostream();
+        return gkr::log::impl::dummy_ostream();
     }
 }
 }

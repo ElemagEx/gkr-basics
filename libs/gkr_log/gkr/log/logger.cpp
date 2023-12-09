@@ -200,48 +200,49 @@ void logger::set_facility(const name_id_pair& facility_info)
     }
 }
 
-bool logger::add_consumer(consumer_ptr_t consumer)
+int logger::add_consumer(consumer_ptr_t consumer)
 {
-    Check_ValidState(running(), false);
+    Check_ValidState(running(), 0);
 
     if(!in_worker_thread())
     {
         return execute_action_method<bool>(ACTION_ADD_CONSUMER, consumer);
     }
-    Check_Arg_NotNull(consumer, false);
+    Check_Arg_NotNull(consumer, 0);
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
         if(it->consumer == consumer)
         {
-            Check_Arg_Invalid(consumer, false);
+            Check_Arg_Invalid(consumer, 0);
         }
     }
     if(!init_consumer(*consumer))
     {
         done_consumer(*consumer);
-        Check_Failure(false);
+        Check_Failure(0);
     }
     m_consumers.emplace_back();
 
     consumer_data_t& data = m_consumers.back();
     data.consumer = consumer;
-    return true;
+    data.id       = ++m_consumer_id;
+    return data.id;
 }
 
-bool logger::del_consumer(consumer_ptr_t consumer)
+bool logger::del_consumer(consumer_ptr_t consumer, int id)
 {
     Check_ValidState(running(), false);
 
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_DEL_CONSUMER, consumer);
+        return execute_action_method<bool>(ACTION_DEL_CONSUMER, consumer, id);
     }
     Check_Arg_NotNull(consumer, false);
 
     for(auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
     {
-        if(it->consumer == consumer)
+        if((it->consumer == consumer) || (it->id == id))
         {
             m_consumers.erase(it);
             done_consumer(*consumer);
@@ -269,7 +270,7 @@ void logger::del_all_consumers()
     }
 }
 
-void logger::set_thread_name(const char* name, tid_t tid)
+void logger::set_thread_name(int* ptr, const char* name, tid_t tid)
 {
     Check_ValidState(running(), );
 
@@ -279,7 +280,7 @@ void logger::set_thread_name(const char* name, tid_t tid)
         {
             tid = misc::union_cast<tid_t>(std::this_thread::get_id());
         }
-        return execute_action_method<void>(ACTION_SET_THREAD_NAME, name, tid);
+        return execute_action_method<void>(ACTION_SET_THREAD_NAME, ptr, name, tid);
     }
     if(name == nullptr)
     {
@@ -288,6 +289,14 @@ void logger::set_thread_name(const char* name, tid_t tid)
     else
     {
         m_thread_ids[tid] = name;
+    }
+    if(ptr == nullptr)
+    {
+        m_msg_id_ptr.erase(tid);
+    }
+    else
+    {
+        m_msg_id_ptr[tid] = ptr;
     }
 }
 
@@ -447,6 +456,9 @@ void logger::process_message(message_data& msg)
 {
     prepare_message(msg);
     consume_message(msg);
+
+    auto it = m_msg_id_ptr.find(msg.tid);
+    if(it  != m_msg_id_ptr.end()) *it->second = msg.id;
 }
 
 void logger::prepare_message(message_data& msg)
@@ -504,7 +516,7 @@ void logger::consume_message(const message_data& msg)
         catch(...)
         {
             consumer_ptr_t consumer_that_throws = m_consumers[index].consumer;
-            del_consumer(consumer_that_throws);
+            del_consumer(consumer_that_throws, 0);
             --count;
 
             Check_Recovery("Log message consumer exception caught - consumer removed");

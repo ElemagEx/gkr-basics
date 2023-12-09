@@ -2,21 +2,18 @@
 
 #include <gkr/api.h>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/consumers/windows_debugger_consumer.h>
+#include <gkr/log/consumers/dummy_consumer.h>
 
 namespace gkr
 {
 namespace log
 {
 
-class windows_debugger_consumer : public consumer
+class dummy_consumer : public consumer
 {
-    char*    m_buf;
-    unsigned m_cch;
-
 public:
-    GKR_LOG_API windows_debugger_consumer(unsigned buffer_capacity = 2*1024);
-    GKR_LOG_API virtual ~windows_debugger_consumer() override;
+    GKR_LOG_API dummy_consumer();
+    GKR_LOG_API virtual ~dummy_consumer() override;
 
 protected:
     GKR_LOG_API virtual bool init_logging() override;
@@ -24,9 +21,6 @@ protected:
 
     GKR_LOG_API virtual bool  filter_log_message(const message& msg) override;
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
-
-protected:
-    GKR_LOG_API virtual unsigned compose_output(const message& msg, char* buf, unsigned cch);
 };
 
 }

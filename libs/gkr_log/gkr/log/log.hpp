@@ -134,7 +134,7 @@ protected:
     int         m_facility = 0;
 
 public:
-    ostream(ostream&& other) noexcept
+    ostream(ostream&& other) noexcept(false)
         : base_t    (std::move(other))
         , m_ostream (std::move(other.m_ostream))
         , m_func    (other.m_func)
@@ -144,7 +144,7 @@ public:
         , m_facility(other.m_facility) {
         other.invalidate();
     }
-    ostream& operator=(ostream&& other) noexcept {
+    ostream& operator=(ostream&& other) noexcept(false) {
         base_t::operator=(std::move(other));
 
         m_ostream  = std::move(other.m_ostream );
@@ -255,7 +255,7 @@ public:
         if(m_ptr < m_end) *m_ptr = value;
         ++m_ptr;
     }
-    void seal() {
+    void seal() noexcept {
         if(m_ptr < m_end) *m_ptr = 0; else *(m_end - 1) = 0;
     }
 private:

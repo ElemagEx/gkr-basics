@@ -50,7 +50,7 @@ protected:
     }
 
 protected:
-    void reset(std::size_t capacity) noexcept
+    void reset(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
     {
         m_busy_count = 0;
         m_free_count = capacity;
@@ -65,7 +65,7 @@ protected:
         }
         m_has_items_event.reset();
     }
-    void resize(std::size_t capacity) noexcept
+    void resize(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
     {
         m_free_count = capacity - m_busy_count;
 
@@ -80,62 +80,56 @@ protected:
     }
 
 protected:
-    void notify_producer_ownership_fail() noexcept
+    void notify_producer_ownership_fail() noexcept(DIAG_NOEXCEPT)
     {
         m_has_space_event.reset();
+        m_has_items_event.fire();
     }
     void notify_producer_ownership_start() noexcept(DIAG_NOEXCEPT)
     {
-        const std::ptrdiff_t new_free_count = std::ptrdiff_t(--m_free_count);
-
-        Assert_Check(new_free_count >= 0);
-
-        if(new_free_count == 0)
+        if(m_free_count-- == 1)
         {
             m_has_space_event.reset();
         }
     }
-    void notify_producer_ownership_finish() noexcept
+    void notify_producer_ownership_finish() noexcept(DIAG_NOEXCEPT)
     {
-        if(++m_busy_count == 1)
+        if(m_busy_count++ == 0)
         {
             m_has_items_event.fire();
         }
     }
-    void notify_producer_ownership_cancel() noexcept
+    void notify_producer_ownership_cancel() noexcept(DIAG_NOEXCEPT)
     {
-        if(++m_free_count == 1)
+        if(m_free_count++ == 0)
         {
             m_has_space_event.fire();
         }
     }
 
 protected:
-    void notify_consumer_ownership_fail() noexcept
+    void notify_consumer_ownership_fail() noexcept(DIAG_NOEXCEPT)
     {
+        m_has_space_event.fire();
         m_has_items_event.reset();
     }
     void notify_consumer_ownership_start() noexcept(DIAG_NOEXCEPT)
     {
-        const std::ptrdiff_t new_busy_count = std::ptrdiff_t(--m_busy_count);
-
-        Assert_Check(new_busy_count >= 0);
-
-        if(new_busy_count == 0)
+        if(m_busy_count-- == 1)
         {
             m_has_items_event.reset();
         }
     }
-    void notify_consumer_ownership_finish() noexcept
+    void notify_consumer_ownership_finish() noexcept(DIAG_NOEXCEPT)
     {
-        if(++m_free_count == 1)
+        if(m_free_count++ == 0)
         {
             m_has_space_event.fire();
         }
     }
-    void notify_consumer_ownership_cancel() noexcept
+    void notify_consumer_ownership_cancel() noexcept(DIAG_NOEXCEPT)
     {
-        if(++m_busy_count == 1)
+        if(m_busy_count++ == 0)
         {
             m_has_items_event.fire();
         }
@@ -162,11 +156,11 @@ protected:
     }
 
 public:
-    bool bind_with_producer_waiter(events_waiter& waiter) noexcept
+    bool bind_with_producer_waiter(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
     {
         return m_has_space_event.bind_with(waiter, true, false);
     }
-    bool bind_with_consumer_waiter(events_waiter& waiter) noexcept
+    bool bind_with_consumer_waiter(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
     {
         return m_has_items_event.bind_with(waiter, true, false);
     }

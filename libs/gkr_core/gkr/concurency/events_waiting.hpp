@@ -217,8 +217,8 @@ private:
     {
         wait_result = m_bits_event_state & mask;
         m_bits_event_state &= (~mask | m_bits_manual_reset);
-        return (wait_result != 0);
-    }
+            return (wait_result != 0);
+        }
 
 private:
     wait_result_t masked_check(wait_result_t mask) noexcept(DIAG_NOEXCEPT)
@@ -227,7 +227,6 @@ private:
 
         Check_ValidState(m_events_count > 0, WAIT_RESULT_ERROR);
         Check_ValidState(mask_is_valid(mask), WAIT_RESULT_ERROR);
-        Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
 
         wait_result_t wait_result = WAIT_RESULT_ERROR;
         has_signaled_event(wait_result, mask);

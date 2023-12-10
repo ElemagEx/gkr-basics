@@ -30,7 +30,7 @@ GKR_LOG_API unsigned gkr_log_format_output_text(
     const char* fmt,
     const struct gkr_log_message* msg,
     int flags,
-    const char** args,
+    const char* const* args,
     unsigned cols,
     unsigned rows
     );

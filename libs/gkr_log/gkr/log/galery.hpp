@@ -18,3 +18,5 @@ inline unsigned format_output(const message& msg, char* buf, unsigned cch, int t
 
 }
 }
+
+#define PLOG_CONSOLE_PATTERN "$IS00$%F %T:$S_MS$ $P 05$$SNAM$ [$T_ID$] [$FUNC$@$LINE$] $TEXT$$IS01$"

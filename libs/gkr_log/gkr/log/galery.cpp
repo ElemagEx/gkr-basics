@@ -14,6 +14,7 @@ namespace
 using ulonglong = unsigned long long;
 
 constexpr char CHAR_FORMAT   = '$';
+constexpr char CHAR_INS_ARG  = 'I';
 constexpr char CHAR_CONSOLE  = 'C';
 constexpr char CHAR_LPADDING = 'P';
 constexpr char CHAR_RPADDING = 'R';
@@ -162,6 +163,44 @@ bool parse_styling(const char* fmt, char* style, std::size_t& scl, char*& buf, s
 
     return copy_str_text(len, buf, cap, style);
 }
+bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned cols, unsigned rows)
+{
+    bool use_severity;
+    switch(*fmt)
+    {
+        case 'S': use_severity = true ; break;
+        case 'F': use_severity = false; break;
+        default : return (errno = ENOTSUP), false;
+    }
+    const int digit1 = (fmt[1] - '0'); if((digit1 < 0) || (digit1 > 9)) return (errno = ENOTSUP), false;
+    const int digit2 = (fmt[2] - '0'); if((digit2 < 0) || (digit2 > 9)) return (errno = ENOTSUP), false;
+
+    if((flags & gkr_log_fo_flag_ignore_inserts) != 0) return true;
+
+    const std::size_t col = std::size_t((digit1 * 10) + digit2);
+    const std::size_t row = use_severity
+        ? unsigned(msg->severity)
+        : unsigned(msg->facility)
+        ;
+    if((col >= cols) || (row >= rows)) return (errno = ENOTSUP), false;
+
+    const std::size_t index = (row * cols) + col;
+
+    Check_Arg_NotNull(args       , (errno = EINVAL), false);
+    Check_Arg_IsValid(cols > col , (errno = EINVAL), false);
+    Check_Arg_IsValid(rows > row , (errno = EINVAL), false);
+    Check_Arg_NotNull(args[index], (errno = EINVAL), false);
+
+    const char* arg = args[index];
+
+    unsigned cch = gkr_log_format_output_text(buf, unsigned(cap), arg, msg, flags, args, cols, rows);
+
+    if(errno != 0) return false;
+
+    buf += cch;
+    cap -= cch;
+    return true;
+}
 }
 
 extern "C" {
@@ -172,7 +211,7 @@ unsigned gkr_log_format_output_time(char* buf, unsigned cch, const char* fmt, lo
     Check_Arg_NotNull(buf    , (errno = EINVAL), 0);
     Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0);
 
-    if(*fmt == 0)
+    if((*fmt == 0) || ((flags & gkr_log_fo_flag_ignore_time_fmt) != 0))
     {
         *buf  = 0;
         errno = 0;
@@ -194,7 +233,7 @@ unsigned gkr_log_format_output_time(char* buf, unsigned cch, const char* fmt, lo
     return unsigned(len);
 }
 
-unsigned gkr_log_format_output_text(char* buf, unsigned cch, const char* fmt, const struct gkr_log_message* msg, int flags, const char** args, unsigned cols, unsigned rows)
+unsigned gkr_log_format_output_text(char* buf, unsigned cch, const char* fmt, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned cols, unsigned rows)
 {
     Check_Arg_NotNull(msg    , (errno = EINVAL), 0);
     Check_Arg_NotNull(fmt    , (errno = EINVAL), 0);
@@ -215,6 +254,11 @@ unsigned gkr_log_format_output_text(char* buf, unsigned cch, const char* fmt, co
     std::size_t scl = (CCH_STYLE_BUF - 2);
     char style[CCH_STYLE_BUF] = "\033[";
 
+    if((flags & gkr_log_fo_flag_ignore_text_fmt) != 0)
+    {
+        fmt += len;
+        len  = 0;
+    }
     for(errno = ENOBUFS; ; )
     {
         const char* found = std::strchr(fmt, CHAR_FORMAT);
@@ -244,6 +288,8 @@ unsigned gkr_log_format_output_text(char* buf, unsigned cch, const char* fmt, co
             case CHAR_RPADDING: if(parse_padding(fmt - 4, ch, padding, -1)) continue; errno = ENOTSUP; break;
 
             case CHAR_CONSOLE : if(parse_styling(fmt - 4, style, scl, buf, cap, flags)) continue; errno = ENOTSUP; break;
+
+            case CHAR_INS_ARG : if(parse_ins_arg(fmt - 4, buf, cap, msg, flags, args, cols, rows)) continue; break;
 
             default:
                 switch(make_four_cc(fmt - 6))

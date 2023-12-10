@@ -3,15 +3,15 @@
 #include <gkr/api.h>
 
 enum {
-    gkr_log_textFileEoln_LF,
-    gkr_log_textFileEoln_CR,
-    gkr_log_textFileEoln_CRLF,
+    gkr_log_tf_eoln_lf,
+    gkr_log_tf_eoln_cr,
+    gkr_log_tf_eoln_crlf,
 #if   defined(_WIN32)
-    gkr_log_textFileEoln_Default = gkr_log_textFileEoln_CRLF
+    gkr_log_tf_eoln_default = gkr_log_tf_eoln_crlf
 #elif defined(__APPLE__)
-    gkr_log_textFileEoln_Default = gkr_log_textFileEoln_CR
+    gkr_log_tf_eoln_default = gkr_log_tf_eoln_cr
 #else
-    gkr_log_textFileEoln_Default = gkr_log_textFileEoln_LF
+    gkr_log_tf_eoln_default = gkr_log_tf_eoln_lf
 #endif
 };
 
@@ -21,19 +21,18 @@ extern "C" {
 
 struct gkr_log_text_file_consumer_callbacks
 {
-    void      *param;
-    unsigned (*compose_output     )(void*, const struct gkr_log_message*, char*, unsigned);
-    void     (*on_file_opened     )(void*);
-    void     (*on_file_closing    )(void*);
-    void     (*on_enter_file_write)(void*);
-    void     (*on_leave_file_write)(void*);
+    void         *param;
+    const char* (*compose_output     )(void*, const struct gkr_log_message*);
+    void        (*on_file_opened     )(void*);
+    void        (*on_file_closing    )(void*);
+    void        (*on_enter_file_write)(void*);
+    void        (*on_leave_file_write)(void*);
 };
 
 GKR_LOG_API int gkr_log_add_text_file_consumer(
     const gkr_log_text_file_consumer_callbacks* callbacks,
     const char* filepath,
-    int eoln,
-    unsigned bufferCapacity
+    int eoln
     );
 
 #ifdef __cplusplus

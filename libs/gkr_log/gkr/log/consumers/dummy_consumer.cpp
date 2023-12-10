@@ -16,14 +16,10 @@ class c_dummy_consumer : public dummy_consumer
     gkr_log_dummy_consumer_callbacks m_callbacks {};
 
 public:
-    c_dummy_consumer(
-        const gkr_log_dummy_consumer_callbacks* callbacks
-        )
+    c_dummy_consumer(const gkr_log_dummy_consumer_callbacks* callbacks)
         : dummy_consumer()
     {
-        if(callbacks != nullptr) {
-            m_callbacks = *callbacks;
-        }
+        if(callbacks != nullptr) m_callbacks = *callbacks;
     }
     virtual ~c_dummy_consumer() override
     {
@@ -34,9 +30,7 @@ public:
 
 extern "C" {
 
-int gkr_log_add_dummy_consumer(
-    const gkr_log_dummy_consumer_callbacks* callbacks
-    )
+int gkr_log_add_dummy_consumer(const gkr_log_dummy_consumer_callbacks* callbacks)
 {
     return gkr_log_add_consumer(std::make_shared<gkr::log::c_dummy_consumer>(callbacks));
 }

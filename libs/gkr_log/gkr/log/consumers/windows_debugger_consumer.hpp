@@ -11,11 +11,8 @@ namespace log
 
 class windows_debugger_consumer : public consumer
 {
-    char*    m_buf;
-    unsigned m_cch;
-
 public:
-    GKR_LOG_API windows_debugger_consumer(unsigned buffer_capacity = 2*1024);
+    GKR_LOG_API windows_debugger_consumer();
     GKR_LOG_API virtual ~windows_debugger_consumer() override;
 
 protected:
@@ -26,7 +23,7 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual unsigned compose_output(const message& msg, char* buf, unsigned cch);
+    GKR_LOG_API virtual const char* compose_output(const message& msg);
 };
 
 }

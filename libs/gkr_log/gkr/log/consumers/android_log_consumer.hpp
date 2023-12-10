@@ -11,13 +11,8 @@ namespace log
 
 class android_log_consumer : public consumer
 {
-    char*    m_buf;
-    unsigned m_cch;
-
 public:
-    GKR_LOG_API android_log_consumer(
-        unsigned bufferCapacity = 2*1024
-        );
+    GKR_LOG_API android_log_consumer();
     GKR_LOG_API virtual ~android_log_consumer() override;
 
 protected:
@@ -32,7 +27,7 @@ protected:
 
     GKR_LOG_API virtual const char* get_tag(const message& msg);
 
-    GKR_LOG_API virtual unsigned compose_output(const message& msg, char* buf, unsigned cch);
+    GKR_LOG_API virtual const char* compose_output(const message& msg);
 };
 
 }

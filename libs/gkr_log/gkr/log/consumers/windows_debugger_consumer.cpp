@@ -2,6 +2,7 @@
 
 #include <gkr/stamp.hpp>
 #include <gkr/diagnostics.h>
+#include <gkr/log/galery.hpp>
 #include <gkr/log/logging.hpp>
 
 #include <cstdio>
@@ -30,27 +31,22 @@ class c_windows_debugger_consumer : public windows_debugger_consumer
     gkr_log_windows_debugger_consumer_callbacks m_callbacks {};
 
 public:
-    c_windows_debugger_consumer(
-        const gkr_log_windows_debugger_consumer_callbacks* callbacks,
-        unsigned bufferCapacity
-        )
-        : windows_debugger_consumer(bufferCapacity)
+    c_windows_debugger_consumer(const gkr_log_windows_debugger_consumer_callbacks* callbacks)
+        : windows_debugger_consumer()
     {
-        if(callbacks != nullptr) {
-            m_callbacks = *callbacks;
-        }
+        if(callbacks != nullptr) m_callbacks = *callbacks;
     }
     virtual ~c_windows_debugger_consumer() override
     {
     }
 
 protected:
-    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
+    virtual const char* compose_output(const message& msg) override
     {
         if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, buf, cch);
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg);
         } else {
-            return windows_debugger_consumer::compose_output(msg, buf, cch);
+            return windows_debugger_consumer::compose_output(msg);
         }
     }
 };
@@ -59,12 +55,9 @@ protected:
 
 extern "C" {
 
-int gkr_log_add_windows_debugger_consumer(
-    const gkr_log_windows_debugger_consumer_callbacks* callbacks,
-    unsigned bufferCapacity
-    )
+int gkr_log_add_windows_debugger_consumer(const gkr_log_windows_debugger_consumer_callbacks* callbacks)
 {
-    return gkr_log_add_consumer(std::make_shared<gkr::log::c_windows_debugger_consumer>(callbacks, bufferCapacity));
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_windows_debugger_consumer>(callbacks));
 }
 
 }
@@ -74,27 +67,18 @@ namespace gkr
 namespace log
 {
 
-windows_debugger_consumer::windows_debugger_consumer(unsigned buffer_capacity)
-    : m_buf(nullptr)
-    , m_cch(buffer_capacity)
+windows_debugger_consumer::windows_debugger_consumer()
 {
-    Check_Arg_IsValid(buffer_capacity > 0, );
-
-    m_buf = new char[buffer_capacity];
 }
 
 windows_debugger_consumer::~windows_debugger_consumer()
 {
-    if(m_buf != nullptr)
-    {
-        delete [] m_buf;
-    }
 }
 
 bool windows_debugger_consumer::init_logging()
 {
 #ifdef _WIN32
-    return (m_buf != nullptr);
+    return true;
 #else
     return false;
 #endif
@@ -111,32 +95,14 @@ bool windows_debugger_consumer::filter_log_message(const message& msg)
 
 void windows_debugger_consumer::consume_log_message(const message& msg)
 {
-    compose_output(msg, m_buf, m_cch);
+    const char* output = compose_output(msg);
 
-    m_buf[m_cch - 1] = 0;
-
-    outputToWindowsDebugger(m_buf);
+    outputToWindowsDebugger(output);
 }
 
-unsigned windows_debugger_consumer::compose_output(const message& msg, char* buf, unsigned cch)
+const char* windows_debugger_consumer::compose_output(const message& msg)
 {
-    struct tm tm;
-    int ms = stamp_decompose(true, msg.stamp, tm) / 1000000;
-
-    const int len = std::snprintf(
-        buf,
-        cch,
-        "[%02d:%02d:%02d.%03d][%s][%s][%s] - %s",
-        tm.tm_hour,
-        tm.tm_min,
-        tm.tm_sec,
-        ms,
-        msg.severityName,
-        msg.facilityName,
-        msg.threadName,
-        msg.messageText
-        );
-    return unsigned(len);
+    return gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, nullptr);
 }
 
 }

@@ -25,6 +25,9 @@ GKR_LOG_API int gkr_log_done();
 GKR_LOG_API int gkr_log_get_severity_threshold();
 GKR_LOG_API int gkr_log_set_severity_threshold(int threshold);
 
+GKR_LOG_API int gkr_log_get_max_queue_entries();
+GKR_LOG_API int gkr_log_get_max_message_chars();
+
 GKR_LOG_API int gkr_log_set_max_queue_entries(unsigned max_queue_entries);
 GKR_LOG_API int gkr_log_set_max_message_chars(unsigned max_message_chars);
 

@@ -1,5 +1,7 @@
 #include <gkr/log/galery.hpp>
+#include <gkr/log/galery.hpp>
 #include <gkr/log/consumer.hpp>
+
 #include <gkr/log/defs/plog.h>
 
 //#include <gkr/log/logging.hpp>
@@ -31,15 +33,7 @@ TEST_CASE("logging.logger.format.output. main")
 
     gkr_log_message msg { 12345LL, gkr::stamp_now(), plog::none, 5, "int main()", "main.cpp", 16U, 12U, "Test message", "Main", "Info", "Testing"};
 
-    constexpr const char* args[] = {
-        "", "",
-        "$C097$$C101$", "$C000$",
-        "$C091$"      , "$C000$",
-        "$C093$"      , "$C000$",
-        "", "",
-        "$C096$"      , "$C000$",
-        "$C096$"      , "$C000$",
-    };
+    constexpr const char* args[] = PLOG_TEXT_ARGS_STRS;
 
     int severities[] = { plog::fatal, plog::info, plog::verbose };
 
@@ -47,24 +41,24 @@ TEST_CASE("logging.logger.format.output. main")
     {
         msg.severity = severity;
 
-        unsigned len1 = gkr_log_format_output_time(
+        unsigned len1 = gkr_log_apply_time_format(
             buf1,
             256,
-            PLOG_CONSOLE_PATTERN,
+            PLOG_TEXT_FORMAT,
             msg.stamp,
             0);
         CHECK(len1 > 0);
         REQUIRE(errno == 0);
 
-        unsigned len2 = gkr_log_format_output_text(
+        unsigned len2 = gkr_log_apply_text_format(
             buf2,
             256,
             buf1,
             &msg,
             0,
             args,
-            2,
-            7
+            PLOG_TEXT_ARGS_COLS,
+            PLOG_TEXT_ARGS_ROWS
             );
         CHECK(len2 > 0);
         REQUIRE(errno == 0);

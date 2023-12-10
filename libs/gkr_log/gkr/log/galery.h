@@ -1,63 +1,26 @@
 #pragma once
 
-#include <gkr/api.h>
+//
+// Generic
+//
+#define GENERIC_FMT_ANDROID         "[$SNAM$][$FNAM$][$TNAM$] - $TEXT$"
+#define GENERIC_FMT_MESSAGE         "%F %T:$R003$$S_MS$ [$IS00$$P 07$$SNAM$$C000$] <$C096$$P 07$$SNAM$$C000$> [$P 07$$T_ID$] - $TEXT$"
 
-enum
-{
-    gkr_log_fo_flag_default         = 0x0000,
-    gkr_log_fo_flag_use_utc_time    = 0x0001,
-    gkr_log_fo_flag_ignore_inserts  = 0x0002,
-    gkr_log_fo_flag_ignore_padding  = 0x0004,
-    gkr_log_fo_flag_ignore_coloring = 0x0008,
-    gkr_log_fo_flag_ignore_time_fmt = 0x0010,
-    gkr_log_fo_flag_ignore_text_fmt = 0x0020,
-};
+#define GENERIC_CONSOLE_ARGS_STRS   {"$C097$$C101$", "$C091$",  "$C093$", "$C092$", "$C096$", "$C041$", "$C042$" }
+#define GENERIC_CONSOLE_ARGS_COLS   1
+#define GENERIC_CONSOLE_ARGS_ROWS   7
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//
+// PLOG
+//
 
-GKR_LOG_API unsigned gkr_log_format_output_time(
-    char* buf,
-    unsigned cch,
-    const char* fmt,
-    long long stamp,
-    int flags
-    );
-GKR_LOG_API unsigned gkr_log_format_output_text(
-    char* buf,
-    unsigned cch,
-    const char* fmt,
-    const struct gkr_log_message* msg,
-    int flags,
-    const char* const* args,
-    unsigned cols,
-    unsigned rows
-    );
+#define PLOG_CSV_HEAD           "Date;Time;Severity;TID;This;Function;Message"
+#define PLOG_CSV_FORMAT         "%Y/%m/%d;%T:$R003$$S_MS$;$SNAM$;$T_ID$;0;$FILE$@$LINE$;\"$TEXT%\""
 
-GKR_LOG_API unsigned gkr_log_format_output(const struct gkr_log_message* msg, char* buf, unsigned cch, int type, int color_scheme);
+#define PLOG_FUNC_MSG_FORMAT    "$FUNC$@$LINE$: $TEXT$"
+#define PLOG_ONLY_MSG_FORMAT    "$TEXT$"
 
-#ifdef __cplusplus
-}
-#endif
-
-enum {
-    FMT_TYPE_PLOG_CSV_HEAD     = 20,
-    FMT_TYPE_PLOG_CSV_TEXT     = 21,
-    FMT_TYPE_PLOG_CSV_TEXT_UTC = 22,
-    FMT_TYPE_PLOG_MSG_ONLY     = 23,
-    FMT_TYPE_PLOG_MSG_FUNC     = 24,
-    FMT_TYPE_PLOG_MSG_TEXT     = 25,
-    FMT_TYPE_PLOG_MSG_TEXT_UTC = 26,
-};
-enum {
-    COLOR_SCHEME_NONE = 0,
-
-    COLOR_SCHEME_PLOG_SEV_NONE    = 100,
-    COLOR_SCHEME_PLOG_SEV_FATAL   = 101,
-    COLOR_SCHEME_PLOG_SEV_ERROR   = 102,
-    COLOR_SCHEME_PLOG_SEV_WARNING = 103,
-    COLOR_SCHEME_PLOG_SEV_INFO    = 104,
-    COLOR_SCHEME_PLOG_SEV_DEBUG   = 105,
-    COLOR_SCHEME_PLOG_SEV_VERBOSE = 106,
-};
+#define PLOG_TEXT_FORMAT        "$IS00$%F %T:$R003$$S_MS$ $P 05$$SNAM$ [$T_ID$] [$FUNC$@$LINE$] $TEXT$$IS01$"
+#define PLOG_TEXT_ARGS_STRS     {"", "", "$C097$$C101$", "$C000$", "$C091$", "$C000$", "$C093$", "$C000$", "", "", "$C096$", "$C000$", "$C096$", "$C000$"}
+#define PLOG_TEXT_ARGS_COLS     2
+#define PLOG_TEXT_ARGS_ROWS     7

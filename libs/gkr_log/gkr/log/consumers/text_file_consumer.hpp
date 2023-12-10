@@ -13,8 +13,6 @@ namespace log
 
 class text_file_consumer : public consumer
 {
-    char*       m_buf;
-    unsigned    m_cch;
     int         m_eoln;
     void*       m_file;
     std::string m_name;
@@ -22,8 +20,7 @@ class text_file_consumer : public consumer
 public:
     GKR_LOG_API text_file_consumer(
         const char* filepath = nullptr,
-        int eoln = gkr_log_textFileEoln_Default,
-        unsigned bufferCapacity = 2*1024
+        int eoln = gkr_log_tf_eoln_default
         );
     GKR_LOG_API virtual ~text_file_consumer() override;
 
@@ -35,8 +32,9 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual unsigned compose_output(const message& msg, char* buf, unsigned cch);
+    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned& len);
 
+protected:
     GKR_LOG_API virtual void on_file_opened();
     GKR_LOG_API virtual void on_file_closing();
 

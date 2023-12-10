@@ -23,5 +23,3 @@ public:
 
 }
 }
-
-#define PLOG_TEXT

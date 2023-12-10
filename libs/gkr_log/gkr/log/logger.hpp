@@ -2,6 +2,8 @@
 
 #include <gkr/log/consumer.hpp>
 
+#include <gkr/container/raw_buffer.hpp>
+
 #include <gkr/concurency/worker_thread.hpp>
 #include <gkr/concurency/events_waiting.hpp>
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
@@ -67,6 +69,9 @@ private:
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override;
 
 public:
+    int max_queue_entries() const;
+    int max_message_chars() const;
+
     bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
 public:
@@ -95,6 +100,17 @@ public:
     int finish_log_message(const source_location* location, int severity, int facility);
 
     int log_message(const source_location* location, int severity, int facility, const char* format, va_list args);
+
+public:
+    const char* format_output(
+        const char* fmt,
+        const struct gkr_log_message& msg,
+        int flags,
+        const char* const* args,
+        unsigned cols,
+        unsigned rows,
+        unsigned* len
+        );
 
 private:
     struct message_data : public message
@@ -150,6 +166,9 @@ private:
     events_waiter m_msg_waiter;
 
     log_queue_t m_log_queue;
+
+    raw_buffer_t m_fmt;
+    raw_buffer_t m_txt;
 
     std::vector<consumer_data_t> m_consumers;
 

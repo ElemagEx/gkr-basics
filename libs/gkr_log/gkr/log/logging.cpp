@@ -92,6 +92,19 @@ int gkr_log_set_severity_threshold(int threshold)
     return true;
 }
 
+int gkr_log_get_max_queue_entries()
+{
+    if(s_logger == nullptr) return false;
+
+    return s_logger->max_queue_entries();
+}
+int gkr_log_get_max_message_chars()
+{
+    if(s_logger == nullptr) return false;
+
+    return s_logger->max_message_chars();
+}
+
 int gkr_log_set_max_queue_entries(unsigned max_queue_entries)
 {
     Check_Arg_IsValid(max_queue_entries > 0, false);
@@ -305,6 +318,23 @@ int gkr_log_custom_message_finish_ex(const char* func, const char* file, unsigne
     const gkr::log::source_location location{func, file, line};
 
     return s_logger->finish_log_message(&location, severity, facility);
+}
+
+const char* gkr_log_format_output(
+    const char* fmt,
+    const struct gkr_log_message* msg,
+    int flags,
+    const char* const* args,
+    unsigned cols,
+    unsigned rows,
+    unsigned* len
+    )
+{
+    if(s_logger == nullptr) return nullptr;
+
+    Check_Arg_NotNull(msg, nullptr);
+
+    return s_logger->format_output(fmt, *msg, flags, args, cols, rows, len);
 }
 
 }

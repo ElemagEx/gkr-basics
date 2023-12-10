@@ -1,15 +1,46 @@
 #include "app_console_consumer.hpp"
 
-#include <gkr/stamp.hpp>
-#include <gkr/diagnostics.h>
 #include <gkr/log/logging.hpp>
+#include <gkr/log/galery.hpp>
 #include <gkr/sys/file.hpp>
 
 #include <cstdio>
-#include <cstdlib>
 #include <iostream>
 
-inline void outputToConsole(int method, const char* text)
+namespace gkr
+{
+namespace log
+{
+class c_app_console_consumer : public app_console_consumer
+{
+    gkr_log_app_console_consumer_callbacks m_callbacks {};
+
+public:
+    c_app_console_consumer(const gkr_log_app_console_consumer_callbacks* callbacks, int method)
+        : app_console_consumer(method)
+    {
+        if(callbacks != nullptr) m_callbacks = *callbacks;
+    }
+    virtual ~c_app_console_consumer() override
+    {
+    }
+
+protected:
+    virtual const char* compose_output(const message& msg, bool colored) override
+    {
+        if(m_callbacks.compose_output != nullptr) {
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, colored?1:0);
+        } else {
+            return app_console_consumer::compose_output(msg, colored);
+        }
+    }
+};
+}
+}
+
+namespace 
+{
+void outputToConsole(int method, const char* text)
 {
     switch(method)
     {
@@ -31,8 +62,7 @@ inline void outputToConsole(int method, const char* text)
         case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
     }
 }
-
-inline bool isOutputAtty(int method)
+bool isOutputAtty(int method)
 {
     switch(method)
     {
@@ -47,53 +77,13 @@ inline bool isOutputAtty(int method)
             return gkr::sys::file_is_atty(stdout);
     }
 }
-
-namespace gkr
-{
-namespace log
-{
-class c_app_console_consumer : public app_console_consumer
-{
-    gkr_log_app_console_consumer_callbacks m_callbacks {};
-
-public:
-    c_app_console_consumer(
-        const gkr_log_app_console_consumer_callbacks* callbacks,
-        int method,
-        unsigned bufferCapacity
-        )
-        : app_console_consumer(method, bufferCapacity)
-    {
-        if(callbacks != nullptr) {
-            m_callbacks = *callbacks;
-        }
-    }
-    virtual ~c_app_console_consumer() override
-    {
-    }
-
-protected:
-    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
-    {
-        if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, buf, cch);
-        } else {
-            return app_console_consumer::compose_output(msg, buf, cch);
-        }
-    }
-};
-}
 }
 
 extern "C" {
 
-int gkr_log_add_app_console_consumer(
-    const gkr_log_app_console_consumer_callbacks* callbacks,
-    int method,
-    unsigned bufferCapacity
-    )
+int gkr_log_add_app_console_consumer(const gkr_log_app_console_consumer_callbacks* callbacks, int method)
 {
-    return gkr_log_add_consumer(std::make_shared<gkr::log::c_app_console_consumer>(callbacks, method, bufferCapacity));
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_app_console_consumer>(callbacks, method));
 }
 
 }
@@ -103,29 +93,20 @@ namespace gkr
 namespace log
 {
 
-app_console_consumer::app_console_consumer(int method, unsigned bufferCapacity)
-    : m_buf(nullptr)
-    , m_cch(bufferCapacity)
-    , m_method(method)
+app_console_consumer::app_console_consumer(int method)
+    : m_method(method)
     , m_isAtty(isOutputAtty(method))
 {
-    Check_Arg_IsValid(bufferCapacity > 0, );
-
-    m_buf = new char[bufferCapacity];
 }
 
 app_console_consumer::~app_console_consumer()
 {
-    if(m_buf != nullptr)
-    {
-        delete [] m_buf;
-    }
 }
 
 bool app_console_consumer::init_logging()
 {
 #ifdef _WIN32
-    return (m_buf != nullptr);
+    return true;
 #else
     return false;
 #endif
@@ -142,32 +123,30 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    compose_output(msg, m_buf, m_cch);
+    const char* output = compose_output(msg, !m_isAtty);
 
-    m_buf[m_cch - 1] = 0;
-
-    outputToConsole(m_method, m_buf);
+    outputToConsole(m_method, output);
 }
 
-unsigned app_console_consumer::compose_output(const message& msg, char* buf, unsigned cch)
+const char* app_console_consumer::compose_output(const message& msg, bool colored)
 {
-    struct tm tm;
-    int ns = stamp_decompose(true, msg.stamp, tm);
+    constexpr const char* args[] = GENERIC_CONSOLE_ARGS_STRS;
 
-    const int len = std::snprintf(
-        buf,
-        cch,
-        "[%02d:%02d:%02d.%03d][%-7s][%s][%s] - %s",
-        tm.tm_hour,
-        tm.tm_min,
-        tm.tm_sec,
-        ns / 1000000,
-        msg.severityName,
-        msg.facilityName,
-        msg.threadName,
-        msg.messageText
+    const int flags =
+        gkr_log_fo_flag_use_inserts |
+        gkr_log_fo_flag_use_padding |
+        (colored ? gkr_log_fo_flag_use_coloring : 0)
+        ;
+    const char* output = gkr_log_format_output(
+        GENERIC_FMT_MESSAGE,
+        &msg,
+        flags,
+        args,
+        GENERIC_CONSOLE_ARGS_COLS,
+        GENERIC_CONSOLE_ARGS_ROWS,
+        nullptr
         );
-    return unsigned(len);
+    return output;
 }
 
 }

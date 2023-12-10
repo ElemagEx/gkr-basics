@@ -7,14 +7,11 @@ extern "C" {
 #endif
 
 struct gkr_log_windows_debugger_consumer_callbacks {
-    void      *param;
-    unsigned (*compose_output)(void*, const struct gkr_log_message*, char*, unsigned);
+    void         *param;
+    const char* (*compose_output)(void*, const struct gkr_log_message*);
 };
 
-GKR_LOG_API int gkr_log_add_windows_debugger_consumer(
-    const gkr_log_windows_debugger_consumer_callbacks* callbacks,
-    unsigned bufferCapacity
-    );
+GKR_LOG_API int gkr_log_add_windows_debugger_consumer(const gkr_log_windows_debugger_consumer_callbacks* callbacks);
 
 #ifdef __cplusplus
 }

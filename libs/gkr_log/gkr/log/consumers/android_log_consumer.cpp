@@ -1,11 +1,7 @@
 #include "android_log_consumer.hpp"
 
-#include <gkr/diagnostics.h>
 #include <gkr/log/logging.hpp>
-
-#include <cstdio>
-#include <cstdlib>
-#include <utility>
+#include <gkr/log/galery.hpp>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -28,15 +24,9 @@ class c_android_log_consumer : public android_log_consumer
     gkr_log_android_log_consumer_callbacks m_callbacks {};
 
 public:
-    c_android_log_consumer(
-        const gkr_log_android_log_consumer_callbacks* callbacks,
-        unsigned bufferCapacity
-        )
-        : android_log_consumer(bufferCapacity)
+    c_android_log_consumer(const gkr_log_android_log_consumer_callbacks* callbacks)
     {
-        if(callbacks != nullptr) {
-            m_callbacks = *callbacks;
-        }
+        if(callbacks != nullptr) m_callbacks = *callbacks;
     }
     virtual ~c_android_log_consumer() override
     {
@@ -59,12 +49,12 @@ protected:
             return android_log_consumer::get_tag(msg);
         }
     }
-    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
+    virtual const char* compose_output(const message& msg) override
     {
         if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, buf, cch);
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg);
         } else {
-            return android_log_consumer::compose_output(msg, buf, cch);
+            return android_log_consumer::compose_output(msg);
         }
     }
 };
@@ -73,12 +63,9 @@ protected:
 
 extern "C" {
 
-int gkr_log_add_android_log_consumer(
-    const gkr_log_android_log_consumer_callbacks* callbacks,
-    unsigned bufferCapacity
-    )
+int gkr_log_add_android_log_consumer(const gkr_log_android_log_consumer_callbacks* callbacks)
 {
-    return gkr_log_add_consumer(std::make_shared<gkr::log::c_android_log_consumer>(callbacks, bufferCapacity));
+    return gkr_log_add_consumer(std::make_shared<gkr::log::c_android_log_consumer>(callbacks));
 }
 
 }
@@ -88,27 +75,18 @@ namespace gkr
 namespace log
 {
 
-android_log_consumer::android_log_consumer(unsigned bufferCapacity)
-    : m_buf(nullptr)
-    , m_cch(bufferCapacity)
+android_log_consumer::android_log_consumer()
 {
-    Check_Arg_IsValid(bufferCapacity > 0, );
-
-    m_buf = new char[bufferCapacity];
 }
 
 android_log_consumer::~android_log_consumer()
 {
-    if(m_buf != nullptr)
-    {
-        delete [] m_buf;
-    }
 }
 
 bool android_log_consumer::init_logging()
 {
 #ifdef __ANDROID__
-    return (param != nullptr);
+    return true;
 #else
     return false;
 #endif
@@ -125,14 +103,11 @@ bool android_log_consumer::filter_log_message(const message& msg)
 
 void android_log_consumer::consume_log_message(const message& msg)
 {
-    compose_output(msg, m_buf, m_cch);
-
-    m_buf[m_cch - 1] = 0;
-
-    const char* tag      = get_tag(msg);
     const int   priority = get_priority(msg);
+    const char* tag      = get_tag(msg);
+    const char* output   = compose_output(msg);
 
-    writeToAndroidLog(priority, tag, m_buf);
+    writeToAndroidLog(priority, tag, output);
 }
 
 int android_log_consumer::get_priority(const message& msg)
@@ -149,18 +124,9 @@ const char* android_log_consumer::get_tag(const message& msg)
     return "";
 }
 
-unsigned android_log_consumer::compose_output(const message& msg, char* buf, unsigned cch)
+const char* android_log_consumer::compose_output(const message& msg)
 {
-    const int len = std::snprintf(
-        buf,
-        cch,
-        "[%s][%s][%s] - %s",
-        msg.severityName,
-        msg.facilityName,
-        msg.threadName,
-        msg.messageText
-        );
-    return unsigned(len);
+    return gkr_log_format_output(GENERIC_FMT_ANDROID, &msg, 0, nullptr, 0, 0, nullptr);
 }
 
 }

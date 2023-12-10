@@ -17,15 +17,15 @@ namespace log
 
 class udp_socket_consumer : public consumer
 {
-    std::string m_hostName;
-    std::string m_processName;
+    std::string m_host_name;
+    std::string m_proc_name;
 
     comm::udp_socket_sender* m_sender;
 
-    char*       m_bufferPtr;
-    std::size_t m_bufferCap;
+    char*       m_buf = nullptr;
+    std::size_t m_cap = 0;
 
-    unsigned m_processId {0};
+    unsigned m_processId = 0;
 
 public:
     static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;
@@ -34,8 +34,7 @@ public:
     GKR_LOG_API udp_socket_consumer(
         const char*    remoteHost,
         unsigned short remotePort,
-        unsigned maxPacketSize  = OPTIMAL_UDP_PACKET_SIZE,
-        unsigned bufferCapacity = 2*1024
+        unsigned maxPacketSize = OPTIMAL_UDP_PACKET_SIZE
         );
     GKR_LOG_API virtual ~udp_socket_consumer() override;
 
@@ -47,6 +46,8 @@ public:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 private:
+    void update_buffer(std::size_t size);
+
     bool retrieve_process_name();
     bool retrieve_host_name();
 

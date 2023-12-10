@@ -1,22 +1,3 @@
 #pragma once
 
 #include <gkr/log/galery.h>
-
-struct gkr_log_message;
-
-namespace gkr
-{
-namespace log
-{
-
-using message = gkr_log_message;
-
-inline unsigned format_output(const message& msg, char* buf, unsigned cch, int type, int color_scheme)
-{
-    return gkr_log_format_output(&msg, buf, cch, type, color_scheme);
-}
-
-}
-}
-
-#define PLOG_CONSOLE_PATTERN "$IS00$%F %T:$S_MS$ $P 05$$SNAM$ [$T_ID$] [$FUNC$@$LINE$] $TEXT$$IS01$"

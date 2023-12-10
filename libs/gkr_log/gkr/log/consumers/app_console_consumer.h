@@ -2,7 +2,8 @@
 
 #include <gkr/api.h>
 
-enum {
+enum
+{
     gkr_log_appConsoleWriteMethod_printf,
     gkr_log_appConsoleWriteMethod_fputs2stderr,
     gkr_log_appConsoleWriteMethod_fputs2stdout,
@@ -18,15 +19,11 @@ extern "C" {
 #endif
 
 struct gkr_log_app_console_consumer_callbacks {
-    void      *param;
-    unsigned (*compose_output)(void*, const struct gkr_log_message*, char*, unsigned);
+    void         *param;
+    const char* (*compose_output)(void*, const struct gkr_log_message*, int);
 };
 
-GKR_LOG_API int gkr_log_add_app_console_consumer(
-    const gkr_log_app_console_consumer_callbacks* callbacks,
-    int method,
-    unsigned bufferCapacity
-    );
+GKR_LOG_API int gkr_log_add_app_console_consumer(const gkr_log_app_console_consumer_callbacks* callbacks, int method);
 
 #ifdef __cplusplus
 }

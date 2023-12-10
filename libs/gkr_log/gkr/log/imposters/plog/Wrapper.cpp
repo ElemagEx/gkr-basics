@@ -26,25 +26,24 @@ static constexpr int calcMethod(int outStream)
         ;
 }
 
-static unsigned format_output(bool colored, formatter_t& formatter, const message& msg, char* buf, unsigned cch)
+static const char* format_output(bool colored, formatter_t& formatter, const message& msg)
 {
-    const int color_scheme = !colored
-        ? (COLOR_SCHEME_NONE)
-        : (COLOR_SCHEME_PLOG_SEV_NONE + msg.severity)
-        ;
+    int flags = gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding;
+    if(colored) flags |= gkr_log_fo_flag_use_coloring;
+    const char* fmt = "";
+
     switch(formatter.type)
     {
-        case formatter_CsvFormatter        : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_CSV_TEXT    , color_scheme);
-        case formatter_CsvFormatterUtcTime : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_CSV_TEXT_UTC, color_scheme);
-        case formatter_TxtFormatter        : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_TEXT    , color_scheme);
-        case formatter_TxtFormatterUtcTime : return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_TEXT_UTC, color_scheme);
-        case formatter_FuncMessageFormatter: return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_FUNC    , color_scheme);
-        case formatter_MessageOnlyFormatter: return gkr::log::format_output(msg, buf, cch, FMT_TYPE_PLOG_MSG_ONLY    , color_scheme);
+        case formatter_CsvFormatter        : fmt = PLOG_CSV_FORMAT ; break;
+        case formatter_CsvFormatterUtcTime : fmt = PLOG_CSV_FORMAT ; flags |= gkr_log_fo_flag_use_utc_time; break;
+        case formatter_TxtFormatter        : fmt = PLOG_TEXT_FORMAT; break;
+        case formatter_TxtFormatterUtcTime : fmt = PLOG_TEXT_FORMAT; flags |= gkr_log_fo_flag_use_utc_time; break;
+
+        case formatter_FuncMessageFormatter: fmt = PLOG_FUNC_MSG_FORMAT; break;
+        case formatter_MessageOnlyFormatter: fmt = PLOG_ONLY_MSG_FORMAT; break;
     }
-    const plog::Record record(msg);
-    std::strncpy(buf, (*formatter.format)(record).c_str(), cch);
-    buf[cch - 1] = 0;
-    return unsigned(std::strlen(buf));
+    constexpr const char* args[] = PLOG_TEXT_ARGS_STRS;
+    return gkr_log_format_output(fmt, &msg, flags, args, PLOG_TEXT_ARGS_COLS, PLOG_TEXT_ARGS_ROWS, nullptr);
 }
 
 class ColorConsoleAppenderWrapper : public app_console_consumer
@@ -62,9 +61,9 @@ protected:
     {
         return (msg.facility != m_formatter.instanceId);
     }
-    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
+    virtual const char* compose_output(const message& msg, bool colored) override
     {
-        return format_output(outputIsAtty(), m_formatter, msg, buf, cch);
+        return format_output(colored, m_formatter, msg);
     }
 };
 class ConsoleAppenderWrapper : public app_console_consumer
@@ -82,9 +81,9 @@ protected:
     {
         return (msg.facility != m_formatter.instanceId);
     }
-    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
+    virtual const char* compose_output(const message& msg, bool colored) override
     {
-        return format_output(false, m_formatter, msg, buf, cch);
+        return format_output(false, m_formatter, msg);
     }
 };
 class AndroidAppenderWrapper : public android_log_consumer
@@ -124,9 +123,9 @@ protected:
     {
         return m_tag;
     }
-    virtual unsigned compose_output(const message& msg, char* buf, unsigned cch) override
+    virtual const char* compose_output(const message& msg) override
     {
-        return format_output(false, m_formatter, msg, buf, cch);
+        return format_output(false, m_formatter, msg);
     }
 };
 

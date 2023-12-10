@@ -95,6 +95,16 @@ bool logger::on_exception(except_method_t method, const std::exception* e) noexc
     return true;
 }
 
+int logger::max_queue_entries() const
+{
+    return int(m_log_queue.capacity());
+}
+
+int logger::max_message_chars() const
+{
+    return int(m_log_queue.element_size() - sizeof(message_data));
+}
+
 bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars)
 {
     Check_ValidState(running(), false);
@@ -398,6 +408,56 @@ int logger::log_message(const source_location* location, int severity, int facil
         }
         return msg.id;
     }
+}
+
+const char* logger::format_output(
+    const char* fmt,
+    const struct gkr_log_message& msg,
+    int flags,
+    const char* const* args,
+    unsigned cols,
+    unsigned rows,
+    unsigned* len
+    )
+{
+    Check_Arg_NotNull(fmt, nullptr);
+
+    Check_ValidState(running(), nullptr);
+
+    Check_ValidState(in_worker_thread(), nullptr);
+
+    constexpr std::size_t CCH_MAX_BUFFER = 64 * 1024;     // 64K
+    constexpr std::size_t CCH_FMT_BUFFER =      1024 / 4; // 256 bytes
+    constexpr std::size_t CCH_TXT_BUFFER =  1 * 1024;     // 1K
+
+    if(m_fmt.capacity() == 0) m_fmt.reserve(CCH_FMT_BUFFER);
+    if(m_txt.capacity() == 0) m_txt.reserve(CCH_TXT_BUFFER);
+
+    unsigned length;
+
+    for( ; ; )
+    {
+        length = gkr_log_apply_time_format(m_fmt.data<char>(), unsigned(m_fmt.capacity()), fmt, msg.stamp, flags);
+
+        if(length > 0) break;
+
+        if((errno != ENOBUFS) || (m_fmt.capacity() >= CCH_MAX_BUFFER)) return nullptr;
+
+        m_fmt.reserve(2 * m_fmt.capacity());
+    }
+    for( ; ; )
+    {
+        length = gkr_log_apply_text_format(m_txt.data<char>(), unsigned(m_txt.capacity()), m_fmt.data<char>(), &msg, flags, args, cols, rows);
+
+        if(length > 0) break;
+
+        if((errno != ENOBUFS) || (m_txt.capacity() >= CCH_MAX_BUFFER)) return nullptr;
+
+        m_txt.reserve(2 * m_txt.capacity());
+    }
+    if(len != nullptr) *len = length;
+
+    return m_txt.data<char>();
 }
 
 void logger::sync_log_message(message_data& msg)

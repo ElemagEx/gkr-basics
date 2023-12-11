@@ -123,7 +123,7 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    const char* output = compose_output(msg, !m_isAtty);
+    const char* output = compose_output(msg, m_isAtty);
 
     outputToConsole(m_method, output);
 }

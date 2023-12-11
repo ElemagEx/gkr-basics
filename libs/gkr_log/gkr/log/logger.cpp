@@ -216,7 +216,7 @@ int logger::add_consumer(consumer_ptr_t consumer)
 
     if(!in_worker_thread())
     {
-        return execute_action_method<bool>(ACTION_ADD_CONSUMER, consumer);
+        return execute_action_method<int>(ACTION_ADD_CONSUMER, consumer);
     }
     Check_Arg_NotNull(consumer, 0);
 

@@ -285,8 +285,8 @@ int gkr_log_valist_message_ex(const char* func, const char* file, unsigned line,
 
 int gkr_log_custom_message_start(int severity, char** buf, unsigned* cch)
 {
-    Check_Arg_NotNull(buf, nullptr);
-    Check_Arg_NotNull(cch, nullptr);
+    Check_Arg_NotNull(buf, 0);
+    Check_Arg_NotNull(cch, 0);
 
     if(s_logger == nullptr) return false;
 
@@ -445,5 +445,5 @@ int check_thread_name(const char* name)
 
         s_logger->set_thread_name(&thread_name.last_msg_id, thread_name.buff);
     }
-    return thread_name.last_msg_id;;
+    return thread_name.last_msg_id;
 }

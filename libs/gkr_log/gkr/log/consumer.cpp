@@ -4,6 +4,9 @@
 #include <gkr/diagnostics.h>
 #include <gkr/stamp.hpp>
 
+#include <cstring>
+#include <ctime>
+
 namespace gkr
 {
 namespace log
@@ -210,10 +213,10 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
     {
         case 'S': use_severity = true ; break;
         case 'F': use_severity = false; break;
-        default : return (errno = ENOTSUP), false;
+        default : return void(errno = ENOTSUP), false;
     }
-    const int digit1 = (fmt[1] - '0'); if((digit1 < 0) || (digit1 > 9)) return (errno = ENOTSUP), false;
-    const int digit2 = (fmt[2] - '0'); if((digit2 < 0) || (digit2 > 9)) return (errno = ENOTSUP), false;
+    const int digit1 = (fmt[1] - '0'); if((digit1 < 0) || (digit1 > 9)) return void(errno = ENOTSUP), false;
+    const int digit2 = (fmt[2] - '0'); if((digit2 < 0) || (digit2 > 9)) return void(errno = ENOTSUP), false;
 
     if((flags & gkr_log_fo_flag_use_inserts) == 0) return true;
 
@@ -222,7 +225,7 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
         ? unsigned(msg->severity)
         : unsigned(msg->facility)
         ;
-    if((col >= cols) || (row >= rows)) return (errno = ENOTSUP), false;
+    if((col >= cols) || (row >= rows)) return void(errno = ENOTSUP), false;
 
     const std::size_t index = (row * cols) + col;
 
@@ -258,9 +261,9 @@ int gkr_log_add_c_consumer(const struct gkr_log_consumer_callbacks* callbacks)
 
 unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, long long stamp, int flags)
 {
-    Check_Arg_NotNull(fmt    , (errno = EINVAL), 0);
-    Check_Arg_NotNull(buf    , (errno = EINVAL), 0);
-    Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0);
+    Check_Arg_NotNull(fmt    , (errno = EINVAL), 0U);
+    Check_Arg_NotNull(buf    , (errno = EINVAL), 0U);
+    Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0U);
 
     if((*fmt == 0) || ((flags & gkr_log_fo_flag_ignore_time_fmt) != 0))
     {
@@ -286,10 +289,10 @@ unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, lon
 
 unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned cols, unsigned rows)
 {
-    Check_Arg_NotNull(msg    , (errno = EINVAL), 0);
-    Check_Arg_NotNull(fmt    , (errno = EINVAL), 0);
-    Check_Arg_NotNull(buf    , (errno = EINVAL), 0);
-    Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0);
+    Check_Arg_NotNull(msg    , (errno = EINVAL), 0U);
+    Check_Arg_NotNull(fmt    , (errno = EINVAL), 0U);
+    Check_Arg_NotNull(buf    , (errno = EINVAL), 0U);
+    Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0U);
 
     const bool local = ((flags & gkr_log_fo_flag_use_utc_time) == 0);
 

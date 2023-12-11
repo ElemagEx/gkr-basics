@@ -23,10 +23,14 @@
 #else
 
 #ifndef __cpp_lib_is_swappable
-namespace std {
+namespace std
+{
 template<typename T>
-struct is_nothrow_swappable {
-    static constexpr bool value = std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_assignable<T>::value;
+struct is_nothrow_swappable
+{
+    static constexpr bool value =
+        std::is_nothrow_move_constructible<T>::value &&
+        std::is_nothrow_move_assignable<T>::value;
 };
 }
 };
@@ -34,7 +38,11 @@ struct is_nothrow_swappable {
 #ifndef __cpp_lib_exchange_function
 namespace std {
 template<class T, class U=T>
-T exchange(T& obj, U&& new_value) noexcept(std::is_nothrow_move_constructible<T>::value && std::is_nothrow_assignable<T&, U>::value) {
+T exchange(T& obj, U&& new_value) noexcept(
+    std::is_nothrow_move_constructible<T>::value &&
+    std::is_nothrow_assignable<T&, U>::value
+    )
+{
     T old_value = std::move(obj);
     obj = std::forward<U>(new_value);
     return old_value;
@@ -2760,7 +2768,7 @@ private:
 
         const std::size_t stride = calc_pitch(m_size) * granularity;
 
-        Check_ValidState(stride > 0, nullptr);
+        Check_ValidState(stride > 0, queue_npos);
 
         const std::size_t index = std::size_t(static_cast<char*>(element) - m_elements) / stride;
 

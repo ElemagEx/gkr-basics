@@ -26,7 +26,7 @@ static gkr::log::logging logging(g_severities, g_facilities, 256);
 
 #include <thread>
 
-int N = 0;
+static int N = 0;
 
 TEST_CASE("logging.logger.defs.generic. main")
 {

@@ -57,18 +57,14 @@ inline constexpr const char* plog_severity2string(plog::Severity severity) noexc
 #   define IF_PLOG_(instanceId, severity)       gkr::log::ostream
 #endif
 
-#ifndef PLOG_DEFAULT_INSTANCE_ID
-#   define PLOG_DEFAULT_INSTANCE_ID 0
-#endif
-
 #ifdef PLOG_DEFAULT_INSTANCE
 #   define PLOG_DEFAULT_INSTANCE_ID PLOG_DEFAULT_INSTANCE
 #endif
 
 #define IF_PLOG(severity)                IF_PLOG_(PLOG_DEFAULT_INSTANCE_ID, severity)
 
-#define PLOG_(instanceId, severity)      IF_PLOG_(instanceId, severity) (PLOG_GET_FUNC(), PLOG_GET_FILE(), __LINE__, severity, instanceId)
-#define PLOG(severity)                   PLOG_(PLOG_DEFAULT_INSTANCE_ID, severity)
+#define PLOG_(instanceId, severity)      IF_PLOG_(instanceId, severity) (instanceId, PLOG_GET_FUNC(), PLOG_GET_FILE(), __LINE__, severity, 0)
+#define PLOG(severity)                   PLOG_(nullptr, severity)
 
 #define PLOG_VERBOSE                     PLOG(plog::verbose)
 #define PLOG_DEBUG                       PLOG(plog::debug)

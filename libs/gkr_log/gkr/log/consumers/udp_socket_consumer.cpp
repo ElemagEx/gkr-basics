@@ -155,20 +155,22 @@ bool udp_socket_consumer::construct_data(const message& msg)
 {
     const std::size_t nameLenFunc     = std::strlen(msg.sourceFunc);
     const std::size_t nameLenFile     = std::strlen(msg.sourceFile);
+    const std::size_t nameLenModule   = std::strlen(msg.moduleName);
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
     const std::size_t nameLenSeverity = std::strlen(msg.severityName);
 
     const std::size_t dataSize =
         sizeof(data::log_message)
+        + msg.messageLen     + 1
         + m_host_name.size() + 1
         + m_proc_name.size() + 1
-        + nameLenFunc     + 1
-        + nameLenFile     + 1
-        + nameLenThread   + 1
-        + nameLenFacility + 1
-        + nameLenSeverity + 1
-        + msg.messageLen  + 1
+        + nameLenFunc        + 1
+        + nameLenFile        + 1
+        + nameLenModule      + 1
+        + nameLenThread      + 1
+        + nameLenSeverity    + 1
+        + nameLenFacility    + 1
         ;
     update_buffer(dataSize);
 
@@ -182,30 +184,33 @@ bool udp_socket_consumer::construct_data(const message& msg)
     messageData.pid       = m_processId;
     messageData.severity  = msg.severity;
     messageData.facility  = msg.facility;
+    messageData._reserved = 0;
+    messageData.sized_ver = sizeof(data::log_message);
 
     std::size_t offsetToStr = sizeof(data::log_message);
 
-    messageData.offset_to_func     = std::uint16_t(offsetToStr); offsetToStr += nameLenFunc        + 1;
-    messageData.offset_to_file     = std::uint16_t(offsetToStr); offsetToStr += nameLenFile        + 1;
+    messageData.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen     + 1;
     messageData.offset_to_host     = std::uint16_t(offsetToStr); offsetToStr += m_host_name.size() + 1;
     messageData.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_proc_name.size() + 1;
+    messageData.offset_to_func     = std::uint16_t(offsetToStr); offsetToStr += nameLenFunc        + 1;
+    messageData.offset_to_file     = std::uint16_t(offsetToStr); offsetToStr += nameLenFile        + 1;
+    messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenModule      + 1;
     messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread      + 1;
-    messageData.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility    + 1;
     messageData.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity    + 1;
-    messageData.offset_to_text     = std::uint16_t(offsetToStr); offsetToStr += msg.messageLen     + 1;
+    messageData.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility    + 1;
 
     Assert_Check(offsetToStr == dataSize);
 
     char* strBase = reinterpret_cast<char*>(&messageData);
 
-    std::strncpy(strBase + messageData.offset_to_func    , msg.threadName     , nameLenFunc        + 1);
-    std::strncpy(strBase + messageData.offset_to_file    , msg.threadName     , nameLenFile        + 1);
+    std::strncpy(strBase + messageData.offset_to_text    , msg.messageText    , msg.messageLen     + 1);
     std::strncpy(strBase + messageData.offset_to_host    , m_host_name.c_str(), m_host_name.size() + 1); 
     std::strncpy(strBase + messageData.offset_to_process , m_proc_name.c_str(), m_proc_name.size() + 1);
+    std::strncpy(strBase + messageData.offset_to_func    , msg.threadName     , nameLenFunc        + 1);
+    std::strncpy(strBase + messageData.offset_to_file    , msg.threadName     , nameLenFile        + 1);
     std::strncpy(strBase + messageData.offset_to_thread  , msg.threadName     , nameLenThread      + 1);
-    std::strncpy(strBase + messageData.offset_to_facility, msg.facilityName   , nameLenFacility    + 1);
     std::strncpy(strBase + messageData.offset_to_severity, msg.severityName   , nameLenSeverity    + 1);
-    std::strncpy(strBase + messageData.offset_to_text    , msg.messageText    , msg.messageLen     + 1);
+    std::strncpy(strBase + messageData.offset_to_facility, msg.facilityName   , nameLenFacility    + 1);
 
     return true;
 }

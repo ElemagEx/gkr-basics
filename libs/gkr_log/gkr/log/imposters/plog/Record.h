@@ -30,7 +30,7 @@ public:
     }
 
     Record(Severity severity, const char* func, size_t line, const char* file, const void* object, int instanceId)
-        : base_t(func, file, unsigned(line), severity, instanceId)
+        : base_t(nullptr, func, file, unsigned(line), severity, instanceId)
     {
     }
     Record(const gkr::log::message& message) : base_t(nullptr), m_message(&message)

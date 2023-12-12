@@ -15,11 +15,14 @@ struct split_packet_head
     std::uint32_t data_size;
     std::uint32_t data_sent;
 };
+static_assert((sizeof(split_packet_head) % 8) == 0, "Please keep size of split_packet_head multiple of 8");
+
 struct split_packet_data_head
 {
     std::uint32_t signature;
     std::uint32_t size;
 };
+static_assert((sizeof(split_packet_data_head) % 8) == 0, "Please keep size of split_packet_data_head multiple of 8");
 
 }
 }

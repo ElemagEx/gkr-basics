@@ -41,12 +41,12 @@ public:
     }
 
 protected:
-    virtual const char* compose_output(const message& msg) override
+    virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
     {
         if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg);
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, len, colored);
         } else {
-            return windows_debugger_consumer::compose_output(msg);
+            return windows_debugger_consumer::compose_output(msg, len, colored);
         }
     }
 };
@@ -103,9 +103,9 @@ void windows_debugger_consumer::consume_log_message(const message& msg)
     outputToWindowsDebugger(output);
 }
 
-const char* windows_debugger_consumer::compose_output(const message& msg)
+const char* windows_debugger_consumer::compose_output(const message& msg, unsigned* len, bool colored)
 {
-    return gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, nullptr);
+    return gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, len);
 }
 
 }

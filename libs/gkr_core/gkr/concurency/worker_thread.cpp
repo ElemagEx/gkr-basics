@@ -65,7 +65,7 @@ bool worker_thread::join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT)
 
 bool worker_thread::quit() noexcept(DIAG_NOEXCEPT)
 {
-    Check_ValidState(running(), false);
+    Check_ValidState(joinable(), false);
 
     if(in_worker_thread())
     {
@@ -74,7 +74,7 @@ bool worker_thread::quit() noexcept(DIAG_NOEXCEPT)
     }
     else
     {
-        return enqueue_action(ACTION_QUIT);
+        return running() ? enqueue_action(ACTION_QUIT) : true;
     }
 }
 

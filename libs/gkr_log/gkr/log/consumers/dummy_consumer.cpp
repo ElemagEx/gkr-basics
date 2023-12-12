@@ -69,6 +69,12 @@ bool dummy_consumer::filter_log_message(const message& msg)
 
 void dummy_consumer::consume_log_message(const message& msg)
 {
+    compose_output(msg);
+}
+
+const char* dummy_consumer::compose_output(const message& msg, unsigned* len, bool colored)
+{
+    return "";
 }
 
 }

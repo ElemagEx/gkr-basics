@@ -31,12 +31,12 @@ public:
     }
 
 protected:
-    virtual const char* compose_output(const message& msg, unsigned& len) override
+    virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
     {
         if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg);
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, len, colored);
         } else {
-            return text_file_consumer::compose_output(msg, len);
+            return text_file_consumer::compose_output(msg, len, colored);
         }
     }
 
@@ -166,7 +166,7 @@ bool text_file_consumer::filter_log_message(const message& msg)
 void text_file_consumer::consume_log_message(const message& msg)
 {
     unsigned len;
-    const char* output = compose_output(msg, len);
+    const char* output = compose_output(msg, &len);
 
     std::FILE* file = static_cast<std::FILE*>(m_file);
 
@@ -176,9 +176,9 @@ void text_file_consumer::consume_log_message(const message& msg)
     on_leave_file_write();
 }
 
-const char* text_file_consumer::compose_output(const message& msg, unsigned& len)
+const char* text_file_consumer::compose_output(const message& msg, unsigned* len, bool colored)
 {
-    return gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, &len);
+    return gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, len);
 }
 
 void text_file_consumer::on_file_opened()

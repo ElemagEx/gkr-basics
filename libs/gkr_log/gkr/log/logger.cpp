@@ -1,6 +1,4 @@
 #include "logger.hpp"
-#include "logging.hpp"
-#include "consumer.hpp"
 
 #include <gkr/stamp.hpp>
 
@@ -120,9 +118,6 @@ void* logger::add_instance(
 {
     if(!in_worker_thread())
     {
-        Check_Arg_IsValid(max_queue_entries > 0, nullptr);
-        Check_Arg_IsValid(max_message_chars > 0, nullptr);
-
         if(!run())
         {
             if(errno != EEXIST)
@@ -141,10 +136,10 @@ void* logger::add_instance(
         ;
     change_log_queue(max_queue_entries, max_message_chars);
 
-    change_name(nullptr, name);
+    change_name(instance, name);
 
-    set_severities(nullptr, false, severities_infos);
-    set_facilities(nullptr, false, facilities_infos);
+    set_severities(instance, false, severities_infos);
+    set_facilities(instance, false, facilities_infos);
 
     return instance;
 }
@@ -212,8 +207,8 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     }
     else
     {
-        if(max_queue_entries == 0) max_queue_entries = 16;
-        if(max_message_chars == 0) max_queue_entries = 256;
+        if(max_queue_entries == 0) max_queue_entries = 32;
+        if(max_message_chars == 0) max_message_chars = (512 - sizeof(message_data));
 
         m_log_queue.reset(max_queue_entries, calc_queue_element_size(sizeof(message_data), max_message_chars));
 

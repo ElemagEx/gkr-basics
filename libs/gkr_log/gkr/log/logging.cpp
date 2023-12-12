@@ -79,7 +79,7 @@ extern "C"
 int gkr_log_init(
     const char* name,
     unsigned max_queue_entries, // = 32
-    unsigned max_message_chars, // = 939 [1024 - sizeof(message_data) - 1] //1 for NTS and 4 for msg id (64bit)
+    unsigned max_message_chars, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/instance (64bit)
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities_infos  // = nullptr - no facility names
     )

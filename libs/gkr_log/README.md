@@ -22,6 +22,7 @@
 | `$S_ID$` | severity
 | `$F_ID$` | facility
 | `$TNAM$` | thread name
+| `$MNAM$` | module name
 | `$SNAM$` | severity name
 | `$FNAM$` | facility name
 | `$FUNC$` | source function

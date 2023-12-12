@@ -59,8 +59,7 @@ public:
     Logger& addAppender(Appender<Formatter>* appender)
     {
         if(appender == nullptr) return *this;
-        auto consumer = gkr::log::impl::makePlogConsumerWrapper2(instanceId, appender);
-        gkr_log_add_consumer(consumer);
+        gkr::log::impl::addPlogConsumerWrapper2(instanceId, appender);
         return *this;
     }
     template<class Formatter, class Converter>

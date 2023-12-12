@@ -26,12 +26,12 @@ public:
     }
 
 protected:
-    virtual const char* compose_output(const message& msg, bool colored) override
+    virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
     {
         if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, colored?1:0);
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, len, colored);
         } else {
-            return app_console_consumer::compose_output(msg, colored);
+            return app_console_consumer::compose_output(msg, len, colored);
         }
     }
 };
@@ -127,12 +127,12 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    const char* output = compose_output(msg, m_isAtty);
+    const char* output = compose_output(msg, nullptr, m_isAtty);
 
     outputToConsole(m_method, output);
 }
 
-const char* app_console_consumer::compose_output(const message& msg, bool colored)
+const char* app_console_consumer::compose_output(const message& msg, unsigned* len, bool colored)
 {
     constexpr const char* args[] = GENERIC_CONSOLE_ARGS_STRS;
 
@@ -148,7 +148,7 @@ const char* app_console_consumer::compose_output(const message& msg, bool colore
         args,
         GENERIC_CONSOLE_ARGS_COLS,
         GENERIC_CONSOLE_ARGS_ROWS,
-        nullptr
+        len
         );
     return output;
 }

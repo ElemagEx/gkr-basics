@@ -5,6 +5,7 @@
 #include <gkr/testing/log_defs.hpp>
 
 //#define GKR_LOG_USE_C_DEFS
+#include <gkr/log/galery.hpp>
 #include <gkr/log/defs/generic.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -30,11 +31,13 @@ static int N = 0;
 
 TEST_CASE("logging.logger.defs.generic. main")
 {
+    using namespace gkr::log;
+
     gkr_log_del_all_consumers(nullptr);
     gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::app_console_consumer>());
 
 #ifdef _WIN32
-    gkr_log_win32_format_message(ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error: ");
+    gkr_log_win32_format_message(nullptr, ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error: ");
 #endif
 
     LOGV(FACILITY_NETWORK, "Hello There!");

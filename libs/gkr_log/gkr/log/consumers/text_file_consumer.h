@@ -22,7 +22,7 @@ extern "C" {
 struct gkr_log_text_file_consumer_callbacks
 {
     void         *param;
-    const char* (*compose_output     )(void*, const struct gkr_log_message*);
+    const char* (*compose_output     )(void*, const struct gkr_log_message*, unsigned*, int);
     void        (*on_file_opened     )(void*);
     void        (*on_file_closing    )(void*);
     void        (*on_enter_file_write)(void*);

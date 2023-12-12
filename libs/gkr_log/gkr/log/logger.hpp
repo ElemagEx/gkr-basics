@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gkr/log/consumer.hpp>
+#include <gkr/log/logging.hpp>
 
 #include <gkr/container/raw_buffer.hpp>
 
@@ -110,8 +111,6 @@ public:
     bool set_facility(void* instance, const name_id_pair& facility_info);
 
 public:
-    using consumer_ptr_t = std::shared_ptr<consumer>;
-
     int  add_consumer(void* instance, consumer_ptr_t consumer);
     bool del_consumer(void* instance, consumer_ptr_t consumer, int id);
 

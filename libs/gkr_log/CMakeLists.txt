@@ -99,12 +99,6 @@ target_sources(
     PUBLIC
     "gkr/log/imposters/plog/Wrapper.h"
 )
-# plog imposter source
-target_sources(
-    gkr_log
-    PRIVATE
-    "gkr/log/imposters/plog/Wrapper.cpp"
-)
 
 if(GKR_BASICS_TESTS)
 add_subdirectory(tests)

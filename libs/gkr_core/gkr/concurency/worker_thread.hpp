@@ -163,7 +163,8 @@ protected:
     }
     bool enqueue_action(action_id_t id) noexcept(DIAG_NOEXCEPT)
     {
-        Check_ValidState(running() && !in_worker_thread(), false);
+        Check_ValidState(!in_worker_thread(), false);
+        Check_ValidState(running(), false);
 
         auto element = m_actions_queue.start_push();
 

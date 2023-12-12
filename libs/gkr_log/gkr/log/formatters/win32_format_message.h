@@ -20,25 +20,25 @@ __declspec(dllimport) int __stdcall lstrlenA(const char*);
 __declspec(dllimport) char* __stdcall lstrcpynA(char*, const char*, int);
 #endif
 
-inline int gkr_log_win32_format_message(long messageId, int severity, int facility, const char* prefix)
+inline int gkr_log_win32_format_message(void* instance, long messageId, int severity, int facility, const char* prefix)
 {
     char* buf;
     unsigned cch;
-    if(!gkr_log_custom_message_start(nullptr, severity, &buf, &cch)) return 0;
+    if(!gkr_log_custom_message_start(instance, severity, &buf, &cch)) return 0;
 
     int len = 0;
     if(prefix != nullptr) {
         len = lstrlenA(prefix);
-        if((unsigned)len >= cch) return gkr_log_custom_message_cancel(nullptr);
+        if((unsigned)len >= cch) return gkr_log_custom_message_cancel(instance);
         lstrcpynA(buf, prefix, len+1);
     }
     const unsigned flags = 0x000012FF; //(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK)
     const unsigned res   = FormatMessageA(flags, nullptr, (unsigned)messageId, 0, buf + len, cch - len, nullptr);
 
     if(res > 0) {
-        return gkr_log_custom_message_finish(nullptr, severity, facility);
+        return gkr_log_custom_message_finish(instance, severity, facility);
     } else {
-        return gkr_log_custom_message_cancel(nullptr);
+        return gkr_log_custom_message_cancel(instance);
     }
 }
 

@@ -33,12 +33,12 @@ public:
     }
 
 protected:
-    virtual int get_priority(const message& msg) override
+    virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
     {
-        if(m_callbacks.get_priority != nullptr) {
-            return (*m_callbacks.get_priority)(m_callbacks.param, &msg);
+        if(m_callbacks.compose_output != nullptr) {
+            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, len, colored);
         } else {
-            return android_log_consumer::get_priority(msg);
+            return android_log_consumer::compose_output(msg, len, colored);
         }
     }
     virtual const char* get_tag(const message& msg) override
@@ -49,12 +49,12 @@ protected:
             return android_log_consumer::get_tag(msg);
         }
     }
-    virtual const char* compose_output(const message& msg) override
+    virtual int get_priority(const message& msg) override
     {
-        if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg);
+        if(m_callbacks.get_priority != nullptr) {
+            return (*m_callbacks.get_priority)(m_callbacks.param, &msg);
         } else {
-            return android_log_consumer::compose_output(msg);
+            return android_log_consumer::get_priority(msg);
         }
     }
 };
@@ -113,13 +113,9 @@ void android_log_consumer::consume_log_message(const message& msg)
     writeToAndroidLog(priority, tag, output);
 }
 
-int android_log_consumer::get_priority(const message& msg)
+const char* android_log_consumer::compose_output(const message& msg, unsigned* len, bool colored)
 {
-#ifdef __ANDROID__
-    return ANDROID_LOG_VERBOSE;
-#else
-    return 0;
-#endif
+    return gkr_log_format_output(GENERIC_FMT_ANDROID, &msg, 0, nullptr, 0, 0, len);
 }
 
 const char* android_log_consumer::get_tag(const message& msg)
@@ -127,9 +123,13 @@ const char* android_log_consumer::get_tag(const message& msg)
     return "";
 }
 
-const char* android_log_consumer::compose_output(const message& msg)
+int android_log_consumer::get_priority(const message& msg)
 {
-    return gkr_log_format_output(GENERIC_FMT_ANDROID, &msg, 0, nullptr, 0, 0, nullptr);
+#ifdef __ANDROID__
+    return ANDROID_LOG_VERBOSE;
+#else
+    return 0;
+#endif
 }
 
 }

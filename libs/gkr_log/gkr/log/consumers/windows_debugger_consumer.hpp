@@ -23,7 +23,7 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual const char* compose_output(const message& msg);
+    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned* len = nullptr, bool colored = false);
 };
 
 }

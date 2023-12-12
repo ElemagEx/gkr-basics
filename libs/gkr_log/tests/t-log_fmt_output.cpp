@@ -33,7 +33,7 @@ TEST_CASE("logging.logger.format.output. main")
 
     gkr_log_message msg { 12345LL, gkr::stamp_now(), plog::none, 5, "int main()", "main.cpp", 16U, 12U, "Test message", "Main", "Info", "Testing"};
 
-    constexpr const char* args[] = PLOG_TEXT_ARGS_STRS;
+    constexpr const char* args[] = PLOG_CONSOLE_ARGS_STRS;
 
     int severities[] = { plog::fatal, plog::info, plog::verbose };
 
@@ -44,7 +44,7 @@ TEST_CASE("logging.logger.format.output. main")
         unsigned len1 = gkr_log_apply_time_format(
             buf1,
             256,
-            PLOG_TEXT_FORMAT,
+            PLOG_FULL_MSG_FORMAT,
             msg.stamp,
             0);
         CHECK(len1 > 0);
@@ -57,8 +57,8 @@ TEST_CASE("logging.logger.format.output. main")
             &msg,
             0,
             args,
-            PLOG_TEXT_ARGS_COLS,
-            PLOG_TEXT_ARGS_ROWS
+            PLOG_CONSOLE_ARGS_COLS,
+            PLOG_CONSOLE_ARGS_ROWS
             );
         CHECK(len2 > 0);
         REQUIRE(errno == 0);

@@ -8,7 +8,8 @@ extern "C" {
 
 struct gkr_log_dummy_consumer_callbacks
 {
-    void* param;
+    void         *param;
+    const char* (*compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
 };
 
 GKR_LOG_API int gkr_log_add_dummy_consumer(

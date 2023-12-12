@@ -6,7 +6,7 @@
 
 namespace plog
 {
-enum OutputStream {streamStdOut,streamStdErr};
+enum OutputStream {streamStdOut=3,streamStdErr=4};
 template<class Formatter>
 class ConsoleAppender : public IAppender
 {

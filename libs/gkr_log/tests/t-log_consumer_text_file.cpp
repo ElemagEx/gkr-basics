@@ -10,22 +10,22 @@
 constexpr gkr::log::name_id_pair g_severities[] = COMMON_SEVERITIES_INFOS;
 constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES_INFOS;
 
-static gkr::log::logging logging(g_severities, g_facilities);
+static gkr::log::logging logging(nullptr, 0, 0, g_severities, g_facilities);
 
 #include <thread>
 
 TEST_CASE("logging.logger. main")
 {
-    gkr_log_del_all_consumers();
-    gkr_log_add_consumer(std::make_shared<gkr::log::text_file_consumer>());
+    gkr_log_del_all_consumers(nullptr);
+    gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::text_file_consumer>());
 
-    gkr_log_simple_message(LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
+    gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
     std::thread t([] () {
         gkr_log_set_this_thread_name("gkr-bar");
-        gkr_log_simple_message(LOG_SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
+        gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
     });
     t.join();
 
-    gkr_log_simple_message(LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
+    gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
 }

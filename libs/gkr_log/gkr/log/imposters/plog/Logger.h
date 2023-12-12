@@ -35,7 +35,7 @@ public:
             {severityToString(Severity::verbose), Severity::verbose},
             {nullptr                            , 0                }
         };
-        gkr_log_init(SEVERITIES, nullptr, 1023, 64);
+        gkr_log_init(nullptr, 64, 1023, SEVERITIES, nullptr);
     }
     virtual ~Logger() override
     {
@@ -75,7 +75,7 @@ public:
     {
         if(appender == nullptr) return *this;
         auto consumer = gkr::log::impl::makePlogConsumerWrapper4(instanceId, appender);
-        gkr_log_add_consumer(consumer);
+        gkr_log_add_consumer(nullptr, consumer);
         return *this;
     }
     Severity getMaxSeverity() const noexcept

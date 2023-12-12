@@ -18,12 +18,13 @@ struct logging final
     const bool initialized;
 
     logging(
-        const name_id_pair* severities_infos = nullptr,
-        const name_id_pair* facilities_infos = nullptr,
+        const char* name = nullptr,
         unsigned max_queue_entries = 16,
-        unsigned max_message_chars = 955 // = 955 [1024 - sizeof(gkr_log_message) - 1] //1 for NTS and 4 for msg id (64bit)
+        unsigned max_message_chars = 939, // = 939 [1024 - sizeof(message_data) - 1] //1 for NTS and 4 for msg id (64bit)
+        const name_id_pair* severities_infos = nullptr,
+        const name_id_pair* facilities_infos = nullptr
         )
-        : initialized(0 != gkr_log_init(severities_infos, facilities_infos, max_queue_entries, max_message_chars))
+        : initialized(0 != gkr_log_init(name, max_queue_entries, max_message_chars, severities_infos, facilities_infos))
     {
     }
     ~logging()
@@ -42,5 +43,5 @@ private:
 }
 }
 
-GKR_LOG_API int gkr_log_add_consumer(std::shared_ptr<gkr::log::consumer> consumer);
-GKR_LOG_API int gkr_log_del_consumer(std::shared_ptr<gkr::log::consumer> consumer);
+GKR_LOG_API int gkr_log_add_consumer(void* instance, std::shared_ptr<gkr::log::consumer> consumer);
+GKR_LOG_API int gkr_log_del_consumer(void* instance, std::shared_ptr<gkr::log::consumer> consumer);

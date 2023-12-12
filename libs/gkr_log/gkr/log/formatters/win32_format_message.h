@@ -24,21 +24,21 @@ inline int gkr_log_win32_format_message(long messageId, int severity, int facili
 {
     char* buf;
     unsigned cch;
-    if(!gkr_log_custom_message_start(severity, &buf, &cch)) return 0;
+    if(!gkr_log_custom_message_start(nullptr, severity, &buf, &cch)) return 0;
 
     int len = 0;
     if(prefix != nullptr) {
         len = lstrlenA(prefix);
-        if((unsigned)len >= cch) return gkr_log_custom_message_cancel();
+        if((unsigned)len >= cch) return gkr_log_custom_message_cancel(nullptr);
         lstrcpynA(buf, prefix, len+1);
     }
     const unsigned flags = 0x000012FF; //(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK)
     const unsigned res   = FormatMessageA(flags, nullptr, (unsigned)messageId, 0, buf + len, cch - len, nullptr);
 
     if(res > 0) {
-        return gkr_log_custom_message_finish(severity, facility);
+        return gkr_log_custom_message_finish(nullptr, severity, facility);
     } else {
-        return gkr_log_custom_message_cancel();
+        return gkr_log_custom_message_cancel(nullptr);
     }
 }
 

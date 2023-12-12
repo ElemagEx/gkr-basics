@@ -14,7 +14,7 @@ namespace GKR_LOG_NS
 template<int severity, bool>
 inline int log_simple(int facility, const char* message)
 {
-    return gkr_log_simple_message(severity, facility, message);
+    return gkr_log_simple_message(nullptr, severity, facility, message);
 }
 template<> inline int log_simple<LOG_SEVERITY_FATAL  ,false>(int, const char*) { return 0; }
 template<> inline int log_simple<LOG_SEVERITY_ERROR  ,false>(int, const char*) { return 0; }
@@ -28,7 +28,7 @@ template<int severity, bool>
 inline int log_simple_if(bool condition, int facility, const char* message)
 {
     if(condition) {
-        return gkr_log_simple_message(severity, facility, message);
+        return gkr_log_simple_message(nullptr, severity, facility, message);
     } else {
         return 0;
     }
@@ -87,7 +87,7 @@ namespace GKR_LOG_NS
 template<int severity, bool>
 inline int log_printf(int facility, const char* format, va_list args)
 {
-    return gkr_log_valist_message(severity, facility, format, args);
+    return gkr_log_valist_message(nullptr, severity, facility, format, args);
 }
 template<> int log_printf<LOG_SEVERITY_FATAL  ,false>(int, const char*, va_list) { return 0; }
 template<> int log_printf<LOG_SEVERITY_ERROR  ,false>(int, const char*, va_list) { return 0; }
@@ -101,7 +101,7 @@ template<int severity, bool>
 inline int log_printf_if(bool condition, int facility, const char* format, va_list args)
 {
     if(condition) {
-        return gkr_log_valist_message(severity, facility, format, args);
+        return gkr_log_valist_message(nullptr, severity, facility, format, args);
     } else {
         return 0;
     }

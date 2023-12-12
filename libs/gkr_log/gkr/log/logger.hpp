@@ -8,8 +8,9 @@
 #include <gkr/concurency/events_waiting.hpp>
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
 
-#include <memory>
+#include <list>
 #include <vector>
+#include <memory>
 #include <unordered_map>
 
 struct gkr_log_name_id_pair;
@@ -19,6 +20,11 @@ namespace gkr
 namespace log
 {
 
+struct instance_info
+{
+    const char* name {nullptr};
+    int         threshold {100};
+};
 struct source_location
 {
     const char* func;
@@ -42,14 +48,6 @@ public:
     logger();
     virtual ~logger() noexcept(DIAG_NOEXCEPT) override;
 
-public:
-    int get_severity_threshold() const {
-        return m_severity_threshold;
-    }
-    void set_severity_threshold(int severity_threshold) {
-        m_severity_threshold = severity_threshold;
-    }
-
 private:
     virtual const char* get_name() noexcept override;
 
@@ -69,37 +67,67 @@ private:
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override;
 
 public:
-    int max_queue_entries() const;
-    int max_message_chars() const;
-
-    bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
+    void* add_instance(
+        bool primary,
+        const char* name,
+        std::size_t max_queue_entries,
+        std::size_t max_message_chars,
+        const struct gkr_log_name_id_pair* severities_infos,
+        const struct gkr_log_name_id_pair* facilities_infos
+        );
+    bool del_instance(void* instance);
 
 public:
-    void set_severities(bool clear_existing, const name_id_pair* severities_infos);
-    void set_facilities(bool clear_existing, const name_id_pair* facilities_infos);
+    void set_severity_threshold(int threshold)
+    {
+        m_primary.threshold = threshold;
+    }
+    int get_severity_threshold() const
+    {
+        return m_primary.threshold;
+    }
+    unsigned get_max_queue_entries() const
+    {
+        return unsigned(m_log_queue.capacity());
+    }
+    unsigned get_max_message_chars() const
+    {
+        return (m_log_queue.element_size() <= sizeof(message_data))
+            ? 0U
+            : unsigned(m_log_queue.element_size() - sizeof(message_data));
+    }
 
-    void set_severity(const name_id_pair& severity_info);
-    void set_facility(const name_id_pair& facility_info);
+public:
+    bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
+
+    bool change_name(void* instance, const char* name);
+
+public:
+    bool set_severities(void* instance, bool clear_existing, const name_id_pair* severities_infos);
+    bool set_facilities(void* instance, bool clear_existing, const name_id_pair* facilities_infos);
+
+    bool set_severity(void* instance, const name_id_pair& severity_info);
+    bool set_facility(void* instance, const name_id_pair& facility_info);
 
 public:
     using consumer_ptr_t = std::shared_ptr<consumer>;
 
-    int  add_consumer(consumer_ptr_t consumer);
-    bool del_consumer(consumer_ptr_t consumer, int id);
+    int  add_consumer(void* instance, consumer_ptr_t consumer);
+    bool del_consumer(void* instance, consumer_ptr_t consumer, int id);
 
-    void del_all_consumers();
+    bool del_all_consumers(void* instance);
 
 public:
     using tid_t = long long;
 
-    void set_thread_name(int* ptr, const char* name, tid_t tid = 0);
+    bool set_thread_name(int* ptr, const char* name, tid_t tid = 0);
 
 public:
-    bool start_log_message(int severity, char*& buf, unsigned& cch);
-    int cancel_log_message();
-    int finish_log_message(const source_location* location, int severity, int facility);
+    bool start_log_message(void* instance, int severity, char*& buf, unsigned& cch);
+    int cancel_log_message(void* instance);
+    int finish_log_message(void* instance, const source_location* location, int severity, int facility);
 
-    int log_message(const source_location* location, int severity, int facility, const char* format, va_list args);
+    int log_message(void* instance, const source_location* location, int severity, int facility, const char* format, va_list args);
 
 public:
     const char* format_output(
@@ -118,18 +146,19 @@ private:
         message_data() = delete;
        ~message_data() = delete;
 
-        int  id;
-        char buf[1];
+        int   id;
+        void* instance;
+        char  buf[1];
     };
 
 private:
     void sync_log_message(message_data& msg);
 
-    bool compose_message(message_data& msg, std::size_t cch, const source_location* location, int severity, int facility, const char* format, va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, void* instance, const source_location* location, int severity, int facility, const char* format, va_list args);
 
     void process_message(message_data& msg);
-    void prepare_message(message_data& msg);
 
+    void prepare_message(message_data& msg);
     void consume_message(const message_data& msg);
 
     bool process_next_message();
@@ -141,6 +170,8 @@ private:
 private:
     enum : action_id_t
     {
+        ACTION_ADD_INSTANCE     ,
+        ACTION_DEL_INSTANCE     ,
         ACTION_CHANGE_LOG_QUEUE ,
         ACTION_SET_SEVERITIES   ,
         ACTION_SET_FACILITIES   ,
@@ -155,33 +186,46 @@ private:
 
     using log_queue_t = waitable_lockfree_queue<void, true, true>;
 
-    struct consumer_data_t
+    struct consumer_info
     {
         consumer_ptr_t consumer;
         bool           reentry_guard {false};
         int            id {0};
     };
+    struct instance_data : instance_info
+    {
+        std::vector<consumer_info> consumers;
+
+        std::unordered_map<int, const char*> severities;
+        std::unordered_map<int, const char*> facilities;
+    };
+    instance_data& get_data(void* instance)
+    {
+        return (instance == nullptr)
+            ? m_primary
+            : *static_cast<instance_data*>(instance);
+    }
 
 private:
     events_waiter m_msg_waiter;
 
     log_queue_t m_log_queue;
 
-    raw_buffer_t m_fmt;
-    raw_buffer_t m_txt;
+    instance_data m_primary;
 
-    std::vector<consumer_data_t> m_consumers;
-
-    std::unordered_map<int, const char*> m_severities;
-    std::unordered_map<int, const char*> m_facilities;
+    std::list  <instance_data> m_instances;
+    std::vector<consumer_info> m_consumers;
 
     std::unordered_map<tid_t, const char*> m_thread_ids;
     std::unordered_map<tid_t, int*>        m_msg_id_ptr;
 
     std::atomic<int> m_msg_id {0};
 
-    int m_severity_threshold  {100};
-    int m_consumer_id         {0};
+    int m_consumer_id {0};
+    int m_ref_count   {0};
+
+    raw_buffer_t m_fmt;
+    raw_buffer_t m_txt;
 };
 
 }

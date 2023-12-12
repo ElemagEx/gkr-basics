@@ -11,7 +11,10 @@ struct gkr_log_windows_debugger_consumer_callbacks {
     const char* (*compose_output)(void*, const struct gkr_log_message*);
 };
 
-GKR_LOG_API int gkr_log_add_windows_debugger_consumer(const gkr_log_windows_debugger_consumer_callbacks* callbacks);
+GKR_LOG_API int gkr_log_add_windows_debugger_consumer(
+    void* instance,
+    const gkr_log_windows_debugger_consumer_callbacks* callbacks
+    );
 
 #ifdef __cplusplus
 }

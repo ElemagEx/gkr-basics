@@ -11,14 +11,14 @@
 constexpr gkr::log::name_id_pair g_severities[] = COMMON_SEVERITIES_INFOS;
 constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES_INFOS;
 
-static gkr::log::logging logging(g_severities, g_facilities);
+static gkr::log::logging logging(nullptr, 0, 0, g_severities, g_facilities);
 
 #include <thread>
 
 TEST_CASE("logging.logger.defs.plog. main")
 {
-    gkr_log_del_all_consumers();
-    gkr_log_add_consumer(std::make_shared<gkr::log::app_console_consumer>());
+    gkr_log_del_all_consumers(nullptr);
+    gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::app_console_consumer>());
 
     PLOGD << "Hello log!"; // short macro
     PLOG_DEBUG << "Hello log!"; // long macro

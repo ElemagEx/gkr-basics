@@ -23,7 +23,11 @@ struct gkr_log_app_console_consumer_callbacks {
     const char* (*compose_output)(void*, const struct gkr_log_message*, int);
 };
 
-GKR_LOG_API int gkr_log_add_app_console_consumer(const gkr_log_app_console_consumer_callbacks* callbacks, int method);
+GKR_LOG_API int gkr_log_add_app_console_consumer(
+    void* instance,
+    const gkr_log_app_console_consumer_callbacks* callbacks,
+    int method
+    );
 
 #ifdef __cplusplus
 }

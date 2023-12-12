@@ -26,7 +26,7 @@ struct custom_message {
     custom_message() noexcept {
     }
     custom_message(int severity) {
-        gkr_log_custom_message_start(severity, &buf, &cch);
+        gkr_log_custom_message_start(nullptr, severity, &buf, &cch);
     }
     ~custom_message() {
         cancel();
@@ -39,19 +39,19 @@ struct custom_message {
         if(!is_started()) return 0;
         buf = nullptr;
         cch = 0;
-        return gkr_log_custom_message_finish(severity, facility);
+        return gkr_log_custom_message_finish(nullptr, severity, facility);
     }
     int finish(const char* func, const char* file, unsigned line, int severity, int facility) {
         if(!is_started()) return 0;
         buf = nullptr;
         cch = 0;
-        return gkr_log_custom_message_finish_ex(func, file, line, severity, facility);
+        return gkr_log_custom_message_finish_ex(nullptr, func, file, line, severity, facility);
     }
     int cancel() {
         if(!is_started()) return -1;
         buf = nullptr;
         cch = 0;
-        return gkr_log_custom_message_cancel();
+        return gkr_log_custom_message_cancel(nullptr);
     }
 };
 }

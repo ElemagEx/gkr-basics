@@ -33,6 +33,11 @@ bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
+    if(running())
+    {
+        errno = EEXIST;
+        return false;
+    }
     Check_ValidState(!m_thread.joinable(), false);
 
     m_thread = std::thread([this] () { thread_proc(); });
@@ -40,7 +45,9 @@ bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
     m_work_event.fire();
     m_done_event.wait();
 
-    return running();
+    if(running()) return true;
+    errno = ECANCELED;
+    return false;
 }
 
 bool worker_thread::join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT)

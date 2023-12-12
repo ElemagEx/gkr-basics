@@ -78,7 +78,7 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
 #if 0
 TEST_CASE("logging.logger. main")
 {
-    gkr_log_init(g_severities_infos, g_facilities_infos, 16, 1023/*63*/);
+    gkr_log_init(nullptr, 16, 1023/*63*/, g_severities_infos, g_facilities_infos);
 
     gkr_log_add_consumer(std::make_shared<console_consumer>());
 

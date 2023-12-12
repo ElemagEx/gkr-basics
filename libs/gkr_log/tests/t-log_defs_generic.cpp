@@ -22,7 +22,7 @@
 constexpr gkr::log::name_id_pair g_severities[] = COMMON_SEVERITIES_INFOS;
 constexpr gkr::log::name_id_pair g_facilities[] = COMMON_FACILITIES_INFOS;
 
-static gkr::log::logging logging(g_severities, g_facilities, 256);
+static gkr::log::logging logging(nullptr, 0, 256, g_severities, g_facilities);
 
 #include <thread>
 
@@ -30,8 +30,8 @@ static int N = 0;
 
 TEST_CASE("logging.logger.defs.generic. main")
 {
-    gkr_log_del_all_consumers();
-    gkr_log_add_consumer(std::make_shared<gkr::log::app_console_consumer>());
+    gkr_log_del_all_consumers(nullptr);
+    gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::app_console_consumer>());
 
 #ifdef _WIN32
     gkr_log_win32_format_message(ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error: ");

@@ -11,6 +11,7 @@ struct gkr_log_udp_socket_consumer_callbacks {
 };
 
 GKR_LOG_API int gkr_log_add_udp_socket_consumer(
+    void* instance,
     const gkr_log_udp_socket_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,

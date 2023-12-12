@@ -13,6 +13,7 @@ struct gkr_log_message
     unsigned    sourceLine;
     unsigned    messageLen;
     const char* messageText;
+    const char* moduleName;
     const char* threadName;
     const char* severityName;
     const char* facilityName;
@@ -44,7 +45,7 @@ struct gkr_log_consumer_callbacks
     void (*consume_log_message)(void*, const struct gkr_log_message*);
 };
 
-GKR_LOG_API int gkr_log_add_c_consumer(const struct gkr_log_consumer_callbacks* callbacks);
+GKR_LOG_API int gkr_log_add_c_consumer(void* instance, const struct gkr_log_consumer_callbacks* callbacks);
 
 GKR_LOG_API unsigned gkr_log_apply_time_format(
     char* buf,

@@ -420,7 +420,7 @@ bool logger::start_log_message(void* instance, int severity, char*& buf, unsigne
 
     Check_ValidState(running(), false);
 
-    Check_ValidState(!in_worker_thread(), false);//???
+    Check_ValidState(!in_worker_thread(), false);//TODO:???
 
     instance_data& data = get_data(instance);
 
@@ -430,7 +430,7 @@ bool logger::start_log_message(void* instance, int severity, char*& buf, unsigne
 
     Check_ValidState(element.push_in_progress(), false);
 
-    Assert_Check(element.get_element_size() > sizeof(message_data));
+    Assert_Check(element.size() > sizeof(message_data));
 
     message_data& msg = element.as<message_data>();
 
@@ -445,9 +445,11 @@ int logger::cancel_log_message(void* instance)
 {
     Check_NotNullPtr(thread_local_element, -1);
 
-    m_log_queue.cancel_producer_element_ownership(thread_local_element);
+    queue_producer_element<log_queue_t> element(m_log_queue, thread_local_element);
 
     thread_local_element = nullptr;
+
+    element.cancel_push();
     return 0;
 }
 

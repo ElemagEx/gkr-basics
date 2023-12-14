@@ -16,7 +16,7 @@
 #ifndef GKR_GALERY_PLOG
 
 #define PLOG_CSV_HEAD           "Date;Time;Severity;TID;This;Function;Message"
-#define PLOG_CSV_FORMAT         "%Y/%m/%d;%T:$R003$$S_MS$;$SNAM$;$T_ID$;0;$FILE$@$LINE$;\"$TEXT$\""
+#define PLOG_CSV_FORMAT         "$IS00$%Y/%m/%d;%T:$R003$$S_MS$;$SNAM$;$T_ID$;0;$FILE$@$LINE$;\"$TEXT$\"$IS01$"
 
 #define PLOG_FULL_MSG_FORMAT    "$IS00$%F %T:$R003$$S_MS$ $P 05$$SNAM$ [$T_ID$] [$FUNC$@$LINE$] $TEXT$$IS01$"
 #define PLOG_FUNC_MSG_FORMAT    "$IS00$$FUNC$@$LINE$: $TEXT$$IS01$"

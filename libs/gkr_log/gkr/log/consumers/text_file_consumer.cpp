@@ -1,11 +1,14 @@
 #include "text_file_consumer.hpp"
 
-#include <gkr/stamp.hpp>
 #include <gkr/diagnostics.h>
+#include <gkr/stamp.hpp>
+
 #include <gkr/log/galery.hpp>
 #include <gkr/log/logging.hpp>
+
 #include <gkr/sys/process.hpp>
 #include <gkr/sys/path.hpp>
+#include <gkr/sys/file.hpp>
 
 #include <cstdio>
 
@@ -156,6 +159,7 @@ text_file_consumer::text_file_consumer(
     )
     : m_eoln(calc_eoln(eoln))
 {
+    if(filepath != nullptr) m_path = filepath;
 }
 
 text_file_consumer::~text_file_consumer()
@@ -165,16 +169,19 @@ text_file_consumer::~text_file_consumer()
 
 bool text_file_consumer::init_logging()
 {
-    constexpr unsigned cch = 256;
-    char buf[cch];
+    if(m_path.empty())
+    {
+        constexpr unsigned cch = 256;
+        char buf[cch];
 
-    const unsigned head_len = unsigned(sys::get_current_process_path(buf, cch));
-    if(head_len >= cch) return false;
+        const unsigned head_len = unsigned(sys::get_current_process_path(buf, cch));
+        if(head_len >= cch) return false;
 
-    unsigned tail_len = gkr_log_apply_time_format(buf + head_len, cch - head_len, "_%F_%T.log", stamp_now(), 0);
-    if(tail_len == 0) return false;
+        unsigned tail_len = gkr_log_apply_time_format(buf + head_len, cch - head_len, "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
+        if(tail_len == 0) return false;
 
-    m_path = buf;
+        m_path = buf;
+    }
     open();
     return true;
 }
@@ -287,8 +294,10 @@ void text_file_consumer::open()
 {
     m_file = std::fopen(m_path.c_str(), "ab");
 
-    if(m_file == nullptr) return; //TODO:Log
-
+    if(m_file == nullptr)
+    {
+        return sys::file_report_error(errno);
+    }
     fpos_t pos;
     fgetpos(static_cast<std::FILE*>(m_file), &pos);
     m_size = gkr_log_tfs(pos);
@@ -311,9 +320,15 @@ void text_file_consumer::close()
         on_file_closing();
         m_flags &= ~text_file_flag_prevent_open_close_events;
     }
-    std::fclose(static_cast<std::FILE*>(m_file));
+
+    std::FILE* file = static_cast<std::FILE*>(m_file);
 
     m_file = nullptr;
+
+    if(std::fclose(file))
+    {
+        sys::file_report_error(errno);
+    }
 }
 
 }

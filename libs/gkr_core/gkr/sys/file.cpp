@@ -1,6 +1,9 @@
 #include "file.hpp"
 
-#include <stdio.h>
+#include <gkr/diagnostics.h>
+
+#include <cstdio>
+#include <cstring>
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -11,6 +14,22 @@ namespace gkr
 {
 namespace sys
 {
+
+void file_report_error(int error, unsigned* errors)
+{
+    if(errors != nullptr)
+    {
+        unsigned err = unsigned(-1);
+        if((*errors & err) != 0)
+        {
+            *errors = err;
+            return;
+        }
+    }
+    [[maybe_unused]] auto text = std::strerror(error);
+    //TODO:change Check_Failure with log
+    Check_Failure();
+}
 
 bool file_is_atty(void* file)
 {

@@ -18,3 +18,11 @@ TEST_CASE("sys.path. insert_ext")
     path = path_insert_ext(path.c_str(), "doc", +1); CHECK(path == "/dir/xyz.doc.txt.exe");
     path = path_insert_ext(path.c_str(), "cpp", -1); CHECK(path == "/dir/xyz.doc.txt.cpp.exe");
 }
+
+TEST_CASE("sys.path. has_extension")
+{
+    using namespace gkr::sys;
+
+    CHECK( path_has_extension("/home/user/file.txt", "txt"));
+    CHECK(!path_has_extension("/home/user/file.txt", "json"));
+}

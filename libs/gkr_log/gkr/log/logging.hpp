@@ -48,29 +48,106 @@ private:
 
 namespace impl
 {
-template<class Parent, typename Function, typename... Args>
-class template_consumer : public Parent
+template<class Consumer, typename FuncFilter, typename... Args>
+class template_filter_consumer : public Consumer
 {
-    Function m_consume;
+    FuncFilter m_filter;
+
+    virtual bool filter_log_message(const message& msg) override
+    {
+        return m_filter(msg);
+    }
+public:
+    template_filter_consumer(FuncFilter filter, Args&&... args) : Consumer(std::forward<Args>(args)...), m_filter(filter)
+    {
+    }
+};
+template<class Consumer, typename FuncCompose, typename... Args>
+class template_composer_consumer : public Consumer
+{
+    FuncCompose m_compose;
 
     virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
     {
-        return m_consume(msg, len, colored);
+        return m_compose(msg, len, colored);
     }
 public:
-    template_consumer(Function consume, Args&&... args) : Parent(std::forward<Args>(args)...), m_consume(consume)
+    template_composer_consumer(FuncCompose compose, Args&&... args) : Consumer(std::forward<Args>(args)...), m_compose(compose)
+    {
+    }
+};
+template<class TextFileConsumer, typename FuncCompose, typename FuncEvent1, typename FuncEvent2, typename FuncEvent3, typename FuncEvent4, typename... Args>
+class template_text_file_consumer : public TextFileConsumer
+{
+    FuncCompose m_compose;
+    FuncEvent1  m_on_opened;
+    FuncEvent2  m_on_closing;
+    FuncEvent3  m_on_enter;
+    FuncEvent4  m_on_leave;
+
+    virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
+    {
+        return m_compose(msg, len, colored);
+    }
+    virtual void on_file_opened     () override { m_on_opened (*this); }
+    virtual void on_file_closing    () override { m_on_closing(*this); }
+    virtual void on_enter_file_write() override { m_on_enter  (*this); }
+    virtual void on_leave_file_write() override { m_on_leave  (*this); }
+public:
+    template_text_file_consumer(
+        FuncCompose compose,
+        FuncEvent1 on_opened,
+        FuncEvent2 on_closing,
+        FuncEvent3 on_enter,
+        FuncEvent4 on_leave,
+        Args&&... args
+        )
+        : TextFileConsumer(std::forward<Args>(args)...)
+        , m_compose   (compose   )
+        , m_on_opened (on_opened )
+        , m_on_closing(on_closing)
+        , m_on_enter  (on_enter  )
+        , m_on_leave  (on_leave  )
     {
     }
 };
 }
 
-template<class Parent, typename Function, typename... Args>
-inline int add_consumer(void* instance, Function consume, Args&&... args)
+template<class Consumer, typename FuncCompose, typename... Args>
+inline int add_composer_consumer(void* instance, FuncCompose compose, Args&&... args)
 {
     return gkr_log_add_consumer(
         instance,
         consumer_ptr_t(
-            new impl::template_consumer<Parent, Function, Args...>(consume, std::forward<Args>(args)...))
+            new impl::template_composer_consumer<Consumer, FuncCompose, Args...>(
+                compose,
+                std::forward<Args>(args)...)
+                )
+        );
+}
+
+template<class TextFileConsumer, typename FuncCompose, typename FuncEvent1, typename FuncEvent2, typename FuncEvent3, typename FuncEvent4, typename... Args>
+inline int add_text_file_consumer(
+    void* instance,
+    FuncCompose compose,
+    FuncEvent1 on_opened,
+    FuncEvent2 on_closing,
+    FuncEvent3 on_enter,
+    FuncEvent4 on_leave,
+    Args&&... args
+    )
+{
+    return gkr_log_add_consumer(
+        instance,
+        consumer_ptr_t(
+            new impl::template_text_file_consumer<TextFileConsumer, FuncCompose, FuncEvent1, FuncEvent2, FuncEvent3, FuncEvent4, Args...>(
+                compose,
+                on_opened,
+                on_closing,
+                on_enter,
+                on_leave,
+                std::forward<Args>(args)...)
+                )
         );
 }
 

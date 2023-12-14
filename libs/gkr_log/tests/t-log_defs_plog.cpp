@@ -20,7 +20,9 @@ TEST_CASE("logging.logger.defs.plog. main")
 {
     gkr_log_del_all_consumers(nullptr);
 
-    plog_add_appender_color_console<plog_formatter_txt_utc>();
+//  plog_add_appender_color_console<plog_formatter_txt_utc>();
+
+    plog_add_appender_rolling_file<plog_formatter_csv_utc>(nullptr, "text.log", 1024, 4);
 
     PLOGD << "Hello log!"; // short macro
     PLOG_DEBUG << "Hello log!"; // long macro

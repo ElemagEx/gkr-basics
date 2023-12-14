@@ -24,6 +24,28 @@ namespace gkr
 namespace sys
 {
 
+GKR_INNER_API bool path_has_extension(const char* path, const char* ext)
+{
+    Check_Arg_NotNull(path, false);
+    Check_Arg_NotNull(ext , false);
+
+    const char* name = path_file_begin(path);
+
+    if(*ext == 0)
+    {
+        return (std::strchr(name, '.') == nullptr);
+    }
+    else
+    {
+        const char* pos = std::strrchr(name, '.');
+
+        return (pos == nullptr)
+            ? false
+            : !std::strcmp(ext, pos + 1)
+            ;
+    }
+}
+
 GKR_INNER_API std::string path_insert_ext(const char* path, const char* ext, int order)
 {
     Check_Arg_NotNull(path     , {});

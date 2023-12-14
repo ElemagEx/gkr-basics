@@ -23,7 +23,7 @@ stamp_t gkr_stamp_now()
 
 int gkr_stamp_decompose(int local, stamp_t stamp, struct tm* tm)
 {
-    Check_Arg_NotNull(tm, (errno=EINVAL), -1);
+    Check_Arg_NotNull(tm, -1);
 
     const auto nanoseconds = std::chrono::nanoseconds(stamp);
 

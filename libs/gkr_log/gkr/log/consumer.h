@@ -20,16 +20,15 @@ struct gkr_log_message
 };
 enum
 {
-    gkr_log_fo_flag_default           = 0x0000,
-    gkr_log_fo_flag_use_inserts       = 0x0001,
-    gkr_log_fo_flag_use_padding       = 0x0002,
-    gkr_log_fo_flag_use_coloring      = 0x0004,
-    gkr_log_fo_flag_use_utc_time      = 0x0008,
-    gkr_log_fo_flag_ignore_time_fmt   = 0x0010,
-    gkr_log_fo_flag_ignore_text_fmt   = 0x0020,
-    gkr_log_fo_flag_unescape_text     = 0x0100,
-    gkr_log_fo_flag_escape_text_ascii = 0x0200,
-//  gkr_log_fo_flag_escape_text_utf8  = 0x0400,
+    gkr_log_fo_flag_default            = 0x0000,
+    gkr_log_fo_flag_use_inserts        = 0x0001,
+    gkr_log_fo_flag_use_padding        = 0x0002,
+    gkr_log_fo_flag_use_coloring       = 0x0004,
+    gkr_log_fo_flag_use_utc_time       = 0x0008,
+    gkr_log_fo_flag_ignore_time_fmt    = 0x0010,
+    gkr_log_fo_flag_ignore_text_fmt    = 0x0020,
+    gkr_log_fo_flag_unescape_text      = 0x0100,
+    gkr_log_fo_flag_escape_text_dquote = 0x0200,
 };
 
 #ifdef __cplusplus

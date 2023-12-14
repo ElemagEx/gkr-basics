@@ -359,7 +359,7 @@ bool logger::del_consumer(void* instance, consumer_ptr_t consumer, int id)
 
 bool logger::del_all_consumers(void* instance)
 {
-    Check_ValidState(joinable(), );
+    Check_ValidState(joinable(), false);
 
     if(!in_worker_thread())
     {

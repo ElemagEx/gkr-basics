@@ -117,18 +117,28 @@ bool copy_fmt_text(std::size_t count, char*& buf, std::size_t& cap, const char*&
     fmt += count; len -= count;
     return true;
 }
-bool copy_msg_txt(std::size_t count, char*& buf, std::size_t& cap, const char* text)
+bool copy_msg_txt(std::size_t count, char*& buf, std::size_t& cap, const char* text, int flags)
 {
-    if(count >= cap) return false;
+    if((flags & gkr_log_fo_flag_escape_text_dquote) == 0)
+    {
+        return copy_fmt_text(count, buf, cap, text, count);
+    }
+    for( ; ; )
+    {
+        const char* found = std::strchr(text, '\"');
 
-    std::memcpy(buf, text, count);
-
-    buf += count; cap -= count;
-    return true;
+        if((found == nullptr) || std::size_t(found - text) >= count)
+        {
+            return copy_fmt_text(count, buf, cap, text, count);
+        }
+        if(!copy_fmt_text(std::size_t(found - text), buf, cap, text, count)) return false;
+        if(!copy_str_text(2, buf, cap, "\\\"")) return false;
+        advance_format(1, text, count);
+    }
 }
 bool copy_pad_txt(char ch, int& padding, char*& buf, std::size_t& cap, const char* text, std::size_t len, int flags)
 {
-    Check_Arg_NotNull(text, (errno = EINVAL), false);
+    Check_Arg_NotNull(text, false);
 
     if((flags & gkr_log_fo_flag_use_padding) == 0) padding = 0;
 
@@ -230,10 +240,10 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
 
     const std::size_t index = (row * cols) + col;
 
-    Check_Arg_NotNull(args       , (errno = EINVAL), false);
-    Check_Arg_IsValid(cols > col , (errno = EINVAL), false);
-    Check_Arg_IsValid(rows > row , (errno = EINVAL), false);
-    Check_Arg_NotNull(args[index], (errno = EINVAL), false);
+    Check_Arg_NotNull(args       , false);
+    Check_Arg_IsValid(cols > col , false);
+    Check_Arg_IsValid(rows > row , false);
+    Check_Arg_NotNull(args[index], false);
 
     const char* arg = args[index];
 
@@ -262,9 +272,9 @@ int gkr_log_add_c_consumer(void* instance, const struct gkr_log_consumer_callbac
 
 unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, long long stamp, int flags)
 {
-    Check_Arg_NotNull(fmt    , (errno = EINVAL), 0U);
-    Check_Arg_NotNull(buf    , (errno = EINVAL), 0U);
-    Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0U);
+    Check_Arg_NotNull(fmt    , 0U);
+    Check_Arg_NotNull(buf    , 0U);
+    Check_Arg_IsValid(cch > 0, 0U);
 
     if((*fmt == 0) || ((flags & gkr_log_fo_flag_ignore_time_fmt) != 0))
     {
@@ -290,10 +300,10 @@ unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, lon
 
 unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned cols, unsigned rows)
 {
-    Check_Arg_NotNull(msg    , (errno = EINVAL), 0U);
-    Check_Arg_NotNull(fmt    , (errno = EINVAL), 0U);
-    Check_Arg_NotNull(buf    , (errno = EINVAL), 0U);
-    Check_Arg_IsValid(cch > 0, (errno = EINVAL), 0U);
+    Check_Arg_NotNull(msg    , 0U);
+    Check_Arg_NotNull(fmt    , 0U);
+    Check_Arg_NotNull(buf    , 0U);
+    Check_Arg_IsValid(cch > 0, 0U);
 
     const bool local = ((flags & gkr_log_fo_flag_use_utc_time) == 0);
 
@@ -349,7 +359,7 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
             default:
                 switch(make_four_cc(fmt - 6))
                 {
-                    case FOUR_CC_TEXT: if(copy_msg_txt(msg->messageLen, buf, cap, msg->messageText)) continue; break;
+                    case FOUR_CC_TEXT: if(copy_msg_txt(msg->messageLen, buf, cap, msg->messageText, flags)) continue; break;
 
                     case FOUR_CC_MNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->moduleName  , 0, flags)) continue; break;
                     case FOUR_CC_TNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->threadName  , 0, flags)) continue; break;

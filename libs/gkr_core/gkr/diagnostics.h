@@ -256,6 +256,10 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 
 #endif /* DIAG_EXTERNAL_API */
 
+#define DIAG_ARG_STMT errno = EINVAL
+#define DIAG_ARG_COND ((DIAG_ARG_STMT) != 0)
+#define DIAG_ARG_WARN DIAG_ARG_COND && DIAG_WARN
+
 //
 // Assert_xxx
 //
@@ -304,7 +308,7 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 
 #elif (DIAG_MODE == DIAG_MODE_SILENT)
 //
-// Checks are silint
+// Checks are silent
 //
 #define Check_NotNullPtr(ptr,    ...)   if((ptr)==DIAG_NULL) return __VA_ARGS__
 #define Check_ValidState(check,  ...)   if(!(check))         return __VA_ARGS__
@@ -312,9 +316,9 @@ inline int diag_cpp_warn(int, const char*, const std::stacktrace&) noexcept
 #define Check_Failure(           ...)                        return __VA_ARGS__
 #define Check_Recovery(msg          )   DIAG_NOOP
 
-#define Check_Arg_IsValid(check, ...)   if(!(check))         return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if((ptr)==DIAG_NULL) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                        return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_ARG_COND) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_ARG_COND) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                            DIAG_ARG_STMT; return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
@@ -334,16 +338,16 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)) return __VA_ARGS__
 #define Check_Failure(           ...)                            DIAG_WARN(DIAG_ID_CHECK_FAILURE  , NULL   DIAG_SRC_LOCATION); return __VA_ARGS__
 #define Check_Recovery(msg          )                         if(DIAG_WARN(DIAG_ID_CHECK_RECOVERY , msg    DIAG_SRC_LOCATION)) DIAG_NOOP
 
-#define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_WARN(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
-#define Check_Arg_Invalid(arg,   ...)                            DIAG_WARN(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Arg_IsValid(check, ...)   if(!(check)           && DIAG_ARG_WARN(DIAG_ID_ARG_NOT_VALID  , #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_NotNull(ptr,   ...)   if(((ptr)==DIAG_NULL) && DIAG_ARG_WARN(DIAG_ID_ARG_IS_NULL    , #ptr   DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Arg_Invalid(arg,   ...)                            DIAG_ARG_WARN(DIAG_ID_ARG_FAILURE    , #arg   DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #ifdef __cplusplus
 #define Check_Arg_Array(ndx, cnt, check, ...) \
-for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+for(decltype(cnt) ndx = 0; ndx < (cnt); ++ndx) if(!(check) && DIAG_ARG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #else
 #define Check_Arg_Array(ndx, cnt, check, ...) \
-for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
+for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check) && DIAG_ARG_WARN(DIAG_ID_ARG_BAD_ARRAY, #check DIAG_SRC_LOCATION)) return __VA_ARGS__
 #endif
 
 #elif (DIAG_MODE == DIAG_MODE_INTRUSIVE)

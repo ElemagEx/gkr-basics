@@ -5,6 +5,7 @@
 #include <gkr/log/galery.hpp>
 #include <gkr/log/logging.hpp>
 #include <gkr/sys/process.hpp>
+#include <gkr/sys/path.hpp>
 
 #include <cstdio>
 
@@ -33,9 +34,12 @@ public:
 protected:
     virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
     {
-        if(m_callbacks.compose_output != nullptr) {
+        if(m_callbacks.compose_output != nullptr)
+        {
             return (*m_callbacks.compose_output)(m_callbacks.param, &msg, len, colored);
-        } else {
+        }
+        else
+        {
             return text_file_consumer::compose_output(msg, len, colored);
         }
     }
@@ -43,34 +47,30 @@ protected:
 protected:
     virtual void on_file_opened() override
     {
-        if(m_callbacks.on_file_opened != nullptr) {
-            return (*m_callbacks.on_file_opened)(m_callbacks.param);
-        } else {
-            return text_file_consumer::on_file_opened();
+        if(m_callbacks.on_file_opened != nullptr)
+        {
+            return (*m_callbacks.on_file_opened)(m_callbacks.param, this);
         }
     }
     virtual void on_file_closing() override
     {
-        if(m_callbacks.on_file_closing != nullptr) {
-            return (*m_callbacks.on_file_closing)(m_callbacks.param);
-        } else {
-            return text_file_consumer::on_file_closing();
+        if(m_callbacks.on_file_closing != nullptr)
+        {
+            return (*m_callbacks.on_file_closing)(m_callbacks.param, this);
         }
     }
     virtual void on_enter_file_write() override
     {
-        if(m_callbacks.on_enter_file_write != nullptr) {
-            return (*m_callbacks.on_enter_file_write)(m_callbacks.param);
-        } else {
-            return text_file_consumer::on_enter_file_write();
+        if(m_callbacks.on_enter_file_write != nullptr)
+        {
+            return (*m_callbacks.on_enter_file_write)(m_callbacks.param, this);
         }
     }
     virtual void on_leave_file_write() override
     {
-        if(m_callbacks.on_leave_file_write != nullptr) {
-            return (*m_callbacks.on_leave_file_write)(m_callbacks.param);
-        } else {
-            return text_file_consumer::on_leave_file_write();
+        if(m_callbacks.on_leave_file_write != nullptr)
+        {
+            return (*m_callbacks.on_leave_file_write)(m_callbacks.param, this);
         }
     }
 };
@@ -87,6 +87,26 @@ int gkr_log_add_text_file_consumer(
     )
 {
     return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_text_file_consumer>(callbacks, filepath, eoln));
+}
+
+gkr_log_tfs gkr_log_text_file_get_size(void* arg)
+{
+    return static_cast<gkr::log::text_file_consumer*>(arg)->get_size();
+}
+
+const char* gkr_log_text_file_get_path(void* arg)
+{
+    return static_cast<gkr::log::text_file_consumer*>(arg)->get_path();
+}
+
+void gkr_log_text_file_write_line(void* arg, const char* line, unsigned len)
+{
+    return static_cast<gkr::log::text_file_consumer*>(arg)->write_line(line, len);
+}
+
+void gkr_log_text_file_roll(void* arg, unsigned max_files)
+{
+    return static_cast<gkr::log::text_file_consumer*>(arg)->roll(max_files);
 }
 
 }
@@ -117,6 +137,12 @@ inline void output_to_text_file(std::FILE* file, const char* text, unsigned len)
 {
     std::fwrite(text, sizeof(char), len, file);
 }
+enum
+{
+    text_file_flag_prevent_open_close_events = 0x0001,
+    text_file_flag_prevent_write_line_events = 0x0002,
+    text_file_flag_prevent_recursive_roll    = 0x0004,
+};
 }
 
 namespace gkr
@@ -129,13 +155,12 @@ text_file_consumer::text_file_consumer(
     int eoln
     )
     : m_eoln(calc_eoln(eoln))
-    , m_file(nullptr)
 {
 }
 
 text_file_consumer::~text_file_consumer()
 {
-    close_file();
+    close();
 }
 
 bool text_file_consumer::init_logging()
@@ -149,13 +174,14 @@ bool text_file_consumer::init_logging()
     unsigned tail_len = gkr_log_apply_time_format(buf + head_len, cch - head_len, "_%F_%T.log", stamp_now(), 0);
     if(tail_len == 0) return false;
 
-    m_name = buf;
-    return open_file();
+    m_path = buf;
+    open();
+    return true;
 }
 
 void text_file_consumer::done_logging()
 {
-    close_file();
+    close();
 }
 
 bool text_file_consumer::filter_log_message(const message& msg)
@@ -168,12 +194,7 @@ void text_file_consumer::consume_log_message(const message& msg)
     unsigned len;
     const char* output = compose_output(msg, &len);
 
-    std::FILE* file = static_cast<std::FILE*>(m_file);
-
-    on_enter_file_write();
-    output_to_text_file(file, output, len);
-    output_to_text_file(file, reinterpret_cast<const char*>(&m_eoln), get_eoln_len(m_eoln));
-    on_leave_file_write();
+    write_line(output, len);
 }
 
 const char* text_file_consumer::compose_output(const message& msg, unsigned* len, bool colored)
@@ -197,26 +218,102 @@ void text_file_consumer::on_leave_file_write()
 {
 }
 
-bool text_file_consumer::open_file()
+void text_file_consumer::write_line(const char* line, unsigned len)
 {
-    m_file = std::fopen(m_name.c_str(), "wb");
+    Check_Arg_IsValid((line != nullptr) || (len == 0), );
 
-    if(m_file != nullptr)
+    if(m_file == nullptr) return;
+
+    std::FILE* file = static_cast<std::FILE*>(m_file);
+
+    if((m_flags & text_file_flag_prevent_write_line_events) == 0)
     {
-        return false;
+        m_flags |=  text_file_flag_prevent_write_line_events;
+        on_enter_file_write();
+        m_flags &= ~text_file_flag_prevent_write_line_events;
     }
-    on_file_opened();
-    return true;
+    output_to_text_file(file, line, len);
+    m_size += len;
+
+    len = get_eoln_len(m_eoln);
+    output_to_text_file(file, reinterpret_cast<const char*>(&m_eoln), len);
+    m_size += len;
+
+    if((m_flags & text_file_flag_prevent_write_line_events) == 0)
+    {
+        m_flags |=  text_file_flag_prevent_write_line_events;
+        on_leave_file_write();
+        m_flags &= ~text_file_flag_prevent_write_line_events;
+    }
 }
 
-void text_file_consumer::close_file()
+void text_file_consumer::roll(unsigned max_files)
 {
-    if(m_file != nullptr)
+    Check_Arg_IsValid(max_files > 0, );
+
+    if((m_flags & text_file_flag_prevent_recursive_roll) != 0) return;
+
+    m_flags |= text_file_flag_prevent_recursive_roll;
+
+    close();
+
+    if(max_files <= 1)
     {
-        on_file_closing();
-        std::fclose(static_cast<std::FILE*>(m_file));
-        m_file = nullptr;
+        remove(m_path.c_str());
     }
+    else
+    {
+        char num[12];
+        snprintf(num, sizeof(num), "%u", --max_files);
+        std::string next_path = sys::path_insert_ext(m_path.c_str(), num, 1);
+
+        remove(next_path.c_str());
+
+        while(max_files > 1)
+        {
+            snprintf(num, sizeof(num), "%u", --max_files);
+            std::string prev_path = sys::path_insert_ext(m_path.c_str(), num, 1);
+            if(std::rename(prev_path.c_str(), next_path.c_str())) std::remove(prev_path.c_str()); //TODO:LOG and/or CHECK - https://learn.microsoft.com/en-us/cpp/code-quality/c6031
+            next_path = std::move(prev_path);
+        }
+        if(!std::rename(m_path.c_str(), next_path.c_str())) std::remove(m_path.c_str()); //TODO:LOG and/or CHECK - https://learn.microsoft.com/en-us/cpp/code-quality/c6031
+    }
+    open();
+
+    m_flags &= ~text_file_flag_prevent_recursive_roll;
+}
+
+void text_file_consumer::open()
+{
+    m_file = std::fopen(m_path.c_str(), "ab");
+
+    if(m_file == nullptr) return; //TODO:Log
+
+    fpos_t pos;
+    fgetpos(static_cast<std::FILE*>(m_file), &pos);
+    m_size = gkr_log_tfs(pos);
+
+    if((m_flags & text_file_flag_prevent_open_close_events) == 0)
+    {
+        m_flags |=  text_file_flag_prevent_open_close_events;
+        on_file_opened();
+        m_flags &= ~text_file_flag_prevent_open_close_events;
+    }
+}
+
+void text_file_consumer::close()
+{
+    if(m_file == nullptr) return;
+
+    if((m_flags & text_file_flag_prevent_open_close_events) == 0)
+    {
+        m_flags |=  text_file_flag_prevent_open_close_events;
+        on_file_closing();
+        m_flags &= ~text_file_flag_prevent_open_close_events;
+    }
+    std::fclose(static_cast<std::FILE*>(m_file));
+
+    m_file = nullptr;
 }
 
 }

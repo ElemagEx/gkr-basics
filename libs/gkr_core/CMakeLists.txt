@@ -42,6 +42,7 @@ target_sources(
     INTERFACE
     "gkr/misc/union_cast.hpp"
     "gkr/misc/stack_args_order.hpp"
+    "gkr/sys/path.hpp"
     "gkr/sys/file.hpp"
     "gkr/sys/thread.hpp"
     "gkr/sys/process.hpp"
@@ -56,6 +57,7 @@ target_sources(
     PRIVATE
     "gkr/stamp.cpp"
     "gkr/concurency/worker_thread.cpp"
+    "gkr/sys/path.cpp"
     "gkr/sys/file.cpp"
     "gkr/sys/thread.cpp"
     "gkr/sys/process.cpp"
@@ -63,3 +65,7 @@ target_sources(
     "gkr/net/address.cpp"
     "gkr/net/socket.cpp"
 )
+
+if(GKR_BASICS_TESTS)
+add_subdirectory(tests)
+endif()

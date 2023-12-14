@@ -629,6 +629,7 @@ private:
 private:
     long long                m_ns_to_wait {initial_ns_to_wait};
     std::atomic<std::size_t> m_op_threads {0};
+    std::atomic<std::size_t> m_op_pausers {0};
 
 protected:
     queue_pausing() noexcept(std::is_nothrow_default_constructible<base_t>::value) = default;
@@ -638,6 +639,7 @@ protected:
         : base_t(other)
         , m_ns_to_wait(std::exchange(other.m_ns_to_wait, initial_ns_to_wait))
         , m_op_threads(other.m_op_threads.exchange(0))
+        , m_op_pausers(other.m_op_pausers.exchange(0))
     {
     }
     queue_pausing& operator=(queue_pausing&& other) noexcept(std::is_nothrow_move_assignable<base_t>::value)
@@ -647,6 +649,7 @@ protected:
         m_ns_to_wait = std::exchange(other.m_ns_to_wait, initial_ns_to_wait);
 
         m_op_threads = other.m_op_threads.exchange(0);
+        m_op_pausers = other.m_op_pausers.exchange(0);
         return *this;
     }
 
@@ -657,6 +660,7 @@ protected:
         std::swap(m_ns_to_wait, other.m_ns_to_wait);
 
         m_op_threads = other.m_op_threads.exchange(m_op_threads);
+        m_op_pausers = other.m_op_pausers.exchange(m_op_pausers);
     }
 
 protected:
@@ -668,35 +672,40 @@ protected:
 private:
     void enter_pause_prevention() noexcept
     {
-        while(++m_op_threads > max_op_threads)
+        for( ; ; m_op_threads--)
         {
-            --m_op_threads;
-            wait_a_while();
+            while(m_op_pausers > 0)
+            {
+                wait_a_while();
+            }
+            if(m_op_threads++ < max_op_threads) break;
         }
     }
     void leave_pause_prevention() noexcept
     {
-        --m_op_threads;
+        m_op_threads--;
     }
 
 private:
-    void pause() noexcept
+    void pause(bool pause_from_current_pause_prevention_thread) noexcept
     {
-        for( ; ; )
+        for(m_op_pausers++; ; )
         {
-            std::size_t expected = 0;
+            std::size_t expected = pause_from_current_pause_prevention_thread ? 1U : 0;
             if(m_op_threads.compare_exchange_strong(expected, max_op_threads)) break;
             wait_a_while();
         }
     }
-    void resume() noexcept
+    void resume(bool pause_from_current_pause_prevention_thread) noexcept
     {
-        m_op_threads -= max_op_threads;
+        std::size_t correction = pause_from_current_pause_prevention_thread ? 1U : 0;
+        m_op_threads -= (max_op_threads - correction);
+        m_op_pausers--;
     }
 
 private:
     friend class prevent_pause_sentry;
-    friend class pause_resume_sentry;
+    friend class  pause_resume_sentry;
 
 protected:
     class prevent_pause_sentry
@@ -722,10 +731,11 @@ protected:
         pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
 
         queue_pausing& m_qp;
+        const bool     m_ex;
     public:
         [[nodiscard]] explicit
-        pause_resume_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.pause (); }
-       ~pause_resume_sentry()                             { m_qp.resume(); }
+        pause_resume_sentry(queue_pausing& qp, bool ex) : m_qp(qp), m_ex(ex) { m_qp.pause (m_ex); }
+       ~pause_resume_sentry()                                                { m_qp.resume(m_ex); }
     };
 
 public:
@@ -1001,20 +1011,6 @@ protected:
         if(m_consumer_tid_owner == current_tid) --count;
 
         return (count == 0);
-    }
-    bool some_thread_owns_element() const noexcept
-    {
-        return (m_producer_tid_owner != 0) || (m_consumer_tid_owner != 0);
-    }
-    bool all_elemenets_with_ownerships_are(std::size_t count) const noexcept
-    {
-        switch(count)
-        {
-            default:
-            case 2 : return (m_producer_tid_owner != 0) && (m_consumer_tid_owner != 0);
-            case 1 : return (m_producer_tid_owner == 0) != (m_consumer_tid_owner == 0);
-            case 0 : return (m_producer_tid_owner == 0) && (m_consumer_tid_owner == 0);
-        }
     }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
@@ -1496,31 +1492,13 @@ protected:
         {
             if(m_entries[index].tid_owner == current_tid)
             {
-                if(std::ptrdiff_t(--count) < 0)
+                if(count-- == 0)
                 {
                     return false;
                 }
             }
         }
         return (count == 0);
-    }
-    bool some_thread_owns_element() const noexcept
-    {
-        const std::size_t busy_count = (m_busy_tail - m_busy_head);
-        const std::size_t free_count = (m_free_tail - m_free_head);
-
-        const std::size_t idle_count = busy_count + free_count;
-
-        return ((m_capacity - idle_count) == 0);
-    }
-    bool all_elemenets_with_ownerships_are(std::size_t count) const noexcept
-    {
-        const std::size_t busy_count = (m_busy_tail - m_busy_head);
-        const std::size_t free_count = (m_free_tail - m_free_head);
-
-        const std::size_t idle_count = busy_count + free_count;
-
-        return ((m_capacity - idle_count) == count);
     }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
@@ -1583,7 +1561,7 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool Pausable=false,
-    typename BaseAllocator=std::allocator<char>,
+    typename BaseAllocator=std::allocator<std::max_align_t>,
     typename WaitSupport  =impl::queue_no_wait_support
     >
 class lockfree_queue
@@ -1812,16 +1790,10 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this);
+        typename base_t::pause_resume_sentry sentry(*this, false);
 
         if(capacity <= base_t::count()) return false;
 
-        Check_ValidState(base_t::this_thread_owns_elements(0), false);
-
-        while(base_t::some_thread_owns_element())
-        {
-            base_t::wait_a_while();
-        }
         element_t* elements = m_allocator.allocate(capacity);
 
         for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
@@ -2480,10 +2452,6 @@ private:
         ;
 
 public:
-    static constexpr std::size_t alignment = (alignof(std::max_align_t) >= alignof(allocator_value_t))
-        ? alignof(std::max_align_t)
-        : alignof(allocator_value_t)
-        ;
     static constexpr bool move_is_noexcept = (
         std::is_nothrow_move_assignable<base_t>::value && (
             AllocatorTraits::is_always_equal::value || (
@@ -2650,7 +2618,7 @@ private:
 public:
     static constexpr std::size_t element_alignment() noexcept
     {
-        return alignment;
+        return alignof(allocator_value_t);
     }
     std::size_t element_size() const noexcept
     {
@@ -2686,18 +2654,12 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this);
+        typename base_t::pause_resume_sentry sentry(*this, false);
 
         Check_ValidState(m_size > 0, false);
 
         if(capacity <= base_t::count()) return false;
 
-        Check_ValidState(base_t::this_thread_owns_elements(0), false);
-
-        while(base_t::some_thread_owns_element())
-        {
-            base_t::wait_a_while();
-        }
         const std::size_t pitch  = calc_pitch(m_size);
         const std::size_t count  = pitch * capacity;
         const std::size_t stride = pitch * granularity;
@@ -2718,25 +2680,16 @@ public:
         base_t::resize(capacity);
         return true;
     }
-    bool change_element_size(std::size_t size, void** owned_elements = nullptr, std::size_t count_elements = 1) noexcept(false)
+    bool change_element_size(std::size_t size) noexcept(false)
     {
         static_assert(Pausable, "Cannot change element size of not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this);
+        typename base_t::pause_resume_sentry sentry(*this, false);
 
         if(size <= m_size) return false;
 
-        if(owned_elements == nullptr) count_elements = 0;
-
-        Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
-
         std::size_t pos = queue_npos;
-        Check_Arg_Array(index, count_elements, base_t::element_has_value(index_of_element(owned_elements[index]), pos), false);
 
-        while(base_t::all_elemenets_with_ownerships_are(count_elements))
-        {
-            base_t::wait_a_while();
-        }
         const std::size_t new_pitch = calc_pitch(  size);
         const std::size_t old_pitch = calc_pitch(m_size);
 
@@ -2754,6 +2707,58 @@ public:
             {
                 if(base_t::element_has_value(index, pos))
                 {
+                    std::memcpy(elements + pos * new_stride, m_elements + index * old_stride, m_size);
+                }
+            }
+            clear();
+            m_elements = elements;
+        }
+        m_size = size;
+        return true;
+    }
+    bool change_element_size(std::size_t size, void** owned_elements, std::size_t count_elements = 1) noexcept(false)
+    {
+        static_assert(Pausable, "Cannot change element size of not pausable queue");
+
+        typename base_t::pause_resume_sentry sentry(*this, true);
+
+        if(size <= m_size) return false;
+
+        Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
+
+        const std::size_t new_pitch = calc_pitch(  size);
+        const std::size_t old_pitch = calc_pitch(m_size);
+
+        if(new_pitch != old_pitch)
+        {
+            std::size_t pos = queue_npos;
+            for(std::size_t element_no = 0; element_no < count_elements; ++element_no)
+            {
+                if(!base_t::element_has_value(index_of_element(owned_elements[element_no]), pos))
+                {
+                    Check_Failure(false);
+                }
+                owned_elements[element_no] = reinterpret_cast<void*>(pos * 2 + 1);
+            }
+            const std::size_t capacity  = base_t::capacity();
+            const std::size_t new_count = new_pitch * capacity;
+
+            char* elements = reinterpret_cast<char*>(m_allocator.allocate(new_count));
+
+            const std::size_t new_stride = new_pitch * granularity;
+            const std::size_t old_stride = old_pitch * granularity;
+
+            for(std::size_t index = 0; index < capacity; ++index)
+            {
+                if(base_t::element_has_value(index, pos))
+                {
+                    for(std::size_t element_no = 0; element_no < count_elements; ++element_no)
+                    {
+                        if(owned_elements[element_no] == reinterpret_cast<void*>(pos * 2 + 1))
+                        {
+                            owned_elements[element_no] = elements + pos * new_stride;
+                        }
+                    }
                     std::memcpy(elements + pos * new_stride, m_elements + index * old_stride, m_size);
                 }
             }

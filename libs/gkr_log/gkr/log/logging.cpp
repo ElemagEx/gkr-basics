@@ -100,7 +100,7 @@ void* gkr_log_add_instance(
     const struct gkr_log_name_id_pair* facilities_infos
     )
 {
-    return get_logger().add_instance(true, name, max_queue_entries, max_message_chars, severities_infos, facilities_infos);
+    return get_logger().add_instance(false, name, max_queue_entries, max_message_chars, severities_infos, facilities_infos);
 }
 
 int gkr_log_del_instance(void* instance)

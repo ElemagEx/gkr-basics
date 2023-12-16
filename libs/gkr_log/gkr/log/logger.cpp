@@ -16,7 +16,7 @@ inline std::size_t calc_queue_element_size(std::size_t extra_data_size, std::siz
 
     return ((queue_element_size % granularity) == 0)
         ? (queue_element_size)
-        : (queue_element_size / granularity) * granularity;
+        : (queue_element_size / granularity) * granularity + granularity;
 }
 }
 
@@ -61,7 +61,15 @@ bool logger::on_start()
 
 void logger::on_finish()
 {
-    while(process_next_message());
+    process_all_messages();
+
+    for(auto it = m_instances.begin(); it != m_instances.end(); ++it)
+    {
+        del_all_consumers(&*it);
+    }
+    m_instances.clear();
+
+    del_all_consumers(nullptr);
 }
 
 void logger::on_cross_action(action_id_t action, void* param, void* result)
@@ -158,12 +166,11 @@ bool logger::del_instance(void* instance)
     }
     if(m_ref_count == 0) return false;
 
-    if(--m_ref_count == 0)
-    {
-        del_all_consumers(nullptr);
-        quit();
-    }
+    if(--m_ref_count == 0) quit();
+
     if(instance == nullptr) return true;
+
+    process_all_messages();
 
     for(auto it = m_instances.begin(); it != m_instances.end(); ++it)
     {
@@ -202,15 +209,15 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
         }
         if(max_message_chars > get_max_message_chars())
         {
-            m_log_queue.change_element_size(calc_queue_element_size(sizeof(message_data), max_message_chars));
+            m_log_queue.change_element_size(calc_queue_element_size(offsetof(message_data, buf) + 1, max_message_chars));
         }
     }
     else
     {
         if(max_queue_entries == 0) max_queue_entries = 32;
-        if(max_message_chars == 0) max_message_chars = (512 - sizeof(message_data));
+        if(max_message_chars == 0) max_message_chars = (512 - offsetof(message_data, buf) + 1);
 
-        m_log_queue.reset(max_queue_entries, calc_queue_element_size(sizeof(message_data), max_message_chars));
+        m_log_queue.reset(max_queue_entries, calc_queue_element_size(offsetof(message_data, buf) + 1, max_message_chars));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
 
@@ -435,7 +442,7 @@ bool logger::start_log_message(void* instance, int severity, char*& buf, unsigne
     message_data& msg = element.as<message_data>();
 
     buf = msg.buf;
-    cch = unsigned(msg.buf - element.data<char>());
+    cch = element.size() - offsetof(message_data, buf);
 
     thread_local_element = element.detach();
     return true;
@@ -635,6 +642,7 @@ void logger::prepare_message(message_data& msg)
     instance_data& data = get_data(msg.instance);
 
     msg.messageText = msg.buf;
+    msg.moduleName  = data.name;
 
     auto itThreadId =    m_thread_ids.find(msg.tid);
     auto itSeverity = data.severities.find(msg.severity);
@@ -700,6 +708,11 @@ void logger::consume_message(const message_data& msg)
         while(index < count);
 #endif
     }
+}
+
+void logger::process_all_messages()
+{
+    while(process_next_message());
 }
 
 bool logger::process_next_message()

@@ -12,20 +12,20 @@
 namespace GKR_LOG_NS
 {
 template<int severity, bool>
-inline int log_simple(void* instance, int facility, const char* message)
+inline int simple(void* instance, int facility, const char* message)
 {
     return gkr_log_simple_message(instance, severity, facility, message);
 }
-template<> inline int log_simple<LOG_SEVERITY_FATAL  ,false>(void*, int, const char*) { return 0; }
-template<> inline int log_simple<LOG_SEVERITY_ERROR  ,false>(void*, int, const char*) { return 0; }
-template<> inline int log_simple<LOG_SEVERITY_WARN   ,false>(void*, int, const char*) { return 0; }
-template<> inline int log_simple<LOG_SEVERITY_INFO   ,false>(void*, int, const char*) { return 0; }
-template<> inline int log_simple<LOG_SEVERITY_VERBOSE,false>(void*, int, const char*) { return 0; }
-template<> inline int log_simple<LOG_SEVERITY_DEBUG  ,false>(void*, int, const char*) { return 0; }
-template<> inline int log_simple<LOG_SEVERITY_TRACE  ,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_FATAL  ,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_ERROR  ,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_WARNING,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_INFO   ,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_VERBOSE,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_DEBUG  ,false>(void*, int, const char*) { return 0; }
+template<> inline int simple<LOG_SEVERITY_TRACE  ,false>(void*, int, const char*) { return 0; }
 
 template<int severity, bool>
-inline int log_simple_if(bool condition, void* instance, int facility, const char* message)
+inline int simple_if(bool condition, void* instance, int facility, const char* message)
 {
     if(condition)
     {
@@ -36,110 +36,110 @@ inline int log_simple_if(bool condition, void* instance, int facility, const cha
         return 0;
     }
 }
-template<> inline int log_simple_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int, const char*) { return 0; }
-template<> inline int log_simple_if<LOG_SEVERITY_ERROR  ,false>(bool, void*, int, const char*) { return 0; }
-template<> inline int log_simple_if<LOG_SEVERITY_WARN   ,false>(bool, void*, int, const char*) { return 0; }
-template<> inline int log_simple_if<LOG_SEVERITY_INFO   ,false>(bool, void*, int, const char*) { return 0; }
-template<> inline int log_simple_if<LOG_SEVERITY_VERBOSE,false>(bool, void*, int, const char*) { return 0; }
-template<> inline int log_simple_if<LOG_SEVERITY_DEBUG  ,false>(bool, void*, int, const char*) { return 0; }
-template<> inline int log_simple_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_ERROR  ,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_WARNING,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_INFO   ,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_VERBOSE,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_DEBUG  ,false>(bool, void*, int, const char*) { return 0; }
+template<> inline int simple_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int, const char*) { return 0; }
 }
 
 template<int severity>
-inline int LOG        (int facility, const char* message) { return GKR_LOG_NS::log_simple<severity            , log_threshold(severity            )>(nullptr, facility, message); }
+inline int LOG        (int facility, const char* message) { return GKR_LOG_NS::simple<severity            , GKR_LOG_NS::threshold(severity            )>(nullptr, facility, message); }
 
-inline int LOGF       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, message); }
-inline int LOGE       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, message); }
-inline int LOGW       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(nullptr, facility, message); }
-inline int LOGI       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, message); }
-inline int LOGV       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, message); }
-inline int LOGD       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, message); }
-inline int LOGT       (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, message); }
+inline int LOGF       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, message); }
+inline int LOGE       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, message); }
+inline int LOGW       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(nullptr, facility, message); }
+inline int LOGI       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, message); }
+inline int LOGV       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, message); }
+inline int LOGD       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, message); }
+inline int LOGT       (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, message); }
 
-inline int LOG_FATAL  (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, message); }
-inline int LOG_ERROR  (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, message); }
-inline int LOG_WARN   (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(nullptr, facility, message); }
-inline int LOG_INFO   (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, message); }
-inline int LOG_VERBOSE(int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, message); }
-inline int LOG_DEBUG  (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, message); }
-inline int LOG_TRACE  (int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, message); }
-
-template<int severity>
-inline int LOG_IF         (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<severity            , log_threshold(severity            )>(condition, nullptr, facility, message); }
-
-inline int LOGF_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, message); }
-inline int LOGE_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, message); }
-inline int LOGW_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, nullptr, facility, message); }
-inline int LOGI_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, message); }
-inline int LOGV_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, message); }
-inline int LOGD_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, message); }
-inline int LOGT_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, message); }
-
-inline int LOG_FATAL_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, message); }
-inline int LOG_ERROR_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, message); }
-inline int LOG_WARN_IF    (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, nullptr, facility, message); }
-inline int LOG_INFO_IF    (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, message); }
-inline int LOG_VERBOSE_IF (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, message); }
-inline int LOG_DEBUG_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, message); }
-inline int LOG_TRACE_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, message); }
+inline int LOG_FATAL  (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, message); }
+inline int LOG_ERROR  (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, message); }
+inline int LOG_WARNING(int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(nullptr, facility, message); }
+inline int LOG_INFO   (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, message); }
+inline int LOG_VERBOSE(int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, message); }
+inline int LOG_DEBUG  (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, message); }
+inline int LOG_TRACE  (int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, message); }
 
 template<int severity>
-inline int CLOG        (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<severity            , log_threshold(severity            )>(instance, facility, message); }
+inline int LOG_IF         (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<severity            , GKR_LOG_NS::threshold(severity            )>(condition, nullptr, facility, message); }
 
-inline int CLOGF       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(instance, facility, message); }
-inline int CLOGE       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(instance, facility, message); }
-inline int CLOGW       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(instance, facility, message); }
-inline int CLOGI       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(instance, facility, message); }
-inline int CLOGV       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, message); }
-inline int CLOGD       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, message); }
-inline int CLOGT       (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(instance, facility, message); }
+inline int LOGF_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, message); }
+inline int LOGE_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, message); }
+inline int LOGW_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, nullptr, facility, message); }
+inline int LOGI_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, message); }
+inline int LOGV_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, message); }
+inline int LOGD_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, message); }
+inline int LOGT_IF        (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, message); }
 
-inline int CLOG_FATAL  (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(instance, facility, message); }
-inline int CLOG_ERROR  (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(instance, facility, message); }
-inline int CLOG_WARN   (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(instance, facility, message); }
-inline int CLOG_INFO   (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(instance, facility, message); }
-inline int CLOG_VERBOSE(void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, message); }
-inline int CLOG_DEBUG  (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, message); }
-inline int CLOG_TRACE  (void* instance, int facility, const char* message) { return GKR_LOG_NS::log_simple<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(instance, facility, message); }
+inline int LOG_FATAL_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, message); }
+inline int LOG_ERROR_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, message); }
+inline int LOG_WARNING_IF (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, nullptr, facility, message); }
+inline int LOG_INFO_IF    (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, message); }
+inline int LOG_VERBOSE_IF (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, message); }
+inline int LOG_DEBUG_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, message); }
+inline int LOG_TRACE_IF   (bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, message); }
 
 template<int severity>
-inline int CLOG_IF         (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<severity            , log_threshold(severity            )>(condition, instance, facility, message); }
+inline int CLOG        (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<severity            , GKR_LOG_NS::threshold(severity            )>(instance, facility, message); }
 
-inline int CLOGF_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, message); }
-inline int CLOGE_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, message); }
-inline int CLOGW_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, instance, facility, message); }
-inline int CLOGI_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, message); }
-inline int CLOGV_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, message); }
-inline int CLOGD_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, message); }
-inline int CLOGT_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, message); }
+inline int CLOGF       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, message); }
+inline int CLOGE       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, message); }
+inline int CLOGW       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(instance, facility, message); }
+inline int CLOGI       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(instance, facility, message); }
+inline int CLOGV       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, message); }
+inline int CLOGD       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, message); }
+inline int CLOGT       (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, message); }
 
-inline int CLOG_FATAL_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, message); }
-inline int CLOG_ERROR_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, message); }
-inline int CLOG_WARN_IF    (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, instance, facility, message); }
-inline int CLOG_INFO_IF    (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, message); }
-inline int CLOG_VERBOSE_IF (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, message); }
-inline int CLOG_DEBUG_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, message); }
-inline int CLOG_TRACE_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::log_simple_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, message); }
+inline int CLOG_FATAL  (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, message); }
+inline int CLOG_ERROR  (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, message); }
+inline int CLOG_WARNING(void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(instance, facility, message); }
+inline int CLOG_INFO   (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(instance, facility, message); }
+inline int CLOG_VERBOSE(void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, message); }
+inline int CLOG_DEBUG  (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, message); }
+inline int CLOG_TRACE  (void* instance, int facility, const char* message) { return GKR_LOG_NS::simple<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, message); }
+
+template<int severity>
+inline int CLOG_IF         (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<severity            , GKR_LOG_NS::threshold(severity            )>(condition, instance, facility, message); }
+
+inline int CLOGF_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, message); }
+inline int CLOGE_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, message); }
+inline int CLOGW_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, message); }
+inline int CLOGI_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, message); }
+inline int CLOGV_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, message); }
+inline int CLOGD_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, message); }
+inline int CLOGT_IF        (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, message); }
+
+inline int CLOG_FATAL_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, message); }
+inline int CLOG_ERROR_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, message); }
+inline int CLOG_WARNING_IF (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, message); }
+inline int CLOG_INFO_IF    (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, message); }
+inline int CLOG_VERBOSE_IF (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, message); }
+inline int CLOG_DEBUG_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, message); }
+inline int CLOG_TRACE_IF   (void* instance, bool condition, int facility, const char* message) { return GKR_LOG_NS::simple_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, message); }
 
 #ifndef GKR_NO_PRINTF_LOGGING
 
 namespace GKR_LOG_NS
 {
 template<int severity, bool>
-inline int log_printf(void* instance, int facility, const char* format, va_list args)
+inline int printf(void* instance, int facility, const char* format, va_list args)
 {
     return gkr_log_valist_message(instance, severity, facility, format, args);
 }
-template<> int log_printf<LOG_SEVERITY_FATAL  ,false>(void*, int, const char*, va_list) { return 0; }
-template<> int log_printf<LOG_SEVERITY_ERROR  ,false>(void*, int, const char*, va_list) { return 0; }
-template<> int log_printf<LOG_SEVERITY_WARN   ,false>(void*, int, const char*, va_list) { return 0; }
-template<> int log_printf<LOG_SEVERITY_INFO   ,false>(void*, int, const char*, va_list) { return 0; }
-template<> int log_printf<LOG_SEVERITY_VERBOSE,false>(void*, int, const char*, va_list) { return 0; }
-template<> int log_printf<LOG_SEVERITY_DEBUG  ,false>(void*, int, const char*, va_list) { return 0; }
-template<> int log_printf<LOG_SEVERITY_TRACE  ,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_FATAL  ,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_ERROR  ,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_WARNING,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_INFO   ,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_VERBOSE,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_DEBUG  ,false>(void*, int, const char*, va_list) { return 0; }
+template<> int printf<LOG_SEVERITY_TRACE  ,false>(void*, int, const char*, va_list) { return 0; }
 
 template<int severity, bool>
-inline int log_printf_if(bool condition, void* instance, int facility, const char* format, va_list args)
+inline int printf_if(bool condition, void* instance, int facility, const char* format, va_list args)
 {
     if(condition)
     {
@@ -150,90 +150,90 @@ inline int log_printf_if(bool condition, void* instance, int facility, const cha
         return 0;
     }
 }
-template<> inline int log_printf_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int, const char*, va_list) { return 0; }
-template<> inline int log_printf_if<LOG_SEVERITY_ERROR  ,false>(bool, void*, int, const char*, va_list) { return 0; }
-template<> inline int log_printf_if<LOG_SEVERITY_WARN   ,false>(bool, void*, int, const char*, va_list) { return 0; }
-template<> inline int log_printf_if<LOG_SEVERITY_INFO   ,false>(bool, void*, int, const char*, va_list) { return 0; }
-template<> inline int log_printf_if<LOG_SEVERITY_VERBOSE,false>(bool, void*, int, const char*, va_list) { return 0; }
-template<> inline int log_printf_if<LOG_SEVERITY_DEBUG  ,false>(bool, void*, int, const char*, va_list) { return 0; }
-template<> inline int log_printf_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_ERROR  ,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_WARNING,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_INFO   ,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_VERBOSE,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_DEBUG  ,false>(bool, void*, int, const char*, va_list) { return 0; }
+template<> inline int printf_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int, const char*, va_list) { return 0; }
 }
 
 template<int severity>
-inline int LOG_        (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<severity            , log_threshold(severity            )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_        (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<severity            , GKR_LOG_NS::threshold(severity            )>(nullptr, facility, format, args); va_end(args); return id; }
 
-inline int LOGF_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGE_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGW_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGI_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGV_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGD_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGT_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGF_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGE_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGW_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGI_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGV_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGD_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGT_       (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, format, args); va_end(args); return id; }
 
-inline int LOG_FATAL_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_ERROR_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_WARN_   (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_INFO_   (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_VERBOSE_(int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_DEBUG_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_TRACE_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, format, args); va_end(args); return id; }
-
-template<int severity>
-inline int LOG_IF_        (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<severity            , log_threshold(severity            )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-
-inline int LOGF_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGE_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGW_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGI_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGV_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGD_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOGT_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-
-inline int LOG_FATAL_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_ERROR_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_WARN_IF_   (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_INFO_IF_   (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_VERBOSE_IF_(bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_DEBUG_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
-inline int LOG_TRACE_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_FATAL_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_ERROR_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_WARNING_(int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_INFO_   (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_VERBOSE_(int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_DEBUG_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_TRACE_  (int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility, format, args); va_end(args); return id; }
 
 template<int severity>
-inline int CLOG_        (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<severity            , log_threshold(severity            )>(instance, facility, format, args); va_end(args); return id; }
+inline int LOG_IF_        (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<severity            , GKR_LOG_NS::threshold(severity            )>(condition, nullptr, facility, format, args); va_end(args); return id; }
 
-inline int CLOGF_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOGE_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOGW_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOGI_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOGV_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOGD_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOGT_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(instance, facility, format, args); va_end(args); return id; }
+inline int LOGF_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGE_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGW_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGI_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGV_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGD_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOGT_IF_       (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
 
-inline int CLOG_FATAL_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_ERROR_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_WARN_   (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_INFO_   (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_VERBOSE_(void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_DEBUG_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_TRACE_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(instance, facility, format, args); va_end(args); return id; }
+inline int LOG_FATAL_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_ERROR_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_WARNING_IF_(bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_INFO_IF_   (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_VERBOSE_IF_(bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_DEBUG_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
+inline int LOG_TRACE_IF_  (bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility, format, args); va_end(args); return id; }
 
 template<int severity>
-inline int CLOG_IF_        (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<severity            , log_threshold(severity            )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_        (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<severity            , GKR_LOG_NS::threshold(severity            )>(instance, facility, format, args); va_end(args); return id; }
 
-inline int CLOGF_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOGE_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOGW_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOGI_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOGV_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOGD_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOGT_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGF_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOGE_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOGW_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOGI_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOGV_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOGD_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOGT_       (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, format, args); va_end(args); return id; }
 
-inline int CLOG_FATAL_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_ERROR_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_WARN_IF_   (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_INFO_IF_   (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_VERBOSE_IF_(void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_DEBUG_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, format, args); va_end(args); return id; }
-inline int CLOG_TRACE_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::log_printf_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_FATAL_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_ERROR_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_WARNING_(void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_INFO_   (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_VERBOSE_(void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_DEBUG_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_TRACE_  (void* instance, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, format, args); va_end(args); return id; }
+
+template<int severity>
+inline int CLOG_IF_        (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<severity            , GKR_LOG_NS::threshold(severity            )>(condition, instance, facility, format, args); va_end(args); return id; }
+
+inline int CLOGF_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGE_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGW_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGI_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGV_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGD_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOGT_IF_       (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, format, args); va_end(args); return id; }
+
+inline int CLOG_FATAL_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_ERROR_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_WARNING_IF_(void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_INFO_IF_   (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_VERBOSE_IF_(void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_DEBUG_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, format, args); va_end(args); return id; }
+inline int CLOG_TRACE_IF_  (void* instance, bool condition, int facility, const char* format, ...) { va_list args; va_start(args, format); int id = GKR_LOG_NS::printf_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, format, args); va_end(args); return id; }
 
 #endif /*!GKR_NO_PRINTF_LOGGING*/
 
@@ -242,19 +242,19 @@ inline int CLOG_TRACE_IF_  (void* instance, bool condition, int facility, const 
 namespace GKR_LOG_NS
 {
 template<int severity, bool>
-inline auto log_stream(void* instance, int facility)
+inline auto stream(void* instance, int facility)
 {
     return gkr::log::ostream(instance, severity, facility);
 }
-template<> auto log_stream<LOG_SEVERITY_FATAL  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_ERROR  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_WARN   ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_INFO   ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_VERBOSE,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_DEBUG  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream<LOG_SEVERITY_TRACE  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_FATAL  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_ERROR  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_WARNING,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_INFO   ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_VERBOSE,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_DEBUG  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream<LOG_SEVERITY_TRACE  ,false>(void*, int) { return gkr::log::impl::dummy_ostream(); }
 template<int severity, bool>
-inline auto log_stream_if(bool condition, void* instance, int facility)
+inline auto stream_if(bool condition, void* instance, int facility)
 {
     if(condition)
     {
@@ -265,90 +265,90 @@ inline auto log_stream_if(bool condition, void* instance, int facility)
         return gkr::log::ostream(instance);
     }
 }
-template<> auto log_stream_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_ERROR  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_WARN   ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_INFO   ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_VERBOSE,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_DEBUG  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
-template<> auto log_stream_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_ERROR  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_WARNING,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_INFO   ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_VERBOSE,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_DEBUG  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
+template<> auto stream_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int) { return gkr::log::impl::dummy_ostream(); }
 }
 
 template<int severity>
-inline auto LOG        (int facility) { return GKR_LOG_NS::log_stream<severity            , log_threshold(severity            )>(nullptr, facility); }
+inline auto LOG        (int facility) { return GKR_LOG_NS::stream<severity            , GKR_LOG_NS::threshold(severity            )>(nullptr, facility); }
 
-inline auto LOGF       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility); }
-inline auto LOGE       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility); }
-inline auto LOGW       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(nullptr, facility); }
-inline auto LOGI       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(nullptr, facility); }
-inline auto LOGV       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility); }
-inline auto LOGD       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility); }
-inline auto LOGT       (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility); }
+inline auto LOGF       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility); }
+inline auto LOGE       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility); }
+inline auto LOGW       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(nullptr, facility); }
+inline auto LOGI       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(nullptr, facility); }
+inline auto LOGV       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility); }
+inline auto LOGD       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility); }
+inline auto LOGT       (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility); }
 
-inline auto LOG_FATAL  (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility); }
-inline auto LOG_ERROR  (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility); }
-inline auto LOG_WARN   (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(nullptr, facility); }
-inline auto LOG_INFO   (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(nullptr, facility); }
-inline auto LOG_VERBOSE(int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility); }
-inline auto LOG_DEBUG  (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility); }
-inline auto LOG_TRACE  (int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility); }
-
-template<int severity>
-inline auto LOG_IF         (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<severity            , log_threshold(severity            )>(condition, nullptr, facility); }
-
-inline auto LOGF_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility); }
-inline auto LOGE_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility); }
-inline auto LOGW_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, nullptr, facility); }
-inline auto LOGI_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility); }
-inline auto LOGV_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility); }
-inline auto LOGD_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility); }
-inline auto LOGT_IF        (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility); }
-
-inline auto LOG_FATAL_IF   (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility); }
-inline auto LOG_ERROR_IF   (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility); }
-inline auto LOG_WARN_IF    (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, nullptr, facility); }
-inline auto LOG_INFO_IF    (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility); }
-inline auto LOG_VERBOSE_IF (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility); }
-inline auto LOG_DEBUG_IF   (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility); }
-inline auto LOG_TRACE_IF   (bool condition, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility); }
+inline auto LOG_FATAL  (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(nullptr, facility); }
+inline auto LOG_ERROR  (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(nullptr, facility); }
+inline auto LOG_WARNING(int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(nullptr, facility); }
+inline auto LOG_INFO   (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(nullptr, facility); }
+inline auto LOG_VERBOSE(int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(nullptr, facility); }
+inline auto LOG_DEBUG  (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(nullptr, facility); }
+inline auto LOG_TRACE  (int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(nullptr, facility); }
 
 template<int severity>
-inline auto CLOG        (void* instance, int facility) { return GKR_LOG_NS::log_stream<severity            , log_threshold(severity            )>(instance, facility); }
+inline auto LOG_IF         (bool condition, int facility) { return GKR_LOG_NS::stream_if<severity            , GKR_LOG_NS::threshold(severity            )>(condition, nullptr, facility); }
 
-inline auto CLOGF       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(instance, facility); }
-inline auto CLOGE       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(instance, facility); }
-inline auto CLOGW       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(instance, facility); }
-inline auto CLOGI       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(instance, facility); }
-inline auto CLOGV       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(instance, facility); }
-inline auto CLOGD       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(instance, facility); }
-inline auto CLOGT       (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(instance, facility); }
+inline auto LOGF_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility); }
+inline auto LOGE_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility); }
+inline auto LOGW_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, nullptr, facility); }
+inline auto LOGI_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility); }
+inline auto LOGV_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility); }
+inline auto LOGD_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility); }
+inline auto LOGT_IF        (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility); }
 
-inline auto CLOG_FATAL  (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(instance, facility); }
-inline auto CLOG_ERROR  (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(instance, facility); }
-inline auto CLOG_WARN   (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(instance, facility); }
-inline auto CLOG_INFO   (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(instance, facility); }
-inline auto CLOG_VERBOSE(void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(instance, facility); }
-inline auto CLOG_DEBUG  (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(instance, facility); }
-inline auto CLOG_TRACE  (void* instance, int facility) { return GKR_LOG_NS::log_stream<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(instance, facility); }
+inline auto LOG_FATAL_IF   (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, nullptr, facility); }
+inline auto LOG_ERROR_IF   (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, nullptr, facility); }
+inline auto LOG_WARNING_IF (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, nullptr, facility); }
+inline auto LOG_INFO_IF    (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, nullptr, facility); }
+inline auto LOG_VERBOSE_IF (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, nullptr, facility); }
+inline auto LOG_DEBUG_IF   (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, nullptr, facility); }
+inline auto LOG_TRACE_IF   (bool condition, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, nullptr, facility); }
 
 template<int severity>
-inline auto CLOG_IF         (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<severity            , log_threshold(severity            )>(condition, instance, facility); }
+inline auto CLOG        (void* instance, int facility) { return GKR_LOG_NS::stream<severity            , GKR_LOG_NS::threshold(severity            )>(instance, facility); }
 
-inline auto CLOGF_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility); }
-inline auto CLOGE_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility); }
-inline auto CLOGW_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, instance, facility); }
-inline auto CLOGI_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility); }
-inline auto CLOGV_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility); }
-inline auto CLOGD_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility); }
-inline auto CLOGT_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility); }
+inline auto CLOGF       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(instance, facility); }
+inline auto CLOGE       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(instance, facility); }
+inline auto CLOGW       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(instance, facility); }
+inline auto CLOGI       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(instance, facility); }
+inline auto CLOGV       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility); }
+inline auto CLOGD       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility); }
+inline auto CLOGT       (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(instance, facility); }
 
-inline auto CLOG_FATAL_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_FATAL  , log_threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility); }
-inline auto CLOG_ERROR_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_ERROR  , log_threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility); }
-inline auto CLOG_WARN_IF    (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_WARN   , log_threshold(LOG_SEVERITY_WARN   )>(condition, instance, facility); }
-inline auto CLOG_INFO_IF    (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_INFO   , log_threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility); }
-inline auto CLOG_VERBOSE_IF (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_VERBOSE, log_threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility); }
-inline auto CLOG_DEBUG_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_DEBUG  , log_threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility); }
-inline auto CLOG_TRACE_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::log_stream_if<LOG_SEVERITY_TRACE  , log_threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility); }
+inline auto CLOG_FATAL  (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(instance, facility); }
+inline auto CLOG_ERROR  (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(instance, facility); }
+inline auto CLOG_WARNING(void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(instance, facility); }
+inline auto CLOG_INFO   (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(instance, facility); }
+inline auto CLOG_VERBOSE(void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility); }
+inline auto CLOG_DEBUG  (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility); }
+inline auto CLOG_TRACE  (void* instance, int facility) { return GKR_LOG_NS::stream<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(instance, facility); }
+
+template<int severity>
+inline auto CLOG_IF         (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<severity            , GKR_LOG_NS::threshold(severity            )>(condition, instance, facility); }
+
+inline auto CLOGF_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility); }
+inline auto CLOGE_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility); }
+inline auto CLOGW_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility); }
+inline auto CLOGI_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility); }
+inline auto CLOGV_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility); }
+inline auto CLOGD_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility); }
+inline auto CLOGT_IF        (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility); }
+
+inline auto CLOG_FATAL_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_FATAL  , GKR_LOG_NS::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility); }
+inline auto CLOG_ERROR_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_ERROR  , GKR_LOG_NS::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility); }
+inline auto CLOG_WARNING_IF (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_WARNING, GKR_LOG_NS::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility); }
+inline auto CLOG_INFO_IF    (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_INFO   , GKR_LOG_NS::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility); }
+inline auto CLOG_VERBOSE_IF (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_VERBOSE, GKR_LOG_NS::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility); }
+inline auto CLOG_DEBUG_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_DEBUG  , GKR_LOG_NS::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility); }
+inline auto CLOG_TRACE_IF   (bool condition, void* instance, int facility) { return GKR_LOG_NS::stream_if<LOG_SEVERITY_TRACE  , GKR_LOG_NS::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility); }
 
 #endif /*!GKR_NO_STREAM_LOGGING*/
 

@@ -15,12 +15,12 @@ enum Severity {
     verbose = 6
 };
 }
-constexpr const char* plog_severities[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
+constexpr const char* plog_severities_names[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
 
 inline constexpr const char* plog_severity2string(plog::Severity severity) noexcept {
-    return (unsigned(severity) < unsigned(sizeof(plog_severities)/sizeof(char*)))
-        ?  plog_severities[severity]
-        : *plog_severities
+    return (unsigned(severity) < unsigned(sizeof(plog_severities_names)/sizeof(char*)))
+        ?  plog_severities_names[severity]
+        : *plog_severities_names
         ;
 }
 #define PLOG_SEVERITIES_INFOS { \
@@ -32,6 +32,8 @@ inline constexpr const char* plog_severity2string(plog::Severity severity) noexc
     {plog_severity2string(plog::Severity::debug  ), plog::Severity::debug  }, \
     {plog_severity2string(plog::Severity::verbose), plog::Severity::verbose}, \
     {nullptr, 0}}
+
+#ifndef GKR_NO_LOG_DEFS
 
 #ifdef _MSC_VER
 #   define PLOG_GET_FUNC()  __FUNCTION__
@@ -204,4 +206,6 @@ inline constexpr const char* plog_severity2string(plog::Severity severity) noexc
 #define LOGE_IF_(instanceId, condition)         PLOG_ERROR_IF_(instanceId, condition)
 #define LOGF_IF_(instanceId, condition)         PLOG_FATAL_IF_(instanceId, condition)
 #define LOGN_IF_(instanceId, condition)         PLOG_NONE_IF_(instanceId, condition)
-#endif
+#endif /*ndef PLOG_OMIT_LOG_DEFINES*/
+
+#endif /*ndef GKR_NO_LOG_DEFS*/

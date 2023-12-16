@@ -93,9 +93,9 @@ public:
     }
     unsigned get_max_message_chars() const
     {
-        return (m_log_queue.element_size() <= sizeof(message_data))
+        return (m_log_queue.element_size() <= (offsetof(message_data, buf)+1))
             ? 0U
-            : unsigned(m_log_queue.element_size() - sizeof(message_data));
+            : unsigned(m_log_queue.element_size() - (offsetof(message_data, buf)+1));
     }
 
 public:
@@ -160,6 +160,7 @@ private:
     void prepare_message(message_data& msg);
     void consume_message(const message_data& msg);
 
+    void process_all_messages();
     bool process_next_message();
 
 private:

@@ -222,8 +222,8 @@ private:
     {
         wait_result = m_bits_event_state & mask;
         m_bits_event_state &= (~mask | m_bits_manual_reset);
-            return (wait_result != 0);
-        }
+        return (wait_result != 0);
+    }
 
 private:
     wait_result_t masked_check(wait_result_t mask) noexcept(DIAG_NOEXCEPT)

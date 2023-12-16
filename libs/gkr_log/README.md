@@ -1,11 +1,15 @@
 # gkr::logging
 
-## Defines
-- `GKR_LOG_THRESHOLD_LEVEL=<integer>` - define compile-time logging threshold - only severity levels below this threshold will be logged (C++ only)
-- `GKR_LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions (C++ only)
+## GKR Defines
 - `GKR_NO_PRINTF_LOGGING` - disables logging with `printf` style
 - `GKR_NO_STREAM_LOGGING` - disables logging with C++ output streams
 - `GKR_NO_FORMAT_LOGGING` - disables logging with C++20 format
+
+## Generic Definitions Defines
+- `LOG_INSTANCE` - log instance all LOG_xxx macros/inlines use to log (C/C++) - default is (`NULL`/`nullptr`)
+- `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time logging threshold - only severity levels below this threshold will be logged (C++ only)
+- `LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions (C++ only)
+- `LOG_NS` - namespace where all inline helper functions will be placed (C++ only)
 
 ## Uniques
 - recursive logging - when logging is used inside logging thread from consumers

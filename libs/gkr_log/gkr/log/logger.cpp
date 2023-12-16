@@ -442,7 +442,7 @@ bool logger::start_log_message(void* instance, int severity, char*& buf, unsigne
     message_data& msg = element.as<message_data>();
 
     buf = msg.buf;
-    cch = element.size() - offsetof(message_data, buf);
+    cch = unsigned(element.size() - offsetof(message_data, buf));
 
     thread_local_element = element.detach();
     return true;

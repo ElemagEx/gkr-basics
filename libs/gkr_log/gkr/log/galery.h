@@ -7,8 +7,8 @@
 #define GENERIC_FMT_MESSAGE         "<C090>%F %T:<R003><S_MS><C000> [<IS00><P 07><SNAM><C000>] (<C033><FNAM><C000>) [<R 06><T_ID>] - <TEXT>"
 
 #define GENERIC_CONSOLE_ARGS_STRS   {"<C097><C101>", "<C091>",  "<C093>", "<C092>", "<C096>", "<C034>", "<C035>" }
-#define GENERIC_CONSOLE_ARGS_COLS   1
-#define GENERIC_CONSOLE_ARGS_ROWS   7
+#define GENERIC_CONSOLE_ARGS_ROWS   1
+#define GENERIC_CONSOLE_ARGS_COLS   7
 
 //
 // PLOG
@@ -22,8 +22,9 @@
 #define PLOG_FUNC_MSG_FORMAT    "<IS00><FUNC>@<LINE>: <TEXT><IS01>"
 #define PLOG_ONLY_MSG_FORMAT    "<IS00><TEXT><IS01>"
 
-#define PLOG_CONSOLE_ARGS_STRS  {"", "", "<C097><C101>", "<C000>", "<C091>", "<C000>", "<C093>", "<C000>", "", "", "<C096>", "<C000>", "<C096>", "<C000>"}
-#define PLOG_CONSOLE_ARGS_COLS  2
-#define PLOG_CONSOLE_ARGS_ROWS  7
+#define PLOG_CONSOLE_ARGS_STRS  {"", "<C097><C101>", "<C091>", "<C093>", "", "<C096>", "<C096>", \
+                                 "", "<C000>"      , "<C000>", "<C000>", "", "<C000>", "<C000>", }
+#define PLOG_CONSOLE_ARGS_ROWS  2
+#define PLOG_CONSOLE_ARGS_COLS  7
 
 #endif

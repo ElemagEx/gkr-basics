@@ -38,11 +38,11 @@
 
 | Control Code | Description
 | :--- | :---
+| `<ISnn>` | insert text argument located in row indexed by `nn` and column indexed by `severity`
+| `<IFnn>` | insert text argument located in row indexed by `nn` and column indexed by `facility`
+| `<Pcnn>` | specifies left padding with `nn` width with `c` character for next replacement
+| `<Rcnn>` | specifies right padding with `nn` width with `c` character for next replacement
 | `<Cnnn>` | changes console text color/style
-| `<ISxx>` | insert text argument from column `xx` in row indexed by `severity`
-| `<IFxx>` | insert text argument from column `xx` in row indexed by `facility`
-| `<Pcxx>` | specifies left padding with `xx` width with `c` character for next replacement
-| `<Rcnn>` | specifies right padding with `xx` width with `c` character for next replacement
 
 ## Console control codes used with `<Cnnn>`
 

@@ -292,12 +292,12 @@ const char* gkr_log_format_output(
     const struct gkr_log_message* msg,
     int flags,
     const char* const* args,
-    unsigned cols,
     unsigned rows,
+    unsigned cols,
     unsigned* len
     )
 {
-    return get_logger().format_output(fmt, *msg, flags, args, cols, rows, len);
+    return get_logger().format_output(fmt, *msg, flags, args, rows, cols, len);
 }
 
 }

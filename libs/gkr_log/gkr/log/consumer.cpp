@@ -218,7 +218,7 @@ bool parse_styling(const char* fmt, char* style, std::size_t& scl, char*& buf, s
 
     return copy_str_text(len, buf, cap, style);
 }
-bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned cols, unsigned rows)
+bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned rows, unsigned cols)
 {
     bool use_severity;
     switch(*fmt)
@@ -232,23 +232,23 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
 
     if((flags & gkr_log_fo_flag_use_inserts) == 0) return true;
 
-    const std::size_t col = std::size_t((digit1 * 10) + digit2);
-    const std::size_t row = use_severity
+    const std::size_t row = std::size_t((digit1 * 10) + digit2);
+    const std::size_t col = use_severity
         ? unsigned(msg->severity)
         : unsigned(msg->facility)
         ;
-    if((col >= cols) || (row >= rows)) return void(errno = ENOTSUP), false;
+    if((row >= rows) || (col >= cols)) return void(errno = ENOTSUP), false;
 
     const std::size_t index = (row * cols) + col;
 
     Check_Arg_NotNull(args       , false);
-    Check_Arg_IsValid(cols > col , false);
     Check_Arg_IsValid(rows > row , false);
+    Check_Arg_IsValid(cols > col , false);
     Check_Arg_NotNull(args[index], false);
 
     const char* arg = args[index];
 
-    unsigned cch = gkr_log_apply_text_format(buf, unsigned(cap), arg, msg, flags, args, cols, rows);
+    unsigned cch = gkr_log_apply_text_format(buf, unsigned(cap), arg, msg, flags, args, rows, cols);
 
     if(errno != 0) return false;
 
@@ -299,7 +299,7 @@ unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, lon
     return unsigned(len);
 }
 
-unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned cols, unsigned rows)
+unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, const struct gkr_log_message* msg, int flags, const char* const* args, unsigned rows, unsigned cols)
 {
     Check_Arg_NotNull(msg    , 0U);
     Check_Arg_NotNull(fmt    , 0U);
@@ -355,7 +355,7 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
 
             case CHAR_CONSOLE : if(parse_styling(fmt - 4, style, scl, buf, cap, flags)) continue; errno = ENOTSUP; break;
 
-            case CHAR_INS_ARG : if(parse_ins_arg(fmt - 4, buf, cap, msg, flags, args, cols, rows)) continue; break;
+            case CHAR_INS_ARG : if(parse_ins_arg(fmt - 4, buf, cap, msg, flags, args, rows, cols)) continue; break;
 
             default:
                 switch(make_four_cc(fmt - 6))

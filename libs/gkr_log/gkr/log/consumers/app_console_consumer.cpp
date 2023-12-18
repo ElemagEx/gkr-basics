@@ -146,8 +146,8 @@ const char* app_console_consumer::compose_output(const message& msg, unsigned* l
         &msg,
         flags,
         args,
-        GENERIC_CONSOLE_ARGS_COLS,
         GENERIC_CONSOLE_ARGS_ROWS,
+        GENERIC_CONSOLE_ARGS_COLS,
         len
         );
     return output;

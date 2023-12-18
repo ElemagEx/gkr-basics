@@ -66,8 +66,8 @@ GKR_LOG_API unsigned gkr_log_apply_text_format(
     const struct gkr_log_message* msg,
     int flags,
     const char* const* args,
-    unsigned cols,
-    unsigned rows
+    unsigned rows,
+    unsigned cols
     );
 
 GKR_LOG_API const char* gkr_log_format_output(
@@ -75,8 +75,8 @@ GKR_LOG_API const char* gkr_log_format_output(
     const struct gkr_log_message* msg,
     int flags,
     const char* const* args,
-    unsigned cols,
     unsigned rows,
+    unsigned cols,
     unsigned* len
     );
 

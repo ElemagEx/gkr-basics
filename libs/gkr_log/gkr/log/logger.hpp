@@ -134,8 +134,8 @@ public:
         const struct gkr_log_message& msg,
         int flags,
         const char* const* args,
-        unsigned cols,
         unsigned rows,
+        unsigned cols,
         unsigned* len
         );
 

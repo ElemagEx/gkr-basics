@@ -67,10 +67,10 @@ TEST_CASE("logging.logger.format.output. main")
             256,
             buf1,
             &msg,
-            0,
+            gkr_log_fo_flag_use_coloring | gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding,
             args,
-            PLOG_CONSOLE_ARGS_COLS,
-            PLOG_CONSOLE_ARGS_ROWS
+            PLOG_CONSOLE_ARGS_ROWS,
+            PLOG_CONSOLE_ARGS_COLS
             );
         CHECK(len2 > 0);
         REQUIRE(errno == 0);

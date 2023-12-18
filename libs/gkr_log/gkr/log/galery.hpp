@@ -57,7 +57,7 @@ inline int plog_add_appender_color_console(void* instance = nullptr, int method 
     return gkr::log::add_composer_consumer<gkr::log::app_console_consumer>(instance, [] (const gkr::log::message& msg, unsigned* len, bool colored)
     {
         const int colored_flags = flags | (colored ? gkr_log_fo_flag_use_coloring : 0);
-        return gkr_log_format_output(fmt, &msg, colored_flags, plog_format_args, PLOG_CONSOLE_ARGS_COLS, PLOG_CONSOLE_ARGS_ROWS, len);
+        return gkr_log_format_output(fmt, &msg, colored_flags, plog_format_args, PLOG_CONSOLE_ARGS_ROWS, PLOG_CONSOLE_ARGS_COLS, len);
     },
     method);
 }

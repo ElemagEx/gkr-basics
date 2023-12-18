@@ -6,11 +6,23 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <iostream>
-
-
-//"$IS00$[Thread: $R~12$$TNAM$ ($R008$$T_ID$)][Severity: $P-10$$SNAM$][Facility: $P 04$$FNAM$][Source: $FILE$@$LINE$] $$ Text: $TEXT$$IS01$",
+#include <cstring>
 
 gkr_log_message msg { 12345LL, gkr::stamp_now(), plog::none, 5, "int main()", "main.cpp", 16U, 12U, "Test message", "Default", "Main", "Info", "Testing"};
+
+TEST_CASE("logging.logger.format.output. sample")
+{
+    const char* fmt = "<IS00>[Thread: <R~12><TNAM> (<R008><T_ID>)][Severity: <P-10><SNAM>][Facility: <P 04><FNAM>][Source: <FILE>@<LINE>] << Text: <TEXT><IS01>";
+
+    char buf[256];
+
+    const unsigned len = gkr_log_apply_text_format(buf, sizeof(buf), fmt, &msg, gkr_log_fo_flag_escape_text_dquote, nullptr, 0, 0);
+
+    const char* result = "[Thread: Main (12345)][Severity: Info][Facility: Testing][Source: main.cpp@16] < Text: Test message";
+
+    CHECK(len == unsigned(std::strlen(result)));
+    CHECK(0 == std::strcmp(buf, result));
+}
 
 TEST_CASE("logging.logger.format.output. escape_dquote")
 {
@@ -19,7 +31,7 @@ TEST_CASE("logging.logger.format.output. escape_dquote")
     msg.messageText = "Testing with \"double quote\"!";
     msg.messageLen  = unsigned(std::strlen(msg.messageText));
 
-    const unsigned len = gkr_log_apply_text_format(buf, sizeof(buf), "$TEXT$", &msg, gkr_log_fo_flag_escape_text_dquote, nullptr, 0, 0);
+    const unsigned len = gkr_log_apply_text_format(buf, sizeof(buf), "<TEXT>", &msg, gkr_log_fo_flag_escape_text_dquote, nullptr, 0, 0);
 
     CHECK(len == msg.messageLen + 2);
     CHECK(0 == std::strcmp(buf, "Testing with \\\"double quote\\\"!"));

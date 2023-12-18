@@ -4,7 +4,7 @@
 
 #include <gkr/testing/log_defs.hpp>
 
-//#define LOG_USE_C_DEFS
+#define LOG_USE_C_DEFS
 #include <gkr/log/galery.hpp>
 #include <gkr/log/defs/generic.hpp>
 

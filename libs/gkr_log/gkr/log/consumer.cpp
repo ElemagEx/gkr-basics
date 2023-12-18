@@ -56,11 +56,12 @@ namespace
 {
 using ulonglong = unsigned long long;
 
-constexpr char CHAR_FORMAT   = '$';
-constexpr char CHAR_INS_ARG  = 'I';
-constexpr char CHAR_CONSOLE  = 'C';
-constexpr char CHAR_LPADDING = 'P';
-constexpr char CHAR_RPADDING = 'R';
+constexpr char CHAR_FMT_ENTER = '<';
+constexpr char CHAR_FMT_LEAVE = '>';
+constexpr char CHAR_INS_ARG   = 'I';
+constexpr char CHAR_CONSOLE   = 'C';
+constexpr char CHAR_LPADDING  = 'P';
+constexpr char CHAR_RPADDING  = 'R';
 
 constexpr int make_four_cc(const char* str)
 {
@@ -70,26 +71,26 @@ constexpr int make_four_cc(const char* str)
         (unsigned(str[3]) <<  8) |
         (unsigned(str[4]) <<  0) );
 }
-constexpr int FOUR_CC_TEXT = make_four_cc("$TEXT$"); // Message text
+constexpr int FOUR_CC_TEXT = make_four_cc("<TEXT>"); // Message text
 
-constexpr int FOUR_CC_MNAM = make_four_cc("$MNAM$"); // module name
-constexpr int FOUR_CC_TNAM = make_four_cc("$TNAM$"); // thread name
-constexpr int FOUR_CC_SNAM = make_four_cc("$SNAM$"); // severity name
-constexpr int FOUR_CC_FNAM = make_four_cc("$FNAM$"); // facility name
+constexpr int FOUR_CC_MNAM = make_four_cc("<MNAM>"); // module name
+constexpr int FOUR_CC_TNAM = make_four_cc("<TNAM>"); // thread name
+constexpr int FOUR_CC_SNAM = make_four_cc("<SNAM>"); // severity name
+constexpr int FOUR_CC_FNAM = make_four_cc("<FNAM>"); // facility name
 
-constexpr int FOUR_CC_T_ID = make_four_cc("$T_ID$"); // thread name
-constexpr int FOUR_CC_S_ID = make_four_cc("$S_ID$"); // severity name
-constexpr int FOUR_CC_F_ID = make_four_cc("$F_ID$"); // facility name
+constexpr int FOUR_CC_T_ID = make_four_cc("<T_ID>"); // thread name
+constexpr int FOUR_CC_S_ID = make_four_cc("<S_ID>"); // severity name
+constexpr int FOUR_CC_F_ID = make_four_cc("<F_ID>"); // facility name
 
-constexpr int FOUR_CC_FUNC = make_four_cc("$FUNC$"); // source function
-constexpr int FOUR_CC_FILE = make_four_cc("$FILE$"); // source file
-constexpr int FOUR_CC_LINE = make_four_cc("$LINE$"); // source line
+constexpr int FOUR_CC_FUNC = make_four_cc("<FUNC>"); // source function
+constexpr int FOUR_CC_FILE = make_four_cc("<FILE>"); // source file
+constexpr int FOUR_CC_LINE = make_four_cc("<LINE>"); // source line
 
-constexpr int FOUR_CC_S_MS = make_four_cc("$S_MS$"); // milliseconds
-constexpr int FOUR_CC_S_US = make_four_cc("$S_US$"); // microseconds
-constexpr int FOUR_CC_S_NS = make_four_cc("$S_NS$"); //  nanoseconds
+constexpr int FOUR_CC_S_MS = make_four_cc("<S_MS>"); // milliseconds
+constexpr int FOUR_CC_S_US = make_four_cc("<S_US>"); // microseconds
+constexpr int FOUR_CC_S_NS = make_four_cc("<S_NS>"); //  nanoseconds
 
-constexpr int FOUR_CC_STMP = make_four_cc("$STMP$"); // raw stamp
+constexpr int FOUR_CC_STMP = make_four_cc("<STMP>"); // raw stamp
 
 constexpr std::size_t CCH_STYLE_BUF  = 24;
 constexpr std::size_t CCH_NUMBER_BUF = 24;
@@ -205,7 +206,7 @@ bool parse_styling(const char* fmt, char* style, std::size_t& scl, char*& buf, s
     else if(digit2 > 0) { if(!copy_str_text(2, pch, scl, fmt + 1)) return false; }
     else                { if(!copy_str_text(1, pch, scl, fmt + 2)) return false; }
 
-    if((fmt[4] == CHAR_FORMAT) && (fmt[5] == CHAR_CONSOLE)) return true;
+    if((fmt[4] == CHAR_FMT_ENTER) && (fmt[5] == CHAR_CONSOLE)) return true;
 
     if(!copy_str_text(1, pch, scl, "m")) return false;
 
@@ -326,7 +327,7 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
     }
     for(errno = ENOBUFS; ; )
     {
-        const char* found = std::strchr(fmt, CHAR_FORMAT);
+        const char* found = std::strchr(fmt, CHAR_FMT_ENTER);
 
         if(found == nullptr)
         {
@@ -335,13 +336,13 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
         }
         if(!copy_fmt_text(std::size_t(found - fmt), buf, cap, fmt, len)) break;
 
-        if(fmt[1] == CHAR_FORMAT)
+        if(fmt[1] == CHAR_FMT_ENTER)
         {
             advance_format(1, fmt, len);
             if(copy_fmt_text(1, buf, cap, fmt, len)) continue;
             break;
         }
-        if((len < 6) || (fmt[5] != CHAR_FORMAT))
+        if((len < 6) || (fmt[5] != CHAR_FMT_LEAVE))
         {
             errno = ENOTSUP;
             break;

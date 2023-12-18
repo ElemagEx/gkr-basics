@@ -18,33 +18,33 @@
 
 | Replace Code | Description
 | :--- | :---
-| `$STMP$` | raw stamp
-| `$S_MS$` | milliseconds
-| `$S_US$` | microseconds
-| `$S_NS$` | nanoseconds
-| `$T_ID$` | thread ID
-| `$S_ID$` | severity
-| `$F_ID$` | facility
-| `$TNAM$` | thread name
-| `$MNAM$` | module name
-| `$SNAM$` | severity name
-| `$FNAM$` | facility name
-| `$FUNC$` | source function
-| `$FILE$` | source file
-| `$LINE$` | source line
-| `$TEXT$` | message text
+| `<STMP>` | raw stamp
+| `<S_MS>` | stamp milliseconds
+| `<S_US>` | stamp microseconds
+| `<S_NS>` | stamp nanoseconds
+| `<T_ID>` | thread ID
+| `<S_ID>` | severity value
+| `<F_ID>` | facility value
+| `<TNAM>` | thread name
+| `<MNAM>` | module name
+| `<SNAM>` | severity name
+| `<FNAM>` | facility name
+| `<FUNC>` | source function
+| `<FILE>` | source file
+| `<LINE>` | source line
+| `<TEXT>` | message text
 
 ## Format output control codes
 
 | Control Code | Description
 | :--- | :---
-| `$Cnnn$` | changes console text color/style
-| `$ISxx$` | insert text argument from column `xx` in row indexed by `severity`
-| `$IFxx$` | insert text argument from column `xx` in row indexed by `facility`
-| `$Pcxx$` | specifies left padding with `xx` width with `c` character for next replacement
-| `$Rcnn$` | specifies right padding with `xx` width with `c` character for next replacement
+| `<Cnnn>` | changes console text color/style
+| `<ISxx>` | insert text argument from column `xx` in row indexed by `severity`
+| `<IFxx>` | insert text argument from column `xx` in row indexed by `facility`
+| `<Pcxx>` | specifies left padding with `xx` width with `c` character for next replacement
+| `<Rcnn>` | specifies right padding with `xx` width with `c` character for next replacement
 
-## Console control codes used with `$Cnnn$`
+## Console control codes used with `<Cnnn>`
 
 `nnn` | Description
 | :--- | :---

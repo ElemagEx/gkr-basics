@@ -3,9 +3,6 @@
 #include <gkr/log/defs/generic.h>
 #include <gkr/log/log.hpp>
 
-#ifndef LOG_THRESHOLD_LEVEL
-#define LOG_THRESHOLD_LEVEL 100
-#endif
 #ifndef GKR_NO_STREAM_LOGGING
 #define LOG_FINISH gkr::log::finish
 #endif

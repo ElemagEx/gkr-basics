@@ -19,9 +19,9 @@
 | Replace Code | Description
 | :--- | :---
 | `<STMP>` | raw stamp
-| `<S_MS>` | stamp milliseconds
-| `<S_US>` | stamp microseconds
-| `<S_NS>` | stamp nanoseconds
+| `<MSEC>` | stamp milliseconds
+| `<USEC>` | stamp microseconds
+| `<NSEC>` | stamp nanoseconds
 | `<T_ID>` | thread ID
 | `<S_ID>` | severity value
 | `<F_ID>` | facility value

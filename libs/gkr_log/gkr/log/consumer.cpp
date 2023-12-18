@@ -86,9 +86,9 @@ constexpr int FOUR_CC_FUNC = make_four_cc("<FUNC>"); // source function
 constexpr int FOUR_CC_FILE = make_four_cc("<FILE>"); // source file
 constexpr int FOUR_CC_LINE = make_four_cc("<LINE>"); // source line
 
-constexpr int FOUR_CC_S_MS = make_four_cc("<S_MS>"); // milliseconds
-constexpr int FOUR_CC_S_US = make_four_cc("<S_US>"); // microseconds
-constexpr int FOUR_CC_S_NS = make_four_cc("<S_NS>"); //  nanoseconds
+constexpr int FOUR_CC_MSEC = make_four_cc("<MSEC>"); // milliseconds
+constexpr int FOUR_CC_USEC = make_four_cc("<USEC>"); // microseconds
+constexpr int FOUR_CC_NSEC = make_four_cc("<NSEC>"); //  nanoseconds
 
 constexpr int FOUR_CC_STMP = make_four_cc("<STMP>"); // raw stamp
 
@@ -374,9 +374,9 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
                     case FOUR_CC_F_ID: if(copy_pad_num(ch, padding, buf, cap, ulonglong(msg->facility  ), flags)) continue; break;
                     case FOUR_CC_LINE: if(copy_pad_num(ch, padding, buf, cap, ulonglong(msg->sourceLine), flags)) continue; break;
                     case FOUR_CC_STMP: if(copy_pad_num(ch, padding, buf, cap, ulonglong(msg->stamp     ), flags)) continue; break;
-                    case FOUR_CC_S_MS: if(copy_pad_num(ch, padding, buf, cap, ulonglong(ns / 1000000   ), flags)) continue; break;
-                    case FOUR_CC_S_US: if(copy_pad_num(ch, padding, buf, cap, ulonglong(ns / 1000      ), flags)) continue; break;
-                    case FOUR_CC_S_NS: if(copy_pad_num(ch, padding, buf, cap, ulonglong(ns / 1         ), flags)) continue; break;
+                    case FOUR_CC_MSEC: if(copy_pad_num(ch, padding, buf, cap, ulonglong(ns / 1000000   ), flags)) continue; break;
+                    case FOUR_CC_USEC: if(copy_pad_num(ch, padding, buf, cap, ulonglong(ns / 1000      ), flags)) continue; break;
+                    case FOUR_CC_NSEC: if(copy_pad_num(ch, padding, buf, cap, ulonglong(ns / 1         ), flags)) continue; break;
 
                     default:
                         errno = ENOTSUP;

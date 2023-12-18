@@ -31,7 +31,7 @@ struct custom_message
     custom_message() : instance(nullptr)
     {
     }
-    custom_message(void* instance, int severity) : instance(instance)
+    custom_message(void* instance_, int severity) : instance(instance_)
     {
         gkr_log_custom_message_start(instance, severity, &buf, &cch);
     }
@@ -172,8 +172,8 @@ public:
     {
         invalidate();
     }
-    ostream(void* instance, int severity, int facility)
-        : base_t(instance, severity)
+    ostream(void* instance_, int severity, int facility)
+        : base_t(instance_, severity)
         , m_ostream()
         , m_severity(severity)
         , m_facility(facility)
@@ -187,8 +187,8 @@ public:
             invalidate();
         }
     }
-    ostream(void* instance, const char* func, const char* file, unsigned line, int severity, int facility)
-        : base_t(instance, severity)
+    ostream(void* instance_, const char* func, const char* file, unsigned line, int severity, int facility)
+        : base_t(instance_, severity)
         , m_ostream()
         , m_func(func)
         , m_file(file)

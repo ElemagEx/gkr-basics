@@ -4,6 +4,7 @@
 
 #include <gkr/testing/log_defs.hpp>
 
+#define LOG_THRESHOLD_LEVEL LOG_SEVERITY_INFO
 #define LOG_USE_C_DEFS
 #include <gkr/log/galery.hpp>
 #include <gkr/log/defs/generic.hpp>
@@ -59,6 +60,10 @@ TEST_CASE("logging.logger.defs.generic. main")
 #endif
 #else
 int flag = 1;
+    LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
+
+    int msg_id = 
+    LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
     LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
 #endif
 

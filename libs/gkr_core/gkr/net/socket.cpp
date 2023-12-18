@@ -8,8 +8,8 @@
 
 #ifdef _WIN32
 #pragma warning(disable:4668)
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 #pragma warning(default:4668)
 enum
 {
@@ -28,7 +28,7 @@ static std::string get_net_error_text(int error)
         nullptr,
         DWORD(error),
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (char*)&buffer,
+        reinterpret_cast<char*>(&buffer),
         128,
         nullptr
         );

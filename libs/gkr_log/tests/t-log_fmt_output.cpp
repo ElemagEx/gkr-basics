@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cstring>
 
-gkr_log_message msg { 12345LL, gkr::stamp_now(), plog::none, 5, "int main()", "main.cpp", 16U, 12U, "Test message", "Default", "Main", "Info", "Testing"};
+static gkr_log_message msg { 12345LL, gkr::stamp_now(), plog::none, 5, "int main()", "main.cpp", 16U, 12U, "Test message", "Default", "Main", "Info", "Testing"};
 
 TEST_CASE("logging.logger.format.output. sample")
 {

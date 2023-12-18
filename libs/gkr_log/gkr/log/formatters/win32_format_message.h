@@ -31,11 +31,11 @@ inline int gkr_log_win32_format_message(void* instance, long msg_id, int severit
     if(prefix != nullptr)
     {
         len = lstrlenA(prefix);
-        if((unsigned)len >= cch) return gkr_log_custom_message_cancel(instance);
+        if(unsigned(len) >= cch) return gkr_log_custom_message_cancel(instance);
         lstrcpynA(buf, prefix, len+1);
     }
     const unsigned flags = 0x000012FF; //(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK)
-    const unsigned res   = FormatMessageA(flags, nullptr, (unsigned)msg_id, 0, buf + len, cch - len, nullptr);
+    const unsigned res   = FormatMessageA(flags, nullptr, unsigned(msg_id), 0, buf + unsigned(len), cch - unsigned(len), nullptr);
 
     if(res == 0) return gkr_log_custom_message_cancel(instance);
 
@@ -51,11 +51,11 @@ inline int gkr_log_win32_format_message_ex(void* instance, long msg_id, const ch
     if(prefix != nullptr)
     {
         len = lstrlenA(prefix);
-        if((unsigned)len >= cch) return gkr_log_custom_message_cancel(instance);
+        if(unsigned(len) >= cch) return gkr_log_custom_message_cancel(instance);
         lstrcpynA(buf, prefix, len+1);
     }
     const unsigned flags = 0x000012FF; //(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK)
-    const unsigned res   = FormatMessageA(flags, nullptr, (unsigned)msg_id, 0, buf + len, cch - len, nullptr);
+    const unsigned res   = FormatMessageA(flags, nullptr, unsigned(msg_id), 0, buf + unsigned(len), cch - unsigned(len), nullptr);
 
     if(res == 0) return gkr_log_custom_message_cancel(instance);
 

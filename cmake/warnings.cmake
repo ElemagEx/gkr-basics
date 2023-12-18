@@ -1,5 +1,5 @@
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(GKR_BASICS_EXCLUDE_CLANG_WARNINGS "-Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-format-nonliteral -Wno-global-constructors -Wno-exit-time-destructors -Wno-c++17-extensions -Wno-unknown-attributes")
+    set(GKR_BASICS_EXCLUDE_CLANG_WARNINGS "-Wno-unsafe-buffer-usage -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-format-nonliteral -Wno-global-constructors -Wno-exit-time-destructors -Wno-c++17-extensions -Wno-unknown-attributes")
 endif()
 
 if(MSVC)

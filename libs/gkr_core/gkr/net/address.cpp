@@ -4,8 +4,8 @@
 
 #ifdef _WIN32
 #pragma warning(disable:4668)
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 #pragma warning(default:4668)
 using sockaddr_inet = SOCKADDR_INET;
 #define s6_addr16 s6_words

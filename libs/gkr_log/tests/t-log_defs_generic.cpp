@@ -62,7 +62,6 @@ TEST_CASE("logging.logger.defs.generic. main")
 int flag = 1;
     LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
 
-    int msg_id = 
     LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
     LOGV_IF_(flag < 8, FACILITY_NETWORK, "Hello %s!", "There");
 #endif

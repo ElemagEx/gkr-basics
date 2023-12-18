@@ -133,7 +133,7 @@ consumer_ptr_t makePlogConsumerWrapper3(int instanceId, plog::RollingFileAppende
         formatter2.header = &Converter::header;
         formatter2.format = &Converter::format;
     }
-    return makeRollingFileAppenderWrapper(formatter1, formatter2, *static_cast<const plog::RollingFileData*>(appender->data()));
+    return nullptr;
 }
 
 inline consumer_ptr_t makePlogConsumerWrapper4(int instanceId, plog::IAppender* appender)

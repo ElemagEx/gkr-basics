@@ -298,8 +298,12 @@ void text_file_consumer::open()
     {
         return sys::file_report_error(errno);
     }
-    fpos_t pos;
-    fgetpos(static_cast<std::FILE*>(m_file), &pos);
+    std::FILE* file = static_cast<std::FILE*>(m_file);
+    const long pos = std::ftell(file);
+    if(pos == -1)
+    {
+        return sys::file_report_error(errno);
+    }
     m_size = gkr_log_tfs(pos);
 
     if((m_flags & text_file_flag_prevent_open_close_events) == 0)

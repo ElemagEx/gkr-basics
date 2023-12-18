@@ -2,6 +2,8 @@
 
 #include <gkr/api.h>
 
+#include <string>
+
 namespace gkr
 {
 namespace net
@@ -10,7 +12,7 @@ namespace net
 GKR_INNER_API bool startup();
 GKR_INNER_API void shutdown();
 
-GKR_INNER_API int get_hostname(char* buffer, unsigned cch);
+GKR_INNER_API std::string get_hostname();
 
 struct lib
 {

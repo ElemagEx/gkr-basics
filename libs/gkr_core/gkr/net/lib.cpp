@@ -44,24 +44,15 @@ void shutdown()
 #endif
 }
 
-int get_hostname(char* buffer, unsigned cch)
+std::string get_hostname()
 {
     char hostname[256];
 
     if(0 != gethostname(hostname, 256))
     {
-        return 0;
+        return {};
     }
-
-    const std::size_t len = std::strlen(hostname);
-
-    if(len >= cch) return int(cch + 1);
-
-    Check_Arg_NotNull(buffer, 0);
-
-    std::strncpy(buffer, hostname, cch);
-
-    return int(len);
+    return std::string(hostname);
 }
 
 }

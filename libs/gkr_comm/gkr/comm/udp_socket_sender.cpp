@@ -12,7 +12,7 @@ udp_socket_sender::udp_socket_sender(std::size_t maxPacketSize)
 {
     m_buffer.resize(maxPacketSize);
 
-    m_packetId = packet_it_t(sys::get_current_process_id()) << 32;
+    m_packetId = packet_id_t(sys::get_current_process_id()) << 32;
 }
 
 udp_socket_sender::~udp_socket_sender()

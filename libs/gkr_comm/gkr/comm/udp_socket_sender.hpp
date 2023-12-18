@@ -71,9 +71,9 @@ public:
     }
 
 private:
-    using packet_it_t = unsigned long long;
+    using packet_id_t = unsigned long long;
 
-    packet_it_t m_packetId {0};
+    packet_id_t m_packetId {0};
 
     gkr::net::address m_address;
     gkr::net::socket  m_socket;

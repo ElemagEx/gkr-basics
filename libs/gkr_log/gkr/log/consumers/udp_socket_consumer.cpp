@@ -65,7 +65,7 @@ udp_socket_consumer::udp_socket_consumer(
     unsigned maxPacketSize
     )
     : m_sender(new comm::udp_socket_sender(maxPacketSize))
-    , m_processId(unsigned(sys::get_current_process_id()))
+    , m_processId(sys::get_current_process_id())
 {
     update_buffer(std::size_t(gkr_log_get_max_message_chars()) + 257);
 
@@ -85,8 +85,8 @@ bool udp_socket_consumer::init_logging()
 {
     Check_ValidState(m_sender->max_packet_size() >= MINIMUM_UDP_PACKET_SIZE, false);
 
-    if(!retrieve_process_name()) return false;
-    if(!retrieve_host_name()) return false;
+    m_proc_name = sys::get_current_process_name();
+    m_host_name = net::get_hostname();
 
     Check_ValidState( m_sender->remote_address().is_valid(), false);
     Check_ValidState(!m_sender->is_started(), false);
@@ -127,28 +127,6 @@ void udp_socket_consumer::update_buffer(std::size_t size)
         ? nullptr
         : new char[size]
         ;
-}
-
-bool udp_socket_consumer::retrieve_process_name()
-{
-    const int len = sys::get_current_process_name(m_buf, unsigned(m_cap));
-
-    Check_ValidState(len > 0, false);
-
-    m_proc_name.assign(m_buf, unsigned(len));
-
-    return true;
-}
-
-bool udp_socket_consumer::retrieve_host_name()
-{
-    const int len = net::get_hostname(m_buf, unsigned(m_cap));
-
-    Check_ValidState(len > 0, false);
-
-    m_host_name.assign(m_buf, unsigned(len));
-
-    return true;
 }
 
 bool udp_socket_consumer::construct_data(const message& msg)

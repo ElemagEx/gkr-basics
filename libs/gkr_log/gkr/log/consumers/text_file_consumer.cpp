@@ -171,16 +171,11 @@ bool text_file_consumer::init_logging()
 {
     if(m_path.empty())
     {
-        constexpr unsigned cch = 256;
-        char buf[cch];
+        m_path = sys::get_current_process_path();
 
-        const unsigned head_len = unsigned(sys::get_current_process_path(buf, cch));
-        if(head_len >= cch) return false;
-
-        unsigned tail_len = gkr_log_apply_time_format(buf + head_len, cch - head_len, "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
-        if(tail_len == 0) return false;
-
-        m_path = buf;
+        char ext[32];
+        const unsigned len = gkr_log_apply_time_format(ext, sizeof(ext), "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
+        m_path.append(ext, len);
     }
     open();
     return true;

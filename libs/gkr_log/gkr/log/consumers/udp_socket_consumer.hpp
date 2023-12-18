@@ -48,9 +48,6 @@ public:
 private:
     void update_buffer(std::size_t size);
 
-    bool retrieve_process_name();
-    bool retrieve_host_name();
-
     bool construct_data(const message& msg);
 };
 

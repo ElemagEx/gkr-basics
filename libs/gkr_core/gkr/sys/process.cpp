@@ -2,6 +2,7 @@
 
 #include <gkr/diagnostics.h>
 
+#include <memory>
 #include <cstring>
 
 #ifdef _WIN32
@@ -14,58 +15,46 @@ namespace gkr
 {
 namespace sys
 {
-int get_current_process_id()
+unsigned get_current_process_id()
 {
-    return (int)GetCurrentProcessId();
+    return GetCurrentProcessId();
 }
-int get_current_process_name(char* name, unsigned cch)
+std::string get_current_process_name()
 {
-    char file[MAX_PATH];
+    char name[FILENAME_MAX];
 
-    unsigned len = GetModuleBaseNameA(GetCurrentProcess(), nullptr, file, MAX_PATH);
+    unsigned len = GetModuleBaseNameA(GetCurrentProcess(), nullptr, name, FILENAME_MAX);
 
-    Check_ValidState((len > 0) && (len < MAX_PATH), 0);
+    Check_ValidState((len > 0) && (len < FILENAME_MAX), 0);
 
-    char* ext = std::strrchr(file, '.');
+    char* ext = std::strrchr(name, '.');
 
     if((ext != nullptr) && (0 == std::strcmp(ext, ".exe")))
     {
         *ext = 0;
         len -= 4;
     }
-    if((name != nullptr) && (len < cch))
-    {
-        std::strncpy(name, file, cch);
-        return int(len);
-    }
-    else
-    {
-        return int(len + 1);
-    }
+    return std::string(name, len);
 }
-int get_current_process_path(char* path, unsigned cch)
+std::string get_current_process_path()
 {
-    char file[MAX_PATH];
-
-    unsigned len = GetModuleFileNameA(nullptr, file, MAX_PATH);
-
-    Check_ValidState((len > 0) && (len < MAX_PATH), 0);
-
-    char* ext = std::strrchr(file, '.');
-
-    if((ext != nullptr) && (0 == std::strcmp(ext, ".exe")))
+    for (unsigned cch = 512; ; cch *= 2)
     {
-        *ext = 0;
-        len -= 4;
-    }
-    if((path != nullptr) && (len < cch))
-    {
-        std::strncpy(path, file, cch);
-        return int(len);
-    }
-    else
-    {
-        return int(len + 1);
+        std::unique_ptr<char[]> buf(new char[cch]);
+
+        unsigned len = GetModuleFileNameA(nullptr, buf.get(), cch);
+
+        if((len > 0) && (len < cch))
+        {
+            char* ext = std::strrchr(buf.get(), '.');
+
+            if((ext != nullptr) && (0 == std::strcmp(ext, ".exe")))
+            {
+                *ext = 0;
+                len -= 4;
+            }
+            return std::string(buf.get(), len);
+        }
     }
 }
 }
@@ -89,44 +78,26 @@ namespace gkr
 {
 namespace sys
 {
-int get_current_process_id()
+unsigned get_current_process_id()
 {
-    return int(getpid());
+    return unsigned(getpid());
 }
-int get_current_process_name(char* name, unsigned cch)
+std::string get_current_process_name()
 {
-    Check_ValidState(__progname != nullptr, 0);
-
-    const std::size_t len = std::strlen(__progname);
-
-    Check_ValidState(len > 0, 0);
-
-    if((name != nullptr) && (len < cch))
-    {
-        std::strncpy(name, __progname, cch);
-        return int(len);
-    }
-    else
-    {
-        return int(len + 1);
-    }
+    return std::string(__progname);
 }
-int get_current_process_path(char* name, unsigned cch)
+std::string get_current_process_path()
 {
-    char path[PATH_MAX];
+    for(std::size_t cch = 512; ; cch *= 2)
+    { 
+        std::unique_ptr<char[]> buf(new char[cch]);
 
-    ssize_t len = readlink("/proc/self/exe", path, PATH_MAX);
+        const ssize_t len = readlink("/proc/self/exe", buf.get(), cch - 1);
 
-    Check_ValidState(len > 0, 0);
-
-    if((name != nullptr) && (len < cch))
-    {
-        std::strncpy(name, __progname, cch);
-        return int(len);
-    }
-    else
-    {
-        return int(len + 1);
+        if(len != -1)
+        {
+            return std::string(buf.get(), std::size_t(len));
+        }
     }
 }
 }

@@ -2,13 +2,15 @@
 
 #include <gkr/api.h>
 
+#include <string>
+
 namespace gkr
 {
 namespace sys
 {
-//TODO:Make all return types unsigned
-GKR_INNER_API int get_current_process_id();
-GKR_INNER_API int get_current_process_name(char* name, unsigned cch);
-GKR_INNER_API int get_current_process_path(char* path, unsigned cch);
+GKR_INNER_API unsigned get_current_process_id();
+
+GKR_INNER_API std::string get_current_process_name();
+GKR_INNER_API std::string get_current_process_path();
 }
 }

@@ -9,7 +9,6 @@
 - `LOG_INSTANCE` - log instance all LOG_xxx macros/inlines use to log (C/C++) - default is (`NULL`/`nullptr`)
 - `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time logging threshold - only severity levels below this threshold will be logged (C++ only)
 - `LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions (C++ only)
-- `LOG_NS` - namespace where all inline helper functions will be placed (C++ only)
 
 ## Uniques
 - recursive logging - when logging is used inside logging thread from consumers

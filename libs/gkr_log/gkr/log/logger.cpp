@@ -209,15 +209,15 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
         }
         if(max_message_chars > get_max_message_chars())
         {
-            m_log_queue.change_element_size(calc_queue_element_size(offsetof(message_data, buf) + 1, max_message_chars));
+            m_log_queue.change_element_size(calc_queue_element_size(sizeof(message_head) + 1, max_message_chars));
         }
     }
     else
     {
         if(max_queue_entries == 0) max_queue_entries = 32;
-        if(max_message_chars == 0) max_message_chars = (512 - offsetof(message_data, buf) + 1);
+        if(max_message_chars == 0) max_message_chars = (512 - sizeof(message_head) + 1);
 
-        m_log_queue.reset(max_queue_entries, calc_queue_element_size(offsetof(message_data, buf) + 1, max_message_chars));
+        m_log_queue.reset(max_queue_entries, calc_queue_element_size(sizeof(message_head) + 1, max_message_chars));
 
         Check_ValidState(m_log_queue.capacity() > 0, false);
 
@@ -442,7 +442,7 @@ bool logger::start_log_message(void* instance, int severity, char*& buf, unsigne
     message_data& msg = element.as<message_data>();
 
     buf = msg.buf;
-    cch = unsigned(element.size() - offsetof(message_data, buf));
+    cch = unsigned(element.size() - sizeof(message_head));
 
     thread_local_element = element.detach();
     return true;

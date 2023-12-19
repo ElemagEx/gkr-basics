@@ -93,9 +93,9 @@ public:
     }
     unsigned get_max_message_chars() const
     {
-        return (m_log_queue.element_size() <= (offsetof(message_data, buf)+1))
+        return (m_log_queue.element_size() <= (sizeof(message_head)+1))
             ? 0U
-            : unsigned(m_log_queue.element_size() - (offsetof(message_data, buf)+1));
+            : unsigned(m_log_queue.element_size() - (sizeof(message_head)+1));
     }
 
 public:
@@ -140,14 +140,14 @@ public:
         );
 
 private:
-    struct message_data : public message
+    struct message_head : message
     {
-        message_data() = delete;
-       ~message_data() = delete;
-
         int   id;
         void* instance;
-        char  buf[1];
+    };
+    struct message_data : message_head
+    {
+        char buf[1];
     };
 
 private:

@@ -59,6 +59,55 @@ constexpr std::size_t WAIT_MAX_OBJECTS = sizeof(wait_result_t) * CHAR_BIT - 1;
 constexpr wait_result_t WAIT_RESULT_ERROR   = wait_result_t(1) << WAIT_MAX_OBJECTS;
 constexpr wait_result_t WAIT_RESULT_TIMEOUT = wait_result_t(0);
 
+//TODO:IMPLEMENT
+class events_waiter_base
+{
+    events_waiter_base           (const events_waiter_base&) noexcept = delete;
+    events_waiter_base& operator=(const events_waiter_base&) noexcept = delete;
+
+    events_waiter_base           (events_waiter_base&&) noexcept = delete;
+    events_waiter_base& operator=(events_waiter_base&&) noexcept = delete;
+
+public:
+    enum Flag
+    {
+        Flag_ForbidMultipleThreadsWait = 0x01,
+        Flag_ForbidMultipleEventsBind  = 0x02,
+        Flag_AllowPartialEventsWait    = 0x04,
+    };
+
+public:
+    virtual
+   ~events_waiter_base() noexcept = default;
+    events_waiter_base(std::size_t flags = 0) noexcept : m_flags(flags) {}
+
+public:
+    bool flag_is_set(std::size_t flag) const noexcept
+    {
+        return ((m_flags & flag) != 0);
+    }
+    std::size_t events_count() const noexcept
+    {
+        return m_count;
+    }
+
+public:
+    virtual bool clear_events() = 0;
+
+    virtual bool add_event(void* ev) = 0;
+    virtual bool del_event(void* ev) = 0;
+
+    virtual wait_result_t check() = 0;
+    virtual wait_result_t wait() = 0;
+    virtual wait_result_t wait_for() = 0;
+    virtual wait_result_t wait_until() = 0;
+
+protected:
+    std::size_t m_flags = 0;
+    std::size_t m_count = 0;
+
+};
+
 class events_waiter final
 {
     events_waiter           (const events_waiter&) noexcept = delete;

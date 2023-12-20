@@ -2,6 +2,7 @@
 
 project(gkr-basics)
 
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 option(GKR_BASICS_DEV "Specifies that this is development build" ON)
 option(GKR_BASICS_TESTS "Build unit tests for the library" ON)
 
@@ -41,3 +42,7 @@ add_subdirectory(libs)
 if(GKR_BASICS_TESTS)
 add_subdirectory(tests)
 endif()
+
+#include(GNUInstallDirs)
+#include(GenerateExportHeader)
+#include(CMakePackageConfigHelpers)

@@ -14,9 +14,9 @@ namespace gkr
 namespace log
 {
 template<int severity, bool>
-inline void simple_message(void* instance, int facility, const char* message)
+inline void simple_message(void* instance, int facility, const char* msg)
 {
-    gkr_log_simple_message(instance, severity, facility, message);
+    gkr_log_simple_message(instance, severity, facility, msg);
 }
 template<> inline void simple_message<LOG_SEVERITY_FATAL  ,false>(void*, int, const char*) {}
 template<> inline void simple_message<LOG_SEVERITY_ERROR  ,false>(void*, int, const char*) {}
@@ -27,11 +27,11 @@ template<> inline void simple_message<LOG_SEVERITY_DEBUG  ,false>(void*, int, co
 template<> inline void simple_message<LOG_SEVERITY_TRACE  ,false>(void*, int, const char*) {}
 
 template<int severity, bool>
-inline void simple_message_if(bool condition, void* instance, int facility, const char* message)
+inline void simple_message_if(bool condition, void* instance, int facility, const char* msg)
 {
     if(condition)
     {
-        gkr_log_simple_message(instance, severity, facility, message);
+        gkr_log_simple_message(instance, severity, facility, msg);
     }
 }
 template<> inline void simple_message_if<LOG_SEVERITY_FATAL  ,false>(bool, void*, int, const char*) {}
@@ -45,80 +45,80 @@ template<> inline void simple_message_if<LOG_SEVERITY_TRACE  ,false>(bool, void*
 }
 
 template<int severity>
-inline void LOG        (int facility, const char* message) { gkr::log::simple_message<severity            , gkr::log::threshold(severity            )>(LOG_INSTANCE, facility, message); }
+inline void LOG        (int facility, const char* msg) { gkr::log::simple_message<severity            , gkr::log::threshold(severity            )>(LOG_INSTANCE, facility, msg); }
 
-inline void LOGF       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_INSTANCE, facility, message); }
-inline void LOGE       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_INSTANCE, facility, message); }
-inline void LOGW       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(LOG_INSTANCE, facility, message); }
-inline void LOGI       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(LOG_INSTANCE, facility, message); }
-inline void LOGV       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_INSTANCE, facility, message); }
-inline void LOGD       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_INSTANCE, facility, message); }
-inline void LOGT       (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_INSTANCE, facility, message); }
+inline void LOGF       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_INSTANCE, facility, msg); }
+inline void LOGE       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_INSTANCE, facility, msg); }
+inline void LOGW       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(LOG_INSTANCE, facility, msg); }
+inline void LOGI       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(LOG_INSTANCE, facility, msg); }
+inline void LOGV       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_INSTANCE, facility, msg); }
+inline void LOGD       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_INSTANCE, facility, msg); }
+inline void LOGT       (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_INSTANCE, facility, msg); }
 
-inline void LOG_FATAL  (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_INSTANCE, facility, message); }
-inline void LOG_ERROR  (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_INSTANCE, facility, message); }
-inline void LOG_WARNING(int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(LOG_INSTANCE, facility, message); }
-inline void LOG_INFO   (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(LOG_INSTANCE, facility, message); }
-inline void LOG_VERBOSE(int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_INSTANCE, facility, message); }
-inline void LOG_DEBUG  (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_INSTANCE, facility, message); }
-inline void LOG_TRACE  (int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_INSTANCE, facility, message); }
-
-template<int severity>
-inline void LOG_IF         (bool condition, int facility, const char* message) { gkr::log::simple_message_if<severity            , gkr::log::threshold(severity            )>(condition, LOG_INSTANCE, facility, message); }
-
-inline void LOGF_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOGE_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOGW_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, LOG_INSTANCE, facility, message); }
-inline void LOGI_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOGV_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, LOG_INSTANCE, facility, message); }
-inline void LOGD_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOGT_IF        (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, LOG_INSTANCE, facility, message); }
-
-inline void LOG_FATAL_IF   (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOG_ERROR_IF   (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOG_WARNING_IF (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, LOG_INSTANCE, facility, message); }
-inline void LOG_INFO_IF    (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOG_VERBOSE_IF (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, LOG_INSTANCE, facility, message); }
-inline void LOG_DEBUG_IF   (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, LOG_INSTANCE, facility, message); }
-inline void LOG_TRACE_IF   (bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, LOG_INSTANCE, facility, message); }
+inline void LOG_FATAL  (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_INSTANCE, facility, msg); }
+inline void LOG_ERROR  (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_INSTANCE, facility, msg); }
+inline void LOG_WARNING(int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(LOG_INSTANCE, facility, msg); }
+inline void LOG_INFO   (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(LOG_INSTANCE, facility, msg); }
+inline void LOG_VERBOSE(int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_INSTANCE, facility, msg); }
+inline void LOG_DEBUG  (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_INSTANCE, facility, msg); }
+inline void LOG_TRACE  (int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_INSTANCE, facility, msg); }
 
 template<int severity>
-inline void CLOG        (void* instance, int facility, const char* message) { gkr::log::simple_message<severity            , gkr::log::threshold(severity            )>(instance, facility, message); }
+inline void LOG_IF         (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<severity            , gkr::log::threshold(severity            )>(condition, LOG_INSTANCE, facility, msg); }
 
-inline void CLOGF       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, message); }
-inline void CLOGE       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, message); }
-inline void CLOGW       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(instance, facility, message); }
-inline void CLOGI       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(instance, facility, message); }
-inline void CLOGV       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, message); }
-inline void CLOGD       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, message); }
-inline void CLOGT       (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, message); }
+inline void LOGF_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOGE_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOGW_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOGI_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOGV_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOGD_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOGT_IF        (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, LOG_INSTANCE, facility, msg); }
 
-inline void CLOG_FATAL  (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, message); }
-inline void CLOG_ERROR  (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, message); }
-inline void CLOG_WARNING(void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(instance, facility, message); }
-inline void CLOG_INFO   (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(instance, facility, message); }
-inline void CLOG_VERBOSE(void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, message); }
-inline void CLOG_DEBUG  (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, message); }
-inline void CLOG_TRACE  (void* instance, int facility, const char* message) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, message); }
+inline void LOG_FATAL_IF   (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOG_ERROR_IF   (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOG_WARNING_IF (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOG_INFO_IF    (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOG_VERBOSE_IF (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOG_DEBUG_IF   (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, LOG_INSTANCE, facility, msg); }
+inline void LOG_TRACE_IF   (bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, LOG_INSTANCE, facility, msg); }
 
 template<int severity>
-inline void CLOG_IF         (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<severity            , gkr::log::threshold(severity            )>(condition, instance, facility, message); }
+inline void CLOG        (void* instance, int facility, const char* msg) { gkr::log::simple_message<severity            , gkr::log::threshold(severity            )>(instance, facility, msg); }
 
-inline void CLOGF_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, message); }
-inline void CLOGE_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, message); }
-inline void CLOGW_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, message); }
-inline void CLOGI_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, message); }
-inline void CLOGV_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, message); }
-inline void CLOGD_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, message); }
-inline void CLOGT_IF        (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, message); }
+inline void CLOGF       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, msg); }
+inline void CLOGE       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, msg); }
+inline void CLOGW       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(instance, facility, msg); }
+inline void CLOGI       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(instance, facility, msg); }
+inline void CLOGV       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, msg); }
+inline void CLOGD       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, msg); }
+inline void CLOGT       (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, msg); }
 
-inline void CLOG_FATAL_IF   (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, message); }
-inline void CLOG_ERROR_IF   (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, message); }
-inline void CLOG_WARNING_IF (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, message); }
-inline void CLOG_INFO_IF    (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, message); }
-inline void CLOG_VERBOSE_IF (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, message); }
-inline void CLOG_DEBUG_IF   (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, message); }
-inline void CLOG_TRACE_IF   (void* instance, bool condition, int facility, const char* message) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, message); }
+inline void CLOG_FATAL  (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(instance, facility, msg); }
+inline void CLOG_ERROR  (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(instance, facility, msg); }
+inline void CLOG_WARNING(void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(instance, facility, msg); }
+inline void CLOG_INFO   (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(instance, facility, msg); }
+inline void CLOG_VERBOSE(void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(instance, facility, msg); }
+inline void CLOG_DEBUG  (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(instance, facility, msg); }
+inline void CLOG_TRACE  (void* instance, int facility, const char* msg) { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(instance, facility, msg); }
+
+template<int severity>
+inline void CLOG_IF         (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<severity            , gkr::log::threshold(severity            )>(condition, instance, facility, msg); }
+
+inline void CLOGF_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, msg); }
+inline void CLOGE_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, msg); }
+inline void CLOGW_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, msg); }
+inline void CLOGI_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, msg); }
+inline void CLOGV_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, msg); }
+inline void CLOGD_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, msg); }
+inline void CLOGT_IF        (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, msg); }
+
+inline void CLOG_FATAL_IF   (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, instance, facility, msg); }
+inline void CLOG_ERROR_IF   (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, instance, facility, msg); }
+inline void CLOG_WARNING_IF (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_WARNING, gkr::log::threshold(LOG_SEVERITY_WARNING)>(condition, instance, facility, msg); }
+inline void CLOG_INFO_IF    (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_INFO   , gkr::log::threshold(LOG_SEVERITY_INFO   )>(condition, instance, facility, msg); }
+inline void CLOG_VERBOSE_IF (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(condition, instance, facility, msg); }
+inline void CLOG_DEBUG_IF   (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(condition, instance, facility, msg); }
+inline void CLOG_TRACE_IF   (void* instance, bool condition, int facility, const char* msg) { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(condition, instance, facility, msg); }
 
 #ifndef GKR_NO_PRINTF_LOGGING
 

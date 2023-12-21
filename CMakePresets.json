@@ -126,7 +126,7 @@
             "name": "win-x64-msvc-release",
             "displayName": "MSVC x64 Release",
             "description": "Target Windows (64-bit) with MSVC (Release)",
-            "inherits": "x64-msvc-debug",
+            "inherits": "win-x64-msvc-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
@@ -148,7 +148,7 @@
             "name": "win-x86-msvc-release",
             "displayName": "MSVC x86 Release",
             "description": "Target Windows (32-bit) with MSVC (Release)",
-            "inherits": "x86-msvc-debug",
+            "inherits": "win-x86-msvc-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
@@ -170,7 +170,7 @@
             "name": "win-x64-clang-release",
             "displayName": "Clang x64 Release",
             "description": "Target Windows (64-bit) with Clang (Release)",
-            "inherits": "x64-clang-debug",
+            "inherits": "win-x64-clang-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
@@ -192,7 +192,7 @@
             "name": "win-x86-clang-release",
             "displayName": "Clang x86 Release",
             "description": "Target Windows (32-bit) with Clang (Release)",
-            "inherits": "x86-clang-debug",
+            "inherits": "win-x86-clang-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
@@ -225,7 +225,7 @@
             }
         },
         {
-            "name": "linux-gcc-x64-release",
+            "name": "linux-clang-x64-release",
             "displayName": "Clang x64 Release",
             "description": "Target Linux (64-bit) with Clang (Release)",
             "inherits": "linux-clang-x64-debug",

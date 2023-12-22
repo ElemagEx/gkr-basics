@@ -38,7 +38,7 @@ TEST_CASE("logging.logger.defs.generic. main")
     gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::app_console_consumer>());
 
 #ifdef _WIN32
-    gkr_log_win32_format_message(nullptr, ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error: ");
+    gkr_log_win32_format_message(nullptr, ERROR_INVALID_PASSWORD, LOG_SEVERITY_ERROR, FACILITY_NETWORK, "Windows Error (%1!u!): ");
 #endif
 
     LOGV(FACILITY_NETWORK, "Hello There!");

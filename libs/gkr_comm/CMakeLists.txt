@@ -4,7 +4,6 @@ target_include_directories(gkr_comm PUBLIC ".")
 
 target_sources(gkr_comm
     ${GKR_CPP_INTERFACE}
-    "gkr/comm/api.h"
     "gkr/comm/udp_socket_sender.hpp"
     "gkr/comm/udp_socket_receiver.hpp"
 )

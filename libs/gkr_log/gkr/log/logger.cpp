@@ -1,4 +1,4 @@
-#include "logger.hpp"
+#include "logger.hxx"
 
 #include <gkr/stamp.hpp>
 

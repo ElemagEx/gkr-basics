@@ -1,15 +1,10 @@
-add_library(gkr_log SHARED)
+add_library(gkr_log)
 
-target_link_libraries(gkr_log PRIVATE gkr_core gkr_data gkr_comm)
 target_include_directories(gkr_log PUBLIC ".")
 target_include_directories(gkr_log PUBLIC "gkr/log/imposters")
 
-set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
-
-# C INTERFACE
-target_sources(
-    gkr_log
-    INTERFACE
+target_sources(gkr_log
+    ${GKR_C_INTERFACE}
     "gkr/log/log.h"
     "gkr/log/galery.h"
     "gkr/log/logging.h"
@@ -22,10 +17,8 @@ target_sources(
     "gkr/log/consumers/app_console_consumer.h"
     "gkr/log/consumers/windows_debugger_consumer.h"
 )
-# C++ INTERFACE
-target_sources(
-    gkr_log
-    INTERFACE
+target_sources(gkr_log
+    ${GKR_CPP_INTERFACE}
     "gkr/log/log.hpp"
     "gkr/log/galery.hpp"
     "gkr/log/logging.hpp"
@@ -40,15 +33,11 @@ target_sources(
     "gkr/log/consumers/app_console_consumer.hpp"
     "gkr/log/consumers/windows_debugger_consumer.hpp"
 )
-# PRIVATE Headers
-target_sources(
-    gkr_log
+target_sources(gkr_log
     PRIVATE
-    "gkr/log/logger.hpp"
+    "gkr/log/logger.hxx"
 )
-# PRIVATE Sources
-target_sources(
-    gkr_log
+target_sources(gkr_log
     PRIVATE
     "gkr/log/galery.cpp"
     "gkr/log/logger.cpp"
@@ -61,10 +50,8 @@ target_sources(
     "gkr/log/consumers/app_console_consumer.cpp"
     "gkr/log/consumers/windows_debugger_consumer.cpp"
 )
-# plog original headers
-target_sources(
-    gkr_log
-    INTERFACE
+target_sources(gkr_log
+    ${GKR_CPP_INTERFACE}
     "gkr/log/imposters/plog/Init.h"
     "gkr/log/imposters/plog/Log.h"
     "gkr/log/imposters/plog/Logger.h"
@@ -93,12 +80,15 @@ target_sources(
     "gkr/log/imposters/plog/Helpers/HexDump.h"
     "gkr/log/imposters/plog/Helpers/PrintVar.h"
 )
-# plog imposter header
-target_sources(
-    gkr_log
-    PUBLIC
+target_sources(gkr_log
+    ${GKR_CPP_INTERFACE}
     "gkr/log/imposters/plog/Wrapper.h"
 )
+
+target_link_libraries(gkr_log PUBLIC  gkr_core)
+target_link_libraries(gkr_log PRIVATE gkr_headers_only gkr_data gkr_comm)
+
+set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 
 if(GKR_BASICS_TESTS)
 add_subdirectory(tests)

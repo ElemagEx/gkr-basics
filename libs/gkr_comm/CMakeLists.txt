@@ -1,20 +1,19 @@
-add_library(gkr_comm SHARED)
+add_library(gkr_comm)
 
-target_link_libraries(gkr_comm PRIVATE gkr_core gkr_data)
 target_include_directories(gkr_comm PUBLIC ".")
 
-set_target_properties(gkr_comm PROPERTIES DEFINE_SYMBOL BUILDING_GKR_COMM)
-
-target_sources(
-    gkr_comm
-    INTERFACE
+target_sources(gkr_comm
+    ${GKR_CPP_INTERFACE}
     "gkr/comm/api.h"
     "gkr/comm/udp_socket_sender.hpp"
     "gkr/comm/udp_socket_receiver.hpp"
 )
-target_sources(
-    gkr_comm
+target_sources(gkr_comm
     PRIVATE
     "gkr/comm/udp_socket_sender.cpp"
     "gkr/comm/udp_socket_receiver.cpp"
 )
+
+target_link_libraries(gkr_comm PUBLIC gkr_headers_only gkr_core gkr_data)
+
+set_target_properties(gkr_comm PROPERTIES DEFINE_SYMBOL BUILDING_GKR_COMM)

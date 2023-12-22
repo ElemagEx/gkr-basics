@@ -1,6 +1,7 @@
 # Folders
 .vs/
 build/
+install/
 
 # Prerequisites
 *.d

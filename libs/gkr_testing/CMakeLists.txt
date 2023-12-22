@@ -9,4 +9,4 @@ target_sources(
     "gkr/testing/allocator.hpp"
     "gkr/testing/diag_names.hpp"
     "gkr/testing/diag_undefs.hpp"
-    )
+)

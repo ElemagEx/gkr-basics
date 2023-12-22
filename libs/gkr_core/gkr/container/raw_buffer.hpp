@@ -79,7 +79,7 @@ T exchange(T& obj, U&& new_value) noexcept(
 namespace gkr
 {
 
-template<typename Allocator=std::allocator<char>>
+template<typename Allocator=std::allocator<std::max_align_t>>
 class raw_buffer
 {
     using allocator_traits = std::allocator_traits<Allocator>;
@@ -91,10 +91,7 @@ class raw_buffer
         : alignof(allocator_value_t)
         ;
 public:
-    static constexpr std::size_t alignment = (alignof(std::max_align_t) >= alignof(allocator_value_t))
-        ? alignof(std::max_align_t)
-        : alignof(allocator_value_t)
-        ;
+    static constexpr std::size_t alignment = alignof(allocator_value_t);
 
     static constexpr bool move_constructor_is_nothrow = (
         std::is_nothrow_move_constructible<Allocator>::value
@@ -111,7 +108,7 @@ public:
         );
 
 private:
-    char*       m_data     = nullptr;
+    char*       m_data     = nullptr;                                     
     std::size_t m_size     = 0;
     std::size_t m_capacity = 0;
 
@@ -147,7 +144,7 @@ public:
     }
     raw_buffer& operator=(const raw_buffer& other)
     {
-        if(this == &other) return *this;
+        if(this != &other)
         {
             clear();
             if_constexpr(allocator_traits::propagate_on_container_copy_assignment::value)
@@ -299,8 +296,10 @@ public:
     {
         if(m_data != nullptr)
         {
-            const std::size_t count = m_capacity / granularity;
-
+            const std::size_t count = ((m_capacity % granularity) == 0)
+                ? (m_capacity / granularity + 0)
+                : (m_capacity / granularity + 1)
+                ;
             m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_data), count);
 
             m_data     = nullptr;

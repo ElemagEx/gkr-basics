@@ -1,12 +1,14 @@
 #include <gkr/log/consumers/udp_socket_consumer.hpp>
 #include <gkr/log/consumer.hpp>
 #include <gkr/log/logging.hpp>
-#include <gkr/stamp.hpp>
+#include <gkr/log/defs/generic.hpp>
 
+#include <gkr/testing/log_defs.hpp>
+
+#include <gkr/stamp.hpp>
 #include <gkr/comm/udp_socket_receiver.hpp>
 #include <gkr/data/log_message.hpp>
 
-#include <gkr/net/lib.hpp>
 #include <gkr/net/address.hpp>
 #include <gkr/concurency/worker_thread.hpp>
 
@@ -15,34 +17,10 @@
 #include <thread>
 #include <iostream>
 
-#define SEVERITY_FATAL   0
-#define SEVERITY_ERROR   1
-#define SEVERITY_WARNING 2
-#define SEVERITY_INFO    3
-#define SEVERITY_VERBOSE 4
+#define COMMON_SEVERITIES_INFOS LOG_SEVERITIES_INFOS
+constexpr gkr::log::name_id_pair g_severities_infos[] = COMMON_SEVERITIES_INFOS;
+constexpr gkr::log::name_id_pair g_facilities_infos[] = COMMON_FACILITIES_INFOS;
 
-#define FACILITY_GENERAL 0
-#define FACILITY_NETWORK 1
-#define FACILITY_FILESYS 2
-#define FACILITY_SYNCHRO 3
-
-constexpr gkr::log::name_id_pair g_severities_infos[] = {
-    {"Fatal"  , SEVERITY_FATAL  },
-    {"Error"  , SEVERITY_ERROR  },
-    {"Warning", SEVERITY_WARNING},
-    {"Info"   , SEVERITY_INFO   },
-    {"Verbose", SEVERITY_VERBOSE},
-    {nullptr  , 0               }
-};
-constexpr gkr::log::name_id_pair g_facilities_infos[] = {
-    {"General", FACILITY_GENERAL},
-    {"Network", FACILITY_NETWORK},
-    {"FileSys", FACILITY_FILESYS},
-    {"Synchro", FACILITY_SYNCHRO},
-    {nullptr  , 0               }
-};
-
-static gkr::net::lib     networking;
 static gkr::log::logging logging(nullptr, 0, 0, g_severities_infos, g_facilities_infos);
 
 constexpr unsigned short UDP_COMM_PORT = 12345;
@@ -154,15 +132,15 @@ TEST_CASE("logging.consumer.udp_socket. Simple packet")
 
     REQUIRE(gkr_log_set_this_thread_name("thread-0"));
 
-    REQUIRE(gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First simple log message"));
+    REQUIRE(gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First simple log message"));
 
     std::thread t([] () {
         gkr_log_set_this_thread_name("thread-1");
-        gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread simple log message");
+        gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread simple log message");
     });
     t.join();
 
-    REQUIRE(gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second simple log message"));
+    REQUIRE(gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second simple log message"));
 
     recv.join(false);
 }
@@ -177,15 +155,15 @@ TEST_CASE("logging.consumer.udp_socket. Splitted packet")
 
     REQUIRE(gkr_log_set_this_thread_name("thread-A"));
 
-    REQUIRE(gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First splitted log message"));
+    REQUIRE(gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First splitted log message"));
 
     std::thread t([] () {
         gkr_log_set_this_thread_name("thread-B");
-        gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread splitted log message");
+        gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread splitted log message");
     });
     t.join();
 
-    REQUIRE(gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second splitted log message"));
+    REQUIRE(gkr_log_simple_message(nullptr, LOG_SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second splitted log message"));
 
     recv.join(false);
 }

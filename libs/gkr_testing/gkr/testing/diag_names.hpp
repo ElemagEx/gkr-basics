@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 inline const char* DIAG_GET_PREFIX(int id)
 {

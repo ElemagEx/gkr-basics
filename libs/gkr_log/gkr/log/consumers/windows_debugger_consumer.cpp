@@ -1,7 +1,7 @@
 #include "windows_debugger_consumer.hpp"
 
 #include <gkr/stamp.hpp>
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 #include <gkr/log/galery.hpp>
 #include <gkr/log/logging.hpp>
 

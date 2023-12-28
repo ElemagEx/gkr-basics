@@ -12,7 +12,7 @@ option(GKR_BASICS_TESTS_PROSPONE "Prospone tests execution" ON) #Dependent optio
 
 include(cmake/warnings.cmake) #sets variable ${GKR_BASICS_FLAGS_WARNINGS} and ${GKR_BASICS_TESTING_WARNINGS}
 
-set(CMAKE_CXX_STANDARD          11)
+set(CMAKE_CXX_STANDARD          23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
 

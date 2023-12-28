@@ -9,6 +9,7 @@ target_sources(gkr_headers_only
 )
 target_sources(gkr_headers_only
     ${GKR_CPP_INTERFACE}
+    "gkr/diagnostics.hpp"
     "gkr/container/raw_buffer.hpp"
     "gkr/container/lockfree_queue.hpp"
     "gkr/container/lockfree_grow_only_bag.hpp"

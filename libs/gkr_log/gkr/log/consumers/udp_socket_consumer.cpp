@@ -7,7 +7,7 @@
 #include <gkr/sys/process.hpp>
 #include <gkr/net/lib.hpp>
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #include <cstring>
 

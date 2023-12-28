@@ -1,6 +1,6 @@
 #include "thread.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #ifdef _WIN32
 

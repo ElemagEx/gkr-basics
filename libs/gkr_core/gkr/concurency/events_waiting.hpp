@@ -9,7 +9,7 @@
 
 #ifndef GKR_EVENTS_WAITING_SINGLE_HEADER
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.hpp>

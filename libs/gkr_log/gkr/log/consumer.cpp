@@ -1,7 +1,7 @@
 #include "consumer.hpp"
 #include "logging.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 #include <gkr/stamp.hpp>
 
 #include <cstring>

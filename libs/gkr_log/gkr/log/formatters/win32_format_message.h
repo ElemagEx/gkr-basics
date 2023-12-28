@@ -25,7 +25,7 @@ inline int gkr_log_win32_format_message(void* instance, long msg_id, int severit
 {
     char* buf;
     unsigned cch;
-    unsigned len;
+    unsigned len = 0;
     if(!gkr_log_custom_message_start(instance, severity, &buf, &cch)) return 0;
 
     if(prefix != NULL)

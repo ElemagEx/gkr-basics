@@ -1,6 +1,6 @@
 #include "stamp.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #include <chrono>
 #include <cerrno>

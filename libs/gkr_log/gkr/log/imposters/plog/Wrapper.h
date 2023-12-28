@@ -14,7 +14,7 @@
 #include <plog/Appenders/DynamicAppender.h>
 #include <plog/Appenders/RollingFileAppender.h>
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>
 

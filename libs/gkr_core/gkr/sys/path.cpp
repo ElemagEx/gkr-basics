@@ -1,6 +1,6 @@
 #include "path.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #include <cstring>
 

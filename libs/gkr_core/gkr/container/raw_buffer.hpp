@@ -8,7 +8,7 @@
 
 #ifndef GKR_RAW_BUFFER_SINGLE_HEADER
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.hpp>

@@ -1,7 +1,7 @@
 #include "dummy_consumer.hpp"
 
 #include <gkr/stamp.hpp>
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
 
 #include <cstdio>

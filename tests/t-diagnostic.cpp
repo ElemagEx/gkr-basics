@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #define DIAG_UNIT_TESTING
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #include <exception>
 
@@ -33,6 +33,18 @@ static void my_cpp_halt_proc_pp_args(int id, const char* msg, const char* file, 
     throw std::exception();
 }
 static int my_cpp_warn_proc_pp_args(int id, const char* msg, const char* file, int line) noexcept
+{
+    return 1;
+}
+//
+// C++ procs - preprocessor ex args
+//
+[[noreturn]]
+static void my_cpp_halt_proc_px_args(int id, const char* msg, const char* func, const char* file, int line) noexcept(false)
+{
+    throw std::exception();
+}
+static int my_cpp_warn_proc_px_args(int id, const char* msg, const char* func, const char* file, int line) noexcept
 {
     return 1;
 }
@@ -83,7 +95,7 @@ static int my_c_warn_proc_no_args(int id, const char* msg)
     return 1;
 }
 //
-// C procs - no args
+// C procs - preprocessor args
 //
 [[noreturn]]
 static void my_c_halt_proc_pp_args(int id, const char* msg, const char* file, int line)
@@ -91,6 +103,18 @@ static void my_c_halt_proc_pp_args(int id, const char* msg, const char* file, in
     longjmp(my_jmp_buffer, -1);
 }
 static int my_c_warn_proc_pp_args(int id, const char* msg, const char* file, int line)
+{
+    return 1;
+}
+//
+// C procs - preprocessor ex args
+//
+[[noreturn]]
+static void my_c_halt_proc_px_args(int id, const char* msg, const char* func, const char* file, int line)
+{
+    longjmp(my_jmp_buffer, -1);
+}
+static int my_c_warn_proc_px_args(int id, const char* msg, const char* func, const char* file, int line)
 {
     return 1;
 }
@@ -154,7 +178,7 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_DISABLED
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Disabled Asserts - src=undefined
 //
@@ -278,7 +302,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=disabled, src=undefined")
 #define DIAG_NOEXCEPT       true
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_DISABLED
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Disabled Asserts - src=undefined
 //
@@ -402,7 +426,7 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_SILENT
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Silent Asserts - src=undefined
 //
@@ -526,7 +550,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=silent, src=undefined")
 #define DIAG_NOEXCEPT       true
 #define DIAG_SRC_INFO       -1
 #define DIAG_MODE           DIAG_MODE_SILENT
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Silent Asserts - src=undefined
 //
@@ -650,7 +674,7 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_STEADY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Steady Asserts - src=none
 //
@@ -770,83 +794,83 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=none")
 extern "C" {
 #include <gkr/testing/diag_undefs.hpp>
 #define DIAG_EXTERNAL_API
-//      DIAG_HALT
+    //      DIAG_HALT
 #define DIAG_WARN           my_c_warn_proc_pp_args
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_STEADY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Steady Asserts - src=preprocessor
 //
-static void c_test_steady_assert_not_null_ptr_pp_args(const char* ptr)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void c_test_steady_assert_check_pp_args(int arg)
-{
-    Assert_Check(arg == 1);
-}
-static void c_test_steady_assert_check_msg_pp_args(int arg)
-{
-    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void c_test_steady_assert_failure_pp_args()
-{
-    Assert_Failure();
-}
-static void c_test_steady_assert_failure_msg_pp_args()
-{
-    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
-}
-//
-// Steady Checks - src=preprocessor
-//
-static bool c_test_steady_check_not_null_ptr_pp_args(const char* ptr)
-{
-    Check_NotNullPtr(ptr, false);
-    return true;
-}
-static bool c_test_steady_check_valid_state_pp_args(int arg)
-{
-    Check_ValidState(arg == 1, false);
-    return true;
-}
-static bool c_test_steady_check_failure_msg_pp_args()
-{
-    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
-}
-static bool c_test_steady_check_failure_pp_args()
-{
-    Check_Failure(false);
-}
-static bool c_test_steady_check_recovery_pp_args()
-{
-    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
-    return false;
-}
-//
-// Steady Arguments Checks - src=preprocessor
-//
-static bool c_test_steady_check_arg_not_null_ptr_pp_args(const char* ptr)
-{
-    Check_NotNullPtr(ptr, false);
-    return true;
-}
-static bool c_test_steady_check_arg_is_valid_pp_args(int arg)
-{
-    Check_ValidState(arg == 1, false);
-    return true;
-}
-static bool c_test_steady_check_arg_array_pp_args(unsigned len, const char* str)
-{
-    Check_Arg_Array(pos, len, str[pos] != ' ', false);
-    return true;
-}
-static bool c_test_steady_check_arg_invalid_pp_args(int arg)
-{
-    Check_Arg_Invalid(arg, false);
-}
+    static void c_test_steady_assert_not_null_ptr_pp_args(const char* ptr)
+    {
+        Assert_NotNullPtr(ptr);
+    }
+    static void c_test_steady_assert_check_pp_args(int arg)
+    {
+        Assert_Check(arg == 1);
+    }
+    static void c_test_steady_assert_check_msg_pp_args(int arg)
+    {
+        Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+    }
+    static void c_test_steady_assert_failure_pp_args()
+    {
+        Assert_Failure();
+    }
+    static void c_test_steady_assert_failure_msg_pp_args()
+    {
+        Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+    }
+    //
+    // Steady Checks - src=preprocessor
+    //
+    static bool c_test_steady_check_not_null_ptr_pp_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_steady_check_valid_state_pp_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_steady_check_failure_msg_pp_args()
+    {
+        Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+    }
+    static bool c_test_steady_check_failure_pp_args()
+    {
+        Check_Failure(false);
+    }
+    static bool c_test_steady_check_recovery_pp_args()
+    {
+        Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+        return false;
+    }
+    //
+    // Steady Arguments Checks - src=preprocessor
+    //
+    static bool c_test_steady_check_arg_not_null_ptr_pp_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_steady_check_arg_is_valid_pp_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_steady_check_arg_array_pp_args(unsigned len, const char* str)
+    {
+        Check_Arg_Array(pos, len, str[pos] != ' ', false);
+        return true;
+    }
+    static bool c_test_steady_check_arg_invalid_pp_args(int arg)
+    {
+        Check_Arg_Invalid(arg, false);
+    }
 }
 //
 // Test cases: lang=C, mode=steady, src=preprocessor
@@ -890,6 +914,131 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=preprocessor")
 }
 
 //
+// SECTION: lang=C, mode=steady, src=preprocessor_ex
+//
+extern "C" {
+#include <gkr/testing/diag_undefs.hpp>
+#define DIAG_EXTERNAL_API
+//      DIAG_HALT
+#define DIAG_WARN           my_c_warn_proc_px_args
+#define DIAG_NOEXCEPT
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR_EX
+#define DIAG_MODE           DIAG_MODE_STEADY
+#include <gkr/diagnostics.hpp>
+//
+// Steady Asserts - src=preprocessor_ex
+//
+    static void c_test_steady_assert_not_null_ptr_px_args(const char* ptr)
+    {
+        Assert_NotNullPtr(ptr);
+    }
+    static void c_test_steady_assert_check_px_args(int arg)
+    {
+        Assert_Check(arg == 1);
+    }
+    static void c_test_steady_assert_check_msg_px_args(int arg)
+    {
+        Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+    }
+    static void c_test_steady_assert_failure_px_args()
+    {
+        Assert_Failure();
+    }
+    static void c_test_steady_assert_failure_msg_px_args()
+    {
+        Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+    }
+    //
+    // Steady Checks - src=preprocessor_ex
+    //
+    static bool c_test_steady_check_not_null_ptr_px_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_steady_check_valid_state_px_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_steady_check_failure_msg_px_args()
+    {
+        Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+    }
+    static bool c_test_steady_check_failure_px_args()
+    {
+        Check_Failure(false);
+    }
+    static bool c_test_steady_check_recovery_px_args()
+    {
+        Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+        return false;
+    }
+    //
+    // Steady Arguments Checks - src=preprocessor_ex
+    //
+    static bool c_test_steady_check_arg_not_null_ptr_px_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_steady_check_arg_is_valid_px_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_steady_check_arg_array_px_args(unsigned len, const char* str)
+    {
+        Check_Arg_Array(pos, len, str[pos] != ' ', false);
+        return true;
+    }
+    static bool c_test_steady_check_arg_invalid_px_args(int arg)
+    {
+        Check_Arg_Invalid(arg, false);
+    }
+}
+//
+// Test cases: lang=C, mode=steady, src=preprocessor_ex
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C, mode=steady, src=preprocessor_ex")
+{
+    CHECK_NOTHROW(call(c_test_steady_assert_not_null_ptr_px_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_px_args, 1));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_msg_px_args, 1));
+
+    CHECK_NOTHROW(call(c_test_steady_assert_not_null_ptr_px_args, NULL));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_px_args, 0));
+    CHECK_NOTHROW(call(c_test_steady_assert_check_msg_px_args, 0));
+
+    CHECK_NOTHROW(call(c_test_steady_assert_failure_px_args));
+    CHECK_NOTHROW(call(c_test_steady_assert_failure_msg_px_args));
+}
+TEST_CASE("general.diagnostics. Checks, lang=C, mode=steady, src=preprocessor_ex")
+{
+    CHECK(call(c_test_steady_check_not_null_ptr_px_args, "abcde"));
+    CHECK(call(c_test_steady_check_valid_state_px_args, 1));
+
+    CHECK_FALSE(call(c_test_steady_check_not_null_ptr_px_args, NULL));
+    CHECK_FALSE(call(c_test_steady_check_valid_state_px_args, 0));
+
+    CHECK_FALSE(call(c_test_steady_check_failure_msg_px_args));
+    CHECK_FALSE(call(c_test_steady_check_failure_px_args));
+    CHECK_FALSE(call(c_test_steady_check_recovery_px_args));
+}
+TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=preprocessor_ex")
+{
+    CHECK(call(c_test_steady_check_arg_not_null_ptr_px_args, "abcde"));
+    CHECK(call(c_test_steady_check_arg_is_valid_px_args, 1));
+    CHECK(call(c_test_steady_check_arg_array_px_args, 7U, "abc-def"));
+
+    CHECK_FALSE(call(c_test_steady_check_arg_not_null_ptr_px_args, NULL));
+    CHECK_FALSE(call(c_test_steady_check_arg_is_valid_px_args, 0));
+    CHECK_FALSE(call(c_test_steady_check_arg_array_px_args, 7U, "abc def"));
+
+    CHECK_FALSE(call(c_test_steady_check_arg_invalid_px_args, 0));
+}
+
+//
 // SECTION: lang=C++, mode=steady, src=none
 //
 #include <gkr/testing/diag_undefs.hpp>
@@ -899,7 +1048,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=preprocessor")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_STEADY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Steady Asserts - src=none
 //
@@ -1022,7 +1171,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=none")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_STEADY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Steady Asserts - src=preprocessor
 //
@@ -1136,6 +1285,129 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=preprocessor")
 }
 
 //
+// SECTION: lang=C++, mode=steady, src=preprocessor_ex
+//
+#include <gkr/testing/diag_undefs.hpp>
+#define DIAG_EXTERNAL_API
+//      DIAG_HALT
+#define DIAG_WARN           my_cpp_warn_proc_px_args
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR_EX
+#define DIAG_MODE           DIAG_MODE_STEADY
+#include <gkr/diagnostics.hpp>
+//
+// Steady Asserts - src=preprocessor_ex
+//
+static void cpp_test_steady_assert_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_steady_assert_check_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_steady_assert_check_msg_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_steady_assert_failure_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_steady_assert_failure_msg_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Steady Checks - src=preprocessor_ex
+//
+static bool cpp_test_steady_check_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_steady_check_valid_state_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_steady_check_failure_msg_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_steady_check_failure_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_steady_check_recovery_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// Steady Arguments Checks - src=preprocessor_ex
+//
+static bool cpp_test_steady_check_arg_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_steady_check_arg_is_valid_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_steady_check_arg_array_px_args(unsigned len, const char* str) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_steady_check_arg_invalid_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+//
+// Test cases: lang=C++, mode=steady, src=preprocessor_ex
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=steady, src=preprocessor_ex")
+{
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_px_args("abcde"));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_px_args(1));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_px_args(1));
+
+    CHECK_NOTHROW(cpp_test_steady_assert_not_null_ptr_px_args(nullptr));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_px_args(0));
+    CHECK_NOTHROW(cpp_test_steady_assert_check_msg_px_args(0));
+
+    CHECK_NOTHROW(cpp_test_steady_assert_failure_px_args());
+    CHECK_NOTHROW(cpp_test_steady_assert_failure_msg_px_args());
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=steady, src=preprocessor_ex")
+{
+    CHECK(cpp_test_steady_check_not_null_ptr_px_args("abcde"));
+    CHECK(cpp_test_steady_check_valid_state_px_args(1));
+
+    CHECK_FALSE(cpp_test_steady_check_not_null_ptr_px_args(nullptr));
+    CHECK_FALSE(cpp_test_steady_check_valid_state_px_args(0));
+
+    CHECK_FALSE(cpp_test_steady_check_failure_msg_px_args());
+    CHECK_FALSE(cpp_test_steady_check_failure_px_args());
+    CHECK_FALSE(cpp_test_steady_check_recovery_px_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=preprocessor_ex")
+{
+    CHECK(cpp_test_steady_check_arg_not_null_ptr_px_args("abcde"));
+    CHECK(cpp_test_steady_check_arg_is_valid_px_args(1));
+    CHECK(cpp_test_steady_check_arg_array_px_args(7U, "abc-def"));
+
+    CHECK_FALSE(cpp_test_steady_check_arg_not_null_ptr_px_args(nullptr));
+    CHECK_FALSE(cpp_test_steady_check_arg_is_valid_px_args(0));
+    CHECK_FALSE(cpp_test_steady_check_arg_array_px_args(7U, "abc def"));
+
+    CHECK_FALSE(cpp_test_steady_check_arg_invalid_px_args(0));
+}
+
+//
 // SECTION: lang=C++, mode=steady, src=std_source_location
 //
 #ifdef __cpp_lib_source_location
@@ -1146,7 +1418,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=preprocessor")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
 #define DIAG_MODE           DIAG_MODE_STEADY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Steady Asserts - src=std_source_location
 //
@@ -1278,7 +1550,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=steady, src=std_source_loca
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
 #define DIAG_MODE           DIAG_MODE_STEADY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Steady Asserts - src=std_stacktrace
 //
@@ -1409,7 +1681,7 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Noisy Asserts - src=none
 //
@@ -1534,78 +1806,78 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
-//
-// Noisy Asserts - src=preprocessor
-//
-static void c_test_noisy_assert_not_null_ptr_pp_args(const char* ptr)
-{
-    Assert_NotNullPtr(ptr);
-}
-static void c_test_noisy_assert_check_pp_args(int arg)
-{
-    Assert_Check(arg == 1);
-}
-static void c_test_noisy_assert_check_msg_pp_args(int arg)
-{
-    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
-}
-static void c_test_noisy_assert_failure_pp_args()
-{
-    Assert_Failure();
-}
-static void c_test_noisy_assert_failure_msg_pp_args()
-{
-    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
-}
-//
-// Noisy Checks - src=preprocessor
-//
-static bool c_test_noisy_check_not_null_ptr_pp_args(const char* ptr)
-{
-    Check_NotNullPtr(ptr, false);
-    return true;
-}
-static bool c_test_noisy_check_valid_state_pp_args(int arg)
-{
-    Check_ValidState(arg == 1, false);
-    return true;
-}
-static bool c_test_noisy_check_failure_msg_pp_args()
-{
-    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
-}
-static bool c_test_noisy_check_failure_pp_args()
-{
-    Check_Failure(false);
-}
-static bool c_test_noisy_check_recovery_pp_args()
-{
-    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
-    return false;
-}
-//
-// Noisy Arguments Checks - src=preprocessor
-//
-static bool c_test_noisy_check_arg_not_null_ptr_pp_args(const char* ptr)
-{
-    Check_NotNullPtr(ptr, false);
-    return true;
-}
-static bool c_test_noisy_check_arg_is_valid_pp_args(int arg)
-{
-    Check_ValidState(arg == 1, false);
-    return true;
-}
-static bool c_test_noisy_check_arg_array_pp_args(unsigned len, const char* str)
-{
-    Check_Arg_Array(pos, len, str[pos] != ' ', false);
-    return true;
-}
-static bool c_test_noisy_check_arg_invalid_pp_args(int arg)
-{
-    Check_Arg_Invalid(arg, false);
-}
+#include <gkr/diagnostics.hpp>
+    //
+    // Noisy Asserts - src=preprocessor
+    //
+    static void c_test_noisy_assert_not_null_ptr_pp_args(const char* ptr)
+    {
+        Assert_NotNullPtr(ptr);
+    }
+    static void c_test_noisy_assert_check_pp_args(int arg)
+    {
+        Assert_Check(arg == 1);
+    }
+    static void c_test_noisy_assert_check_msg_pp_args(int arg)
+    {
+        Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+    }
+    static void c_test_noisy_assert_failure_pp_args()
+    {
+        Assert_Failure();
+    }
+    static void c_test_noisy_assert_failure_msg_pp_args()
+    {
+        Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+    }
+    //
+    // Noisy Checks - src=preprocessor
+    //
+    static bool c_test_noisy_check_not_null_ptr_pp_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_noisy_check_valid_state_pp_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_noisy_check_failure_msg_pp_args()
+    {
+        Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+    }
+    static bool c_test_noisy_check_failure_pp_args()
+    {
+        Check_Failure(false);
+    }
+    static bool c_test_noisy_check_recovery_pp_args()
+    {
+        Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+        return false;
+    }
+    //
+    // Noisy Arguments Checks - src=preprocessor
+    //
+    static bool c_test_noisy_check_arg_not_null_ptr_pp_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_noisy_check_arg_is_valid_pp_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_noisy_check_arg_array_pp_args(unsigned len, const char* str)
+    {
+        Check_Arg_Array(pos, len, str[pos] != ' ', false);
+        return true;
+    }
+    static bool c_test_noisy_check_arg_invalid_pp_args(int arg)
+    {
+        Check_Arg_Invalid(arg, false);
+    }
 }
 //
 // Test cases: lang=C, mode=noisy, src=preprocessor
@@ -1649,6 +1921,131 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=noisy, src=preprocessor")
 }
 
 //
+// SECTION: lang=C, mode=noisy, src=preprocessor_ex
+//
+extern "C" {
+#include <gkr/testing/diag_undefs.hpp>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_c_halt_proc_px_args
+#define DIAG_WARN           my_c_warn_proc_px_args
+#define DIAG_NOEXCEPT
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR_EX
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diagnostics.hpp>
+    //
+    // Noisy Asserts - src=preprocessor_ex
+    //
+    static void c_test_noisy_assert_not_null_ptr_px_args(const char* ptr)
+    {
+        Assert_NotNullPtr(ptr);
+    }
+    static void c_test_noisy_assert_check_px_args(int arg)
+    {
+        Assert_Check(arg == 1);
+    }
+    static void c_test_noisy_assert_check_msg_px_args(int arg)
+    {
+        Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+    }
+    static void c_test_noisy_assert_failure_px_args()
+    {
+        Assert_Failure();
+    }
+    static void c_test_noisy_assert_failure_msg_px_args()
+    {
+        Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+    }
+    //
+    // Noisy Checks - src=preprocessor_ex
+    //
+    static bool c_test_noisy_check_not_null_ptr_px_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_noisy_check_valid_state_px_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_noisy_check_failure_msg_px_args()
+    {
+        Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+    }
+    static bool c_test_noisy_check_failure_px_args()
+    {
+        Check_Failure(false);
+    }
+    static bool c_test_noisy_check_recovery_px_args()
+    {
+        Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+        return false;
+    }
+    //
+    // Noisy Arguments Checks - src=preprocessor_ex
+    //
+    static bool c_test_noisy_check_arg_not_null_ptr_px_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_noisy_check_arg_is_valid_px_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_noisy_check_arg_array_px_args(unsigned len, const char* str)
+    {
+        Check_Arg_Array(pos, len, str[pos] != ' ', false);
+        return true;
+    }
+    static bool c_test_noisy_check_arg_invalid_px_args(int arg)
+    {
+        Check_Arg_Invalid(arg, false);
+    }
+}
+//
+// Test cases: lang=C, mode=noisy, src=preprocessor_ex
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C, mode=noisy, src=preprocessor_ex")
+{
+    CHECK_NOTHROW(call(c_test_noisy_assert_not_null_ptr_px_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_noisy_assert_check_px_args, 1));
+    CHECK_NOTHROW(call(c_test_noisy_assert_check_msg_px_args, 1));
+
+    CHECK_THROWS(call(c_test_noisy_assert_not_null_ptr_px_args, NULL));
+    CHECK_THROWS(call(c_test_noisy_assert_check_px_args, 0));
+    CHECK_THROWS(call(c_test_noisy_assert_check_msg_px_args, 0));
+
+    CHECK_THROWS(call(c_test_noisy_assert_failure_px_args));
+    CHECK_THROWS(call(c_test_noisy_assert_failure_msg_px_args));
+}
+TEST_CASE("general.diagnostics. Checks, lang=C, mode=noisy, src=preprocessor_ex")
+{
+    CHECK(call(c_test_noisy_check_not_null_ptr_px_args, "abcde"));
+    CHECK(call(c_test_noisy_check_valid_state_px_args, 1));
+
+    CHECK_FALSE(call(c_test_noisy_check_not_null_ptr_px_args, NULL));
+    CHECK_FALSE(call(c_test_noisy_check_valid_state_px_args, 0));
+
+    CHECK_FALSE(call(c_test_noisy_check_failure_msg_px_args));
+    CHECK_FALSE(call(c_test_noisy_check_failure_px_args));
+    CHECK_FALSE(call(c_test_noisy_check_recovery_px_args));
+}
+TEST_CASE("general.diagnostics. Args, lang=C, mode=noisy, src=preprocessor_ex")
+{
+    CHECK(call(c_test_noisy_check_arg_not_null_ptr_px_args, "abcde"));
+    CHECK(call(c_test_noisy_check_arg_is_valid_px_args, 1));
+    CHECK(call(c_test_noisy_check_arg_array_px_args, 7U, "abc-def"));
+
+    CHECK_FALSE(call(c_test_noisy_check_arg_not_null_ptr_px_args, NULL));
+    CHECK_FALSE(call(c_test_noisy_check_arg_is_valid_px_args, 0));
+    CHECK_FALSE(call(c_test_noisy_check_arg_array_px_args, 7U, "abc def"));
+
+    CHECK_FALSE(call(c_test_noisy_check_arg_invalid_px_args, 0));
+}
+
+//
 // SECTION: lang=C++, mode=noisy, src=none
 //
 #include <gkr/testing/diag_undefs.hpp>
@@ -1658,7 +2055,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=noisy, src=preprocessor")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Noisy Asserts - src=none
 //
@@ -1781,7 +2178,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=none")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Noisy Asserts - src=preprocessor
 //
@@ -1895,6 +2292,129 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=preprocessor")
 }
 
 //
+// SECTION: lang=C++, mode=noisy, src=preprocessor_ex
+//
+#include <gkr/testing/diag_undefs.hpp>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_cpp_halt_proc_px_args
+#define DIAG_WARN           my_cpp_warn_proc_px_args
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR_EX
+#define DIAG_MODE           DIAG_MODE_NOISY
+#include <gkr/diagnostics.hpp>
+//
+// Noisy Asserts - src=preprocessor_ex
+//
+static void cpp_test_noisy_assert_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_noisy_assert_check_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_noisy_assert_check_msg_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_noisy_assert_failure_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_noisy_assert_failure_msg_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Noisy Checks - src=preprocessor_ex
+//
+static bool cpp_test_noisy_check_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_noisy_check_valid_state_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_noisy_check_failure_msg_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_noisy_check_failure_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_noisy_check_recovery_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// noisy Arguments Checks - src=preprocessor_ex
+//
+static bool cpp_test_noisy_check_arg_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_is_valid_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_array_px_args(unsigned len, const char* str) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_noisy_check_arg_invalid_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+//
+// Test cases: lang=C++, mode=noisy, src=preprocessor_ex
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=noisy, src=preprocessor_ex")
+{
+    CHECK_NOTHROW(cpp_test_noisy_assert_not_null_ptr_px_args("abcde"));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_px_args(1));
+    CHECK_NOTHROW(cpp_test_noisy_assert_check_msg_px_args(1));
+
+    CHECK_THROWS(cpp_test_noisy_assert_not_null_ptr_px_args(nullptr));
+    CHECK_THROWS(cpp_test_noisy_assert_check_px_args(0));
+    CHECK_THROWS(cpp_test_noisy_assert_check_msg_px_args(0));
+
+    CHECK_THROWS(cpp_test_noisy_assert_failure_px_args());
+    CHECK_THROWS(cpp_test_noisy_assert_failure_msg_px_args());
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=noisy, src=preprocessor_ex")
+{
+    CHECK(cpp_test_noisy_check_not_null_ptr_px_args("abcde"));
+    CHECK(cpp_test_noisy_check_valid_state_px_args(1));
+
+    CHECK_FALSE(cpp_test_noisy_check_not_null_ptr_px_args(nullptr));
+    CHECK_FALSE(cpp_test_noisy_check_valid_state_px_args(0));
+
+    CHECK_FALSE(cpp_test_noisy_check_failure_msg_px_args());
+    CHECK_FALSE(cpp_test_noisy_check_failure_px_args());
+    CHECK_FALSE(cpp_test_noisy_check_recovery_px_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=preprocessor_ex")
+{
+    CHECK(cpp_test_noisy_check_arg_not_null_ptr_px_args("abcde"));
+    CHECK(cpp_test_noisy_check_arg_is_valid_px_args(1));
+    CHECK(cpp_test_noisy_check_arg_array_px_args(7U, "abc-def"));
+
+    CHECK_FALSE(cpp_test_noisy_check_arg_not_null_ptr_px_args(nullptr));
+    CHECK_FALSE(cpp_test_noisy_check_arg_is_valid_px_args(0));
+    CHECK_FALSE(cpp_test_noisy_check_arg_array_px_args(7U, "abc def"));
+
+    CHECK_FALSE(cpp_test_noisy_check_arg_invalid_px_args(0));
+}
+
+//
 // SECTION: lang=C++, mode=noisy, src=std_source_location
 //
 #ifdef __cpp_lib_source_location
@@ -1905,7 +2425,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=preprocessor")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Noisy Asserts - src=std_source_location
 //
@@ -2037,7 +2557,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=noisy, src=std_source_locat
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Noisy Asserts - src=std_stacktrace
 //
@@ -2168,7 +2688,7 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Intrusive Asserts - src=none
 //
@@ -2293,7 +2813,7 @@ extern "C" {
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Intrusive Asserts - src=preprocessor
 //
@@ -2408,6 +2928,131 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=intrusive, src=preprocessor")
 }
 
 //
+// SECTION: lang=C, mode=intrusive, src=preprocessor_ex
+//
+extern "C" {
+#include <gkr/testing/diag_undefs.hpp>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_c_halt_proc_px_args
+//      DIAG_WARN
+#define DIAG_NOEXCEPT
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR_EX
+#define DIAG_MODE           DIAG_MODE_INTRUSIVE
+#include <gkr/diagnostics.hpp>
+//
+// Intrusive Asserts - src=preprocessor_ex
+//
+    static void c_test_intrusive_assert_not_null_ptr_px_args(const char* ptr)
+    {
+        Assert_NotNullPtr(ptr);
+    }
+    static void c_test_intrusive_assert_check_px_args(int arg)
+    {
+        Assert_Check(arg == 1);
+    }
+    static void c_test_intrusive_assert_check_msg_px_args(int arg)
+    {
+        Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+    }
+    static void c_test_intrusive_assert_failure_px_args()
+    {
+        Assert_Failure();
+    }
+    static void c_test_intrusive_assert_failure_msg_px_args()
+    {
+        Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+    }
+    //
+    // Intrusive Checks - src=preprocessor_ex
+    //
+    static bool c_test_intrusive_check_not_null_ptr_px_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_intrusive_check_valid_state_px_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_intrusive_check_failure_msg_px_args()
+    {
+        Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+    }
+    static bool c_test_intrusive_check_failure_px_args()
+    {
+        Check_Failure(false);
+    }
+    static bool c_test_intrusive_check_recovery_px_args()
+    {
+        Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+        return false;
+    }
+    //
+    // Intrusive Arguments Checks - src=preprocessor_ex
+    //
+    static bool c_test_intrusive_check_arg_not_null_ptr_px_args(const char* ptr)
+    {
+        Check_NotNullPtr(ptr, false);
+        return true;
+    }
+    static bool c_test_intrusive_check_arg_is_valid_px_args(int arg)
+    {
+        Check_ValidState(arg == 1, false);
+        return true;
+    }
+    static bool c_test_intrusive_check_arg_array_px_args(unsigned len, const char* str)
+    {
+        Check_Arg_Array(pos, len, str[pos] != ' ', false);
+        return true;
+    }
+    static bool c_test_intrusive_check_arg_invalid_px_args(int arg)
+    {
+        Check_Arg_Invalid(arg, false);
+    }
+}
+//
+// Test cases: lang=C, mode=intrusive, src=preprocessor_ex
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C, mode=intrusive, src=preprocessor_ex")
+{
+    CHECK_NOTHROW(call(c_test_intrusive_assert_not_null_ptr_px_args, "abcde"));
+    CHECK_NOTHROW(call(c_test_intrusive_assert_check_px_args, 1));
+    CHECK_NOTHROW(call(c_test_intrusive_assert_check_msg_px_args, 1));
+
+    CHECK_THROWS(call(c_test_intrusive_assert_not_null_ptr_px_args, NULL));
+    CHECK_THROWS(call(c_test_intrusive_assert_check_px_args, 0));
+    CHECK_THROWS(call(c_test_intrusive_assert_check_msg_px_args, 0));
+
+    CHECK_THROWS(call(c_test_intrusive_assert_failure_px_args));
+    CHECK_THROWS(call(c_test_intrusive_assert_failure_msg_px_args));
+}
+TEST_CASE("general.diagnostics. Checks, lang=C, mode=intrusive, src=preprocessor_ex")
+{
+    CHECK(call(c_test_intrusive_check_not_null_ptr_px_args, "abcde"));
+    CHECK(call(c_test_intrusive_check_valid_state_px_args, 1));
+
+    CHECK_THROWS(call(c_test_intrusive_check_not_null_ptr_px_args, NULL));
+    CHECK_THROWS(call(c_test_intrusive_check_valid_state_px_args, 0));
+
+    CHECK_THROWS(call(c_test_intrusive_check_failure_msg_px_args));
+    CHECK_THROWS(call(c_test_intrusive_check_failure_px_args));
+    CHECK_THROWS(call(c_test_intrusive_check_recovery_px_args));
+}
+TEST_CASE("general.diagnostics. Args, lang=C, mode=intrusive, src=preprocessor_ex")
+{
+    CHECK(call(c_test_intrusive_check_arg_not_null_ptr_px_args, "abcde"));
+    CHECK(call(c_test_intrusive_check_arg_is_valid_px_args, 1));
+    CHECK(call(c_test_intrusive_check_arg_array_px_args, 7U, "abc-def"));
+
+    CHECK_THROWS(call(c_test_intrusive_check_arg_not_null_ptr_px_args, NULL));
+    CHECK_THROWS(call(c_test_intrusive_check_arg_is_valid_px_args, 0));
+    CHECK_THROWS(call(c_test_intrusive_check_arg_array_px_args, 7U, "abc def"));
+
+    CHECK_THROWS(call(c_test_intrusive_check_arg_invalid_px_args, 0));
+}
+
+//
 // SECTION: lang=C++, mode=intrusive, src=none
 //
 #include <gkr/testing/diag_undefs.hpp>
@@ -2417,7 +3062,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=intrusive, src=preprocessor")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_NONE
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Intrusive Asserts - src=none
 //
@@ -2540,7 +3185,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=none")
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Intrusive Asserts - src=preprocessor
 //
@@ -2654,6 +3299,129 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=preprocessor
 }
 
 //
+// SECTION: lang=C++, mode=intrusive, src=preprocessor_ex
+//
+#include <gkr/testing/diag_undefs.hpp>
+#define DIAG_EXTERNAL_API
+#define DIAG_HALT           my_cpp_halt_proc_px_args
+//      DIAG_WARN
+#define DIAG_NOEXCEPT       false
+#define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR_EX
+#define DIAG_MODE           DIAG_MODE_INTRUSIVE
+#include <gkr/diagnostics.hpp>
+//
+// Intrusive Asserts - src=preprocessor_ex
+//
+static void cpp_test_intrusive_assert_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_NotNullPtr(ptr);
+}
+static void cpp_test_intrusive_assert_check_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Check(arg == 1);
+}
+static void cpp_test_intrusive_assert_check_msg_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Assert_CheckMsg(arg == 1, TEST_ASSERT_CHECK_MESSAGE);
+}
+static void cpp_test_intrusive_assert_failure_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_Failure();
+}
+static void cpp_test_intrusive_assert_failure_msg_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Assert_FailureMsg(TEST_ASSERT_FAILURE_MESSAGE);
+}
+//
+// Intrusive Checks - src=preprocessor_ex
+//
+static bool cpp_test_intrusive_check_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_intrusive_check_valid_state_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_intrusive_check_failure_msg_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_FailureMsg(TEST_CHECK_FAILURE_MESSAGE, false);
+}
+static bool cpp_test_intrusive_check_failure_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Failure(false);
+}
+static bool cpp_test_intrusive_check_recovery_px_args() noexcept(DIAG_NOEXCEPT)
+{
+    Check_Recovery(TEST_CHECK_RECOVERY_MESSAGE);
+    return false;
+}
+//
+// Intrusive Arguments Checks - src=preprocessor_ex
+//
+static bool cpp_test_intrusive_check_arg_not_null_ptr_px_args(const char* ptr) noexcept(DIAG_NOEXCEPT)
+{
+    Check_NotNullPtr(ptr, false);
+    return true;
+}
+static bool cpp_test_intrusive_check_arg_is_valid_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_ValidState(arg == 1, false);
+    return true;
+}
+static bool cpp_test_intrusive_check_arg_array_px_args(unsigned len, const char* str) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Array(pos, len, str[pos] != ' ', false);
+    return true;
+}
+static bool cpp_test_intrusive_check_arg_invalid_px_args(int arg) noexcept(DIAG_NOEXCEPT)
+{
+    Check_Arg_Invalid(arg, false);
+}
+//
+// Test cases: lang=C++, mode=intrusive, src=preprocessor_ex
+//
+TEST_CASE("general.diagnostics. Asserts, lang=C++, mode=intrusive, src=preprocessor_ex")
+{
+    CHECK_NOTHROW(cpp_test_intrusive_assert_not_null_ptr_px_args("abcde"));
+    CHECK_NOTHROW(cpp_test_intrusive_assert_check_px_args(1));
+    CHECK_NOTHROW(cpp_test_intrusive_assert_check_msg_px_args(1));
+
+    CHECK_THROWS(cpp_test_intrusive_assert_not_null_ptr_px_args(nullptr));
+    CHECK_THROWS(cpp_test_intrusive_assert_check_px_args(0));
+    CHECK_THROWS(cpp_test_intrusive_assert_check_msg_px_args(0));
+
+    CHECK_THROWS(cpp_test_intrusive_assert_failure_px_args());
+    CHECK_THROWS(cpp_test_intrusive_assert_failure_msg_px_args());
+}
+TEST_CASE("general.diagnostics. Checks, lang=C++, mode=intrusive, src=preprocessor_ex")
+{
+    CHECK(cpp_test_intrusive_check_not_null_ptr_px_args("abcde"));
+    CHECK(cpp_test_intrusive_check_valid_state_px_args(1));
+
+    CHECK_THROWS(cpp_test_intrusive_check_not_null_ptr_px_args(nullptr));
+    CHECK_THROWS(cpp_test_intrusive_check_valid_state_px_args(0));
+
+    CHECK_THROWS(cpp_test_intrusive_check_failure_msg_px_args());
+    CHECK_THROWS(cpp_test_intrusive_check_failure_px_args());
+    CHECK_THROWS(cpp_test_intrusive_check_recovery_px_args());
+}
+TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=preprocessor_ex")
+{
+    CHECK(cpp_test_intrusive_check_arg_not_null_ptr_px_args("abcde"));
+    CHECK(cpp_test_intrusive_check_arg_is_valid_px_args(1));
+    CHECK(cpp_test_intrusive_check_arg_array_px_args(7U, "abc-def"));
+
+    CHECK_THROWS(cpp_test_intrusive_check_arg_not_null_ptr_px_args(nullptr));
+    CHECK_THROWS(cpp_test_intrusive_check_arg_is_valid_px_args(0));
+    CHECK_THROWS(cpp_test_intrusive_check_arg_array_px_args(7U, "abc def"));
+
+    CHECK_THROWS(cpp_test_intrusive_check_arg_invalid_px_args(0));
+}
+
+//
 // SECTION: lang=C++, mode=intrusive, src=std_source_location
 //
 #ifdef __cpp_lib_source_location
@@ -2664,7 +3432,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=preprocessor
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_SOURCE_LOCATION
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Intrusive Asserts - src=std_source_location
 //
@@ -2796,7 +3564,7 @@ TEST_CASE("general.diagnostics. Args, lang=C++, mode=intrusive, src=std_source_l
 #define DIAG_NOEXCEPT       false
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_STACKTRACE
 #define DIAG_MODE           DIAG_MODE_INTRUSIVE
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 //
 // Intrusive Asserts - src=std_stacktrace
 //

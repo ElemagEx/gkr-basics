@@ -1,7 +1,7 @@
 //NOTE: Do not include protect this file - its multiple inclusions are intended
 
 //
-// Undefines all controlling macros in diagnostics.h file
+// Undefines all controlling macros in diagnostics.h or diagnostics.hpp files
 //
 #undef DIAG_MODE
 #undef DIAG_SRC_INFO
@@ -28,5 +28,4 @@
 #undef DIAG_EXTERNAL_API
 #undef DIAG_NOEXCEPT
 #undef DIAG_HALT
-#undef DIAG_STOP
 #undef DIAG_WARN

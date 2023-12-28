@@ -2,7 +2,7 @@
 
 #include <gkr/net/address.hpp>
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #include <string>
 

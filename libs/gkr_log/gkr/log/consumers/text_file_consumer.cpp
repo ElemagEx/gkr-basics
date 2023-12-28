@@ -1,6 +1,6 @@
 #include "text_file_consumer.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 #include <gkr/stamp.hpp>
 
 #include <gkr/log/galery.hpp>

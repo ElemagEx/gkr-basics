@@ -6,7 +6,7 @@
 #define DIAG_WARN           my_warn_proc
 #define DIAG_NOEXCEPT       false
 #define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 [[noreturn]]
 static void my_halt_proc(int id, const char* msg DIAG_SRC_PROTOTYPE) noexcept(DIAG_NOEXCEPT)

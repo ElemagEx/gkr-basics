@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gkr/api.h>
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 #include <gkr/concurency/events_waiting.hpp>
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
 #include <gkr/misc/stack_args_order.hpp>

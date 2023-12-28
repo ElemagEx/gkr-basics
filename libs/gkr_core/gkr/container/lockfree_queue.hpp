@@ -11,7 +11,7 @@
 
 #ifndef GKR_LOCKFREE_QUEUE_SINGLE_HEADER
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #ifndef __cpp_lib_is_swappable
 #include <gkr/cpp/lib_is_swappable.hpp>

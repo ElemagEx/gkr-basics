@@ -1,6 +1,6 @@
 #include "process.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #include <memory>
 #include <cstring>

@@ -1,6 +1,6 @@
 #include "address.hpp"
 
-#include <gkr/diagnostics.h>
+#include <gkr/diagnostics.hpp>
 
 #ifdef _WIN32
 #pragma warning(disable:4668)

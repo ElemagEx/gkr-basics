@@ -4,7 +4,6 @@
 
 #include <chrono>
 #include <cerrno>
-#include <time.h>
 
 extern "C" {
 

@@ -26,13 +26,13 @@ inline void simple_message(void* instance, int facility, const char* msg)
     }
 }
 template<int severity>
-inline int simple_message_if(bool condition, void* instance, int facility, const char* msg)
+inline void simple_message_if(bool condition, void* instance, int facility, const char* msg)
 {
     if constexpr(threshold(severity))
     {
         if(condition)
         {
-            return gkr_log_simple_message(instance, severity, facility, msg);
+            gkr_log_simple_message(instance, severity, facility, msg);
         }
     }
 }

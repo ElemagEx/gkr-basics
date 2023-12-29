@@ -26,10 +26,12 @@ target_include_directories(gkr_core PUBLIC ".")
 target_sources(gkr_core
     ${GKR_C_INTERFACE}
     "gkr/api.h"
+    "gkr/defs.h"
     "gkr/stamp.h"
 )
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}
+    "gkr/defs.hpp"
     "gkr/stamp.hpp"
     "gkr/concurency/worker_thread.hpp"
 )
@@ -47,6 +49,7 @@ target_sources(gkr_core
     )
 target_sources(gkr_core
     PRIVATE
+    "gkr/defs.cpp"
     "gkr/stamp.cpp"
     "gkr/concurency/worker_thread.cpp"
     "gkr/sys/path.cpp"

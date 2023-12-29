@@ -88,7 +88,7 @@ template<> constexpr int calc_formatter<plog::MessageOnlyFormatter>() { return p
 template<template<class> class Appender, class Formatter>
 int addPlogConsumerWrapper2(int instanceId, Appender<Formatter>* appender)
 {
-    Check_Arg_NotNull(appender, nullptr);
+    Check_Arg_NotNull(appender, 0);
 
     constexpr int formatter = calc_formatter<Formatter>();
 

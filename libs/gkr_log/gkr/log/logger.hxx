@@ -224,8 +224,8 @@ private:
     int m_consumer_id {0};
     int m_ref_count   {0};
 
-    raw_buffer_t m_fmt;
-    raw_buffer_t m_txt;
+    raw_buffer m_fmt;
+    raw_buffer m_txt;
 };
 
 }

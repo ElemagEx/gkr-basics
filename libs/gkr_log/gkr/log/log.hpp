@@ -102,7 +102,7 @@ struct allocator {
         std::size_t cb = n * sizeof(T);
         T* p = static_cast<T*>(allocate_bytes(cb));
         n = cb / sizeof(T);
-        return std::allocation_result{p, cb};
+        return {p, cb};
     }
 #endif
     T* allocate(std::size_t n, const void* = nullptr) {

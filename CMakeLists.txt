@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.23)
+﻿cmake_minimum_required(VERSION 3.22)
 
 project(gkr-basics)
 
@@ -32,9 +32,6 @@ endif()
 if(MSVC)
     set(CMAKE_VS_JUST_MY_CODE_DEBUGGING ON)
     set(CMAKE_CXX_FLAGS "/permissive- /EHsc /GS /sdl")
-endif()
-if(GKR_BASICS_DEV)
-    add_compile_definitions(DIAG_MODE=4)
 endif()
 
 if(CMAKE_VERSION VERSION_LESS "3.23")

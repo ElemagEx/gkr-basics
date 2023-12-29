@@ -19,7 +19,7 @@ class udp_socket_sender : private net::lib
 
 public:
     udp_socket_sender(udp_socket_sender&& other) noexcept(
-        std::is_nothrow_move_assignable<raw_buffer_t>::value
+        std::is_nothrow_move_assignable<raw_buffer>::value
         )
         : m_packetId(std::exchange(other.m_packetId, 0U))
         , m_address (std::move(other.m_address))
@@ -28,7 +28,7 @@ public:
     {
     }
     udp_socket_sender& operator=(udp_socket_sender&& other) noexcept(
-        std::is_nothrow_move_assignable<raw_buffer_t>::value
+        std::is_nothrow_move_assignable<raw_buffer>::value
         )
     {
         m_packetId = std::exchange(other.m_packetId, 0U);
@@ -78,7 +78,7 @@ private:
 
     gkr::net::address m_address;
     gkr::net::socket  m_socket;
-    gkr::raw_buffer_t m_buffer;
+    gkr::raw_buffer   m_buffer;
 };
 
 }

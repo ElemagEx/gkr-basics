@@ -25,7 +25,7 @@ std::string get_current_process_name()
 
     unsigned len = GetModuleBaseNameA(GetCurrentProcess(), nullptr, name, FILENAME_MAX);
 
-    Check_ValidState((len > 0) && (len < FILENAME_MAX), 0);
+    Check_ValidState((len > 0) && (len < FILENAME_MAX), {});
 
     char* ext = std::strrchr(name, '.');
 

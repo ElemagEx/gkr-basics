@@ -26,14 +26,14 @@ class udp_socket_receiver : private net::lib
 
 public:
     udp_socket_receiver(udp_socket_receiver&& other) noexcept(
-        std::is_nothrow_move_assignable<raw_buffer_t>::value
+        std::is_nothrow_move_assignable<raw_buffer>::value
         )
         : m_socket(std::move(other.m_socket))
         , m_packet(std::move(other.m_packet))
     {
     }
     udp_socket_receiver& operator=(udp_socket_receiver&& other) noexcept(
-        std::is_nothrow_move_assignable<raw_buffer_t>::value
+        std::is_nothrow_move_assignable<raw_buffer>::value
         )
     {
         m_socket = std::move(other.m_socket);
@@ -70,7 +70,7 @@ private:
         std::size_t     received = 0;
         packet_id_t     id       = 0;
         net::address    sender;
-        raw_buffer_t    buffer;
+        raw_buffer      buffer;
         time_point_t    updated;
 
         void reset() { count = 0; }
@@ -80,8 +80,8 @@ private:
 
 private:
     net::socket  m_socket;
-    raw_buffer_t m_packet;
-    raw_buffer_t m_buffer;
+    raw_buffer   m_packet;
+    raw_buffer   m_buffer;
 
     net::address m_addr;
     std::size_t  m_offset {0};

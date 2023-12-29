@@ -1,7 +1,7 @@
-#include<iostream>
-using namespace std;
- 
+#include <cstddef>
+#include <iostream>
+
 int main()
 {
-    cout << "Size = " << sizeof(size_t) << std::endl;
+    std::cout << "Size = " << sizeof(std::size_t) << std::endl;
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/api.h>
+#include <gkr/api.hpp>
 #include <gkr/diagnostics.hpp>
 #include <gkr/concurency/events_waiting.hpp>
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
@@ -86,7 +86,7 @@ private:
     GKR_CORE_API bool reply_action() noexcept;
 
 public:
-    std::thread::id get_thread_id() const noexcept
+    std::thread::id thread_id() const noexcept
     {
         return m_thread.get_id();
     }
@@ -113,7 +113,7 @@ private:
 
     void safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT);
 
-    void safe_do_cross_action() noexcept(DIAG_NOEXCEPT);
+    void safe_do_cross_thread_action() noexcept(DIAG_NOEXCEPT);
 
     void safe_notify_wait_timeout() noexcept;
     void safe_notify_wait_success(wait_result_t wait_result) noexcept;
@@ -178,8 +178,8 @@ protected:
     {
         Check_ValidState(running() && !in_worker_thread(), false);
 
-        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must interit or start with actions_queue_element_header_t");
-        static_assert(alignof(T) <= sizeof(actions_queue_element_header_t), "Your data must have alignment less or equal to the alignement of actions_queue_element_header_t");
+        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must inherit or start with actions_queue_element_header_t");
+        static_assert(alignof(T) >= sizeof(actions_queue_element_header_t), "Your data must have alignment greater or equal to the alignement of actions_queue_element_header_t");
 
         auto element = m_actions_queue.start_push();
 
@@ -195,8 +195,8 @@ protected:
     {
         Check_ValidState(running() && !in_worker_thread(), false);
 
-        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must interit or start with actions_queue_element_header_t");
-        static_assert(alignof(T) <= sizeof(actions_queue_element_header_t), "Your data must have alignment less or equal to the alignement of actions_queue_element_header_t");
+        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must inherit or start with actions_queue_element_header_t");
+        static_assert(alignof(T) >= sizeof(actions_queue_element_header_t), "Your data must have alignment greater or equal to the alignement of actions_queue_element_header_t");
 
         auto element = m_actions_queue.start_push();
 
@@ -207,35 +207,6 @@ protected:
         element.as<actions_queue_element_header_t>().id = id;
         return true;
     }
-
-protected:
-    template<typename T>
-    struct queued_data
-    {
-        static_assert(sizeof (T) >= sizeof(actions_queue_element_header_t), "Your data must interit or start with actions_queue_element_header_t");
-        static_assert(alignof(T) <= sizeof(actions_queue_element_header_t), "Your data must have alignment less or equal to the alignement of actions_queue_element_header_t");
-
-        queued_data           (queued_data&&) noexcept = delete;
-        queued_data& operator=(queued_data&&) noexcept = delete;
-
-        queued_data           (const queued_data&) noexcept = delete;
-        queued_data& operator=(const queued_data&) noexcept = delete;
-
-        queued_data(void* data) noexcept : m_data(data)
-        {
-            Assert_NotNullPtr(data);
-        }
-        ~queued_data() noexcept(std::is_nothrow_destructible<T>::value)
-        {
-            value().~T();
-        }
-        T& value() noexcept
-        {
-            return *static_cast<T*>(m_data);
-        }
-    private:
-        void* m_data;
-    };
 
 protected:
     template<typename T>
@@ -304,9 +275,9 @@ protected:
     static void check_args_order()
     {
 #if GKR_RIGHT_TO_LEFT_ARGS_IN_STACK
-        Assert_Check( method_args_stack_order_is_right_to_left());
+        Assert_Check( misc::method_args_stack_order_is_right_to_left());
 #else
-        Assert_Check(!method_args_stack_order_is_right_to_left());
+        Assert_Check(!misc::method_args_stack_order_is_right_to_left());
 #endif
     }
 

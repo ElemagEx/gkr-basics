@@ -5,10 +5,10 @@
 #define GKR_API_IMPORT
 #else
 #ifdef _WIN32
-#define GKR_API_EXPORT __declspec(dllexport)
-#define GKR_API_IMPORT __declspec(dllimport)
+#define GKR_API_EXPORT  __declspec(dllexport)
+#define GKR_API_IMPORT  __declspec(dllimport)
 #else
-#define GKR_API_EXPORT __attribute__((__visibility__("default")))
+#define GKR_API_EXPORT  __attribute__((__visibility__("default")))
 #define GKR_API_IMPORT
 #endif
 #endif

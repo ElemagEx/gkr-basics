@@ -14,7 +14,7 @@ std::atomic<GKR_DIAG_REPORT_FUNC> s_reportFunction { gkr_diag_report };
 
 extern "C" {
 
-GKR_DIAG_REPORT_FUNC gkr_hook_diag_report_func(GKR_DIAG_REPORT_FUNC fn)
+GKR_DIAG_REPORT_FUNC gkr_diag_hook_report_func(GKR_DIAG_REPORT_FUNC fn)
 {
     Check_Arg_NotNull(fn, nullptr);
     return s_reportFunction.exchange(fn);

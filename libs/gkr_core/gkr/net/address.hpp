@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/api.h>
+#include <gkr/api.hpp>
 
 #include <cstddef>
 

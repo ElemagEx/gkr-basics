@@ -22,7 +22,7 @@ extern "C" {
 
 typedef void (*GKR_DIAG_REPORT_FUNC)(int, const char*, const char*, const char*, int);
 
-GKR_CORE_API GKR_DIAG_REPORT_FUNC gkr_hook_diag_report_func(GKR_DIAG_REPORT_FUNC fn);
+GKR_CORE_API GKR_DIAG_REPORT_FUNC gkr_diag_hook_report_func(GKR_DIAG_REPORT_FUNC fn);
 
 [[noreturn]]
 GKR_CORE_API void gkr_diag_halt(int id, const char* text, const char* func, const char* file, int line);

@@ -31,6 +31,7 @@ target_sources(gkr_core
 )
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}
+    "gkr/api.hpp"
     "gkr/defs.hpp"
     "gkr/stamp.hpp"
     "gkr/concurency/worker_thread.hpp"

@@ -7,9 +7,9 @@ namespace gkr
 {
 
 worker_thread::worker_thread(std::size_t initial_actions_queue_capacity, std::size_t initial_actions_queue_element_size) noexcept(false)
-    : m_queue_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
-    , m_outer_waiter (gkr::events_waiter::Flag_ForbidMultipleEventsBind)
-    , m_inner_waiter (gkr::events_waiter::Flag_ForbidMultipleThreadsWait | gkr::events_waiter::Flag_AllowPartialEventsWait)
+    : m_queue_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
+    , m_outer_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
+    , m_inner_waiter(gkr::events_waiter::Flag_ForbidMultipleThreadsWait | gkr::events_waiter::Flag_AllowPartialEventsWait)
 {
     m_done_event.bind_with(m_outer_waiter, false, false);
     m_work_event.bind_with(m_inner_waiter, false, false);
@@ -252,7 +252,7 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
             }
             if(m_work_event.is_signaled(wait_result))
             {
-                safe_do_cross_action();
+                safe_do_cross_thread_action();
             }
             if(m_actions_queue.consumer_event_is_signaled(wait_result))
             {
@@ -300,7 +300,7 @@ void worker_thread::safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
     while(all);
 }
 
-void worker_thread::safe_do_cross_action() noexcept(DIAG_NOEXCEPT)
+void worker_thread::safe_do_cross_thread_action() noexcept(DIAG_NOEXCEPT)
 {
     m_reply = &m_func.result;
 

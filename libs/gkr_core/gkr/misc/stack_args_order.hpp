@@ -2,6 +2,8 @@
 
 namespace gkr
 {
+namespace misc
+{
 namespace impl
 {
 inline int get_next(int& var) noexcept
@@ -36,4 +38,5 @@ inline bool method_args_stack_order_is_right_to_left() noexcept
     return (res > 0);
 }
 
+}
 }

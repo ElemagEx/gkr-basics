@@ -1,5 +1,6 @@
-#include "consumer.hpp"
-#include "logging.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/log/consumer.hpp>
+#include <gkr/log/logging.hpp>
 
 #include <gkr/diagnostics.hpp>
 #include <gkr/stamp.hpp>

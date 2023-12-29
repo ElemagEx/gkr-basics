@@ -1,3 +1,4 @@
+#include <gkr/defs.hpp>
 #include <gkr/sys/path.hpp>
 
 #include <catch2/catch_test_macros.hpp>

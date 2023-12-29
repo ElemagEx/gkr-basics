@@ -1,3 +1,4 @@
+#include <gkr/defs.hpp>
 #include "logger.hxx"
 
 #include <gkr/stamp.hpp>

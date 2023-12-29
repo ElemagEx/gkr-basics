@@ -1,4 +1,5 @@
-#include "worker_thread.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/concurency/worker_thread.hpp>
 
 #include <gkr/sys/thread.hpp>
 

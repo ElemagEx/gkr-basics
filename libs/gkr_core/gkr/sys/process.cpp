@@ -1,4 +1,5 @@
-#include "process.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/sys/process.hpp>
 
 #include <gkr/diagnostics.hpp>
 

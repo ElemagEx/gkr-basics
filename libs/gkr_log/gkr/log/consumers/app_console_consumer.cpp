@@ -1,4 +1,5 @@
-#include "app_console_consumer.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/log/consumers/app_console_consumer.hpp>
 
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>

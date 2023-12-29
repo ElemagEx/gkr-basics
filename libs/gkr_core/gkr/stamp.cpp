@@ -1,4 +1,5 @@
-#include "stamp.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/stamp.hpp>
 
 #include <gkr/diagnostics.hpp>
 

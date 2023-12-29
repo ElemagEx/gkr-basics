@@ -1,4 +1,5 @@
-#include "path.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/sys/path.hpp>
 
 #include <gkr/diagnostics.hpp>
 

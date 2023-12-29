@@ -1,4 +1,5 @@
-#include "dummy_consumer.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/log/consumers/dummy_consumer.hpp>
 
 #include <gkr/stamp.hpp>
 #include <gkr/diagnostics.hpp>

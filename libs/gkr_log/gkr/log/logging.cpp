@@ -1,4 +1,5 @@
-#include "logging.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/log/logging.hpp>
 #include "logger.hxx"
 
 #include <gkr/sys/thread.hpp>

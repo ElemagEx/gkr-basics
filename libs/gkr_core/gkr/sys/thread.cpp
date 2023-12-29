@@ -1,4 +1,5 @@
-#include "thread.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/sys/thread.hpp>
 
 #include <gkr/diagnostics.hpp>
 

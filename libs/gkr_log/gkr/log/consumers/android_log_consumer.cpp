@@ -1,4 +1,5 @@
-#include "android_log_consumer.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/log/consumers/android_log_consumer.hpp>
 
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>

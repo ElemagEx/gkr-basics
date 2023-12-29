@@ -1,4 +1,5 @@
-#include "lib.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/net/lib.hpp>
 
 #include <gkr/diagnostics.hpp>
 

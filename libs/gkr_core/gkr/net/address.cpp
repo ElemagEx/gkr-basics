@@ -1,4 +1,5 @@
-#include "address.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/net/address.hpp>
 
 #include <gkr/diagnostics.hpp>
 

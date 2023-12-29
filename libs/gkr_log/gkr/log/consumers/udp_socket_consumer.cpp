@@ -1,4 +1,5 @@
-#include "udp_socket_consumer.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/log/consumers/udp_socket_consumer.hpp>
 
 #include <gkr/comm/udp_socket_sender.hpp>
 

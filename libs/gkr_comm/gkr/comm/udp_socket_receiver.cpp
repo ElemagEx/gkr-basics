@@ -1,4 +1,5 @@
-#include "udp_socket_receiver.hpp"
+#include <gkr/defs.hpp>
+#include <gkr/comm/udp_socket_receiver.hpp>
 
 #include <gkr/data/split_packet.hpp>
 

@@ -8,7 +8,6 @@ namespace
 void gkr_diag_report(int, const char*, const char*, const char*, int)
 {
 }
-
 std::atomic<GKR_DIAG_REPORT_FUNC> s_reportFunction { gkr_diag_report };
 }
 

@@ -120,7 +120,7 @@ DIAG_EXT_C inline int diag_c_warn(int, const char*, ...)
 //
 template<typename... Args>
 [[noreturn]]
-inline void diag_cpp_halt(int, const char*, const Args&...) noexcept
+inline void diag_cpp_halt(int, const char*, Args&&...) noexcept
 {
     diag_trap();
 }
@@ -128,7 +128,7 @@ inline void diag_cpp_halt(int, const char*, const Args&...) noexcept
 // diag_cpp_warn - used from C in all Check_xxx macros to warns fails
 //
 template<typename... Args>
-inline int diag_cpp_warn(int, const char*, const Args&...) noexcept
+inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 {
     return diag_true();
 }

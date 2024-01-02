@@ -13,6 +13,16 @@
 #endif
 #endif
 
+#ifdef __cplusplus
+#define GKR_NO_RETURN_API   [[noreturn]]
+#else
+#if (__STDC_VERSION__ >= 202311L)
+#define GKR_NO_RETURN_API   [[noreturn]]
+#else
+#define GKR_NO_RETURN_API   _Noreturn
+#endif
+#endif
+
 #ifdef BUILDING_GKR_CORE
 #define GKR_CORE_API    GKR_API_EXPORT
 #else

@@ -207,7 +207,7 @@ private:
     }
 
 private:
-    events_waiter m_msg_waiter;
+    stl_events_waiter m_msg_waiter;
 
     log_queue_t m_log_queue;
 

@@ -34,6 +34,7 @@ target_sources(gkr_core
     "gkr/api.hpp"
     "gkr/defs.hpp"
     "gkr/stamp.hpp"
+    "gkr/concurency/os_events_waiting.hpp"
     "gkr/concurency/worker_thread.hpp"
 )
 target_sources(gkr_core
@@ -52,6 +53,7 @@ target_sources(gkr_core
     PRIVATE
     "gkr/defs.cpp"
     "gkr/stamp.cpp"
+    "gkr/concurency/os_events_waiting.cpp"
     "gkr/concurency/worker_thread.cpp"
     "gkr/sys/path.cpp"
     "gkr/sys/file.cpp"

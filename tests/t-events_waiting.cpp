@@ -1,24 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 
-#include <gkr/testing/diag_undefs.hpp>
-#define DIAG_EXTERNAL_API
-#define DIAG_HALT           my_halt_proc
-#define DIAG_WARN           my_warn_proc
-#define DIAG_NOEXCEPT       false
-#define DIAG_MODE           DIAG_MODE_NOISY
-#include <gkr/diagnostics.hpp>
-
-[[noreturn]]
-static void my_halt_proc(int id, const char* msg DIAG_SRC_PROTOTYPE) noexcept(DIAG_NOEXCEPT)
-{
-    throw std::exception();
-}
-static int my_warn_proc(int id, const char* msg DIAG_SRC_PROTOTYPE) noexcept(DIAG_NOEXCEPT)
-{
-    return 1;
-}
-
+#include <gkr/defs.hpp>
 #include <gkr/concurency/events_waiting.hpp>
+#include <gkr/concurency/os_events_waiting.hpp>
 
 #include <thread>
 
@@ -27,9 +12,9 @@ static auto now() { return std::chrono::steady_clock::now(); }
 using namespace gkr;
 using namespace std::chrono_literals;
 
-TEST_CASE("concurency.events_waiting. Binding (common)")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Binding (common)", "", stl_events_waiter, os_events_waiter)
 {
-    events_waiter waiter;
+    TestType waiter;
 
     CHECK(waiter.events_count() == 0);
 
@@ -46,8 +31,10 @@ TEST_CASE("concurency.events_waiting. Binding (common)")
     //
     std::thread t([&waiter] () noexcept(DIAG_NOEXCEPT) { waiter.wait(); });
     waiter.wait_for(100ms);
+#if (DIAG_MODE != DIAG_MODE_INTRUSIVE)
     CHECK(!event.bind_with(waiter, false, false));
     CHECK(!event.is_bound());
+#endif
     CHECK(events[0].fire());
     t.join();
     //
@@ -62,8 +49,10 @@ TEST_CASE("concurency.events_waiting. Binding (common)")
     //
     // Binding events beyond maximum number of events must fail
     //
+#if (DIAG_MODE != DIAG_MODE_INTRUSIVE)
     CHECK(!event.bind_with(waiter, false, false));
     CHECK(!event.is_bound());
+#endif
     CHECK(waiter.events_count() == WAIT_MAX_OBJECTS);
     //
     // Cleanup
@@ -77,9 +66,9 @@ TEST_CASE("concurency.events_waiting. Binding (common)")
     }
 }
 
-TEST_CASE("concurency.events_waiting. Binding (Flag_ForbidMultipleEventsBind)")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Binding (Flag_ForbidMultipleEventsBind)", "", stl_events_waiter, os_events_waiter)
 {
-    events_waiter waiter(events_waiter::Flag_ForbidMultipleEventsBind);
+    TestType waiter(events_waiter::Flag_ForbidMultipleEventsBind);
 
     CHECK(waiter.events_count() == 0);
 
@@ -94,8 +83,10 @@ TEST_CASE("concurency.events_waiting. Binding (Flag_ForbidMultipleEventsBind)")
     //
     // Binding second event must fail
     //
+#if (DIAG_MODE != DIAG_MODE_INTRUSIVE)
     CHECK(!event2.bind_with(waiter, false, false));
     CHECK(!event2.is_bound());
+#endif
     CHECK(waiter.events_count() == 1);
     //
     // Cleanup
@@ -108,9 +99,9 @@ TEST_CASE("concurency.events_waiting. Binding (Flag_ForbidMultipleEventsBind)")
     CHECK(!event2.is_bound());
 }
 
-TEST_CASE("concurency.events_waiting. Cleanup")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Cleanup", "", stl_events_waiter, os_events_waiter)
 {
-    events_waiter waiter;
+    TestType waiter;
 
     CHECK(waiter.events_count() == 0);
     //
@@ -125,7 +116,9 @@ TEST_CASE("concurency.events_waiting. Cleanup")
     //
     std::thread t([&waiter] () noexcept(DIAG_NOEXCEPT) { waiter.wait(); });
     waiter.wait_for(100ms);
+#if (DIAG_MODE != DIAG_MODE_INTRUSIVE)
     CHECK(!waiter.remove_all_events());
+#endif
     CHECK(event.fire());
     t.join();
     //
@@ -137,20 +130,22 @@ TEST_CASE("concurency.events_waiting. Cleanup")
     CHECK(!event.is_bound());
 }
 
-TEST_CASE("concurency.events_waiting. Waiting (common)")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Waiting (common)", "", stl_events_waiter, os_events_waiter)
 {
     wait_result_t wait_result;
 
-    events_waiter waiter;
+    TestType waiter;
 
     CHECK(waiter.events_count() == 0);
     //
     // Waiting without bound events must fail
     //
+#if (DIAG_MODE != DIAG_MODE_INTRUSIVE)
     CHECK(WAIT_RESULT_ERROR == waiter.check());
     CHECK(WAIT_RESULT_ERROR == waiter.wait());
     CHECK(WAIT_RESULT_ERROR == waiter.wait_for(1h));
     CHECK(WAIT_RESULT_ERROR == waiter.wait_until(now() + 1h));
+#endif
     //
     // Binding events
     //
@@ -224,11 +219,11 @@ TEST_CASE("concurency.events_waiting. Waiting (common)")
         thread.join();
     }
     //
-    // Partial waiting must fail (without flag Flag_AllowPartialEventsWait)
+    // Partial check always suceeded (even without flag Flag_AllowPartialEventsWait)
     //
-    CHECK_THROWS(event1.try_consume());
-    CHECK_THROWS(event2.try_consume());
-    CHECK_THROWS(event3.try_consume());
+    CHECK(!event1.try_consume());
+    CHECK( event2.try_consume());
+    CHECK(!event3.try_consume());
     //
     // Cleanup
     //
@@ -242,9 +237,9 @@ TEST_CASE("concurency.events_waiting. Waiting (common)")
     CHECK(!event3.is_bound());
 }
 
-TEST_CASE("concurency.events_waiting. Waiting (Flag_AllowPartialEventsWait)")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Waiting (Flag_AllowPartialEventsWait)", "", stl_events_waiter, os_events_waiter)
 {
-    events_waiter waiter(events_waiter::Flag_AllowPartialEventsWait);
+    TestType waiter(events_waiter::Flag_AllowPartialEventsWait);
 
     CHECK(waiter.events_count() == 0);
     //
@@ -273,9 +268,9 @@ TEST_CASE("concurency.events_waiting. Waiting (Flag_AllowPartialEventsWait)")
     CHECK(!event3.is_bound());
 }
 
-TEST_CASE("concurency.events_waiting. Event (auto reset)")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Event (auto reset)", "", stl_events_waiter, os_events_waiter)
 {
-    events_waiter waiter;
+    TestType waiter;
 
     CHECK(waiter.events_count() == 0);
     //
@@ -299,9 +294,9 @@ TEST_CASE("concurency.events_waiting. Event (auto reset)")
     CHECK(!event.is_bound());
 }
 
-TEST_CASE("concurency.events_waiting. Event (manual reset)")
+TEMPLATE_TEST_CASE("concurency.events_waiting. Event (manual reset)", "", stl_events_waiter, os_events_waiter)
 {
-    events_waiter waiter;
+    TestType waiter;
 
     CHECK(waiter.events_count() == 0);
     //

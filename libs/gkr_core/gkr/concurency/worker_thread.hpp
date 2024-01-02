@@ -144,9 +144,9 @@ private:
     std::mutex  m_mutex;
     std::thread m_thread;
 
-    events_waiter m_queue_waiter;
-    events_waiter m_outer_waiter;
-    events_waiter m_inner_waiter;
+    stl_events_waiter m_queue_waiter;
+    stl_events_waiter m_outer_waiter;
+    stl_events_waiter m_inner_waiter;
 
     actions_queue_t m_actions_queue;
 

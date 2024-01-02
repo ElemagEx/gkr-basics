@@ -22,13 +22,15 @@ if(MSVC)
     endif()
 
     if(GKR_BASICS_TESTS)
-        # C4388 - '==': signed/unsigned mismatch
-        # C4623 - default constructor was implicitly defined as deleted
-        # C4625 - copy constructor was implicitly defined as deleted
-        # C4626 - assignment operator was implicitly defined as deleted
-        # C5026 - move constructor was implicitly defined as deleted
-        # C5027 - move assignment operator was implicitly defined as deleted
-        set(GKR_BASICS_TESTING_WARNINGS /wd4388 /wd4623 /wd4625 /wd4626 /wd5026 /wd5027)
+        set(GKR_BASICS_TESTING_WARNINGS
+            /wd4388 # '==': signed/unsigned mismatch
+            /wd4623 # default constructor was implicitly defined as deleted
+            /wd4625 # copy constructor was implicitly defined as deleted
+            /wd4626 # assignment operator was implicitly defined as deleted
+            /wd4868 # compiler may not enforce left-to-right evaluation order in braced initializer list
+            /wd5026 # move constructor was implicitly defined as deleted
+            /wd5027 # move assignment operator was implicitly defined as deleted
+        )
     endif()
 else()
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")

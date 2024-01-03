@@ -1,8 +1,6 @@
 #include <gkr/defs.hpp>
 #include <gkr/concurency/os_events_waiting.hpp>
 
-#include <gkr/stack_alloc.h>
-
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
@@ -243,6 +241,7 @@ wait_result_t win_events_waiter::wait_event(std::size_t index, unsigned timeout)
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/eventfd.h>
+#include <gkr/stack_alloc.h>
 
 namespace gkr
 {
@@ -261,7 +260,7 @@ struct lock_guard
 };
 
 template<unsigned SIZE>
-inline pthread_mutex_t* pthtread_mutex(char (&buffer)[SIZE])
+inline pthread_mutex_t* pthread_mutex(char (&buffer)[SIZE])
 {
     static_assert(SIZE >= sizeof(pthread_mutex_t), "You must increase size of the buffer");
     return reinterpret_cast<pthread_mutex_t*>(buffer);
@@ -269,25 +268,25 @@ inline pthread_mutex_t* pthtread_mutex(char (&buffer)[SIZE])
 
 linux_events_waiter::linux_events_waiter(std::size_t flags) noexcept : events_waiter(flags)
 {
-    pthread_mutex_init(pthtread_mutex(m_mutex), nullptr);
+    pthread_mutex_init(pthread_mutex(m_mutex), nullptr);
 }
 
 linux_events_waiter::~linux_events_waiter() noexcept
 {
     pop_events(0);
-    pthread_mutex_destroy(pthtread_mutex(m_mutex));
+    pthread_mutex_destroy(pthread_mutex(m_mutex));
 }
 
 std::size_t linux_events_waiter::events_count() const noexcept
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     return m_events.size();
 }
 
 bool linux_events_waiter::pop_events(std::size_t min_count) noexcept(DIAG_NOEXCEPT)
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     Check_Arg_IsValid(min_count <= m_events.size(), false);
 
@@ -308,7 +307,7 @@ bool linux_events_waiter::remove_all_events() noexcept(DIAG_NOEXCEPT)
 
 bool linux_events_waiter::add_event(bool manual_reset, bool initial_state, std::size_t& index) noexcept(false)
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     index = m_events.size();
 
@@ -330,7 +329,7 @@ bool linux_events_waiter::add_event(bool manual_reset, bool initial_state, std::
 
 bool linux_events_waiter::fire_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     Check_Arg_IsValid(index < m_events.size(), false);
 
@@ -341,7 +340,7 @@ bool linux_events_waiter::fire_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
 
 bool linux_events_waiter::reset_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     Check_Arg_IsValid(index < m_events.size(), false);
 
@@ -352,7 +351,7 @@ bool linux_events_waiter::reset_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
 
 wait_result_t linux_events_waiter::check_single_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     Check_Arg_IsValid(index < m_events.size(), WAIT_RESULT_ERROR);
 
@@ -366,7 +365,7 @@ wait_result_t linux_events_waiter::wait_single_event(std::size_t index, long lon
 
 wait_result_t linux_events_waiter::check_all_events() noexcept(DIAG_NOEXCEPT)
 {
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     Check_Arg_IsValid(0 < m_events.size(), WAIT_RESULT_ERROR);
 
@@ -385,71 +384,84 @@ bool linux_events_waiter::this_thread_can_wait() const noexcept
 
 wait_result_t linux_events_waiter::check_events() const noexcept
 {
-#if 0
     wait_result_t result = 0;
 
     for(std::size_t index = 0; index < m_events.size(); ++index)
     {
-        if((index == preset_index) || (WAIT_OBJECT_0 == WaitForSingleObject(m_events[index], IGNORE)))
-        {
-            result |= (std::size_t(1U) << index);
-        }
+        result |= check_event(index);
     }
     return result;
-#endif
-    return WAIT_RESULT_TIMEOUT;
 }
 
 wait_result_t linux_events_waiter::wait_events(long long nsec) noexcept(DIAG_NOEXCEPT)
 {
-#if 0
-    HANDLE* handles;
+    int* eventfds;
     std::size_t count;
     {
-        lock_guard guard(pthtread_mutex(m_mutex));
+        lock_guard guard(pthread_mutex(m_mutex));
 
         Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
 
         Check_ValidState(m_events.size() > 0, WAIT_RESULT_ERROR);
 
-        count   = m_events.size();
-        handles = m_events.data();
+        count    = m_events.size();
+        eventfds = m_events.data();
 
         ++m_waiting_threads;
     }
-    const DWORD signaled_object_index = WaitForMultipleObjects(DWORD(count), handles, FALSE, timeout);
+    STACK_ARRAY(pollfd, pfds, count);
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        pfds[index].fd      = eventfds[index];
+        pfds[index].events  = POLLIN;
+        pfds[index].revents = 0;
+    }
+    struct timespec ts {0, 0};
+    struct timespec* pts = nullptr;
+    if(nsec >= 0)
+    {
+        ts.tv_sec  = nsec / 1000000000;
+        ts.tv_nsec = nsec % 1000000000;
+        pts = &ts;
+    }
+    const int poll_ret = ppoll(pfds, nfds_t(count), pts, nullptr);
 
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     --m_waiting_threads;
 
-    Check_ValidState(signaled_object_index != WAIT_FAILED, WAIT_RESULT_ERROR);
+    Check_ValidState(poll_ret >= 0, WAIT_RESULT_ERROR);
 
-    if(signaled_object_index == WAIT_TIMEOUT) return WAIT_RESULT_TIMEOUT;
+    if(poll_ret == 0) return WAIT_RESULT_TIMEOUT;
 
-    Check_ValidState(signaled_object_index < m_events.size(), WAIT_RESULT_ERROR);
+    wait_result_t result = 0;
 
-    return check_events(signaled_object_index);
-#endif
-    return WAIT_RESULT_TIMEOUT;
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        if((pfds[index].revents & POLLIN) != 0)
+        {
+            result |= check_event(index);
+        }
+    }
+    return result;
 }
 
 wait_result_t linux_events_waiter::check_event(std::size_t index) const noexcept
 {
-    pollfd fds {m_events[index], POLLIN, 0};
-
     const std::size_t mask = (std::size_t(1) << index);
 
     if((m_auto_mask & mask) == 0)
     {
         unsigned long long value = 0;
-        return (-1 == read(fds.fd, &value, sizeof(value)))
+        return (-1 == read(m_events[index], &value, sizeof(value)))
             ? WAIT_RESULT_TIMEOUT
             : mask;
     }
     else
     {
-        const int poll_ret = poll(&fds, 1, 0);
+        pollfd pfds {m_events[index], POLLIN, 0};
+
+        const int poll_ret = poll(&pfds, 1, 0);
         Check_ValidState(poll_ret >= 0, WAIT_RESULT_ERROR);
         return (poll_ret == 0)
             ? WAIT_RESULT_TIMEOUT
@@ -461,9 +473,9 @@ wait_result_t linux_events_waiter::wait_event(std::size_t index, long long nsec)
 {
     const std::size_t mask = (std::size_t(1) << index);
 
-    pollfd fds {0, POLLIN, 0};
+    pollfd pfds {0, POLLIN, 0};
     {
-        lock_guard guard(pthtread_mutex(m_mutex));
+        lock_guard guard(pthread_mutex(m_mutex));
 
         Check_ValidState(this_thread_can_wait(), WAIT_RESULT_ERROR);
 
@@ -471,16 +483,21 @@ wait_result_t linux_events_waiter::wait_event(std::size_t index, long long nsec)
 
         Check_ValidState(flag_is_set(Flag_AllowPartialEventsWait) || (m_events.size() == 1), WAIT_RESULT_ERROR);
 
-        fds.fd = m_events[index];
+        pfds.fd = m_events[index];
 
         ++m_waiting_threads;
     }
-    struct timespec ts;
-    ts.tv_sec = nsec / 1000000000;
-    ts.tv_sec = nsec % 1000000000;
-    const int poll_ret = ppoll(&fds, 1, &ts, nullptr);
+    struct timespec ts {0, 0};
+    struct timespec* pts = nullptr;
+    if(nsec >= 0)
+    {
+        ts.tv_sec  = nsec / 1000000000;
+        ts.tv_nsec = nsec % 1000000000;
+        pts = &ts;
+    }
+    const int poll_ret = ppoll(&pfds, 1, pts, nullptr);
 
-    lock_guard guard(pthtread_mutex(m_mutex));
+    lock_guard guard(pthread_mutex(m_mutex));
 
     --m_waiting_threads;
 
@@ -491,7 +508,7 @@ wait_result_t linux_events_waiter::wait_event(std::size_t index, long long nsec)
     if((m_auto_mask & mask) != 0) return mask;
 
     unsigned long long value = 0;
-    return (-1 == read(fds.fd, &value, sizeof(value)))
+    return (-1 == read(pfds.fd, &value, sizeof(value)))
         ? WAIT_RESULT_TIMEOUT
         : mask;
 }

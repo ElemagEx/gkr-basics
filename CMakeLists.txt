@@ -10,10 +10,8 @@ option(GKR_BASICS_TESTS     "Build unit tests for the library" ON)
 
 option(GKR_BASICS_TESTS_PROSPONE "Prospone tests execution" ON) #Dependent option
 
-set(CMAKE_MODULE_PATH
-    ${CMAKE_MODULE_PATH}
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE STRING "List of modules dirs")
+
 set(CMAKE_CXX_STANDARD          23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)

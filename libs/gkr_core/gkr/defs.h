@@ -3,7 +3,7 @@
 #define DIAG_SRC_INFO   2 /*DIAG_SRC_INFO_PREPROCESSOR_EX*/
 
 #ifndef DIAG_MODE
-#ifdef _DEBUG
+#ifndef NDEBUG
 #define DIAG_MODE       4 /*DIAG_MODE_INTRUSIVE*/
 #else
 #define DIAG_MODE       2 /*DIAG_MODE_STEADY*/

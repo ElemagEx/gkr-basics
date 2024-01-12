@@ -148,10 +148,10 @@ inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 // If DIAG_MODE is not defined in advance tries to determine the right value
 //
 #ifndef DIAG_MODE
-#if defined(_DEBUG) || defined(DEBUG)
-#define DIAG_MODE DIAG_MODE_NOISY
-#elif defined(NDEBUG)
+#if defined(NDEBUG)
 #define DIAG_MODE DIAG_MODE_SILENT
+#elif defined(_DEBUG) || defined(DEBUG)
+#define DIAG_MODE DIAG_MODE_NOISY
 #else
 #define DIAG_MODE DIAG_MODE_STEADY
 #endif

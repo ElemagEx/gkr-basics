@@ -10,8 +10,10 @@ option(GKR_BASICS_TESTS     "Build unit tests for the library" ON)
 
 option(GKR_BASICS_TESTS_PROSPONE "Prospone tests execution" ON) #Dependent option
 
-include(cmake/warnings.cmake) #sets variable ${GKR_BASICS_FLAGS_WARNINGS} and ${GKR_BASICS_TESTING_WARNINGS}
-
+set(CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH}
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+)
 set(CMAKE_CXX_STANDARD          23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
@@ -28,13 +30,6 @@ else()
     set(CMAKE_RELEASE_POSTFIX "")
 endif()
 
-if(MSVC)
-    if(CMAKE_BUILD_TYPE STREQUAL Debug)
-        set(CMAKE_VS_JUST_MY_CODE_DEBUGGING ON)
-    endif()
-    set(CMAKE_CXX_FLAGS "/permissive- /EHsc /GS /sdl")
-endif()
-
 if(CMAKE_VERSION VERSION_LESS "3.23")
     set(GKR_C_INTERFACE      INTERFACE)
     set(GKR_CPP_INTERFACE    INTERFACE)
@@ -49,7 +44,11 @@ else()
     set(GKR_FILE_SET_HEADERS FILE_SET HEADERS)
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GKR_BASICS_FLAGS_WARNINGS}")
+include(warnings)
+set(CMAKE_CXX_FLAGS         ${GKR_BASIC_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS_DEBUG   ${GKR_BASIC_CXX_FLAGS_DEBUG})
+set(CMAKE_CXX_FLAGS_RELEASE ${GKR_BASIC_CXX_FLAGS_RELEASE})
+add_compile_options(${GKR_BASICS_FLAGS_WARNINGS})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 

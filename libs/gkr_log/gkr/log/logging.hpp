@@ -51,6 +51,12 @@ namespace impl
 template<class Consumer, typename FuncFilter, typename... Args>
 class template_filter_consumer : public Consumer
 {
+    template_filter_consumer           (const template_filter_consumer&) noexcept = delete;
+    template_filter_consumer& operator=(const template_filter_consumer&) noexcept = delete;
+
+    template_filter_consumer           (template_filter_consumer&&) noexcept = delete;
+    template_filter_consumer& operator=(template_filter_consumer&&) noexcept = delete;
+
     FuncFilter m_filter;
 
     virtual bool filter_log_message(const message& msg) override
@@ -65,6 +71,12 @@ public:
 template<class Consumer, typename FuncCompose, typename... Args>
 class template_composer_consumer : public Consumer
 {
+    template_composer_consumer           (const template_composer_consumer&) noexcept = delete;
+    template_composer_consumer& operator=(const template_composer_consumer&) noexcept = delete;
+
+    template_composer_consumer           (template_composer_consumer&&) noexcept = delete;
+    template_composer_consumer& operator=(template_composer_consumer&&) noexcept = delete;
+
     FuncCompose m_compose;
 
     virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
@@ -79,6 +91,12 @@ public:
 template<class TextFileConsumer, typename FuncCompose, typename FuncEvent1, typename FuncEvent2, typename FuncEvent3, typename FuncEvent4, typename... Args>
 class template_text_file_consumer : public TextFileConsumer
 {
+    template_text_file_consumer           (const template_text_file_consumer&) noexcept = delete;
+    template_text_file_consumer& operator=(const template_text_file_consumer&) noexcept = delete;
+
+    template_text_file_consumer           (template_text_file_consumer&&) noexcept = delete;
+    template_text_file_consumer& operator=(template_text_file_consumer&&) noexcept = delete;
+
     FuncCompose m_compose;
     FuncEvent1  m_on_opened;
     FuncEvent2  m_on_closing;

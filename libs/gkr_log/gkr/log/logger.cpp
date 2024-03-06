@@ -388,7 +388,7 @@ bool logger::del_all_consumers(void* instance)
 
 bool logger::set_thread_name(int* ptr, const char* name, tid_t tid)
 {
-    Check_ValidState(running(), false);
+    if(!running()) return false;
 
     if(!in_worker_thread())
     {

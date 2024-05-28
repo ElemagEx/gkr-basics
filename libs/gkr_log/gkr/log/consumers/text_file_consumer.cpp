@@ -140,6 +140,7 @@ inline unsigned get_eoln_len(int eoln)
 inline void output_to_text_file(std::FILE* file, const char* text, unsigned len)
 {
     std::fwrite(text, sizeof(char), len, file);
+    std::fflush(file);
 }
 enum
 {

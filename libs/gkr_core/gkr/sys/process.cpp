@@ -39,7 +39,7 @@ std::string get_current_process_name()
 }
 std::string get_current_process_path()
 {
-    for (unsigned cch = 512; ; cch *= 2)
+    for(unsigned cch = 512; ; cch *= 2)
     {
         std::unique_ptr<char[]> buf(new char[cch]);
 
@@ -58,6 +58,52 @@ std::string get_current_process_path()
         }
     }
 }
+
+std::string expand_process_env_vars(const char* str, bool nativeFormat)
+{
+    Assert_Check(str != nullptr);
+
+    std::string res;
+
+    if(nativeFormat)
+    {
+        for( ; ; )
+        {
+            const char* pos = std::strchr(str, '%');
+
+            if(pos == nullptr)
+            {
+                res += str;
+                break;
+            }
+
+            const char* end = std::strchr(++str, '%');
+
+            if(end == nullptr)
+            {
+                break;
+            }
+            if(end == str)
+            {
+                res += '%';
+                ++str;
+                continue;
+            }
+            std::string var(str, std::size_t(end - str));
+
+            const char* val = std::getenv(var.c_str());
+
+            if(val != nullptr) res += val;
+            str += end - str + 1;
+        }
+    }
+    else
+    {
+        Assert_FailureMsg("Not implemented");
+    }
+    return res;
+}
+
 }
 }
 
@@ -101,6 +147,13 @@ std::string get_current_process_path()
         }
     }
 }
+
+std::string expand_process_env_vars(const char* str, bool nativeFormat)
+{
+    Assert_Check(str != nullptr);
+    return "";
+}
+
 }
 }
 

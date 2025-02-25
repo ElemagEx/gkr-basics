@@ -81,7 +81,7 @@ bool udp_socket_sender::send_data(const char* data, std::size_t size)
 
         std::memcpy(packetBody, data + sentDataSize, currDataSize);
 
-        if(m_socket.send_to(&packetHead, packetSize, m_address) != packetSize)
+        if(m_socket.send_to(m_address, &packetHead, packetSize) != packetSize)
         {
             return false;
         }

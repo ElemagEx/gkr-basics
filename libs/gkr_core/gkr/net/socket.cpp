@@ -14,7 +14,9 @@
 #pragma warning(default:4668)
 enum
 {
-    NET_ERROR_TIMEDOUT = WSAETIMEDOUT,
+    NET_ERROR_TIMEDOUT    = WSAETIMEDOUT,
+    NET_ERROR_CONNREFUSED = WSAECONNREFUSED,
+    NET_ERROR_CONNABORTED = WSAECONNABORTED,
 };
 inline int net_error()
 {
@@ -51,7 +53,9 @@ inline int closesocket(int fd)
 }
 enum
 {
-    NET_ERROR_TIMEDOUT = ETIMEDOUT,
+    NET_ERROR_TIMEDOUT    = ETIMEDOUT,
+    NET_ERROR_CONNREFUSED = ECONNREFUSED,
+    NET_ERROR_CONNABORTED = ECONNABORTED,
 };
 inline int net_error()
 {
@@ -75,8 +79,10 @@ static void report_net_error(int error, unsigned* errors = nullptr)
         unsigned err;
         switch(error)
         {
-            case NET_ERROR_TIMEDOUT: err = socket::error_timeout; break;
-            default:                 err = socket::error_other  ; break;
+            case NET_ERROR_TIMEDOUT   : err = socket::error_timeout     ; break;
+            case NET_ERROR_CONNREFUSED: err = socket::error_conn_refused; break;
+            case NET_ERROR_CONNABORTED: err = socket::error_conn_aborted; break;
+            default:                    err = socket::error_other       ; break;
         }
         if((*errors & err) != 0)
         {
@@ -87,6 +93,22 @@ static void report_net_error(int error, unsigned* errors = nullptr)
     [[maybe_unused]] auto text = get_net_error_text(error);
     //TODO:change Check_Failure with log
     Check_Failure();
+}
+
+bool socket::open_as_tcp(bool ipv6)
+{
+    Check_ValidState(!is_open(), false);
+
+    const int s_family = ipv6 ? AF_INET6 : AF_INET;
+
+    m_socket = ::socket(s_family, SOCK_STREAM, IPPROTO_TCP);
+
+    if(m_socket != INVALID_SOCKET_VALUE)
+    {
+        return true;
+    }
+    report_net_error(net_error());
+    return false;
 }
 
 bool socket::open_as_udp(bool ipv6)
@@ -136,6 +158,27 @@ void socket::close()
     }
     report_net_error(net_error());
     return;
+}
+
+bool socket::connect(const address& addr, unsigned* errors)
+{
+    Check_ValidState(!is_open(), false);
+
+    Check_Arg_IsValid(addr.is_valid(), false);
+
+    if(!open_as_tcp(addr.is_ipv6()))
+    {
+        return false;
+    }
+    const socklen_t tolen = socklen_t(addr.size());
+    const sockaddr* to    = static_cast<const sockaddr*>(addr.data());
+
+    if(0 == ::connect(m_socket, to, tolen))
+    {
+        return true;
+    }
+    report_net_error(net_error(), errors);
+    return false;
 }
 
 bool socket::is_ipv4() const
@@ -346,7 +389,63 @@ bool socket::bind(unsigned short port)
     return false;
 }
 
-std::size_t socket::send_to(const void* buff, std::size_t size, const address& addr)
+bool socket::listen()
+{
+    Check_ValidState(is_open(), false);
+
+    if(0 == ::listen(m_socket, SOMAXCONN))
+    {
+        return true;
+    }
+    report_net_error(net_error());
+    return false;
+}
+
+bool socket::accept(address& addr, socket& conn, unsigned timeout, unsigned* errors)
+{
+    Check_Arg_IsValid(!conn.is_open(), false);
+
+    Check_ValidState(is_open(), false);
+
+	fd_set fd_accept;
+	struct timeval tv;
+	tv.tv_sec  = long(timeout / 1'000);
+	tv.tv_usec = long(timeout % 1'000) * 1'000;
+
+	FD_ZERO(&fd_accept);
+	//WARNING_SUPPRESS(4548)
+	FD_SET(m_socket, &fd_accept);
+
+    const int res = select((int)m_socket + 1, &fd_accept, nullptr, nullptr, &tv);
+
+    switch(res)
+    {
+        default:
+            report_net_error(net_error(), errors);
+            return false;
+        case  0:
+            return false;
+        case  1:
+            Check_ValidState(FD_ISSET(m_socket, &fd_accept), false);
+            break;
+    }
+
+    socklen_t fromlen = socklen_t(addr.capacity());
+
+    sockaddr* from = static_cast<sockaddr*>(addr.data());
+
+    socket_t s = ::accept(m_socket, from, &fromlen);
+
+    if(s != INVALID_SOCKET_VALUE)
+    {
+        conn.m_socket = s;
+        return true;
+    }
+    report_net_error(net_error(), errors);
+    return 0;
+}
+
+std::size_t socket::send_to(const address& addr, const void* buff, std::size_t size, unsigned* errors)
 {
     Check_Arg_NotNull(buff, 0);
     Check_Arg_IsValid(size > 0, 0);
@@ -361,13 +460,14 @@ std::size_t socket::send_to(const void* buff, std::size_t size, const address& a
 
     if(sent > 0)
     {
+        if(errors != nullptr) *errors = error_none;
         return std::size_t(sent);
     }
-    report_net_error(net_error());
+    report_net_error(net_error(), errors);
     return 0;
 }
 
-std::size_t socket::receive_from(void* buff, std::size_t size, address& addr, unsigned* errors)
+std::size_t socket::receive_from(address& addr, void* buff, std::size_t size, unsigned* errors)
 {
     Check_Arg_NotNull(buff, 0);
     Check_Arg_IsValid(size > 0, 0);
@@ -378,13 +478,50 @@ std::size_t socket::receive_from(void* buff, std::size_t size, address& addr, un
 
     sockaddr* from = static_cast<sockaddr*>(addr.data());
 
-    const auto recv = recvfrom(m_socket, static_cast<char*>(buff), socklen_t(size), 0, from, &fromlen);
+    const auto read = recvfrom(m_socket, static_cast<char*>(buff), socklen_t(size), 0, from, &fromlen);
 
-    if(recv >= 0)
+    if(read >= 0)
     {
         if(errors != nullptr) *errors = error_none;
-        Check_ValidState(std::size_t(recv) <= size, 0);
-        return std::size_t(recv);
+        Check_ValidState(std::size_t(read) <= size, 0);
+        return std::size_t(read);
+    }
+    report_net_error(net_error(), errors);
+    return 0;
+}
+
+std::size_t socket::write(const void* buff, std::size_t size, unsigned* errors)
+{
+    Check_Arg_NotNull(buff, 0);
+    Check_Arg_IsValid(size > 0, 0);
+
+    Check_ValidState(is_open(), 0);
+
+    const auto sent = send(m_socket, static_cast<const char*>(buff), socklen_t(size), 0);
+
+    if(sent > 0)
+    {
+        if(errors != nullptr) *errors = error_none;
+        return std::size_t(sent);
+    }
+    report_net_error(net_error(), errors);
+    return 0;
+}
+
+std::size_t socket::read(void* buff, std::size_t size, unsigned* errors)
+{
+    Check_Arg_NotNull(buff, 0);
+    Check_Arg_IsValid(size > 0, 0);
+
+    Check_ValidState(is_open(), 0);
+
+    const auto read = recv(m_socket, static_cast<char*>(buff), socklen_t(size), 0);
+
+    if(read >= 0)
+    {
+        if(errors != nullptr) *errors = error_none;
+        Check_ValidState(std::size_t(read) <= size, 0);
+        return std::size_t(read);
     }
     report_net_error(net_error(), errors);
     return 0;

@@ -171,6 +171,8 @@ text_file_consumer::~text_file_consumer()
 
 bool text_file_consumer::init_logging()
 {
+    m_path = sys::expand_process_env_vars(m_path.c_str(), true);
+
     if(m_path.empty())
     {
         m_path = sys::get_current_process_path();
@@ -179,6 +181,15 @@ bool text_file_consumer::init_logging()
         const unsigned len = gkr_log_apply_time_format(ext, sizeof(ext), "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
         m_path.append(ext, len);
     }
+    else if(sys::path_ends_with_sep(m_path.c_str()))
+    {
+        m_path += sys::get_current_process_name();
+
+        char ext[32];
+        const unsigned len = gkr_log_apply_time_format(ext, sizeof(ext), "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
+        m_path.append(ext, len);
+    }
+
     open();
     return true;
 }
@@ -289,6 +300,8 @@ void text_file_consumer::roll(unsigned max_files)
 
 void text_file_consumer::open()
 {
+    sys::path_ensure_dir_exists(m_path.c_str());
+
     m_file = std::fopen(m_path.c_str(), "ab");
 
     if(m_file == nullptr)

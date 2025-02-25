@@ -537,7 +537,7 @@ const char* logger::format_output(
 {
     Check_Arg_NotNull(fmt, nullptr);
 
-    Check_ValidState(running(), nullptr);
+//  Check_ValidState(running(), nullptr);
 
     Check_ValidState(in_worker_thread(), nullptr);
 

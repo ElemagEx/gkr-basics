@@ -25,7 +25,14 @@ namespace gkr
 namespace sys
 {
 
-GKR_INNER_API bool path_has_extension(const char* path, const char* ext)
+bool path_ends_with_sep(const char* path)
+{
+    Assert_Check(path != nullptr);
+
+    return (*path_file_begin(path) == 0);
+}
+
+bool path_has_extension(const char* path, const char* ext)
 {
     Check_Arg_NotNull(path, false);
     Check_Arg_NotNull(ext , false);
@@ -47,7 +54,7 @@ GKR_INNER_API bool path_has_extension(const char* path, const char* ext)
     }
 }
 
-GKR_INNER_API std::string path_insert_ext(const char* path, const char* ext, int order)
+std::string path_insert_ext(const char* path, const char* ext, int order)
 {
     Check_Arg_NotNull(path     , {});
     Check_Arg_NotNull( ext     , {});
@@ -83,6 +90,46 @@ GKR_INNER_API std::string path_insert_ext(const char* path, const char* ext, int
     str.append(pos);
     return str;
 }
+
+#ifdef _WIN32
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <Psapi.h>
+
+bool path_ensure_dir_exists(const char* path)
+{
+    Assert_Check(path != nullptr);
+
+    if(std::strlen(path) >= 4)
+    {
+        if(!std::strncmp(path + 0, "\\\\?\\", 4)) return false;
+        if( std::strncmp(path + 1, ":\\"    , 2)) return false;
+
+        if(!std::isalpha(*path)) return false;
+    }
+    for(const char* pos = std::strchr(path, '\\'); ; )
+    {
+        pos = std::strchr(pos + 1, '\\');
+
+        if(pos == nullptr) break;
+
+        std::string dir(path, std::size_t(pos - path));
+
+        CreateDirectoryA(dir.c_str(), nullptr);
+    }
+    return true;
+}
+
+#else
+
+bool path_ensure_dir_exists(const char* path)
+{
+    Assert_FailureMsg("Not implemented");
+    return false;
+}
+
+#endif
 
 }
 }

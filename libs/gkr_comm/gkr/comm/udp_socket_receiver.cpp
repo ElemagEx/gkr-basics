@@ -45,7 +45,7 @@ bool udp_socket_receiver::receivePacket()
 
     unsigned errors = net::socket::error_timeout;
 
-    const std::size_t received = m_socket.receive_from(m_packet.data(), m_packet.capacity(), m_addr, &errors);
+    const std::size_t received = m_socket.receive_from(m_addr, m_packet.data(), m_packet.capacity(), &errors);
 
     if(received == 0) return (errors != 0);
 

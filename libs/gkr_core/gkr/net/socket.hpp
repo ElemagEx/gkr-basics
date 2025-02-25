@@ -44,15 +44,20 @@ public:
 public:
     enum : unsigned
     {
-        error_none    = 0,
-        error_timeout = (1U <<  0),
-        error_other   = (1U << 31)
+        error_none         = 0,
+        error_timeout      = (1U <<  0),
+        error_conn_refused = (1U <<  1),
+        error_conn_aborted = (1U <<  2),
+        error_other        = (1U << 31)
     };
 
 public:
+    GKR_INNER_API bool open_as_tcp(bool ipv6 = false);
     GKR_INNER_API bool open_as_udp(bool ipv6 = false);
     GKR_INNER_API bool reopen();
     GKR_INNER_API void close();
+
+    GKR_INNER_API bool connect(const address& addr, unsigned* errors = nullptr);
 
 public:
     GKR_INNER_API bool is_ipv4() const;
@@ -77,10 +82,21 @@ public:
 public:
     GKR_INNER_API bool bind(unsigned short port);
 
-public:
-    GKR_INNER_API std::size_t send_to(const void* buff, std::size_t size, const address& addr);
+    GKR_INNER_API bool listen();
 
-    GKR_INNER_API std::size_t receive_from(void* buff, std::size_t size, address& addr, unsigned* errors = nullptr);
+public:
+    GKR_INNER_API bool accept(address& addr, socket& conn, unsigned timeout = 0, unsigned* errors = nullptr);
+
+public:
+
+public:
+    GKR_INNER_API std::size_t send_to(const address& addr, const void* buff, std::size_t size, unsigned* errors = nullptr);
+
+    GKR_INNER_API std::size_t receive_from(address& addr, void* buff, std::size_t size, unsigned* errors = nullptr);
+
+    GKR_INNER_API std::size_t write(const void* buff, std::size_t size, unsigned* errors = nullptr);
+
+    GKR_INNER_API std::size_t read(void* buff, std::size_t size, unsigned* errors = nullptr);
 
 private:
 #ifdef _WIN32

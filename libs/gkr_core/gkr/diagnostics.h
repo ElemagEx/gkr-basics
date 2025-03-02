@@ -27,10 +27,14 @@
 #define DIAG_ID_CHECK_FAIL_MSG  7
 #define DIAG_ID_CHECK_FAILURE   8
 #define DIAG_ID_CHECK_RECOVERY  9
+//
+// Diagnostics IDs for Arg_xxx macros
+//
 #define DIAG_ID_ARG_NOT_VALID   10
 #define DIAG_ID_ARG_IS_NULL     11
 #define DIAG_ID_ARG_FAILURE     12
 #define DIAG_ID_ARG_BAD_ARRAY   13
+//
 #define DIAG_ID_COUNT           14
 
 //
@@ -208,6 +212,9 @@ inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 // define DIAG_EXTERNAL_API and/or DIAG_HALT/DIAG_WARN if you want to implement your own versions of halt/warn functions
 //
 #ifndef DIAG_EXTERNAL_API
+#define DIAG_EXTERNAL_API
+#undef  DIAG_HALT
+#undef  DIAG_WARN
 #ifndef __cplusplus
 #define DIAG_HALT diag_c_halt
 #define DIAG_WARN diag_c_warn

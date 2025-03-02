@@ -794,7 +794,7 @@ TEST_CASE("general.diagnostics. Args, lang=C, mode=steady, src=none")
 extern "C" {
 #include <gkr/testing/diag_undefs.hpp>
 #define DIAG_EXTERNAL_API
-    //      DIAG_HALT
+//      DIAG_HALT
 #define DIAG_WARN           my_c_warn_proc_pp_args
 #define DIAG_NOEXCEPT
 #define DIAG_SRC_INFO       DIAG_SRC_INFO_PREPROCESSOR

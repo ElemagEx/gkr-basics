@@ -108,7 +108,7 @@ public:
         );
 
 private:
-    char*       m_data     = nullptr;                                     
+    char*       m_data     = nullptr;
     std::size_t m_size     = 0;
     std::size_t m_capacity = 0;
 

@@ -135,13 +135,17 @@ std::string get_current_process_name()
 }
 std::string get_current_process_path()
 {
-    for(std::size_t cch = 512; ; cch *= 2)
+    for(std::size_t cch = 256; ; cch *= 2)
     { 
         std::unique_ptr<char[]> buf(new char[cch]);
 
-        const ssize_t len = readlink("/proc/self/exe", buf.get(), cch - 1);
+        const ssize_t len = readlink("/proc/self/exe", buf.get(), cch);
 
-        if(len != -1)
+        if(len == -1)
+        {
+            return {};
+        }
+        if(len < cch)
         {
             return std::string(buf.get(), std::size_t(len));
         }

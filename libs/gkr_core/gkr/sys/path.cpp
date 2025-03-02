@@ -91,11 +91,78 @@ std::string path_insert_ext(const char* path, const char* ext, int order)
     return str;
 }
 
+std::string path_remove_ext(const char* path, int order)
+{
+    Check_Arg_NotNull(path, {});
+
+    const char* name = path_file_begin(path);
+
+    std::string str(path, std::size_t(name - path));
+
+    const char* pos;
+
+    if(order == 0)
+    {
+        pos = std::strchr(name, '.');
+
+        if(pos == nullptr) pos = name + std::strlen(name);
+    }
+    else
+    {
+        pos = name + std::strlen(name);
+
+        Assert_FailureMsg("Not Implemented");
+    }
+
+    str.append(name, std::size_t(pos - name));
+
+    return str;
+}
+
+std::string path_set_filename(const char* path, const char* name)
+{
+    Check_Arg_IsValid(path && (*path != 0), {});
+    Check_Arg_IsValid(name && (*name != 0), {});
+
+    std::string str(path, std::size_t(path_file_begin(path) - path));
+
+    str += name;
+
+    return str;
+}
+
+std::string path_get_filename(const char* path)
+{
+    Check_Arg_NotNull(path, {});
+
+    std::string str(path_file_begin(path));
+
+    return str;
+}
+
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <Psapi.h>
+
+bool path_exists(const char* path)
+{
+    Check_Arg_NotNull(path, false);
+
+    const DWORD attrs = GetFileAttributesA(path);
+
+    return (attrs != INVALID_FILE_ATTRIBUTES);
+}
+
+bool path_is_dir(const char* path)
+{
+    Check_Arg_NotNull(path, false);
+
+    const DWORD attrs = GetFileAttributesA(path);
+
+    return ((attrs != INVALID_FILE_ATTRIBUTES) && ((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0));
+}
 
 bool path_ensure_dir_exists(const char* path)
 {
@@ -124,6 +191,18 @@ bool path_ensure_dir_exists(const char* path)
 #else
 
 bool path_ensure_dir_exists(const char* path)
+{
+    Assert_FailureMsg("Not implemented");
+    return false;
+}
+
+bool path_exists(const char* path)
+{
+    Assert_FailureMsg("Not implemented");
+    return false;
+}
+
+bool path_is_dir(const char* path)
 {
     Assert_FailureMsg("Not implemented");
     return false;

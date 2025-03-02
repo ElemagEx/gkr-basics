@@ -64,7 +64,7 @@ namespace gkr
 {
 
 //
-// Conform C++11 named requirement: AllocatorAwareContainer
+// Conforms C++11 named requirement: AllocatorAwareContainer
 //  https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer
 //
 template<typename T, typename Allocator=std::allocator<T>>

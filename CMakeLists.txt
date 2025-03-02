@@ -4,7 +4,8 @@ project(gkr-basics)
 
 option(BUILD_SHARED_LIBS    "Build using shared libraries" ON)
 option(GKR_CAPI_ONLY        "Install only C API interface" OFF)
-option(GKR_FEATURE_LOG      "Build and install log featyre" ON)
+option(GKR_WIN32_REDIST     "Use Windows redistributables from DLL" ON)
+option(GKR_FEATURE_LOG      "Build and install log feature" ON)
 option(GKR_BASICS_DEV       "Specifies that this is development build" ON)
 option(GKR_BASICS_TESTS     "Build unit tests for the library" ON)
 

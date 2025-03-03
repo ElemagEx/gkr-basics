@@ -395,7 +395,7 @@ public:
     stl_events_waiter(std::size_t flags = 0) noexcept : events_waiter(flags)
     {
     }
-    virtual ~stl_events_waiter() noexcept
+    virtual ~stl_events_waiter() noexcept override
     {
     }
 

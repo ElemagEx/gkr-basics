@@ -14,7 +14,7 @@
 #define DIAG_HALT       gkr_diag_halt
 #define DIAG_WARN       gkr_diag_warn
 
-#include <gkr/api.h>
+#include <gkr/capi/api.h>
 
 #ifdef __cplusplus
 extern "C" {

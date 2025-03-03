@@ -4,12 +4,13 @@ target_include_directories(gkr_inine INTERFACE ".")
 
 target_sources(gkr_inine
     ${GKR_C_INTERFACE}
-    "gkr/diagnostics.h"
-    "gkr/stack_alloc.h"
+    "gkr/capi/diagnostics.h"
+    "gkr/capi/stack_alloc.h"
 )
 target_sources(gkr_inine
     ${GKR_CPP_INTERFACE}
     "gkr/diagnostics.hpp"
+    "gkr/stack_alloc.hpp"
     "gkr/container/raw_buffer.hpp"
     "gkr/container/lockfree_queue.hpp"
     "gkr/container/lockfree_grow_only_bag.hpp"
@@ -25,9 +26,9 @@ target_include_directories(gkr_core PUBLIC ".")
 
 target_sources(gkr_core
     ${GKR_C_INTERFACE}
-    "gkr/api.h"
-    "gkr/defs.h"
-    "gkr/stamp.h"
+    "gkr/capi/api.h"
+    "gkr/capi/defs.h"
+    "gkr/capi/stamp.h"
 )
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}

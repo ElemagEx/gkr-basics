@@ -145,7 +145,7 @@ std::string get_current_process_path()
         {
             return {};
         }
-        if(len < cch)
+        if(len < ssize_t(cch))
         {
             return std::string(buf.get(), std::size_t(len));
         }

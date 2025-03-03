@@ -154,7 +154,7 @@ wait_result_t win_events_waiter::check_events(std::size_t preset_index) const no
     {
         if((index == preset_index) || (WAIT_OBJECT_0 == WaitForSingleObject(m_events[index], IGNORE)))
         {
-            result |= (std::size_t(1U) << index);
+            result |= (wait_result_t(1U) << index);
         }
     }
     return result;
@@ -195,7 +195,7 @@ wait_result_t win_events_waiter::check_event(std::size_t index) const noexcept
 {
     const wait_result_t result = (WAIT_OBJECT_0 != WaitForSingleObject(m_events[index], IGNORE))
         ? WAIT_RESULT_TIMEOUT
-        : (std::size_t(1U) << index)
+        : (wait_result_t(1U) << index)
         ;
     return result;
 }
@@ -228,7 +228,7 @@ wait_result_t win_events_waiter::wait_event(std::size_t index, unsigned timeout)
 
     Check_ValidState(signaled_object_index == WAIT_OBJECT_0, WAIT_RESULT_ERROR);
 
-    const wait_result_t result = (std::size_t(1U) << index);
+    const wait_result_t result = (wait_result_t(1U) << index);
     return result;
 }
 
@@ -241,7 +241,7 @@ wait_result_t win_events_waiter::wait_event(std::size_t index, unsigned timeout)
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/eventfd.h>
-#include <gkr/stack_alloc.h>
+#include <gkr/stack_alloc.hpp>
 
 namespace gkr
 {
@@ -334,8 +334,8 @@ bool linux_events_waiter::fire_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
     Check_Arg_IsValid(index < m_events.size(), false);
 
     const unsigned long long value = 1;
-    write(m_events[index], &value, sizeof(value));
-    return true;
+    const ssize_t res = write(m_events[index], &value, sizeof(value));
+    return (res > 0);
 }
 
 bool linux_events_waiter::reset_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
@@ -345,8 +345,8 @@ bool linux_events_waiter::reset_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
     Check_Arg_IsValid(index < m_events.size(), false);
 
     unsigned long long value = 0;
-    read(m_events[index], &value, sizeof(value));
-    return true;
+    const ssize_t res = read(m_events[index], &value, sizeof(value));
+    return (res > 0);
 }
 
 wait_result_t linux_events_waiter::check_single_event(std::size_t index) noexcept(DIAG_NOEXCEPT)
@@ -409,7 +409,7 @@ wait_result_t linux_events_waiter::wait_events(long long nsec) noexcept(DIAG_NOE
 
         ++m_waiting_threads;
     }
-    STACK_ARRAY(pollfd, pfds, count);
+    GKR_STACK_ARRAY(pollfd, pfds, count);
     for(std::size_t index = 0; index < count; ++index)
     {
         pfds[index].fd      = eventfds[index];

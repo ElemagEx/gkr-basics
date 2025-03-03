@@ -416,7 +416,7 @@ bool socket::accept(address& addr, socket& conn, unsigned timeout, unsigned* err
 	//WARNING_SUPPRESS(4548)
 	FD_SET(m_socket, &fd_accept);
 
-    const int res = select((int)m_socket + 1, &fd_accept, nullptr, nullptr, &tv);
+    const int res = select(int(m_socket) + 1, &fd_accept, nullptr, nullptr, &tv);
 
     switch(res)
     {

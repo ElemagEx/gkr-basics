@@ -19,7 +19,7 @@ class win_events_waiter : public events_waiter
 
 public:
     GKR_CORE_API win_events_waiter(std::size_t flags = 0) noexcept;
-    GKR_CORE_API virtual ~win_events_waiter() noexcept;
+    GKR_CORE_API virtual ~win_events_waiter() noexcept override;
 
 private:
     alignas(void*)
@@ -77,7 +77,7 @@ class linux_events_waiter : public events_waiter
 
 public:
     GKR_CORE_API linux_events_waiter(std::size_t flags = 0) noexcept;
-    GKR_CORE_API virtual ~linux_events_waiter() noexcept;
+    GKR_CORE_API virtual ~linux_events_waiter() noexcept override;
 
 private:
     alignas(void*)

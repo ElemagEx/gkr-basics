@@ -7,6 +7,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         -Wno-exit-time-destructors
         -Wno-c++17-extensions
         -Wno-unknown-attributes
+        -Wno-switch-default
     )
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16)
         list(APPEND GKR_BASICS_EXCLUDE_CLANG_WARNINGS -Wno-unsafe-buffer-usage)

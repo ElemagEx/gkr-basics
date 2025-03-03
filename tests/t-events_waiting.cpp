@@ -19,7 +19,6 @@ TEMPLATE_TEST_CASE("concurency.events_waiting. Binding (common)", "", stl_events
     CHECK(waiter.events_count() == 0);
 
     event_controller events[WAIT_MAX_OBJECTS];
-    event_controller event;
     //
     // Binding an events
     //
@@ -32,6 +31,7 @@ TEMPLATE_TEST_CASE("concurency.events_waiting. Binding (common)", "", stl_events
     std::thread t([&waiter] () noexcept(DIAG_NOEXCEPT) { waiter.wait(); });
     waiter.wait_for(100ms);
 #if (DIAG_MODE != DIAG_MODE_INTRUSIVE)
+    event_controller event;
     CHECK(!event.bind_with(waiter, false, false));
     CHECK(!event.is_bound());
 #endif

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/stamp.h>
+#include <gkr/capi/stamp.h>
 
 namespace gkr
 {

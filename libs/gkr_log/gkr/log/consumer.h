@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/api.h>
+#include <gkr/capi/api.h>
 
 struct gkr_log_message
 {

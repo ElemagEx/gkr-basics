@@ -85,8 +85,8 @@ target_sources(gkr_log
     "gkr/log/imposters/plog/Wrapper.h"
 )
 
-target_link_libraries(gkr_log PUBLIC  gkr_core)
-target_link_libraries(gkr_log PRIVATE gkr_headers_only gkr_data gkr_comm)
+target_link_libraries(gkr_log PUBLIC  gkr_inine gkr_core)
+target_link_libraries(gkr_log PRIVATE gkr_data  gkr_comm)
 
 set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 

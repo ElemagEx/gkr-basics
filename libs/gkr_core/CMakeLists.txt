@@ -1,13 +1,13 @@
-add_library(gkr_headers_only INTERFACE)
+add_library(gkr_inine INTERFACE)
 
-target_include_directories(gkr_headers_only INTERFACE ".")
+target_include_directories(gkr_inine INTERFACE ".")
 
-target_sources(gkr_headers_only
+target_sources(gkr_inine
     ${GKR_C_INTERFACE}
     "gkr/diagnostics.h"
     "gkr/stack_alloc.h"
 )
-target_sources(gkr_headers_only
+target_sources(gkr_inine
     ${GKR_CPP_INTERFACE}
     "gkr/diagnostics.hpp"
     "gkr/container/raw_buffer.hpp"
@@ -68,7 +68,7 @@ target_sources(gkr_core PUBLIC "gkr/gkr.natvis")
 target_link_libraries(gkr_core PRIVATE ws2_32)
 endif()
 
-target_link_libraries(gkr_core PUBLIC gkr_headers_only)
+target_link_libraries(gkr_core PUBLIC gkr_inine)
 
 set_target_properties(gkr_core PROPERTIES DEFINE_SYMBOL BUILDING_GKR_CORE)
 

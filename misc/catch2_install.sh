@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ "$1" ];
   then catch2_tag=$1
-  else catch2_tag=v3.4.0
+  else catch2_tag=v3.8.0
 fi
 echo Installing Catch2 $catch2_tag ...
 rm -rf tmp

@@ -17,6 +17,6 @@ target_sources(gkr_comm
     "gkr/comm/tcp_socket_connection.cpp"
 )
 
-target_link_libraries(gkr_comm PUBLIC gkr_headers_only gkr_core gkr_data)
+target_link_libraries(gkr_comm PUBLIC gkr_inine gkr_core gkr_data)
 
 set_target_properties(gkr_comm PROPERTIES DEFINE_SYMBOL BUILDING_GKR_COMM)

@@ -278,17 +278,26 @@ void text_file_consumer::roll(unsigned max_files)
     }
     else
     {
-        char num[12];
-        snprintf(num, sizeof(num), "%u", --max_files);
-        std::string next_path = sys::path_insert_extension(m_path.c_str(), num, 1);
+        std::string num = std::to_string(--max_files);
+        std::string ext = sys::path_get_extension(m_path.c_str());
+
+        std::string strip_path = sys::path_del_extension(m_path.c_str());
+
+        std::string
+        next_path = sys::path_add_extension(strip_path.c_str(), num.c_str());
+        next_path = sys::path_add_extension( next_path.c_str(), ext.c_str());
 
         remove(next_path.c_str());
 
         while(max_files > 1)
         {
-            snprintf(num, sizeof(num), "%u", --max_files);
-            std::string prev_path = sys::path_insert_extension(m_path.c_str(), num, 1);
+            num = std::to_string(--max_files);
+            std::string
+            prev_path = sys::path_add_extension(strip_path.c_str(), num.c_str());
+            prev_path = sys::path_add_extension( prev_path.c_str(), ext.c_str());
+
             if(std::rename(prev_path.c_str(), next_path.c_str())) std::remove(prev_path.c_str()); //TODO:LOG and/or CHECK - https://learn.microsoft.com/en-us/cpp/code-quality/c6031
+
             next_path = std::move(prev_path);
         }
         if(!std::rename(m_path.c_str(), next_path.c_str())) std::remove(m_path.c_str()); //TODO:LOG and/or CHECK - https://learn.microsoft.com/en-us/cpp/code-quality/c6031

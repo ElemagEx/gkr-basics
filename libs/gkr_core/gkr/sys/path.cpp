@@ -14,6 +14,19 @@ constexpr char OS_SEPARATOR = '\\';
 constexpr char OS_SEPARATOR = '\\';
 #endif
 
+const char* get_path_last_filename(const char* path)
+{
+    Assert_Check(path != nullptr);
+
+    const char* ptr;
+#ifdef _WIN32
+    ptr = std::strrchr(path, '\\'); if(ptr != nullptr) return (ptr + 1);
+#endif
+    ptr = std::strrchr(path, '/' ); if(ptr != nullptr) return (ptr + 1);
+
+    return path;
+}
+
 bool is_path_separator(char ch)
 {
 #ifdef _WIN32
@@ -122,17 +135,12 @@ bool is_valid_path(const char* path)
     }
     return true;
 }
-const char* get_path_last_name(const char* path)
+
+bool is_valid_ext(const char* ext)
 {
-    Assert_Check(path != nullptr);
+    Assert_NotNullPtr(ext);
 
-    const char* ptr;
-#ifdef _WIN32
-    ptr = std::strrchr(path, '\\'); if(ptr != nullptr) return (ptr + 1);
-#endif
-    ptr = std::strrchr(path, '/' ); if(ptr != nullptr) return (ptr + 1);
-
-    return path;
+    return (is_valid_name(ext) && std::strcmp(ext, ".."));
 }
 }
 
@@ -199,7 +207,7 @@ std::string path_remove_filename(const char* path, const char* name)
     Check_Arg_IsValid(is_valid_path(path), {});
     Check_Arg_IsValid(is_valid_name(name), {});
 
-    const char* last = get_path_last_name(path);
+    const char* last = get_path_last_filename(path);
 
     std::string str(path, std::size_t(last - path));
 
@@ -216,7 +224,7 @@ std::string path_change_filename(const char* path, const char* name)
     Check_Arg_IsValid(is_valid_path(path), {});
     Check_Arg_IsValid(is_valid_name(name), {});
 
-    const char* last = get_path_last_name(path);
+    const char* last = get_path_last_filename(path);
 
     std::string str(path, std::size_t(last - path));
 
@@ -231,7 +239,7 @@ std::string path_obtain_filename(const char* path)
 
     Check_Arg_IsValid(is_valid_path(path), {});
 
-    const char* last = get_path_last_name(path);
+    const char* last = get_path_last_filename(path);
 
     std::string str(last);
 
@@ -244,86 +252,115 @@ bool path_has_extension(const char* path, const char* ext)
 
     Check_Arg_IsValid(is_valid_path(path), {});
 
-    const char* last = get_path_last_name(path);
+    const char* last = get_path_last_filename(path);
 
-    if((ext == nullptr) || (*ext == 0))
-    {
-        return (std::strchr(last, '.') == nullptr);
-    }
-    else
-    {
-        const char* pos = std::strrchr(last, '.');
+    const char* pos = std::strchr(last, '.');
 
-        return (pos == nullptr)
-            ? false
-            : !std::strcmp(ext, pos + 1)
-            ;
+    if(pos == nullptr)
+    {
+        return false;
     }
+    if(ext == nullptr)
+    {
+        return (pos[1] != 0);
+    }
+
+    Check_Arg_IsValid(is_valid_ext(ext));
+
+    if(*ext == '.') ++ext; else ++pos;
+
+    return (0 == std::strcmp(ext, pos));
 }
 
-std::string path_insert_extension(const char* path, const char* ext, int order)
+std::string path_add_extension(const char* path, const char* ext)
 {
-    Check_Arg_NotNull(path     , {});
-    Check_Arg_NotNull( ext     , {});
-    Check_Arg_IsValid(*ext != 0, {});
+    Check_Arg_NotNull(path, {});
+    Check_Arg_NotNull(ext , {});
 
-    const char* last = get_path_last_name(path);
+    Check_Arg_IsValid(is_valid_path(path), {});
+    Check_Arg_IsValid(is_valid_ext (ext ), {});
 
-    std::string str(path, std::size_t(last - path));
+    std::string str(path);
 
-    const char* pos = last;
+    if(str.back() != '.') str.append(1, '.');
 
-    if(order > 0)
-    {
-        for( ; *pos != 0; ++pos)
-        {
-            if(*pos == '.') if(--order == 0) break;
-        }
-    }
-    else if(order < 0)
-    {
-        for(const char* end = pos + std::strlen(pos) ; end > pos; --end)
-        {
-            if(*end == '.') if(++order == 0) { pos = end; break; }
-        }
-    }
-    else
-    {
-        pos += std::strlen(pos);
-    }
-    str.append(last, std::size_t(pos - last));
-    str.append(1, '.');
+    if(*ext == '.') ++ext;
+
     str.append(ext);
-    str.append(pos);
+
     return str;
 }
 
-std::string path_remove_extension(const char* path, int order)
+std::string path_del_extension(const char* path)
 {
     Check_Arg_NotNull(path, {});
 
-    const char* last = get_path_last_name(path);
+    Check_Arg_IsValid(is_valid_path(path), {});
+
+    const char* last = get_path_last_filename(path);
 
     std::string str(path, std::size_t(last - path));
 
-    const char* pos;
+    const char* pos = std::strchr(last, '.');
 
-    if(order == 0)
+    if(pos == nullptr)
     {
-        pos = std::strchr(last, '.');
-
-        if(pos == nullptr) pos = last + std::strlen(last);
+        str.append(last);
     }
     else
     {
-        pos = last + std::strlen(last);
+        str.append(last, std::size_t(pos - last));
+    }
+    return str;
+}
 
-        Assert_FailureMsg("Not Implemented");
+std::string path_set_extension(const char* path, const char* ext)
+{
+    Check_Arg_NotNull(path, {});
+    Check_Arg_NotNull(ext , {});
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+    Check_Arg_IsValid(is_valid_ext (ext ), {});
+
+    const char* last = get_path_last_filename(path);
+
+    std::string str(path, std::size_t(last - path));
+
+    const char* pos = std::strchr(last, '.');
+
+    if(pos == nullptr)
+    {
+        str.append(last);
+    }
+    else
+    {
+        str.append(last, std::size_t(pos - last));
     }
 
-    str.append(last, std::size_t(pos - last));
+    if(*ext != '.') str.append(1, '.');
+
+    str.append(ext);
 
     return str;
+}
+
+std::string path_get_extension(const char* path)
+{
+    Check_Arg_NotNull(path, {});
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+
+    const char* last = get_path_last_filename(path);
+
+    const char* pos = std::strchr(last, '.');
+
+    std::string ext;
+
+    if(pos != nullptr)
+    {
+        ext.append(pos + 1);
+    }
+    return ext;
 }
 
 #ifdef _WIN32

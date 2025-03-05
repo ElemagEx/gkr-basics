@@ -26,10 +26,11 @@ GKR_INNER_API std::string path_obtain_filename(const char* path);
 
 GKR_INNER_API bool path_has_extension(const char* path, const char* ext);
 
-GKR_INNER_API std::string path_insert_extension(const char* path, const char* ext, int order);
-GKR_INNER_API std::string path_remove_extension(const char* path, int order);
+GKR_INNER_API std::string path_add_extension(const char* path, const char* ext);
+GKR_INNER_API std::string path_del_extension(const char* path);
 
-
+GKR_INNER_API std::string path_set_extension(const char* path, const char* ext);
+GKR_INNER_API std::string path_get_extension(const char* path);
 
 //
 // OS dependent path operations

@@ -25,5 +25,5 @@ inline const char* DIAG_GET_PREFIX(int id)
         "Invalid Argument: ",
         "Invalid Array Argument: ",
     };
-    return s_formats[id];
+    return s_prefixes[id];
 }

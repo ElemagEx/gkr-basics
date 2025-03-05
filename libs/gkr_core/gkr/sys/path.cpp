@@ -7,15 +7,131 @@
 
 namespace
 {
-const char* path_file_begin(const char* path)
+
+#ifdef _WIN32
+constexpr char OS_SEPARATOR = '\\';
+#else
+constexpr char OS_SEPARATOR = '\\';
+#endif
+
+bool is_path_separator(char ch)
+{
+#ifdef _WIN32
+    if(ch == '\\') return true;
+#endif
+    return (ch == '/');
+}
+
+std::size_t get_path_absolute_prefix_len(const char* path)
+{
+    Assert_NotNullPtr(path);
+
+#ifdef _WIN32
+    if(std::strlen(path) >= 2)
+    {
+        if((path[0] == '\\') && (path[1] == '\\'))
+        {
+            Assert_FailureMsg("UNC path is not supported yet");
+        }
+        if(std::isalpha(path[0]) && (path[1] == ':'))
+        {
+            if(is_path_separator(path[2]))
+            {
+                return 3;
+            }
+            else
+            {
+                return 2;
+            }
+        }
+    }
+#endif
+    if(is_path_separator(*path))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+bool is_valid_name(const char* path, std::size_t* len = nullptr)
+{
+    Assert_NotNullPtr(path);
+
+    for(const char* start = path; ; ++path)
+    {
+        switch(*path)
+        {
+            case 0:
+                if(len != nullptr)
+                {
+                    *len = std::size_t(path - start);
+                }
+                return ((path - start) > 0);
+
+            case '/':
+#ifdef _WIN32
+            case '\\':
+#endif
+                if(len != nullptr)
+                {
+                    *len = std::size_t(path - start + 1);
+                    return (*len > 1);
+                }
+                break;
+
+            case '.':
+                if(path[1] != '.') continue;
+
+                if(start == path)
+                {
+                    ++path;
+                    if(path[1] == 0) continue;
+                    if(is_path_separator(path[1]) && (len != nullptr)) continue;
+                }
+                break;
+
+#ifdef _WIN32
+            default:
+                if(std::strchr("<>:|?*", *path) == nullptr) continue;
+                break;
+#else
+            case '-':
+            case '_':
+                continue;
+            default:
+                if(std::isalnum(*path)) continue;
+                break;
+#endif
+        }
+        break;
+    }
+    return false;
+}
+
+bool is_valid_path(const char* path)
+{
+    Assert_NotNullPtr(path);
+
+    path += get_path_absolute_prefix_len(path);
+
+    for(std::size_t len; *path != 0; )
+    {
+        if(!is_valid_name(path, &len)) return false;
+
+        path += len;
+    }
+    return true;
+}
+const char* get_path_last_name(const char* path)
 {
     Assert_Check(path != nullptr);
 
-    const char* begin;
+    const char* ptr;
 #ifdef _WIN32
-    begin = std::strrchr(path, '\\'); if(begin != nullptr) return (begin + 1);
+    ptr = std::strrchr(path, '\\'); if(ptr != nullptr) return (ptr + 1);
 #endif
-    begin = std::strrchr(path, '/' ); if(begin != nullptr) return (begin + 1);
+    ptr = std::strrchr(path, '/' ); if(ptr != nullptr) return (ptr + 1);
+
     return path;
 }
 }
@@ -25,27 +141,118 @@ namespace gkr
 namespace sys
 {
 
-bool path_ends_with_sep(const char* path)
+bool path_is_valid(const char* path)
 {
-    Assert_Check(path != nullptr);
+    Check_Arg_NotNull(path, false);
 
-    return (*path_file_begin(path) == 0);
+    return is_valid_path(path);
+}
+
+bool path_is_relative(const char* path)
+{
+    Check_Arg_NotNull(path, false);
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+
+    const std::size_t prefix_len = get_path_absolute_prefix_len(path);
+
+#ifdef _WIN32
+    return (prefix_len > 2);
+#else
+    return (prefix_len > 0);
+#endif
+}
+
+bool path_ends_with_separator(const char* path)
+{
+    Check_Arg_NotNull(path, false);
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+
+    const std::size_t len = std::strlen(path);
+
+    return ((len > 0) && is_path_separator(path[len - 1]));
+}
+
+std::string path_append_filename(const char* path, const char* name)
+{
+    Check_Arg_NotNull(path, {});
+    Check_Arg_NotNull(name, {});
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+    Check_Arg_IsValid(is_valid_name(name), {});
+
+    std::string str(path);
+
+    if(is_path_separator(str.back())) str.append(1, OS_SEPARATOR);
+
+    str.append(name);
+
+    return str;
+}
+
+std::string path_remove_filename(const char* path, const char* name)
+{
+    Check_Arg_NotNull(path, {});
+    Check_Arg_NotNull(name, {});
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+    Check_Arg_IsValid(is_valid_name(name), {});
+
+    const char* last = get_path_last_name(path);
+
+    std::string str(path, std::size_t(last - path));
+
+    if(str.back() == OS_SEPARATOR) str.pop_back();
+
+    return str;
+}
+
+std::string path_change_filename(const char* path, const char* name)
+{
+    Check_Arg_NotNull(path, {});
+    Check_Arg_NotNull(name, {});
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+    Check_Arg_IsValid(is_valid_name(name), {});
+
+    const char* last = get_path_last_name(path);
+
+    std::string str(path, std::size_t(last - path));
+
+    str += name;
+
+    return str;
+}
+
+std::string path_obtain_filename(const char* path)
+{
+    Check_Arg_NotNull(path, {});
+
+    Check_Arg_IsValid(is_valid_path(path), {});
+
+    const char* last = get_path_last_name(path);
+
+    std::string str(last);
+
+    return str;
 }
 
 bool path_has_extension(const char* path, const char* ext)
 {
     Check_Arg_NotNull(path, false);
-    Check_Arg_NotNull(ext , false);
 
-    const char* name = path_file_begin(path);
+    Check_Arg_IsValid(is_valid_path(path), {});
 
-    if(*ext == 0)
+    const char* last = get_path_last_name(path);
+
+    if((ext == nullptr) || (*ext == 0))
     {
-        return (std::strchr(name, '.') == nullptr);
+        return (std::strchr(last, '.') == nullptr);
     }
     else
     {
-        const char* pos = std::strrchr(name, '.');
+        const char* pos = std::strrchr(last, '.');
 
         return (pos == nullptr)
             ? false
@@ -54,17 +261,17 @@ bool path_has_extension(const char* path, const char* ext)
     }
 }
 
-std::string path_insert_ext(const char* path, const char* ext, int order)
+std::string path_insert_extension(const char* path, const char* ext, int order)
 {
     Check_Arg_NotNull(path     , {});
     Check_Arg_NotNull( ext     , {});
     Check_Arg_IsValid(*ext != 0, {});
 
-    const char* name = path_file_begin(path);
+    const char* last = get_path_last_name(path);
 
-    std::string str(path, std::size_t(name - path));
+    std::string str(path, std::size_t(last - path));
 
-    const char* pos = name;
+    const char* pos = last;
 
     if(order > 0)
     {
@@ -84,58 +291,37 @@ std::string path_insert_ext(const char* path, const char* ext, int order)
     {
         pos += std::strlen(pos);
     }
-    str.append(name, std::size_t(pos - name));
+    str.append(last, std::size_t(pos - last));
     str.append(1, '.');
     str.append(ext);
     str.append(pos);
     return str;
 }
 
-std::string path_remove_ext(const char* path, int order)
+std::string path_remove_extension(const char* path, int order)
 {
     Check_Arg_NotNull(path, {});
 
-    const char* name = path_file_begin(path);
+    const char* last = get_path_last_name(path);
 
-    std::string str(path, std::size_t(name - path));
+    std::string str(path, std::size_t(last - path));
 
     const char* pos;
 
     if(order == 0)
     {
-        pos = std::strchr(name, '.');
+        pos = std::strchr(last, '.');
 
-        if(pos == nullptr) pos = name + std::strlen(name);
+        if(pos == nullptr) pos = last + std::strlen(last);
     }
     else
     {
-        pos = name + std::strlen(name);
+        pos = last + std::strlen(last);
 
         Assert_FailureMsg("Not Implemented");
     }
 
-    str.append(name, std::size_t(pos - name));
-
-    return str;
-}
-
-std::string path_set_filename(const char* path, const char* name)
-{
-    Check_Arg_IsValid(path && (*path != 0), {});
-    Check_Arg_IsValid(name && (*name != 0), {});
-
-    std::string str(path, std::size_t(path_file_begin(path) - path));
-
-    str += name;
-
-    return str;
-}
-
-std::string path_get_filename(const char* path)
-{
-    Check_Arg_NotNull(path, {});
-
-    std::string str(path_file_begin(path));
+    str.append(last, std::size_t(pos - last));
 
     return str;
 }

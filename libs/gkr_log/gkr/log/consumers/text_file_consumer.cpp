@@ -181,7 +181,7 @@ bool text_file_consumer::init_logging()
         const unsigned len = gkr_log_apply_time_format(ext, sizeof(ext), "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
         m_path.append(ext, len);
     }
-    else if(sys::path_ends_with_sep(m_path.c_str()))
+    else if(sys::path_ends_with_separator(m_path.c_str()))
     {
         m_path += sys::get_current_process_name();
 
@@ -280,14 +280,14 @@ void text_file_consumer::roll(unsigned max_files)
     {
         char num[12];
         snprintf(num, sizeof(num), "%u", --max_files);
-        std::string next_path = sys::path_insert_ext(m_path.c_str(), num, 1);
+        std::string next_path = sys::path_insert_extension(m_path.c_str(), num, 1);
 
         remove(next_path.c_str());
 
         while(max_files > 1)
         {
             snprintf(num, sizeof(num), "%u", --max_files);
-            std::string prev_path = sys::path_insert_ext(m_path.c_str(), num, 1);
+            std::string prev_path = sys::path_insert_extension(m_path.c_str(), num, 1);
             if(std::rename(prev_path.c_str(), next_path.c_str())) std::remove(prev_path.c_str()); //TODO:LOG and/or CHECK - https://learn.microsoft.com/en-us/cpp/code-quality/c6031
             next_path = std::move(prev_path);
         }

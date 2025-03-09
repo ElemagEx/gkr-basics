@@ -85,7 +85,7 @@ TEST_CASE("logging.logger. main")
     gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
 
     std::thread t([] () {
-        gkr_log_set_this_thread_name("gkr-bar");
+        gkr_log_set_current_thread_name("gkr-bar");
         gkr_log_simple_message(false, SEVERITY_VERBOSE, FACILITY_FILESYS, "Other thread message");
     });
     t.join();

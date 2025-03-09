@@ -34,6 +34,8 @@ void file_report_error(int error, unsigned* errors)
 
 bool file_is_atty(void* file)
 {
+    Check_Arg_NotNull(file);
+
 #ifdef _WIN32
     const int fd = _fileno(static_cast<FILE*>(file));
 

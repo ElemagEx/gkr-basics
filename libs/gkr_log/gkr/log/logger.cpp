@@ -56,7 +56,7 @@ void logger::bind_events(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
 bool logger::on_start()
 {
     m_log_queue.threading.any_thread_can_be_producer();
-    m_log_queue.threading.set_this_thread_as_exclusive_consumer();
+    m_log_queue.threading.set_current_thread_as_exclusive_consumer();
     return true;
 }
 

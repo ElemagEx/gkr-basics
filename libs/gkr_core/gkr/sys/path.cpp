@@ -8,12 +8,6 @@
 namespace
 {
 
-#ifdef _WIN32
-constexpr char OS_SEPARATOR = '\\';
-#else
-constexpr char OS_SEPARATOR = '\\';
-#endif
-
 const char* get_path_last_filename(const char* path)
 {
     Assert_Check(path != nullptr);
@@ -25,6 +19,22 @@ const char* get_path_last_filename(const char* path)
     ptr = std::strrchr(path, '/' ); if(ptr != nullptr) return (ptr + 1);
 
     return path;
+}
+
+std::size_t get_path_last_filename_pos(const char* path)
+{
+    const char* ptr;
+#ifdef _WIN32
+    ptr = std::strrchr(path, '\\'); if(ptr != nullptr) return std::size_t(ptr - path + 1);
+#endif
+    ptr = std::strrchr(path, '/' ); if(ptr != nullptr) return std::size_t(ptr - path + 1);
+
+    return 0;
+}
+
+inline std::size_t get_path_last_filename_pos(const std::string& path)
+{
+    return get_path_last_filename_pos(path.c_str());
 }
 
 bool is_path_separator(char ch)
@@ -135,6 +145,17 @@ bool is_valid_path(const char* path)
     }
     return true;
 }
+inline bool is_valid_path(const std::string& path)
+{
+    return is_valid_path(path.c_str());
+}
+
+bool is_valid_os_path(const char* path)
+{
+    Assert_NotNullPtr(path);
+
+    return (is_valid_path(path) && (std::strchr(path, '/') == nullptr));
+}
 
 bool is_valid_ext(const char* ext)
 {
@@ -154,6 +175,13 @@ bool path_is_valid(const char* path)
     Check_Arg_NotNull(path, false);
 
     return is_valid_path(path);
+}
+
+bool path_is_os_valid(const char* path)
+{
+    Check_Arg_NotNull(path, false);
+
+    return is_valid_os_path(path);
 }
 
 bool path_is_relative(const char* path)
@@ -182,68 +210,66 @@ bool path_ends_with_separator(const char* path)
     return ((len > 0) && is_path_separator(path[len - 1]));
 }
 
-std::string path_append_filename(const char* path, const char* name)
+std::string path_get_filename(const char* path)
 {
     Check_Arg_NotNull(path, {});
-    Check_Arg_NotNull(name, {});
 
     Check_Arg_IsValid(is_valid_path(path), {});
-    Check_Arg_IsValid(is_valid_name(name), {});
 
-    std::string str(path);
+    const std::size_t pos = get_path_last_filename_pos(path);
 
-    if(is_path_separator(str.back())) str.append(1, OS_SEPARATOR);
+    path += pos;
 
-    str.append(name);
-
-    return str;
+    return std::string(path);
 }
 
-std::string path_remove_filename(const char* path, const char* name)
+bool path_set_filename(std::string& path, const char* name)
 {
-    Check_Arg_NotNull(path, {});
-    Check_Arg_NotNull(name, {});
+    Check_Arg_NotNull(name, false);
 
-    Check_Arg_IsValid(is_valid_path(path), {});
-    Check_Arg_IsValid(is_valid_name(name), {});
+    Check_Arg_IsValid(is_valid_path(path), false);
+    Check_Arg_IsValid(is_valid_name(name), false);
 
-    const char* last = get_path_last_filename(path);
+    const std::size_t pos = get_path_last_filename_pos(path);
 
-    std::string str(path, std::size_t(last - path));
+    path.erase(pos);
+    path.append(name);
 
-    if(str.back() == OS_SEPARATOR) str.pop_back();
-
-    return str;
+    return true;
 }
 
-std::string path_change_filename(const char* path, const char* name)
+bool path_add_filename(std::string& path, const char* name)
 {
-    Check_Arg_NotNull(path, {});
-    Check_Arg_NotNull(name, {});
+    Check_Arg_NotNull(name, false);
 
-    Check_Arg_IsValid(is_valid_path(path), {});
-    Check_Arg_IsValid(is_valid_name(name), {});
+    Check_Arg_IsValid(is_valid_path(path), false);
+    Check_Arg_IsValid(is_valid_name(name), false);
 
-    const char* last = get_path_last_filename(path);
+    if(!is_path_separator(path.back()))
+    {
+#ifdef _WIN32
+        if(path.find('/') == std::string::npos) path.append(1, '\\');
+        else                                    path.append(1, '/' );
+#else
+        path.append(1, '/');
+#endif
+    }
+    path.append(name);
 
-    std::string str(path, std::size_t(last - path));
-
-    str += name;
-
-    return str;
+    return true;
 }
 
-std::string path_obtain_filename(const char* path)
+bool path_del_filename(std::string& path)
 {
-    Check_Arg_NotNull(path, {});
+    Check_Arg_IsValid(is_valid_path(path), false);
 
-    Check_Arg_IsValid(is_valid_path(path), {});
+    const std::size_t pos = get_path_last_filename_pos(path);
 
-    const char* last = get_path_last_filename(path);
+    path.erase(pos);
 
-    std::string str(last);
+    if(is_path_separator(path.back())) path.pop_back();
 
-    return str;
+    return true;
 }
 
 bool path_has_extension(const char* path, const char* ext)
@@ -265,83 +291,11 @@ bool path_has_extension(const char* path, const char* ext)
         return (pos[1] != 0);
     }
 
-    Check_Arg_IsValid(is_valid_ext(ext));
+    Check_Arg_IsValid(is_valid_ext(ext), false);
 
-    if(*ext == '.') ++ext; else ++pos;
+    if(*ext != '.') ++pos;
 
     return (0 == std::strcmp(ext, pos));
-}
-
-std::string path_add_extension(const char* path, const char* ext)
-{
-    Check_Arg_NotNull(path, {});
-    Check_Arg_NotNull(ext , {});
-
-    Check_Arg_IsValid(is_valid_path(path), {});
-    Check_Arg_IsValid(is_valid_ext (ext ), {});
-
-    std::string str(path);
-
-    if(str.back() != '.') str.append(1, '.');
-
-    if(*ext == '.') ++ext;
-
-    str.append(ext);
-
-    return str;
-}
-
-std::string path_del_extension(const char* path)
-{
-    Check_Arg_NotNull(path, {});
-
-    Check_Arg_IsValid(is_valid_path(path), {});
-
-    const char* last = get_path_last_filename(path);
-
-    std::string str(path, std::size_t(last - path));
-
-    const char* pos = std::strchr(last, '.');
-
-    if(pos == nullptr)
-    {
-        str.append(last);
-    }
-    else
-    {
-        str.append(last, std::size_t(pos - last));
-    }
-    return str;
-}
-
-std::string path_set_extension(const char* path, const char* ext)
-{
-    Check_Arg_NotNull(path, {});
-    Check_Arg_NotNull(ext , {});
-
-    Check_Arg_IsValid(is_valid_path(path), {});
-    Check_Arg_IsValid(is_valid_ext (ext ), {});
-
-    const char* last = get_path_last_filename(path);
-
-    std::string str(path, std::size_t(last - path));
-
-    const char* pos = std::strchr(last, '.');
-
-    if(pos == nullptr)
-    {
-        str.append(last);
-    }
-    else
-    {
-        str.append(last, std::size_t(pos - last));
-    }
-
-    if(*ext != '.') str.append(1, '.');
-
-    str.append(ext);
-
-    return str;
 }
 
 std::string path_get_extension(const char* path)
@@ -350,17 +304,84 @@ std::string path_get_extension(const char* path)
 
     Check_Arg_IsValid(is_valid_path(path), {});
 
-    const char* last = get_path_last_filename(path);
+    const std::size_t pos = get_path_last_filename_pos(path);
 
-    const char* pos = std::strchr(last, '.');
+    const char* ptr = std::strchr(path + pos, '.');
 
     std::string ext;
 
-    if(pos != nullptr)
+    if(ptr != nullptr)
     {
-        ext.append(pos + 1);
+        ext.append(ptr + 1);
     }
     return ext;
+}
+
+bool path_set_extension(std::string& path, const char* ext)
+{
+    Check_Arg_NotNull(ext, false);
+
+    Check_Arg_IsValid(is_valid_path(path), false);
+    Check_Arg_IsValid(is_valid_ext (ext ), false);
+
+    const std::size_t pos = get_path_last_filename_pos(path);
+
+    const std::size_t dot = path.find('.', pos);
+
+    if(dot != std::string::npos)
+    {
+        path.erase(dot);
+    }
+    if(*ext != '.') ++ext;
+
+    if(*ext == 0)
+    {
+        if(path.back() == '.') path.pop_back();
+    }
+    else
+    {
+        if(path.back() != '.') path.append(1, '.');
+
+        path.append(ext);
+    }
+    return true;
+}
+
+bool path_add_extension(std::string& path, const char* ext)
+{
+    Check_Arg_NotNull(ext, false);
+
+    Check_Arg_IsValid(is_valid_path(path), false);
+    Check_Arg_IsValid(is_valid_ext (ext ), false);
+
+    if(*ext == '.') ++ext;
+
+    if(*ext == 0)
+    {
+        if(path.back() == '.') path.pop_back();
+    }
+    else
+    {
+        if(path.back() != '.') path.append(1, '.');
+
+        path.append(ext);
+    }
+    return true;
+}
+
+bool path_del_extension(std::string& path)
+{
+    Check_Arg_IsValid(is_valid_path(path), false);
+
+    const std::size_t pos = get_path_last_filename_pos(path);
+
+    const std::size_t dot = path.find('.', pos);
+
+    if(dot != std::string::npos)
+    {
+        path.erase(dot);
+    }
+    return true;
 }
 
 #ifdef _WIN32
@@ -373,6 +394,8 @@ bool path_exists(const char* path)
 {
     Check_Arg_NotNull(path, false);
 
+    Check_Arg_IsValid(is_valid_os_path(path), false);
+
     const DWORD attrs = GetFileAttributesA(path);
 
     return (attrs != INVALID_FILE_ATTRIBUTES);
@@ -382,6 +405,8 @@ bool path_is_dir(const char* path)
 {
     Check_Arg_NotNull(path, false);
 
+    Check_Arg_IsValid(is_valid_os_path(path), false);
+
     const DWORD attrs = GetFileAttributesA(path);
 
     return ((attrs != INVALID_FILE_ATTRIBUTES) && ((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0));
@@ -389,35 +414,45 @@ bool path_is_dir(const char* path)
 
 bool path_ensure_dir_exists(const char* path)
 {
-    Assert_Check(path != nullptr);
+    Check_Arg_NotNull(path, false);
 
-    if(std::strlen(path) >= 4)
+    Check_Arg_IsValid(is_valid_os_path(path), false);
+
+    Check_Arg_IsValid(get_path_absolute_prefix_len(path) == 3, false); // Must start with '<Drive-Letter>:\'
+
+    std::string dir(path);
+
+    for(std::size_t pos = dir.find('\\'); ; )
     {
-        if(!std::strncmp(path + 0, "\\\\?\\", 4)) return false;
-        if( std::strncmp(path + 1, ":\\"    , 2)) return false;
+        Assert_Check(pos != std::string::npos);
 
-        if(!std::isalpha(*path)) return false;
-    }
-    for(const char* pos = std::strchr(path, '\\'); ; )
-    {
-        pos = std::strchr(pos + 1, '\\');
+        pos = dir.find('\\', pos);
 
-        if(pos == nullptr) break;
+        if(pos == std::string::npos) break;
 
-        std::string dir(path, std::size_t(pos - path));
+        Check_Arg_IsValid(path[pos - 1] == '.', false); // Encountered '.' or '..'
 
-        CreateDirectoryA(dir.c_str(), nullptr);
+        dir[pos] = 0;
+        {
+            const DWORD attrs = GetFileAttributesA(dir.c_str());
+
+            if(attrs != INVALID_FILE_ATTRIBUTES)
+            {
+                DIAG_VAR(BOOL, res)
+                CreateDirectoryA(dir.c_str(), nullptr);
+                Check_Sys_Result(res, false);
+            }
+            else if((attrs & FILE_ATTRIBUTE_DIRECTORY) == 0)
+            {
+                return false;
+            }
+        }
+        dir[pos] = '\\';
     }
     return true;
 }
 
 #else
-
-bool path_ensure_dir_exists(const char* path)
-{
-    Assert_FailureMsg("Not implemented");
-    return false;
-}
 
 bool path_exists(const char* path)
 {
@@ -426,6 +461,12 @@ bool path_exists(const char* path)
 }
 
 bool path_is_dir(const char* path)
+{
+    Assert_FailureMsg("Not implemented");
+    return false;
+}
+
+bool path_ensure_dir_exists(const char* path)
 {
     Assert_FailureMsg("Not implemented");
     return false;

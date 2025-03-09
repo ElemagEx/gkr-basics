@@ -25,7 +25,12 @@
 #undef Check_Arg_Invalid
 #undef Check_Arg_Array
 
+#undef Check_Sys_Return
+#undef Check_Sys_Result
+#undef Check_std_Fail
+
 #undef DIAG_EXTERNAL_API
 #undef DIAG_NOEXCEPT
 #undef DIAG_HALT
 #undef DIAG_WARN
+#undef DIAG_VAR

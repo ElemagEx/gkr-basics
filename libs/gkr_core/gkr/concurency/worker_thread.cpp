@@ -161,7 +161,7 @@ bool worker_thread::safe_start() noexcept
     Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT, false);
 
     m_actions_queue.threading.any_thread_can_be_producer();
-    m_actions_queue.threading.set_this_thread_as_exclusive_consumer();
+    m_actions_queue.threading.set_current_thread_as_exclusive_consumer();
 
 #ifndef __cpp_exceptions
     return on_start();

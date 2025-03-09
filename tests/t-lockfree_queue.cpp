@@ -125,7 +125,7 @@ TEST_CASE("container.lockfree_queue. main")
 
     queue = std::move(queue2);
 
-    queue.threading.set_this_thread_as_exclusive_producer();
+    queue.threading.set_current_thread_as_exclusive_producer();
     queue.threading.any_thread_can_be_producer();
     queue.capacity();
     queue.count();

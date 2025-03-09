@@ -439,7 +439,7 @@ public:
     }
 
 public:
-    void set_this_thread_as_exclusive_producer() noexcept
+    void set_current_thread_as_exclusive_producer() noexcept
     {
         m_producer_tid = get_current_tid();
     }
@@ -452,7 +452,7 @@ public:
         m_producer_tid = 0;
     }
 
-    void set_this_thread_as_exclusive_consumer() noexcept
+    void set_current_thread_as_exclusive_consumer() noexcept
     {
         m_consumer_tid = get_current_tid();
     }

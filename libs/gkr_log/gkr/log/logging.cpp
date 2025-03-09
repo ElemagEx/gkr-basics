@@ -181,14 +181,14 @@ int gkr_log_del_all_consumers(void* instance)
     return get_logger().del_all_consumers(instance);
 }
 
-int gkr_log_set_this_thread_name(const char* name)
+int gkr_log_set_current_thread_name(const char* name)
 {
     Check_Arg_NotNull(name, false);
     check_thread_name(name);
     return true;
 }
 
-int gkr_log_get_this_thread_llm_id(int id)
+int gkr_log_get_current_thread_llm_id(int id)
 {
     if(id == 0) return check_thread_name(nullptr);
 

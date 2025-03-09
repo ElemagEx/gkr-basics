@@ -14,35 +14,41 @@ namespace sys
 {
 bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 {
-	Check_Arg_NotNull(name, false);
+    Check_Arg_NotNull(name, false);
 
-	wchar_t buff[MAX_THREAD_NAME_CCH];
+    wchar_t buff[MAX_THREAD_NAME_CCH];
 
-	MultiByteToWideChar(CP_UTF8, 0, name, -1, buff, MAX_THREAD_NAME_CCH);
+    DIAG_VAR(int, cch)
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, buff, MAX_THREAD_NAME_CCH);
+    Check_Sys_Result(cch > 0, false);
 
-	buff[MAX_THREAD_NAME_CCH - 1] = 0;
+    buff[MAX_THREAD_NAME_CCH - 1] = 0;
 
-	HRESULT hr = SetThreadDescription(GetCurrentThread(), buff);
+    DIAG_VAR(HRESULT, hr)
+    SetThreadDescription(GetCurrentThread(), buff);
+    Check_Sys_Return(hr, false);
 
-	return SUCCEEDED(hr);
+    return true;
 }
 bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 {
-	Check_Arg_NotNull(name, false);
+    Check_Arg_NotNull(name, false);
 
-	wchar_t* buff;
+    wchar_t* buff;
 
-	HRESULT hr = GetThreadDescription(GetCurrentThread(), &buff);
+    DIAG_VAR(HRESULT, hr)
+    GetThreadDescription(GetCurrentThread(), &buff);
+    Check_Sys_Return(hr, false);
 
-	if(!SUCCEEDED(hr)) return false;
+    DIAG_VAR(int, cch)
+    WideCharToMultiByte(CP_UTF8, 0, buff, -1, name, MAX_THREAD_NAME_CCH, nullptr, nullptr);
+    Check_Sys_Result(cch > 0, false);
 
-	WideCharToMultiByte(CP_UTF8, 0, buff, -1, name, MAX_THREAD_NAME_CCH, nullptr, nullptr);
+    name[MAX_THREAD_NAME_CCH - 1] = 0;
 
-	name[MAX_THREAD_NAME_CCH - 1] = 0;
+    LocalFree(buff);
 
-	LocalFree(buff);
-
-	return true;
+    return true;
 }
 }
 }
@@ -57,15 +63,23 @@ namespace sys
 {
 bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 {
-	if(name == nullptr) return false;
+    Check_Arg_NotNull(name);
 
-	return (0 == prctl(PR_SET_NAME, long(name), 0, 0, 0));
+    DIAG_VAR(int, res)
+    prctl(PR_SET_NAME, long(name), 0, 0, 0);
+    Check_Sys_Result(res >= 0, false);
+
+    return true;
 }
 bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 {
-	if(name == nullptr) return false;
+    Check_Arg_NotNull(name);
 
-	return (0 == prctl(PR_GET_NAME, long(name), 0, 0, 0));
+    DIAG_VAR(int, res)
+    prctl(PR_GET_NAME, long(name), 0, 0, 0);
+    Check_Sys_Result(res >= 0, false);
+
+    return true;
 }
 }
 }

@@ -171,19 +171,21 @@ text_file_consumer::~text_file_consumer()
 
 bool text_file_consumer::init_logging()
 {
-    m_path = sys::expand_process_env_vars(m_path.c_str(), true);
+    m_path = sys::expand_current_process_env_vars(m_path);
 
     if(m_path.empty())
     {
         m_path = sys::get_current_process_path();
 
+        sys::path_del_extension(m_path);
+
         char ext[32];
         const unsigned len = gkr_log_apply_time_format(ext, sizeof(ext), "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
         m_path.append(ext, len);
     }
-    else if(sys::path_ends_with_separator(m_path.c_str()))
+    else if(sys::path_ends_with_separator(m_path) || sys::path_is_dir(m_path))
     {
-        m_path += sys::get_current_process_name();
+        sys::path_add_filename(m_path, sys::get_current_process_name());
 
         char ext[32];
         const unsigned len = gkr_log_apply_time_format(ext, sizeof(ext), "_%Y%m%d_%H%M%S.log", stamp_now(), 0);
@@ -279,22 +281,21 @@ void text_file_consumer::roll(unsigned max_files)
     else
     {
         std::string num = std::to_string(--max_files);
-        std::string ext = sys::path_get_extension(m_path.c_str());
+        std::string ext = sys::path_get_extension(m_path);
 
-        std::string strip_path = sys::path_del_extension(m_path.c_str());
-
-        std::string
-        next_path = sys::path_add_extension(strip_path.c_str(), num.c_str());
-        next_path = sys::path_add_extension( next_path.c_str(), ext.c_str());
+        std::string next_path = m_path;
+        sys::path_set_extension(next_path, num);
+        sys::path_add_extension(next_path, ext);
 
         remove(next_path.c_str());
 
         while(max_files > 1)
         {
             num = std::to_string(--max_files);
-            std::string
-            prev_path = sys::path_add_extension(strip_path.c_str(), num.c_str());
-            prev_path = sys::path_add_extension( prev_path.c_str(), ext.c_str());
+
+            std::string prev_path = m_path;
+            sys::path_set_extension(prev_path, num);
+            sys::path_add_extension(prev_path, ext);
 
             if(std::rename(prev_path.c_str(), next_path.c_str())) std::remove(prev_path.c_str()); //TODO:LOG and/or CHECK - https://learn.microsoft.com/en-us/cpp/code-quality/c6031
 
@@ -309,7 +310,7 @@ void text_file_consumer::roll(unsigned max_files)
 
 void text_file_consumer::open()
 {
-    sys::path_ensure_dir_exists(m_path.c_str());
+    sys::path_ensure_dir_exists(m_path);
 
     m_file = std::fopen(m_path.c_str(), "ab");
 

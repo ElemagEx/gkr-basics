@@ -1,13 +1,14 @@
 #include <gkr/defs.hpp>
-#include <gkr/diagnostics.hpp>
 
 #include <gkr/sys/path.hpp>
 
-#include <exception>
-
-extern GKR_DIAG_REPORT_FUNC prev_func;
+#include <gkr/diagnostics.hpp>
+#include <gkr/testing/text_exception.hpp>
 
 #define ARG_NULLPTR "Argument is NULL"
+#define ARG_INVALID "Argument is invalid"
+
+extern GKR_DIAG_REPORT_FUNC prev_func;
 
 void ReportFunc(int id, const char* text, const char* func, const char* file, int line)
 {
@@ -17,8 +18,9 @@ void ReportFunc(int id, const char* text, const char* func, const char* file, in
     }
     switch(id)
     {
-        case DIAG_ID_ARG_IS_NULL    : throw std::exception(ARG_NULLPTR);
-        case DIAG_ID_ASSERT_FAIL_MSG: throw std::exception(text);
+        case DIAG_ID_ARG_IS_NULL    : throw gkr::testing::text_exception(ARG_NULLPTR);
+        case DIAG_ID_ARG_NOT_VALID  : throw gkr::testing::text_exception(ARG_INVALID);
+        case DIAG_ID_ASSERT_FAIL_MSG: throw gkr::testing::text_exception(text);
     }
 }
 
@@ -40,7 +42,9 @@ TEST_CASE("sys.path. is_valid")
     using namespace gkr::sys;
 
     CHECK_THROWS_WITH(path_is_valid(nullptr), ARG_NULLPTR);
+#ifdef _WIN32
     CHECK_THROWS_WITH(path_is_valid(R"(\\?\C:\a.txt)"), "UNC path is not supported yet");
+#endif
 
     CHECK(path_is_valid(""));
     CHECK(path_is_valid("/"));
@@ -49,6 +53,7 @@ TEST_CASE("sys.path. is_valid")
     CHECK(path_is_valid("dir1"));
     CHECK(path_is_valid("dir2/"));
     CHECK(path_is_valid("textfile.txt"));
+    CHECK(path_is_valid("textfile.txt/"));
     CHECK(path_is_valid("/textfile.txt"));
     CHECK(path_is_valid("abc/textfile.txt"));
     CHECK(path_is_valid("abc/textfile.txt"));
@@ -57,32 +62,63 @@ TEST_CASE("sys.path. is_valid")
 
     CHECK_FALSE(path_is_valid("//"));
     CHECK_FALSE(path_is_valid("..."));
+    CHECK_FALSE(path_is_valid("<file>"));
+    CHECK_FALSE(path_is_valid("file..name"));
+    CHECK_FALSE(path_is_valid("/dir1?name"));
+    CHECK_FALSE(path_is_valid("/text*file"));
+    CHECK_FALSE(path_is_valid("/data:file"));
+    CHECK_FALSE(path_is_valid("file|name.txt"));
 }
 
 TEST_CASE("sys.path. has_extension")
 {
     using namespace gkr::sys;
 
-    CHECK( path_has_extension("/home/user/file.txt", nullptr));
-    CHECK( path_has_extension("/home/user/file.txt", "txt" ));
-    CHECK(!path_has_extension("/home/user/file.txt", "json"));
+    CHECK_THROWS_WITH(path_has_extension(nullptr, nullptr), ARG_NULLPTR);
+    CHECK_THROWS_WITH(path_has_extension(nullptr, "txt"  ), ARG_NULLPTR);
+
+    CHECK_THROWS_WITH(path_has_extension("/dir/file.txt", ""     ), ARG_INVALID);
+    CHECK_THROWS_WITH(path_has_extension("/dir/file.txt", ".."   ), ARG_INVALID);
+    CHECK_THROWS_WITH(path_has_extension("/dir/file.txt", "a/b"  ), ARG_INVALID);
+    CHECK_THROWS_WITH(path_has_extension("/dir/file.txt", "a..b" ), ARG_INVALID);
+    CHECK_THROWS_WITH(path_has_extension("/dir/file.txt", ".a..b"), ARG_INVALID);
+
+    CHECK(path_has_extension("/dir/file.txt" , nullptr));
+    CHECK(path_has_extension("/dir/file.txt.", nullptr));
+
+    CHECK(path_has_extension("/dir/file.txt" , "txt"  ));
+    CHECK(path_has_extension("/dir/file.exe" , "exe"  ));
+    CHECK(path_has_extension("/dir/file.json", "json" ));
+    CHECK(path_has_extension("/file.data.exe", "data.exe"));
+
+    CHECK(path_has_extension("/dir/file.txt" , ".txt"  ));
+    CHECK(path_has_extension("/dir/file.exe" , ".exe"  ));
+    CHECK(path_has_extension("/dir/file.json", ".json" ));
+    CHECK(path_has_extension("/file.data.exe", ".data.exe"));
+
+    CHECK(path_has_extension("/dir/file.txt." , "txt."  ));
+    CHECK(path_has_extension("/dir/file.txt." , ".txt." ));
+
+    CHECK(path_has_extension("/dir/filename." , "." ));
+
+    CHECK_FALSE(path_has_extension("/dir/filename" , nullptr));
+    CHECK_FALSE(path_has_extension("/dir/filename.", nullptr));
+
+    CHECK_FALSE(path_has_extension("/dir/filename" , "." ));
+
+    CHECK_FALSE(path_has_extension("/dir.jpg/file.txt", "jpg"));
+    CHECK_FALSE(path_has_extension("/dir.png/file.txt", "png"));
+    CHECK_FALSE(path_has_extension("/file.data.exe"   , "exe"));
+    CHECK_FALSE(path_has_extension("/file.data.exe"   , ".exe"));
 }
 
 TEST_CASE("sys.path. add_extension")
 {
     using namespace gkr::sys;
 
-    std::string path = ROOT_PATH "dir/xyz";
+    std::string path;
 
-#if (DIAG_MODE != 4)
-    errno = 0; CHECK(path_add_extension(nullptr, "txt"   , 0).empty()); CHECK(errno == EINVAL);
-    errno = 0; CHECK(path_add_extension("file" , nullptr , 0).empty()); CHECK(errno == EINVAL);
-    errno = 0; CHECK(path_add_extension("file" , ""      , 0).empty()); CHECK(errno == EINVAL);
-#endif
-    path = path_add_extension(path.c_str(), "txt"); CHECK(path == ROOT_PATH "dir/xyz.txt");
-    path = path_add_extension(path.c_str(), "exe"); CHECK(path == ROOT_PATH "dir/xyz.txt.exe");
-    path = path_add_extension(path.c_str(), "doc"); CHECK(path == ROOT_PATH "dir/xyz.doc.txt.exe");
-    path = path_add_extension(path.c_str(), "cpp"); CHECK(path == ROOT_PATH "dir/xyz.doc.txt.cpp.exe");
+    path = "/dir/filename"; CHECK(path_add_extension(path, "." )); CHECK(path == "/dir/filename");
 }
 
 TEST_CASE("sys.path. del_extension")

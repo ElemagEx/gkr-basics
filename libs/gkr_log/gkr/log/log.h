@@ -21,8 +21,8 @@ GKR_LOG_API int gkr_log_custom_message_cancel(void* instance);
 GKR_LOG_API int gkr_log_custom_message_finish(void* instance, int severity, int facility);
 GKR_LOG_API int gkr_log_custom_message_finish_ex(void* instance, const char* func, const char* file, unsigned line, int severity, int facility);
 
-GKR_LOG_API int gkr_log_set_this_thread_name(const char* name);
-GKR_LOG_API int gkr_log_get_this_thread_llm_id(int id);
+GKR_LOG_API int gkr_log_set_current_thread_name(const char* name);
+GKR_LOG_API int gkr_log_get_current_thread_llm_id(int id);
 
 #ifdef __cplusplus
 }

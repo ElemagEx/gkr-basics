@@ -47,7 +47,7 @@ TEST_CASE("logging.logger.defs.generic. main")
         //int last_msg_id =
         LOGV(FACILITY_NETWORK) << "Hello There test " << ++N << "!" << LOG_FINISH;
 
-        //gkr_log_get_this_thread_llm_id(last_msg_id);
+        //gkr_log_get_current_thread_llm_id(last_msg_id);
         return 0;
     };
 #endif

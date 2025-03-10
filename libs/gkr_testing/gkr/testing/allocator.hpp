@@ -10,6 +10,10 @@
 #include <cassert>
 #define CHECK assert
 #endif
+#ifndef REQUIRE
+#include <cassert>
+#define REQUIRE assert
+#endif
 
 #ifndef if_constexpr
 #ifdef __cpp_if_constexpr
@@ -88,8 +92,17 @@ public:
     }
 
 public:
-    void reset(std::size_t count = 0)
+    void reset(std::size_t count = 0, bool count_is_bytes=false)
     {
+        if(count_is_bytes)
+        {
+            REQUIRE(alignof(T) <= sizeof(T));
+            count = ((count % sizeof(T)) == 0)
+                ? (0+(count / sizeof(T)))
+                : (1+(count / sizeof(T)))
+                ;
+        }
+
         std::lock_guard<mutex_t> guard(m_mutex);
 
         make_checks();
@@ -125,7 +138,7 @@ public:
 
         if((n < 1) || (n > m_count))
         {
-            throw std::invalid_argument("n is invalid");
+            throw std::bad_alloc();
         }
         for(std::size_t pos, index = 0; index < m_count; ++index)
         {

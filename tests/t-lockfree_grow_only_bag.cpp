@@ -1,13 +1,12 @@
 #include <gkr/container/lockfree_grow_only_bag.hpp>
 
-#include <gkr/testing/allocator.hpp>
-
 #include <catch2/catch_template_test_macros.hpp>
+
+#include <gkr/testing/allocator.hpp>
 
 #include <string>
 #include <thread>
 #include <atomic>
-
 
 struct Data
 {

@@ -11,10 +11,10 @@ template<typename T=void, bool no_except=true>
 class ptr_sentry
 {
 public:
-    typedef void (*PFN)(T*) noexcept(no_except);
+    ptr_sentry           (const ptr_sentry*) noexcept = delete;
+    ptr_sentry& operator=(const ptr_sentry*) noexcept = delete;
 
-    ptr_sentry(const ptr_sentry* sentry) noexcept = delete;
-    ptr_sentry& operator=(const ptr_sentry&) noexcept = delete;
+    typedef void (*PFN)(T*) noexcept(no_except);
 
     ptr_sentry(PFN pfn) noexcept(DIAG_NOEXCEPT) : m_ptr(nullptr), m_pfn(pfn)
     {

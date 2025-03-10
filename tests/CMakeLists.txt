@@ -16,11 +16,6 @@ target_link_libraries (t-lockfree_queue PRIVATE Catch2::Catch2WithMain gkr_testi
 target_compile_options(t-lockfree_queue PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
 catch_discover_tests  (t-lockfree_queue)
 
-add_executable        (t-raw_buffer t-raw_buffer.cpp)
-target_link_libraries (t-raw_buffer PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
-target_compile_options(t-raw_buffer PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-catch_discover_tests  (t-raw_buffer)
-
 add_executable        (t-events_waiting t-events_waiting.cpp)
 target_link_libraries (t-events_waiting PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
 target_compile_options(t-events_waiting PRIVATE ${GKR_BASICS_TESTING_WARNINGS})

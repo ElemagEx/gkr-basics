@@ -5,12 +5,10 @@ target_include_directories(gkr_inine INTERFACE ".")
 target_sources(gkr_inine
     ${GKR_C_INTERFACE}
     "gkr/capi/diagnostics.h"
-    "gkr/capi/stack_alloc.h"
 )
 target_sources(gkr_inine
     ${GKR_CPP_INTERFACE}
     "gkr/diagnostics.hpp"
-    "gkr/stack_alloc.hpp"
     "gkr/container/raw_buffer.hpp"
     "gkr/container/lockfree_queue.hpp"
     "gkr/container/lockfree_grow_only_bag.hpp"
@@ -29,6 +27,7 @@ target_sources(gkr_core
     "gkr/capi/api.h"
     "gkr/capi/defs.h"
     "gkr/capi/stamp.h"
+    "gkr/capi/stack_alloc.h"
 )
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}
@@ -36,10 +35,13 @@ target_sources(gkr_core
     "gkr/defs.hpp"
     "gkr/stamp.hpp"
     "gkr/concurency/os_events_waiting.hpp"
+    "gkr/concurency/waitable_objects.cpp"
     "gkr/concurency/worker_thread.hpp"
 )
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}
+    "gkr/stack_alloc.hpp"
+    "gkr/misc/ptr_sentry.hpp"
     "gkr/misc/union_cast.hpp"
     "gkr/misc/stack_args_order.hpp"
     "gkr/sys/path.hpp"
@@ -55,6 +57,7 @@ target_sources(gkr_core
     "gkr/defs.cpp"
     "gkr/stamp.cpp"
     "gkr/concurency/os_events_waiting.cpp"
+    "gkr/concurency/waitable_objects.cpp"
     "gkr/concurency/worker_thread.cpp"
     "gkr/sys/path.cpp"
     "gkr/sys/file.cpp"

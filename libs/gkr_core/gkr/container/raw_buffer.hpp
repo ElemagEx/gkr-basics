@@ -158,7 +158,7 @@ public:
 
 public:
     basic_raw_buffer(basic_raw_buffer&& other, const Allocator& allocator) noexcept(
-        std::is_nothrow_copy_constructible<Allocator>::value
+        std::is_nothrow_copy_constructible<Allocator>::value && allocator_traits::is_always_equal::value
         )
         : m_allocator(allocator)
     {
@@ -244,10 +244,7 @@ private:
 
         m_size = size;
 
-        if(m_size > 0)
-        {
-            std::memcpy(m_data, data, m_size);
-        }
+        std::memcpy(m_data, data, m_size);
     }
     void relocate_data(char*& data, std::size_t& size, std::size_t& capacity, Allocator& allocator)
     {
@@ -267,10 +264,7 @@ private:
             size     = m_size;
             capacity = count * granularity;
 
-            if(m_size > 0)
-            {
-                std::memcpy(data, m_data, m_size);
-            }
+            std::memcpy(data, m_data, m_size);
             clear();
         }
     }
@@ -294,35 +288,34 @@ public:
 public:
     void clear()
     {
-        if(m_data != nullptr)
-        {
-            const std::size_t count = ((m_capacity % granularity) == 0)
-                ? (m_capacity / granularity + 0)
-                : (m_capacity / granularity + 1)
-                ;
-            m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_data), count);
+        if(m_data == nullptr) return;
 
-            m_data     = nullptr;
-            m_size     = 0;
-            m_capacity = 0;
-        }
+        const std::size_t count = ((m_capacity % granularity) == 0)
+            ? (m_capacity / granularity + 0)
+            : (m_capacity / granularity + 1)
+            ;
+        m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_data), count);
+
+        m_data     = nullptr;
+        m_size     = 0;
+        m_capacity = 0;
     }
     void reserve(std::size_t capacity)
     {
         if(capacity <= m_capacity) return;
 
+        const std::size_t size  = m_size;
         const std::size_t count = ((capacity % granularity) == 0)
             ? (capacity / granularity + 0)
             : (capacity / granularity + 1)
             ;
         char* data = reinterpret_cast<char*>(m_allocator.allocate(count));
 
-        if(m_data != nullptr)
-        {
-            std::memcpy(data, m_data, m_size);
-            clear();
-        }
+        std::memcpy(data, m_data, m_size);
+        clear();
+
         m_data     = data;
+        m_size     = size;
         m_capacity = count * granularity;
     }
     void resize(std::size_t size)
@@ -333,7 +326,7 @@ public:
         }
         m_size = size;
     }
-    bool change_size(std::size_t size)
+    bool change_size(std::size_t size) noexcept(DIAG_NOEXCEPT)
     {
         Check_Arg_IsValid(size <= m_capacity, false);
         m_size = size;
@@ -351,55 +344,55 @@ public:
     }
 
 public:
-	template<typename T>
-    const T* data(std::size_t offset = 0) const
+    template<typename T>
+    const T* data(std::size_t offset = 0) const noexcept(DIAG_NOEXCEPT)
     {
-        static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        Assert_Check((std::size_t(m_data + offset) % alignof(T)) == 0);
         return reinterpret_cast<const T*>(m_data + offset);
     }
-	template<typename T>
-    T* data(std::size_t offset = 0)
+    template<typename T>
+    T* data(std::size_t offset = 0) noexcept(DIAG_NOEXCEPT)
     {
-        static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        Assert_Check((std::size_t(m_data + offset) % alignof(T)) == 0);
         return reinterpret_cast<T*>(m_data + offset);
     }
 
-	template<typename T>
-    const T& as(std::size_t offset = 0) const
+    template<typename T>
+    const T& as(std::size_t offset = 0) const noexcept(DIAG_NOEXCEPT)
     {
-        static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);
+        Assert_Check((std::size_t(m_data + offset) % alignof(T)) == 0);
         return *reinterpret_cast<const T*>(m_data + offset);
     }
-	template<typename T>
-    T& as(std::size_t offset = 0)
+    template<typename T>
+    T& as(std::size_t offset = 0) noexcept(DIAG_NOEXCEPT)
     {
-        static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);
+        Assert_Check((std::size_t(m_data + offset) % alignof(T)) == 0);
         return *reinterpret_cast<T*>(m_data + offset);
     }
 
-	template<typename T>
-    const T* ptr(std::size_t index) const
+    template<typename T>
+    const T* ptr(std::size_t index) const noexcept
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         return reinterpret_cast<const T*>(m_data) + index;
     }
-	template<typename T>
-    T* ptr(std::size_t index)
+    template<typename T>
+    T* ptr(std::size_t index) noexcept
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         return reinterpret_cast<T*>(m_data) + index;
     }
-	template<typename T>
-    const T& at(std::size_t index) const
+    template<typename T>
+    const T& at(std::size_t index) const noexcept(DIAG_NOEXCEPT)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);
         return reinterpret_cast<const T*>(m_data)[index];
     }
-	template<typename T>
-    T& at(std::size_t index)
+    template<typename T>
+    T& at(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
         static_assert(alignof(T) <= alignment, "Alignment mismatch");
         Assert_NotNullPtr(m_data);

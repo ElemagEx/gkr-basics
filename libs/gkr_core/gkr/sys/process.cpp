@@ -34,7 +34,7 @@ std::string get_current_process_name()
 
     if(ext != nullptr)
     {
-        len -= std::strlen(ext);
+        len -= unsigned(std::strlen(ext));
         *ext = 0;
     }
     return std::string(name, len);
@@ -235,7 +235,7 @@ int get_current_process_command_line(struct command_line& cmd_line)
 {
     misc::ptr_sentry<FILE> file(
         std::fopen("/proc/self/cmdline", "r"),
-        [](FILE* f) { std::fclose(f); }
+        [](FILE* f) noexcept { std::fclose(f); }
         );
     if(file.get() == nullptr)
     {

@@ -16,11 +16,6 @@ target_link_libraries (t-lockfree_queue PRIVATE Catch2::Catch2WithMain gkr_testi
 target_compile_options(t-lockfree_queue PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
 catch_discover_tests  (t-lockfree_queue)
 
-add_executable        (t-events_waiting t-events_waiting.cpp)
-target_link_libraries (t-events_waiting PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
-target_compile_options(t-events_waiting PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-catch_discover_tests  (t-events_waiting)
-
 add_executable        (t-address t-address.cpp)
 target_link_libraries (t-address PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
 target_compile_options(t-address PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
@@ -38,5 +33,5 @@ catch_discover_tests  (t-logging)
 
 add_executable        (t-udp_socket_consumer_receiver t-udp_socket_consumer_receiver.cpp)
 target_link_libraries (t-udp_socket_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_data gkr_log gkr_comm)
-target_compile_options(t-udp_socket_consumer_receiver  PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+target_compile_options(t-udp_socket_consumer_receiver PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
 catch_discover_tests  (t-udp_socket_consumer_receiver)

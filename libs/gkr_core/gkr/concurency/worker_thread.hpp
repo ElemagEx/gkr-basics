@@ -1,10 +1,11 @@
 #pragma once
 
 #include <gkr/api.hpp>
-#include <gkr/diagnostics.hpp>
-#include <gkr/concurency/events_waiting.hpp>
+#include <gkr/concurency/waitable_object.h>
+
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
 #include <gkr/misc/stack_args_order.hpp>
+#include <gkr/diagnostics.hpp>
 
 #include <cstddef>
 #include <thread>
@@ -43,19 +44,20 @@ public:
     struct alignas(std::max_align_t) actions_queue_element_header_t { action_id_t id {0}; };
 
 protected:
-    GKR_CORE_API worker_thread(
+    GKR_INNER_API worker_thread(
         std::size_t initial_actions_queue_capacity     = 8,
         std::size_t initial_actions_queue_element_size = sizeof(actions_queue_element_header_t)
-        )
-        noexcept(false);
-    GKR_CORE_API virtual ~worker_thread() noexcept(DIAG_NOEXCEPT);
+        );
+    GKR_INNER_API virtual ~worker_thread();
 
 protected:
     virtual const char* get_name() noexcept = 0;
 
-    virtual std::chrono::nanoseconds get_wait_timeout() noexcept = 0;
+    virtual long long get_wait_timeout_ns() noexcept = 0;
 
-    virtual void bind_events(events_waiter& waiter) noexcept(DIAG_NOEXCEPT) = 0;
+    virtual std::size_t get_waitable_objects_count() noexcept = 0;
+
+    virtual waitable_object& get_waitable_object(std::size_t index) noexcept = 0;
 
     virtual bool on_start() = 0;
     virtual void on_finish() = 0;
@@ -64,26 +66,26 @@ protected:
     virtual void on_queue_action(action_id_t action, void* data) = 0;
 
     virtual void on_wait_timeout() = 0;
-    virtual void on_wait_success(wait_result_t wait_result) = 0;
+    virtual void on_wait_success(std::size_t index) = 0;
 
     enum class except_method_t {on_start, on_finish, on_cross_action, on_queue_action, on_wait_timeout, on_wait_success};
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept = 0;
 
 public:
-    GKR_CORE_API bool run() noexcept(DIAG_NOEXCEPT);
-    GKR_CORE_API bool join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT);
+    GKR_INNER_API bool run();
+    GKR_INNER_API bool join(bool send_quit_signal);
 
 public:
-    GKR_CORE_API bool quit() noexcept(DIAG_NOEXCEPT);
+    GKR_INNER_API bool quit();
 
-    GKR_CORE_API bool update_wait() noexcept(DIAG_NOEXCEPT);
+    GKR_INNER_API bool update_wait();
 
-    GKR_CORE_API bool resize_actions_queue(std::size_t capacity) noexcept(false);
+    GKR_INNER_API bool resize_actions_queue(std::size_t capacity);
 
 private:
-    GKR_CORE_API void forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT);
+    GKR_INNER_API void forward_action(action_id_t id, void* param, void* result);
 
-    GKR_CORE_API bool reply_action() noexcept;
+    GKR_INNER_API bool reply_action() noexcept;
 
 public:
     std::thread::id thread_id() const noexcept
@@ -104,27 +106,21 @@ public:
     }
 
 private:
-    void thread_proc() noexcept(DIAG_NOEXCEPT);
+    void thread_proc();
 
     bool safe_start () noexcept;
     void safe_finish() noexcept;
 
-    bool main_loop() noexcept(DIAG_NOEXCEPT);
+    bool main_loop();
 
-    void safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT);
+    void safe_dequeue_actions(bool all);
 
-    void safe_do_cross_thread_action() noexcept(DIAG_NOEXCEPT);
+    void safe_do_cross_thread_action();
 
     void safe_notify_wait_timeout() noexcept;
-    void safe_notify_wait_success(wait_result_t wait_result) noexcept;
+    void safe_notify_wait_success(wait_result_t wait_result, waitable_object**, std::size_t count) noexcept;
 
 private:
-    enum : std::size_t
-    {
-        OWN_EVENT_HAS_ASYNC_ACTION,
-        OWN_EVENT_HAS_SYNC_ACTION,
-        OWN_EVENTS_TO_WAIT,
-    };
     enum : action_id_t
     {
         ACTION_UPDATE = action_id_t(-2),
@@ -144,14 +140,10 @@ private:
     std::mutex  m_mutex;
     std::thread m_thread;
 
-    stl_events_waiter m_queue_waiter;
-    stl_events_waiter m_outer_waiter;
-    stl_events_waiter m_inner_waiter;
-
     actions_queue_t m_actions_queue;
 
-    event_controller m_work_event;
-    event_controller m_done_event;
+    waitable_event m_work_event;
+    waitable_event m_done_event;
 
     bool m_running  = false;
     bool m_updating = false;
@@ -161,7 +153,7 @@ protected:
     {
         return unsigned((100 * m_actions_queue.count()) / m_actions_queue.capacity());
     }
-    bool enqueue_action(action_id_t id) noexcept(DIAG_NOEXCEPT)
+    bool enqueue_action(action_id_t id)
     {
         Check_ValidState(!in_worker_thread(), false);
         Check_ValidState(running(), false);
@@ -242,7 +234,7 @@ protected:
 
 protected:
     template<typename R, typename... Args>
-    R execute_action_method(action_id_t action, Args&&... args) noexcept(DIAG_NOEXCEPT)
+    R execute_action_method(action_id_t action, Args&&... args)
     {
         Assert_Check(!in_worker_thread());
 

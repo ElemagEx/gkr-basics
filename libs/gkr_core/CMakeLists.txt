@@ -12,8 +12,6 @@ target_sources(gkr_inine
     "gkr/container/raw_buffer.hpp"
     "gkr/container/lockfree_queue.hpp"
     "gkr/container/lockfree_grow_only_bag.hpp"
-    "gkr/concurency/events_waiting.hpp"
-    "gkr/concurency/waitable_lockfree_queue.hpp"
     "gkr/cpp/lib_is_swappable.hpp"
     "gkr/cpp/lib_exchange_function.hpp"
 )
@@ -34,8 +32,10 @@ target_sources(gkr_core
     "gkr/api.hpp"
     "gkr/defs.hpp"
     "gkr/stamp.hpp"
-    "gkr/concurency/os_events_waiting.hpp"
-    "gkr/concurency/waitable_objects.cpp"
+    "gkr/concurency/waitable_lockfree_queue.hpp"
+    "gkr/concurency/waitable_semaphore.hpp"
+    "gkr/concurency/waitable_object.hpp"
+    "gkr/concurency/waitable_event.hpp"
     "gkr/concurency/worker_thread.hpp"
 )
 target_sources(gkr_core
@@ -56,8 +56,9 @@ target_sources(gkr_core
     PRIVATE
     "gkr/defs.cpp"
     "gkr/stamp.cpp"
-    "gkr/concurency/os_events_waiting.cpp"
-    "gkr/concurency/waitable_objects.cpp"
+    "gkr/concurency/waitable_semaphore.cpp"
+    "gkr/concurency/waitable_object.cpp"
+    "gkr/concurency/waitable_event.cpp"
     "gkr/concurency/worker_thread.cpp"
     "gkr/sys/path.cpp"
     "gkr/sys/file.cpp"

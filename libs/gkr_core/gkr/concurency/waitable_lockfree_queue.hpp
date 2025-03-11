@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gkr/container/lockfree_queue.hpp>
-#include <gkr/concurency/events_waiting.hpp>
+#include <gkr/concurency/waitable_event.hpp>
 
 namespace gkr
 {
@@ -16,8 +16,8 @@ private:
     std::atomic<std::size_t> m_busy_count {0};
     std::atomic<std::size_t> m_free_count {0};
 
-    event_controller m_has_space_event;
-    event_controller m_has_items_event;
+    waitable_event m_has_space_event = true;
+    waitable_event m_has_items_event = true;
 
 protected:
     queue_wait_support() noexcept = default;
@@ -156,23 +156,13 @@ protected:
     }
 
 public:
-    bool bind_with_producer_waiter(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+    waitable_object& get_producer_waitable_object()
     {
-        return m_has_space_event.bind_with(waiter, true, false);
+        return m_has_space_event;
     }
-    bool bind_with_consumer_waiter(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+    waitable_object& get_consumer_waitable_object()
     {
-        return m_has_items_event.bind_with(waiter, true, false);
-    }
-
-public:
-    bool producer_event_is_signaled(wait_result_t wait_result) const noexcept
-    {
-        return m_has_space_event.is_signaled(wait_result);
-    }
-    bool consumer_event_is_signaled(wait_result_t wait_result) const noexcept
-    {
-        return m_has_items_event.is_signaled(wait_result);
+        return m_has_space_event;
     }
 };
 

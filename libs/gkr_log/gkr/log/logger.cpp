@@ -26,10 +26,8 @@ namespace gkr
 namespace log
 {
 
-logger::logger() : m_msg_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
+logger::logger()
 {
-    m_log_queue.bind_with_producer_waiter(m_msg_waiter);
-
     check_args_order();
 }
 
@@ -43,14 +41,19 @@ const char* logger::get_name() noexcept
     return "gkr-logger";
 }
 
-std::chrono::nanoseconds logger::get_wait_timeout() noexcept
+long long logger::get_wait_timeout_ns() noexcept
 {
-    return std::chrono::nanoseconds::max();
+    return -1;
 }
 
-void logger::bind_events(events_waiter& waiter) noexcept(DIAG_NOEXCEPT)
+std::size_t logger::get_waitable_objects_count() noexcept
 {
-    m_log_queue.bind_with_consumer_waiter(waiter);
+    return 1;
+}
+
+waitable_object& logger::get_waitable_object(std::size_t index) noexcept
+{
+    return m_log_queue.get_consumer_waitable_object();
 }
 
 bool logger::on_start()
@@ -102,11 +105,12 @@ void logger::on_wait_timeout()
     Check_Failure();
 }
 
-void logger::on_wait_success(wait_result_t wait_result)
+void logger::on_wait_success(std::size_t index)
 {
-    Check_ValidState(m_log_queue.consumer_event_is_signaled(wait_result), );
+    Check_ValidState(index == 0);
 
-    [[maybe_unused]] bool processed = process_next_message();
+    DIAG_VAR(bool, processed)
+    process_next_message();
 
     Check_ValidState(processed, );
 }

@@ -31,12 +31,17 @@ class receiver : public gkr::worker_thread
     {
         return "udp-receiver";
     }
-    virtual std::chrono::nanoseconds get_wait_timeout() noexcept override
+    virtual long long get_wait_timeout_ns() noexcept override
     {
-        return std::chrono::nanoseconds::zero();
+        return 0;
     }
-    virtual void bind_events(gkr::events_waiter& waiter) noexcept(DIAG_NOEXCEPT) override
+    virtual std::size_t get_waitable_objects_count() noexcept override
     {
+        return 0;
+    }
+    virtual gkr::waitable_object& get_waitable_object(std::size_t index) noexcept override
+    {
+        return gkr::waitable_object::null();
     }
     virtual bool on_start() override
     {
@@ -100,8 +105,9 @@ class receiver : public gkr::worker_thread
             }
         }
     }
-    virtual void on_wait_success(gkr::wait_result_t wait_result) override
+    virtual void on_wait_success(std::size_t index) override
     {
+        Check_Failure();
     }
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override
     {

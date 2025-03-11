@@ -6,7 +6,7 @@
 #include <gkr/container/raw_buffer.hpp>
 
 #include <gkr/concurency/worker_thread.hpp>
-#include <gkr/concurency/events_waiting.hpp>
+#include <gkr/concurency/waitable_event.hpp>
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
 
 #include <list>
@@ -52,9 +52,11 @@ public:
 private:
     virtual const char* get_name() noexcept override;
 
-    virtual std::chrono::nanoseconds get_wait_timeout() noexcept override;
+    virtual long long get_wait_timeout_ns() noexcept override;
 
-    virtual void bind_events(events_waiter& waiter) noexcept(DIAG_NOEXCEPT) override;
+    virtual std::size_t get_waitable_objects_count() noexcept override;
+
+    virtual waitable_object& get_waitable_object(std::size_t index) noexcept override;
 
     virtual bool on_start() override;
     virtual void on_finish() override;
@@ -63,7 +65,7 @@ private:
     virtual void on_queue_action(action_id_t action, void* data) override;
 
     virtual void on_wait_timeout() override;
-    virtual void on_wait_success(wait_result_t wait_result) override;
+    virtual void on_wait_success(std::size_t index) override;
 
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override;
 
@@ -207,8 +209,6 @@ private:
     }
 
 private:
-    stl_events_waiter m_msg_waiter;
-
     log_queue_t m_log_queue;
 
     instance_data m_primary;

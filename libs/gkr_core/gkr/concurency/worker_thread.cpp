@@ -1,26 +1,18 @@
 #include <gkr/defs.hpp>
 #include <gkr/concurency/worker_thread.hpp>
 
+#include <gkr/stack_alloc.hpp>
 #include <gkr/sys/thread.hpp>
 
 namespace gkr
 {
 
-worker_thread::worker_thread(std::size_t initial_actions_queue_capacity, std::size_t initial_actions_queue_element_size) noexcept(false)
-    : m_queue_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
-    , m_outer_waiter(gkr::events_waiter::Flag_ForbidMultipleEventsBind)
-    , m_inner_waiter(gkr::events_waiter::Flag_ForbidMultipleThreadsWait | gkr::events_waiter::Flag_AllowPartialEventsWait)
+worker_thread::worker_thread(std::size_t initial_actions_queue_capacity, std::size_t initial_actions_queue_element_size)
 {
-    m_done_event.bind_with(m_outer_waiter, false, false);
-    m_work_event.bind_with(m_inner_waiter, false, false);
-
-    m_actions_queue.bind_with_producer_waiter(m_queue_waiter);
-    m_actions_queue.bind_with_consumer_waiter(m_inner_waiter);
-
     m_actions_queue.reset(initial_actions_queue_capacity, initial_actions_queue_element_size);
 }
 
-worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
+worker_thread::~worker_thread()
 {
     Assert_CheckMsg(
         !joinable(),
@@ -28,7 +20,7 @@ worker_thread::~worker_thread() noexcept(DIAG_NOEXCEPT)
         );
 }
 
-bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
+bool worker_thread::run()
 {
     Check_ValidState(m_actions_queue.element_size() >= sizeof(actions_queue_element_header_t), false);
 
@@ -51,7 +43,7 @@ bool worker_thread::run() noexcept(DIAG_NOEXCEPT)
     return false;
 }
 
-bool worker_thread::join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT)
+bool worker_thread::join(bool send_quit_signal)
 {
     if(!m_thread.joinable()) return false;
 
@@ -64,7 +56,7 @@ bool worker_thread::join(bool send_quit_signal) noexcept(DIAG_NOEXCEPT)
     return true;
 }
 
-bool worker_thread::quit() noexcept(DIAG_NOEXCEPT)
+bool worker_thread::quit()
 {
     Check_ValidState(joinable(), false);
 
@@ -79,7 +71,7 @@ bool worker_thread::quit() noexcept(DIAG_NOEXCEPT)
     }
 }
 
-bool worker_thread::update_wait() noexcept(DIAG_NOEXCEPT)
+bool worker_thread::update_wait()
 {
     Check_ValidState(running(), false);
 
@@ -94,7 +86,7 @@ bool worker_thread::update_wait() noexcept(DIAG_NOEXCEPT)
     }
 }
 
-bool worker_thread::resize_actions_queue(size_t capacity) noexcept(false)
+bool worker_thread::resize_actions_queue(size_t capacity)
 {
     if(running())
     {
@@ -108,7 +100,7 @@ bool worker_thread::resize_actions_queue(size_t capacity) noexcept(false)
     }
 }
 
-void worker_thread::forward_action(action_id_t id, void* param, void* result) noexcept(DIAG_NOEXCEPT)
+void worker_thread::forward_action(action_id_t id, void* param, void* result)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -131,7 +123,7 @@ bool worker_thread::reply_action() noexcept
     return true;
 }
 
-void worker_thread::thread_proc() noexcept(DIAG_NOEXCEPT)
+void worker_thread::thread_proc()
 {
     m_work_event.wait();
 
@@ -158,8 +150,6 @@ void worker_thread::thread_proc() noexcept(DIAG_NOEXCEPT)
 
 bool worker_thread::safe_start() noexcept
 {
-    Check_ValidState(m_inner_waiter.events_count() == OWN_EVENTS_TO_WAIT, false);
-
     m_actions_queue.threading.any_thread_can_be_producer();
     m_actions_queue.threading.set_current_thread_as_exclusive_consumer();
 
@@ -199,62 +189,53 @@ void worker_thread::safe_finish() noexcept
         on_exception(except_method_t::on_finish, nullptr);
     }
 #endif
-
-    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT);
 }
 
-bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
+bool worker_thread::main_loop()
 {
-    const std::chrono::nanoseconds timeout_duration = get_wait_timeout();
+    const long long timeout_ns = get_wait_timeout_ns();
 
-    m_inner_waiter.pop_events(OWN_EVENTS_TO_WAIT);
+    const std::size_t count = get_waitable_objects_count();
 
-    bind_events(m_inner_waiter);
+    Check_ValidState(count < WAIT_MAX_OBJECTS, false);
 
-    Check_ValidState(m_inner_waiter.events_count() >= OWN_EVENTS_TO_WAIT, false);
+    constexpr std::size_t SELF_OBJECTS_TO_WAIT = 2;
 
-    std::chrono::steady_clock::time_point timeout_time = std::chrono::steady_clock::now() + timeout_duration;
+    GKR_STACK_ARRAY(waitable_object*, objects, count + SELF_OBJECTS_TO_WAIT);
+
+    objects[0] = &m_work_event;
+    objects[1] = &m_actions_queue.get_consumer_waitable_object();
+
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        objects[index + SELF_OBJECTS_TO_WAIT] = &get_waitable_object(index + SELF_OBJECTS_TO_WAIT);
+    }
 
     while(running())
     {
         if(m_updating) return true;
 
-        wait_result_t wait_result;
-
-        if(timeout_duration == std::chrono::nanoseconds::max())
-        {
-            wait_result = m_inner_waiter.wait();
-        }
-        else if(timeout_duration <= std::chrono::nanoseconds::zero())
-        {
-            wait_result = m_inner_waiter.check();
-        }
-        else
-        {
-            wait_result = m_inner_waiter.wait_until(timeout_time);
-        }
+        const wait_result_t wait_result = waitable_object::wait_many(timeout_ns, objects, count);
 
         Check_ValidState(wait_result != WAIT_RESULT_ERROR, false);
 
         if(wait_result == WAIT_RESULT_TIMEOUT)
         {
             safe_notify_wait_timeout();
-
-            timeout_time = std::chrono::steady_clock::now() + timeout_duration;
         }
         else
         {
-            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << OWN_EVENTS_TO_WAIT) - 1);
+            constexpr wait_result_t OTHER_EVENTS_MASK = ~((wait_result_t(1) << SELF_OBJECTS_TO_WAIT) - 1);
 
             if((wait_result & OTHER_EVENTS_MASK) != 0)
             {
-                safe_notify_wait_success(wait_result & OTHER_EVENTS_MASK);
+                safe_notify_wait_success(wait_result >> SELF_OBJECTS_TO_WAIT, objects + SELF_OBJECTS_TO_WAIT, count);
             }
-            if(m_work_event.is_signaled(wait_result))
+            if(waitable_object::is_signaled(wait_result, 0))
             {
                 safe_do_cross_thread_action();
             }
-            if(m_actions_queue.consumer_event_is_signaled(wait_result))
+            if(waitable_object::is_signaled(wait_result, 1))
             {
                 safe_dequeue_actions(false);
             }
@@ -263,7 +244,7 @@ bool worker_thread::main_loop() noexcept(DIAG_NOEXCEPT)
     return false;
 }
 
-void worker_thread::safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
+void worker_thread::safe_dequeue_actions(bool all)
 {
     do
     {
@@ -300,12 +281,12 @@ void worker_thread::safe_dequeue_actions(bool all) noexcept(DIAG_NOEXCEPT)
     while(all);
 }
 
-void worker_thread::safe_do_cross_thread_action() noexcept(DIAG_NOEXCEPT)
+void worker_thread::safe_do_cross_thread_action()
 {
     m_reply = &m_func.result;
 
 #ifndef __cpp_exceptions
-    on_action(id, param, result);
+    on_cross_action(m_func.id, m_func.param, m_func.result);
 #else
     try
     {
@@ -344,14 +325,26 @@ void worker_thread::safe_notify_wait_timeout() noexcept
 #endif
 }
 
-void worker_thread::safe_notify_wait_success(wait_result_t wait_result) noexcept
+void worker_thread::safe_notify_wait_success(wait_result_t wait_result, waitable_object**, std::size_t count) noexcept
 {
 #ifndef __cpp_exceptions
-    on_wait_success(wait_result);
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        if(waitable_object_is_signaled(wait_result, index))
+        {
+            on_wait_success(index);
+        }
+    }
 #else
     try
     {
-        on_wait_success(wait_result);
+        for(std::size_t index = 0; index < count; ++index)
+        {
+            if(waitable_object::is_signaled(wait_result, index))
+            {
+                on_wait_success(index);
+            }
+        }
     }
     catch(const std::exception& e)
     {

@@ -1,6 +1,8 @@
 #include <gkr/defs.hpp>
 
-#include <gkr/concurency/waitable_object.h>
+#include <gkr/concurency/waitable_object.hpp>
+#include <gkr/concurency/waitable_event.hpp>
+#include <gkr/concurency/waitable_semaphore.hpp>
 
 //#include <gkr/diagnostics.hpp>
 //#include <gkr/testing/text_exception.hpp>
@@ -27,6 +29,7 @@
 //GKR_DIAG_REPORT_FUNC prev_func = gkr_diag_hook_report_func(ReportFunc);
 
 #include <catch2/catch_test_macros.hpp>
+//#include <catch2/catch_template_test_macros.hpp>
 //#include <catch2/matchers/catch_matchers.hpp>
 
 TEST_CASE("concurency.waitable_object. wait_single")

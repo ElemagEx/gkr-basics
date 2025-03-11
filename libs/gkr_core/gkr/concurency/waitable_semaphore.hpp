@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gkr/api.hpp>
-#include <gkr/concurency/waitable_object.h>
+#include <gkr/concurency/waitable_object.hpp>
 
 namespace gkr
 {
@@ -14,7 +14,10 @@ class waitable_semaphore : public waitable_object
     unsigned m_max_count;
 
 public:
-    waitable_semaphore(unsigned max_count)
+    static constexpr unsigned MAXIMUM_COUNT = 0x7FFFFFFEU;
+
+public:
+    waitable_semaphore(unsigned max_count = MAXIMUM_COUNT)
         : waitable_object(create(max_count, max_count))
         , m_max_count(max_count)
     {

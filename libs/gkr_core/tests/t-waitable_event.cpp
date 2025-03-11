@@ -1,6 +1,8 @@
 #include <gkr/defs.hpp>
-
 #include <gkr/concurency/waitable_event.hpp>
+
+#include <atomic>
+#include <thread>
 
 //#include <gkr/diagnostics.hpp>
 //#include <gkr/testing/text_exception.hpp>
@@ -29,36 +31,141 @@
 
 TEST_CASE("concurency.waitable_event. lifecycle")
 {
-    SECTION("Auto-reset, Non-Signaled")
+    using namespace gkr;
+
+    SECTION("auto-reset, Non-Signaled")
     {
-        gkr::waitable_event ev(false, false);
+        waitable_event ev(false, false);
 
         CHECK_FALSE(ev.try_consume());
         ev.fire();
         CHECK(ev.try_consume());
         CHECK_FALSE(ev.try_consume());
     }
-    SECTION("Auto-reset, Signaled")
+    SECTION("auto-reset, Signaled")
     {
-        gkr::waitable_event ev(false, true);
+        waitable_event ev(false, true);
 
         CHECK(ev.try_consume());
         CHECK_FALSE(ev.try_consume());
     }
-    SECTION("Manual-reset, Non-Signaled")
+    SECTION("manual-reset, Non-Signaled")
     {
-        gkr::waitable_event ev(true, false);
+        waitable_event ev(true, false);
 
         CHECK_FALSE(ev.try_consume());
         ev.fire();
         CHECK(ev.try_consume());
         CHECK(ev.try_consume());
     }
-    SECTION("Manual-reset, Signaled")
+    SECTION("manual-reset, Signaled")
     {
-        gkr::waitable_event ev(true, true);
+        waitable_event ev(true, true);
 
         CHECK(ev.try_consume());
+        CHECK(ev.try_consume());
+    }
+}
+
+TEST_CASE("concurency.waitable_event. is_valid")
+{
+    using namespace gkr;
+
+    waitable_event ev1;
+
+    CHECK(ev1.is_valid());
+
+    waitable_event ev2 = std::move(ev1);
+
+    CHECK(ev2.is_valid());
+
+    CHECK_FALSE(ev1.is_valid());
+}
+
+TEST_CASE("concurency.waitable_event. fire")
+{
+    using namespace gkr;
+
+    SECTION("auto-reset - singlethreaded")
+    {
+        waitable_event ev(false, false);
+        CHECK_FALSE(ev.try_consume());
+        
+        ev.fire();
+        
+        CHECK(ev.try_consume());
+        CHECK_FALSE(ev.try_consume());
+    }
+    SECTION("auto-reset - multithreaded (1 threads)")
+    {
+        waitable_event ev(false, false);
+        CHECK_FALSE(ev.try_consume());
+
+        std::thread thread([&ev] () { ev.consume(); });
+
+        ev.fire();
+
+        thread.join();
+
+        CHECK_FALSE(ev.try_consume());
+    }
+    SECTION("auto-reset - multithreaded (2 threads)")
+    {
+        waitable_event ev(false, false);
+        CHECK_FALSE(ev.try_consume());
+
+        std::atomic_uint val {0};
+
+        std::thread thread1([&ev, &val] () { ev.consume(); ++val; });
+        std::thread thread2([&ev, &val] () { ev.consume(); ++val; });
+
+        for(ev.fire(); val.load() == 0; std::this_thread::yield());
+
+        CHECK_FALSE(ev.try_consume());
+
+        for(ev.fire(); val.load() == 1; std::this_thread::yield());
+
+        CHECK_FALSE(ev.try_consume());
+
+        thread2.join();
+        thread1.join();
+    }
+    SECTION("manual-reset - singlethreaded")
+    {
+        waitable_event ev(true, false);
+        CHECK_FALSE(ev.try_consume());
+
+        ev.fire();
+
+        CHECK(ev.try_consume());
+        CHECK(ev.try_consume());
+    }
+    SECTION("manual-reset - multithreaded (1 threads)")
+    {
+        waitable_event ev(true, false);
+        CHECK_FALSE(ev.try_consume());
+
+        std::thread thread([&ev] () { ev.consume(); });
+
+        ev.fire();
+
+        thread.join();
+
+        CHECK(ev.try_consume());
+    }
+    SECTION("manual-reset - multithreaded (2 threads)")
+    {
+        waitable_event ev(true, false);
+        CHECK_FALSE(ev.try_consume());
+
+        std::thread thread1([&ev]() { ev.consume(); });
+        std::thread thread2([&ev]() { ev.consume(); });
+
+        ev.fire();
+
+        thread2.join();
+        thread1.join();
+
         CHECK(ev.try_consume());
     }
 }

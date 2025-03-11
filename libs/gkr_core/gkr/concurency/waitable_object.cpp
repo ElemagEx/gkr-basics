@@ -1,5 +1,5 @@
 #include <gkr/defs.hpp>
-#include <gkr/concurency/waitable_object.h>
+#include <gkr/concurency/waitable_object.hpp>
 
 #include <gkr/stack_alloc.hpp>
 
@@ -90,7 +90,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
     }
     DWORD res = WaitForMultipleObjects(DWORD(count), handles, false, timeout);
 
-    Check_Sys_Result(res == WAIT_FAILED, WAIT_RESULT_ERROR);
+    Check_Sys_Result(res != WAIT_FAILED, WAIT_RESULT_ERROR);
 
     if(res == WAIT_TIMEOUT)
     {

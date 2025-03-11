@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gkr/api.hpp>
-#include <gkr/concurency/waitable_object.h>
+#include <gkr/concurency/waitable_object.hpp>
 
 #include <gkr/concurency/waitable_lockfree_queue.hpp>
 #include <gkr/misc/stack_args_order.hpp>

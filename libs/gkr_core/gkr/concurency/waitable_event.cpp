@@ -48,6 +48,8 @@ void waitable_event::reset()
 
 void waitable_event::set_manual_reset(bool manual_reset)
 {
+    Assert_CheckMsg(wait_count() == 0, "There is an active thread that wait for this object");
+
     if(manual_reset != m_manual_reset)
     {
         *this = std::move(waitable_event(manual_reset));
@@ -57,6 +59,9 @@ void waitable_event::set_manual_reset(bool manual_reset)
 }
 
 #else
+
+#include <unistd.h>
+#include <sys/eventfd.h>
 
 namespace gkr
 {

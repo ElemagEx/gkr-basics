@@ -92,7 +92,7 @@ int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
 #pragma warning(disable:4868)
 #endif
 
-TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_grow_only_bag. Lifecycle", "", (std_allocator, allocator1, allocator2, allocator3, allocator4), (int, Data))
+TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_grow_only_bag. lifecycle", "", (std_allocator, allocator1, allocator2, allocator3, allocator4), (int, Data))
 {
     using allocator_t = TestType;
     using value_t     = typename allocator_t::value_type;
@@ -240,7 +240,7 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_grow_only_bag. Lifecycle", "", (s
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. Getters", "")
+TEST_CASE("container.lockfree_grow_only_bag. getters")
 {
     using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
@@ -289,7 +289,7 @@ TEST_CASE("container.lockfree_grow_only_bag. Getters", "")
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Clear", "", int, Data, std_string)
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. clear", "", int, Data, std_string)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
@@ -319,7 +319,7 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Clear", "", int, Data, std
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. Iterators")
+TEST_CASE("container.lockfree_grow_only_bag. iterators")
 {
     using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
@@ -359,7 +359,7 @@ TEST_CASE("container.lockfree_grow_only_bag. Iterators")
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Comparison", "", int, Data)
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. comparison", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
@@ -443,7 +443,7 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Comparison", "", int, Data
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. Insert")
+TEST_CASE("container.lockfree_grow_only_bag. insert")
 {
     using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
@@ -491,7 +491,7 @@ TEST_CASE("container.lockfree_grow_only_bag. Insert")
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Erase", "", int, Data)
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. erase", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
@@ -578,7 +578,7 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Erase", "", int, Data)
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Lookup", "", int, Data)
+TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. lookup", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
@@ -643,7 +643,7 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. Lookup", "", int, Data)
     gkr::testing::get_singlethreaded_pre_allocated_storage<slot_t>().reset();
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. Multithreading")
+TEST_CASE("container.lockfree_grow_only_bag. multithreading")
 {
     using allocator_t = allocatorM<Data>;
     using value_t     = typename allocator_t::value_type;

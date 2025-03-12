@@ -422,7 +422,7 @@ bool path_ensure_dir_exists(const char* path)
 
     std::string dir(path);
 
-    for(std::size_t pos = dir.find('\\'); ; )
+    for(std::size_t pos = dir.find('\\'); ; ++pos)
     {
         Assert_Check(pos != std::string::npos);
 
@@ -430,13 +430,14 @@ bool path_ensure_dir_exists(const char* path)
 
         if(pos == std::string::npos) break;
 
-        Check_Arg_IsValid(path[pos - 1] == '.', false); // Encountered '.' or '..'
+        Check_Arg_IsValid(path[pos - 1] != '.', false); // Encountered '.' or '..'
 
         dir[pos] = 0;
+        if(pos > 2)
         {
             const DWORD attrs = GetFileAttributesA(dir.c_str());
 
-            if(attrs != INVALID_FILE_ATTRIBUTES)
+            if(attrs == INVALID_FILE_ATTRIBUTES)
             {
                 DIAG_VAR(BOOL, res)
                 CreateDirectoryA(dir.c_str(), nullptr);

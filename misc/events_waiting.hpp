@@ -56,7 +56,7 @@ namespace gkr
 
 using wait_result_t = unsigned long long;
 
-constexpr std::size_t WAIT_MAX_OBJECTS = sizeof(wait_result_t) * CHAR_BIT - 1;
+constexpr std::size_t WAIT_MAX_OBJECTS = sizeof(wait_result_t) * 8 - 1;
 
 constexpr wait_result_t WAIT_RESULT_ERROR   = wait_result_t(1) << WAIT_MAX_OBJECTS;
 constexpr wait_result_t WAIT_RESULT_TIMEOUT = wait_result_t(0);

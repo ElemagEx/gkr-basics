@@ -14,7 +14,7 @@ static gkr::log::logging logging(nullptr, 0, 0, g_severities, g_facilities);
 
 #include <thread>
 
-TEST_CASE("logging.logger. main")
+TEST_CASE("logging.log_consumer.text_file. main")
 {
     gkr_log_del_all_consumers(nullptr);
     gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::text_file_consumer>());

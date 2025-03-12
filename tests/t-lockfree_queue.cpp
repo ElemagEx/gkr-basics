@@ -94,7 +94,7 @@ using allocatorM_t = allocator1<char>;
 #pragma warning(disable:4868)
 #endif
 
-TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. Lifecycle", "", (queue1_data_t, queue2_data_t, queue3_data_t, queue4_data_t), (std_allocator_t, allocator1_t, allocator2_t, allocator3_t, allocator4_t))
+TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. lifecycle", "", (queue1_data_t, queue2_data_t, queue3_data_t, queue4_data_t), (std_allocator_t, allocator1_t, allocator2_t, allocator3_t, allocator4_t))
 {
     using queue_t = TestType;
     using allocator_t = typename queue_t::TypeAllocator;

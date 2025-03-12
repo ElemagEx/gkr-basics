@@ -162,7 +162,7 @@ public:
     }
     waitable_object& get_consumer_waitable_object()
     {
-        return m_has_space_event;
+        return m_has_items_event;
     }
 };
 

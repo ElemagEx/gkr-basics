@@ -41,7 +41,7 @@ class receiver : public gkr::worker_thread
     }
     virtual gkr::waitable_object& get_waitable_object(std::size_t index) noexcept override
     {
-        return gkr::waitable_object::null();
+        return gkr::waitable_object::null_ref();
     }
     virtual bool on_start() override
     {
@@ -128,7 +128,7 @@ public:
     }
 };
 
-TEST_CASE("logging.consumer.udp_socket. Simple packet")
+TEST_CASE("logging.consumer.udp_socket. simple-packet")
 {
     receiver recv(3);
     REQUIRE(recv.run());
@@ -151,7 +151,7 @@ TEST_CASE("logging.consumer.udp_socket. Simple packet")
     recv.join(false);
 }
 
-TEST_CASE("logging.consumer.udp_socket. Splitted packet")
+TEST_CASE("logging.consumer.udp_socket. splitted-packet")
 {
     receiver recv(3);
     REQUIRE(recv.run());

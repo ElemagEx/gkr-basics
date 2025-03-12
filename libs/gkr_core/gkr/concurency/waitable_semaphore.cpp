@@ -49,6 +49,8 @@ void waitable_semaphore::set_max_count(unsigned max_count)
 {
     Check_Arg_IsValid((max_count > 0U) && (max_count < MAXIMUM_COUNT), );
 
+    Assert_CheckMsg(wait_count() == 0, "There is an active thread that wait for this object");
+
     if(max_count != m_max_count)
     {
         *this = std::move(waitable_semaphore(max_count));
@@ -58,6 +60,9 @@ void waitable_semaphore::set_max_count(unsigned max_count)
 }
 
 #else
+
+#include <unistd.h>
+#include <sys/eventfd.h>
 
 namespace gkr
 {

@@ -6,11 +6,37 @@
 namespace gkr
 {
 
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+class wait_count_keeper
+{
+    std::size_t* m_wait_count;
+
+    void inc() noexcept;
+    void dec() noexcept;
+
+    wait_count_keeper           (const wait_count_keeper&) noexcept = delete;
+    wait_count_keeper& operator=(const wait_count_keeper&) noexcept = delete;
+
+public:
+    wait_count_keeper           (wait_count_keeper&& other) noexcept : m_wait_count ( std::exchange(other.m_wait_count, nullptr)) {}
+    wait_count_keeper& operator=(wait_count_keeper&& other) noexcept { m_wait_count = std::exchange(other.m_wait_count, nullptr); return *this; }
+
+    wait_count_keeper(std::size_t* wait_count) noexcept : m_wait_count(wait_count)
+    {
+        inc();
+    }
+    ~wait_count_keeper() noexcept
+    {
+        if(m_wait_count != nullptr) dec();
+    }
+};
+#endif
+
 waitable_object::~waitable_object()
 {
     close();
 }
-waitable_object& waitable_object::null() noexcept
+waitable_object& waitable_object::null_ref() noexcept
 {
     Assert_FailureMsg("Cannot have null waitable object");
     std::terminate();
@@ -27,10 +53,23 @@ waitable_object& waitable_object::null() noexcept
 namespace gkr
 {
 
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+void wait_count_keeper::inc() noexcept
+{
+    InterlockedIncrementSizeT(m_wait_count);
+}
+void wait_count_keeper::dec() noexcept
+{
+    InterlockedDecrementSizeT(m_wait_count);
+}
+#endif
+
 void waitable_object::close()
 {
     if(is_valid())
     {
+        Assert_CheckMsg(wait_count() == 0, "There is an active thread that wait for this object");
+
         DIAG_VAR(BOOL, res)
         CloseHandle(handle());
         m_handle = INVALID_OBJECT_HANDLE_VALUE;
@@ -39,6 +78,10 @@ void waitable_object::close()
 }
 bool waitable_object::wait(long long timeout_ns)
 {
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+    wait_count_keeper keeper(&m_wait_count);
+#endif
+
     Check_ValidState(is_valid(), false);
 
     DWORD timeout;
@@ -53,6 +96,7 @@ bool waitable_object::wait(long long timeout_ns)
                 : DWORD(timeout_ns / 1000000);
             break;
     }
+
     DWORD waitResult = WaitForSingleObject(m_handle, timeout);
 
     if(waitResult == WAIT_TIMEOUT) return false;
@@ -62,11 +106,18 @@ bool waitable_object::wait(long long timeout_ns)
     return true;
 }
 
-
 wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object** objects, std::size_t count)
 {
     Check_Arg_NotNull(objects, WAIT_RESULT_ERROR);
     Check_Arg_IsValid((count > 0) && (count <= WAIT_MAX_OBJECTS), WAIT_RESULT_ERROR);
+
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+    std::vector<wait_count_keeper> keepers;
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        if(objects[index] != nullptr) keepers.emplace_back(&objects[index]->m_wait_count);
+    }
+#endif
 
     DWORD timeout;
 
@@ -85,9 +136,11 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
     for(std::size_t index = 0; index < count; ++index)
     {
-        Check_Arg_NotNull(objects[index], WAIT_RESULT_ERROR);
+        Check_Arg_NotNull(objects[index]            , WAIT_RESULT_ERROR);
+        Check_Arg_IsValid(objects[index]->is_valid(), WAIT_RESULT_ERROR);
         handles[index] =  objects[index]->handle();
     }
+
     DWORD res = WaitForMultipleObjects(DWORD(count), handles, false, timeout);
 
     Check_Sys_Result(res != WAIT_FAILED, WAIT_RESULT_ERROR);
@@ -127,7 +180,6 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
 #include <poll.h>
 #include <unistd.h>
-#include <sys/eventfd.h>
 
 namespace gkr
 {
@@ -142,10 +194,23 @@ static long long now()
     return ns;
 }
 
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+void wait_count_keeper::inc() noexcept
+{
+    __atomic_add_fetch(m_wait_count, 1, __ATOMIC_SEQ_CST);
+}
+void wait_count_keeper::dec() noexcept
+{
+    __atomic_sub_fetch(m_wait_count, 1, __ATOMIC_SEQ_CST);
+}
+#endif
+
 void waitable_object::close()
 {
     if(is_valid())
     {
+        Assert_CheckMsg(wait_count() == 0, "There is an active thread that wait for this object");
+
         DIAG_VAR(int, res)
         ::close(m_handle);
         m_handle = INVALID_OBJECT_HANDLE_VALUE;
@@ -154,6 +219,10 @@ void waitable_object::close()
 }
 bool waitable_object::wait(long long timeout_ns)
 {
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+    wait_count_keeper keeper(&m_wait_count);
+#endif
+
     Check_ValidState(is_valid(), false);
 
     struct pollfd pfd {handle(), POLLIN, 0};
@@ -167,14 +236,22 @@ bool waitable_object::wait(long long timeout_ns)
         //
         for( ; ; )
         {
-            int poll_result = poll(&pfd, 1U, -1);
+            DIAG_VAR(int, poll_result)
+            poll(&pfd, 1U, -1);
 
-            Check_Sys_Result(poll_result != -1, false);
+            Check_Sys_Result(poll_result == 1, false);
 
-            const ssize_t res = read(handle(), &value, sizeof(value));
+            Assert_CheckMsg(0 == (pfd.revents & POLLNVAL), "This waitable object is closed/destructed during wait");
 
-            if((res == -1) && (errno == EAGAIN)) continue;
+            Check_ValidState(pfd.revents == POLLIN, false);
 
+            const ssize_t res = read(pfd.fd, &value, sizeof(value));
+
+            if((res == -1) && (errno == EAGAIN))
+            {
+                pfd.revents = 0;
+                continue;
+            }
             Check_Sys_Result(res != -1, false);
 
             return handle_poll_data(value);
@@ -186,13 +263,17 @@ bool waitable_object::wait(long long timeout_ns)
         // No wait - just check
         //
         {
-            int poll_result = poll(&pfd, 1U, 0);
+            const int poll_result = poll(&pfd, 1U, 0);
 
             Check_Sys_Result(poll_result != -1, false);
 
             if(poll_result == 0) return false;
 
-            const ssize_t res = read(handle(), &value, sizeof(value));
+            Assert_CheckMsg(0 == (pfd.revents & POLLNVAL), "This waitable object is closed/destructed during wait");
+
+            Check_ValidState(pfd.revents == POLLIN, false);
+
+            const ssize_t res = read(pfd.fd, &value, sizeof(value));
 
             if((res == -1) && (errno == EAGAIN)) return false;
 
@@ -210,18 +291,23 @@ bool waitable_object::wait(long long timeout_ns)
         {
             struct timespec ts {timeout_ns / 1000000000, timeout_ns % 1000000000};
 
-            int poll_result = ppoll(&pfd, 1U, &ts, nullptr);
+            const int poll_result = ppoll(&pfd, 1U, &ts, nullptr);
 
             Check_Sys_Result(poll_result != -1, false);
 
             if(poll_result == 0) return false;
 
-            const ssize_t res = read(handle(), &value, sizeof(value));
+            Assert_CheckMsg(0 == (pfd.revents & POLLNVAL), "This waitable object is closed/destructed during wait");
+
+            Check_ValidState(pfd.revents == POLLIN, false);
+
+            const ssize_t res = read(pfd.fd, &value, sizeof(value));
 
             if((res == -1) && (errno == EAGAIN))
             {
                 timeout_ns -= (now() - start_time);
                 if(timeout_ns < 0) return false;
+                pfd.revents = 0;
                 continue;
             }
             Check_Sys_Result(res != -1, false);
@@ -231,9 +317,145 @@ bool waitable_object::wait(long long timeout_ns)
     }
 }
 
-wait_result_t wait_objects(long long timeout_ns, waitable_object** objects, std::size_t count)
+wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object** objects, std::size_t count)
 {
-    return 0;
+    Check_Arg_NotNull(objects, WAIT_RESULT_ERROR);
+    Check_Arg_IsValid((count > 0) && (count <= WAIT_MAX_OBJECTS), WAIT_RESULT_ERROR);
+
+#ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
+    std::vector<wait_count_keeper> keepers;
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        if(objects[index] != nullptr) keepers.emplace_back(&objects[index]->m_wait_count);
+    }
+#endif
+
+    GKR_STACK_ARRAY(struct pollfd, pfds, count);
+
+    for(std::size_t index = 0; index < count; ++index)
+    {
+        Check_Arg_NotNull(objects[index], WAIT_RESULT_ERROR);
+        pfds[index].fd      = objects[index]->handle();
+        pfds[index].events  = POLLIN;
+        pfds[index].revents = 0;
+    }
+
+    wait_result_t wait_result = 0;
+    unsigned long long value;
+
+    if(timeout_ns == -1)
+    {
+        //
+        // Infinite wait
+        //
+        for( ; ; )
+        {
+            DIAG_VAR(int, poll_result)
+            poll(pfds, nfds_t(count), -1);
+
+            Check_Sys_Result(poll_result != -1, false);
+
+            for(std::size_t index = 0; index < count; ++index)
+            {
+                const short int revents = std::exchange(pfds[index].revents, 0);
+
+                Assert_CheckMsg(0 == (revents & POLLNVAL), "This waitable object is closed/destructed during wait");
+
+                if(revents != POLLIN) continue;
+
+                const ssize_t res = read(pfds[index].fd, &value, sizeof(value));
+
+                if((res == -1) && (errno == EAGAIN)) continue;
+
+                Check_Sys_Result(res != -1, false);
+
+                if(objects[index]->handle_poll_data(value))
+                {
+                    wait_result |= (wait_result_t(1) << index);
+                }
+            }
+            if(wait_result == 0) continue;
+
+            return wait_result;
+        }
+    }
+    else if(timeout_ns <= 0)
+    {
+        //
+        // No wait - just check
+        //
+        {
+            const int poll_result = poll(pfds, nfds_t(count), 0);
+
+            Check_Sys_Result(poll_result != -1, false);
+
+            if(poll_result == 0) return WAIT_RESULT_TIMEOUT;
+
+            for(std::size_t index = 0; index < count; ++index)
+            {
+                const short int revents = pfds[index].revents;
+
+                Assert_CheckMsg(0 == (revents & POLLNVAL), "This waitable object is closed/destructed during wait");
+
+                if(revents != POLLIN) continue;
+
+                const ssize_t res = read(pfds[index].fd, &value, sizeof(value));
+
+                if((res == -1) && (errno == EAGAIN)) continue;
+
+                Check_Sys_Result(res != -1, false);
+
+                if(objects[index]->handle_poll_data(value))
+                {
+                    wait_result |= (wait_result_t(1) << index);
+                }
+            }
+            return wait_result;
+        }
+    }
+    else
+    {
+        //
+        // Timeout wait
+        //
+        for(long long start_time = now(); ; )
+        {
+            struct timespec ts {timeout_ns / 1000000000, timeout_ns % 1000000000};
+
+            const int poll_result = ppoll(pfds, nfds_t(count), &ts, nullptr);
+
+            Check_Sys_Result(poll_result != -1, false);
+
+            if(poll_result == 0) return WAIT_RESULT_TIMEOUT;
+
+            for(std::size_t index = 0; index < count; ++index)
+            {
+                const short int revents = std::exchange(pfds[index].revents, 0);
+
+                Assert_CheckMsg(0 == (revents & POLLNVAL), "This waitable object is closed/destructed during wait");
+
+                if(revents != POLLIN) continue;
+
+                const ssize_t res = read(pfds[index].fd, &value, sizeof(value));
+
+                if((res == -1) && (errno == EAGAIN)) continue;
+
+                Check_Sys_Result(res != -1, false);
+
+                if(objects[index]->handle_poll_data(value))
+                {
+                    wait_result |= (wait_result_t(1) << index);
+                }
+            }
+            if(wait_result == 0)
+            {
+                timeout_ns -= (now() - start_time);
+                if(timeout_ns < 0) return WAIT_RESULT_TIMEOUT;
+                continue;
+            }
+            return wait_result;
+        }
+    }
 }
 
 }

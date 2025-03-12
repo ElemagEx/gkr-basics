@@ -217,7 +217,7 @@ bool worker_thread::main_loop()
 
         const wait_result_t wait_result = waitable_object::wait_many(timeout_ns, objects, count + SELF_OBJECTS_TO_WAIT);
 
-        Check_ValidState(wait_result != WAIT_RESULT_ERROR, false);
+        if(wait_result == WAIT_RESULT_ERROR) return false;
 
         if(wait_result == WAIT_RESULT_TIMEOUT)
         {

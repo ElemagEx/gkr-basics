@@ -1,21 +1,3 @@
-add_library(gkr_inine INTERFACE)
-
-target_include_directories(gkr_inine INTERFACE ".")
-
-target_sources(gkr_inine
-    ${GKR_C_INTERFACE}
-    "gkr/capi/diagnostics.h"
-)
-target_sources(gkr_inine
-    ${GKR_CPP_INTERFACE}
-    "gkr/diagnostics.hpp"
-    "gkr/container/raw_buffer.hpp"
-    "gkr/container/lockfree_queue.hpp"
-    "gkr/container/lockfree_grow_only_bag.hpp"
-    "gkr/cpp/lib_is_swappable.hpp"
-    "gkr/cpp/lib_exchange_function.hpp"
-)
-
 add_library(gkr_core)
 
 target_include_directories(gkr_core PUBLIC ".")
@@ -69,7 +51,7 @@ target_sources(gkr_core
     "gkr/net/socket.cpp"
 )
 if(WIN32)
-target_sources(gkr_core PUBLIC "gkr/gkr.natvis")
+target_sources(gkr_core PUBLIC "gkr/gkr_core.natvis")
 target_link_libraries(gkr_core PRIVATE ws2_32)
 endif()
 
@@ -78,5 +60,43 @@ target_link_libraries(gkr_core PUBLIC gkr_inine)
 set_target_properties(gkr_core PROPERTIES DEFINE_SYMBOL BUILDING_GKR_CORE)
 
 if(GKR_BASICS_TESTS)
-add_subdirectory(tests)
+add_executable        (t-address "tests/t-address.cpp")
+target_link_libraries (t-address PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-address PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-address)
+
+add_executable        (t-socket "tests/t-socket.cpp")
+target_link_libraries (t-socket PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-socket PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-socket)
+
+add_executable        (t-sys_path "tests/t-sys_path.cpp")
+target_link_libraries (t-sys_path PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-sys_path PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-sys_path)
+
+add_executable        (t-sys_thread "tests/t-sys_thread.cpp")
+target_link_libraries (t-sys_thread PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-sys_thread PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-sys_thread)
+
+add_executable        (t-thread_worker "tests/t-thread_worker.cpp")
+target_link_libraries (t-thread_worker PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-thread_worker PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-thread_worker)
+
+add_executable        (t-waitable_object "tests/t-waitable_object.cpp")
+target_link_libraries (t-waitable_object PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-waitable_object PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-waitable_object)
+
+add_executable        (t-waitable_event "tests/t-waitable_event.cpp")
+target_link_libraries (t-waitable_event PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-waitable_event PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-waitable_event)
+
+add_executable        (t-waitable_semaphore "tests/t-waitable_semaphore.cpp")
+target_link_libraries (t-waitable_semaphore PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-waitable_semaphore PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-waitable_semaphore)
 endif()

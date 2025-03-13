@@ -43,7 +43,7 @@ const char* logger::get_name() noexcept
 
 long long logger::get_wait_timeout_ns() noexcept
 {
-    return -1;
+    return WAIT_INFINITE;
 }
 
 std::size_t logger::get_waitable_objects_count() noexcept

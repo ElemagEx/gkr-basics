@@ -27,7 +27,7 @@ void* waitable_semaphore::create(unsigned max_count, unsigned init_count)
 
     HANDLE hSemaphore = CreateSemaphoreA(nullptr, LONG(init_count), LONG(max_count), nullptr);
 
-    Check_Sys_Result(hSemaphore != nullptr, );
+    Check_Sys_Result(hSemaphore != nullptr, nullptr);
 
     return hSemaphore;
 }
@@ -36,7 +36,7 @@ bool waitable_semaphore::release(unsigned count)
 {
     Check_ValidState(is_valid(), false);
 
-    Check_Arg_IsValid((count > 0U) && (count < MAXIMUM_COUNT), );
+    Check_Arg_IsValid((count > 0U) && (count < MAXIMUM_COUNT), false);
 
     BOOL res = ReleaseSemaphore(handle(), LONG(count), nullptr);
 

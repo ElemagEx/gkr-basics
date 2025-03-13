@@ -53,7 +53,7 @@ protected:
 #ifdef GKR_WAITABLE_OBJECT_KEEP_WAIT_COUNT
     std::size_t wait_count() const noexcept { return m_wait_count; }
 #else
-    static constexpr std::size_t wait_count() const noexcept { return 0; }
+    static constexpr std::size_t wait_count() noexcept { return 0; }
 #endif
 
     waitable_object(object_handle_t handle) noexcept : m_handle(handle)

@@ -80,10 +80,10 @@ target_link_libraries (t-sys_thread PRIVATE Catch2::Catch2WithMain gkr_testing g
 target_compile_options(t-sys_thread PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
 catch_discover_tests  (t-sys_thread)
 
-add_executable        (t-thread_worker "tests/t-thread_worker.cpp")
-target_link_libraries (t-thread_worker PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
-target_compile_options(t-thread_worker PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-catch_discover_tests  (t-thread_worker)
+add_executable        (t-worker_thread "tests/t-worker_thread.cpp")
+target_link_libraries (t-worker_thread PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-worker_thread PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-worker_thread)
 
 add_executable        (t-waitable_object "tests/t-waitable_object.cpp")
 target_link_libraries (t-waitable_object PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)

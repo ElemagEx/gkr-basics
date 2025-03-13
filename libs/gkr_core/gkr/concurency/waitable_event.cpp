@@ -23,7 +23,7 @@ void* waitable_event::create(bool manual_reset, bool create_fired)
 {
     HANDLE hEvent = CreateEventA(nullptr, gkr_b2i(manual_reset), gkr_b2i(create_fired), nullptr);
 
-    Check_Sys_Result(hEvent != nullptr, );
+    Check_Sys_Result(hEvent != nullptr, nullptr);
 
     return hEvent;
 }

@@ -613,7 +613,7 @@ class queue_pausing<true, WaitSupport> : public WaitSupport
     using base_t = WaitSupport;
 
 private:
-    static constexpr long long INITIAL_NS_TO_WAIT = 1000; // 1 microsec
+    static constexpr long long INITIAL_NS_TO_WAIT = 10000; // 10 microsec
 
     static constexpr std::size_t MAX_OP_THREADS = 10000;
 
@@ -734,11 +734,11 @@ public:
     }
 };
 
-template<bool MultipleConsumersMultipleProducersSupport, bool Pausable, typename BaseAllocator, typename WaitSupport>
+template<bool MultipleConsumersMultipleProducersSupport, bool Pausable, typename Allocator, typename WaitSupport>
 class basic_lockfree_queue;
 
-template<bool Pausable, typename BaseAllocator, typename WaitSupport>
-class basic_lockfree_queue<false, Pausable, BaseAllocator, WaitSupport> : public queue_pausing<Pausable, WaitSupport>
+template<bool Pausable, typename Allocator, typename WaitSupport>
+class basic_lockfree_queue<false, Pausable, Allocator, WaitSupport> : public queue_pausing<Pausable, WaitSupport>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -761,7 +761,7 @@ private:
 protected:
     basic_lockfree_queue() noexcept = delete;
 
-    basic_lockfree_queue(const BaseAllocator&) noexcept(std::is_nothrow_default_constructible<base_t>::value) : base_t()
+    basic_lockfree_queue(const Allocator&) noexcept(std::is_nothrow_default_constructible<base_t>::value) : base_t()
     {
     }
     ~basic_lockfree_queue() noexcept(std::is_nothrow_destructible<base_t>::value)
@@ -1031,8 +1031,8 @@ protected:
     }
 #endif
 };
-template<bool Pausable, typename BaseAllocator, typename WaitSupport>
-class basic_lockfree_queue<true, Pausable, BaseAllocator, WaitSupport> : public queue_pausing<Pausable, WaitSupport>
+template<bool Pausable, typename Allocator, typename WaitSupport>
+class basic_lockfree_queue<true, Pausable, Allocator, WaitSupport> : public queue_pausing<Pausable, WaitSupport>
 {
     basic_lockfree_queue           (const basic_lockfree_queue&) noexcept = delete;
     basic_lockfree_queue& operator=(const basic_lockfree_queue&) noexcept = delete;
@@ -1043,35 +1043,35 @@ public:
 private:
     using base_t = queue_pausing<Pausable, WaitSupport>;
 
-    struct dequeues_entry
+    struct dequeue_entry
     {
         std::size_t free_index;
         std::size_t busy_index;
         queue_tid_t tid_owner;
     };
-    static_assert(std::is_trivial<dequeues_entry>::value, "Must be trivial");
+    static_assert(std::is_trivial<dequeue_entry>::value, "Must be trivial");
 
-    using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<dequeues_entry>;
+    using dequeue_allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<dequeue_entry>;
 
-    using AllocatorTraits = std::allocator_traits<TypeAllocator>;
+    using dequeue_allocator_traits = std::allocator_traits<dequeue_allocator_type>;
 
     static constexpr bool move_is_noexcept = (
         std::is_nothrow_move_assignable<base_t>::value && (
-            AllocatorTraits::is_always_equal::value || (
-                AllocatorTraits::propagate_on_container_move_assignment::value &&
-                std::is_nothrow_move_assignable<TypeAllocator>::value
+            dequeue_allocator_traits::is_always_equal::value || (
+                dequeue_allocator_traits::propagate_on_container_move_assignment::value &&
+                std::is_nothrow_move_assignable<dequeue_allocator_type>::value
                 )));
     static constexpr bool swap_is_noexcept = (
         std::is_nothrow_swappable<base_t>::value && (
-            AllocatorTraits::is_always_equal::value || (
-                AllocatorTraits::propagate_on_container_swap::value &&
-                std::is_nothrow_swappable<TypeAllocator>::value
+            dequeue_allocator_traits::is_always_equal::value || (
+                dequeue_allocator_traits::propagate_on_container_swap::value &&
+                std::is_nothrow_swappable<dequeue_allocator_type>::value
                 )));
 
-    gkr_attr_no_unique_address TypeAllocator m_allocator;
+    gkr_attr_no_unique_address dequeue_allocator_type m_allocator;
 
-    std::size_t     m_capacity = 0;
-    dequeues_entry* m_entries  = nullptr;
+    std::size_t    m_capacity = 0;
+    dequeue_entry* m_entries  = nullptr;
 
     std::atomic<std::size_t> m_count     {0};
     std::atomic<std::size_t> m_occupied  {0};
@@ -1086,17 +1086,17 @@ private:
 protected:
     basic_lockfree_queue() noexcept = delete;
 
-    basic_lockfree_queue(const BaseAllocator& allocator) noexcept(
+    basic_lockfree_queue(const Allocator& allocator) noexcept(
         std::is_nothrow_default_constructible<base_t>::value &&
-        std::is_nothrow_constructible<TypeAllocator, BaseAllocator>::value
+        std::is_nothrow_constructible<dequeue_allocator_type, const Allocator&>::value
         )
         : base_t()
         , m_allocator(allocator)
     {
     }
     ~basic_lockfree_queue() noexcept(
-        std::is_nothrow_destructible<TypeAllocator>::value &&
-        std::is_nothrow_destructible<base_t       >::value
+        std::is_nothrow_destructible<dequeue_allocator_type>::value &&
+        std::is_nothrow_destructible<base_t>::value
         )
     {
         clean();
@@ -1105,7 +1105,7 @@ protected:
 protected:
     basic_lockfree_queue(basic_lockfree_queue&& other) noexcept(
         std::is_nothrow_move_constructible<base_t>::value &&
-        std::is_nothrow_move_constructible<TypeAllocator>::value
+        std::is_nothrow_move_constructible<dequeue_allocator_type>::value
         )
         :   base_t   (std::move(other))
         ,   threading(std::move(other.  threading))
@@ -1171,7 +1171,7 @@ private:
     }
 
 private:
-    void relocate_entries(dequeues_entry*& entries, TypeAllocator& allocator) noexcept(false)
+    void relocate_entries(dequeue_entry*& entries, dequeue_allocator_type& allocator) noexcept(false)
     {
         if(m_capacity == 0)
         {
@@ -1181,7 +1181,7 @@ private:
         {
             entries = allocator.allocate(m_capacity);
 
-            std::memcpy(entries, m_entries, m_capacity * sizeof(dequeues_entry));
+            std::memcpy(entries, m_entries, m_capacity * sizeof(dequeue_entry));
 
             m_allocator.deallocate(m_entries, m_capacity);
             m_entries = nullptr;
@@ -1189,11 +1189,11 @@ private:
     }
     void move_entries(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+        if_constexpr(dequeue_allocator_traits::propagate_on_container_move_assignment::value)
         {
             m_allocator = std::move(other.m_allocator);
         }
-        else if_constexpr(!AllocatorTraits::is_always_equal::value)
+        else if_constexpr(!dequeue_allocator_traits::is_always_equal::value)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1205,11 +1205,11 @@ private:
     }
     void swap_entries(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        if_constexpr(AllocatorTraits::propagate_on_container_swap::value)
+        if_constexpr(dequeue_allocator_traits::propagate_on_container_swap::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }
-        else if_constexpr(!AllocatorTraits::is_always_equal::value)
+        else if_constexpr(!dequeue_allocator_traits::is_always_equal::value)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1219,7 +1219,7 @@ private:
                     " this case is undefined behaviour."
                     " Recovery code follows"
                     );
-                dequeues_entry* entries;
+                dequeue_entry* entries;
 
                 this->relocate_entries(  entries, other.m_allocator);
                 other.relocate_entries(m_entries,       m_allocator);
@@ -1285,7 +1285,7 @@ protected:
         }
         for(std::size_t index = 0; index < m_capacity; ++index)
         {
-            m_entries[index] = dequeues_entry{index, 0, 0};
+            m_entries[index] = dequeue_entry{index, 0, 0};
         }
         m_count     = 0;
         m_occupied  = 0;
@@ -1305,13 +1305,13 @@ protected:
 
         clean();
 
-        dequeues_entry* entries = m_allocator.allocate(capacity);
+        dequeue_entry* entries = m_allocator.allocate(capacity);
 
         const std::size_t count = m_count;
 
         for(std::size_t index = 0; index < capacity; ++index)
         {
-            entries[index] = dequeues_entry{index + count, index, 0};
+            entries[index] = dequeue_entry{index + count, index, 0};
         }
         m_busy_head = 0;
         m_busy_tail = count;
@@ -1501,72 +1501,81 @@ protected:
 #endif
 };
 
+template<typename T>
+using queue_allocator_value_type = std::conditional<std::is_void<T>::value, std::max_align_t, T>::type;
 }
 
 template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool Pausable=false,
-    typename BaseAllocator=std::allocator<std::max_align_t>,
-    typename WaitSupport  =impl::queue_no_wait_support
+    typename Allocator=std::allocator<impl::queue_allocator_value_type<T>>,
+    typename WaitSupport=impl::queue_no_wait_support
     >
 class lockfree_queue
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
-    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
+    using self_t =             lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>;
+    using base_t = impl::basic_lockfree_queue<   MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>;
 
 public:
-    using element_t = T;
+    using element_t       = T;
+
+    using value_type      = T;
+    using reference       = T&;
+    using const_reference = const T&;
+
+    using size_type       = std::size_t;
+    using difference_type = std::ptrdiff_t;
+
+    using allocator_type  = Allocator;
 
     using queue_producer_element_t = queue_producer_element<self_t>;
     using queue_consumer_element_t = queue_consumer_element<self_t>;
 
-    using TypeAllocator = typename std::allocator_traits<BaseAllocator>::template rebind_alloc<T>;
-
 private:
-    using AllocatorTraits = std::allocator_traits<TypeAllocator>;
+    using allocator_traits = std::allocator_traits<Allocator>;
 
     static constexpr bool move_is_noexcept = (
         std::is_nothrow_move_assignable<base_t>::value && (
-            AllocatorTraits::is_always_equal::value || (
-                AllocatorTraits::propagate_on_container_move_assignment::value &&
-                std::is_nothrow_move_assignable<TypeAllocator>::value
+            allocator_traits::is_always_equal::value || (
+                allocator_traits::propagate_on_container_move_assignment::value &&
+                std::is_nothrow_move_assignable<Allocator>::value
                 )));
     static constexpr bool swap_is_noexcept = (
         std::is_nothrow_swappable<base_t>::value && (
-            AllocatorTraits::is_always_equal::value || (
-                AllocatorTraits::propagate_on_container_swap::value &&
-                std::is_nothrow_swappable<TypeAllocator>::value
+            allocator_traits::is_always_equal::value || (
+                allocator_traits::propagate_on_container_swap::value &&
+                std::is_nothrow_swappable<Allocator>::value
                 )));
 
-    gkr_attr_no_unique_address TypeAllocator m_allocator;
+    gkr_attr_no_unique_address Allocator m_allocator;
 
     element_t* m_elements = nullptr;
 
 public:
-    lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(
-        std::is_nothrow_constructible<base_t       , BaseAllocator>::value &&
-        std::is_nothrow_constructible<TypeAllocator, BaseAllocator>::value
+    lockfree_queue(const Allocator& allocator = Allocator()) noexcept(
+        std::is_nothrow_constructible<base_t, Allocator>::value &&
+        std::is_nothrow_copy_constructible<Allocator>::value
         )
         : base_t     (allocator)
         , m_allocator(allocator)
     {
     }
-    lockfree_queue(std::size_t capacity, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+    lockfree_queue(std::size_t capacity, const Allocator& allocator = Allocator()) noexcept(false)
         : base_t     (allocator)
         , m_allocator(allocator)
     {
         reset(capacity);
     }
     ~lockfree_queue() noexcept(
-        std::is_nothrow_destructible<element_t    >::value &&
-        std::is_nothrow_destructible<TypeAllocator>::value &&
-        std::is_nothrow_destructible<base_t       >::value
+        std::is_nothrow_destructible<element_t>::value &&
+        std::is_nothrow_destructible<Allocator>::value &&
+        std::is_nothrow_destructible<base_t   >::value
         )
     {
         clear();
@@ -1574,8 +1583,8 @@ public:
 
 public:
     lockfree_queue(lockfree_queue&& other) noexcept(
-        std::is_nothrow_move_constructible<base_t       >::value &&
-        std::is_nothrow_move_constructible<TypeAllocator>::value
+        std::is_nothrow_move_constructible<base_t   >::value &&
+        std::is_nothrow_move_constructible<Allocator>::value
         )
         : base_t     (std::move(other))
         , m_allocator(std::move(other.m_allocator))
@@ -1609,8 +1618,7 @@ public:
 private:
     void destroy_element(std::size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
     {
-        //AllocatorTraits::destroy(m_allocator, m_elements + index); //AllocatorAwareContainer
-        m_elements[index].~element_t();
+        allocator_traits::destroy(m_allocator, m_elements + index);
     }
     void clear() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
@@ -1628,7 +1636,7 @@ private:
     }
 
 private:
-    void relocate_elements(element_t*& elements, TypeAllocator& allocator) noexcept(false)
+    void relocate_elements(element_t*& elements, Allocator& allocator) noexcept(false)
     {
         if(base_t::capacity() == 0)
         {
@@ -1642,8 +1650,7 @@ private:
             {
                 if(base_t::element_has_value(index, pos))
                 {
-                    //AllocatorTraits::construct(m_allocator, m_allocator, m_elements + index, std::move(m_elements[index]))); //AllocatorAwareContainer
-                    new (elements + index) element_t(std::move(m_elements[index]));
+                    allocator_traits::construct(allocator, elements + index, std::move(m_elements[index]));
 
                     destroy_element(index);
                 }
@@ -1654,11 +1661,11 @@ private:
     }
     void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+        if_constexpr(allocator_traits::propagate_on_container_move_assignment::value)
         {
             m_allocator = std::move(other.m_allocator);
         }
-        else if_constexpr(!AllocatorTraits::is_always_equal::value)
+        else if_constexpr(!allocator_traits::is_always_equal::value)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1670,11 +1677,11 @@ private:
     }
     void swap_elements(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        if_constexpr(AllocatorTraits::propagate_on_container_swap::value)
+        if_constexpr(allocator_traits::propagate_on_container_swap::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }
-        else if_constexpr(!AllocatorTraits::is_always_equal::value)
+        else if_constexpr(!allocator_traits::is_always_equal::value)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -1752,8 +1759,7 @@ public:
         {
             if(base_t::element_has_value(index, pos))
             {
-                //AllocatorTraits::construct(m_allocator, m_elements + index, std::move(m_elements[index])); //AllocatorAwareContainer
-                new (elements + pos) element_t(std::move(m_elements[index]));
+                allocator_traits::construct(m_allocator, elements + pos, std::move(m_elements[index]));
 
                 destroy_element(index);
             }
@@ -1779,8 +1785,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element, std::forward<Args>(args)...); //AllocatorAwareContainer
-        return new (element) element_t(std::forward<Args>(args)...);
+        allocator_traits::construct(m_allocator, element, std::forward<Args>(args)...);
+
+        return element;
     }
     element_t* try_acquire_producer_element_ownership() noexcept(
         DIAG_NOEXCEPT &&
@@ -1793,8 +1800,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element); //AllocatorAwareContainer
-        return new (element) element_t();
+        allocator_traits::construct(m_allocator, element);
+
+        return element;
     }
     element_t* try_acquire_producer_element_ownership(element_t&& value) noexcept(
         DIAG_NOEXCEPT &&
@@ -1807,8 +1815,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element, std::move(value)); //AllocatorAwareContainer
-        return new (element) element_t(std::move(value));
+        allocator_traits::construct(m_allocator, element, std::move(value));
+
+        return element;
     }
     element_t* try_acquire_producer_element_ownership(const element_t& value) noexcept(
         DIAG_NOEXCEPT &&
@@ -1821,8 +1830,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element, value); //AllocatorAwareContainer
-        return new (element) element_t(value);
+        allocator_traits::construct(m_allocator, element, value);
+
+        return element;
     }
     element_t* try_acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
@@ -2013,8 +2023,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element, std::forward<Args>(args)...); //AllocatorAwareContainer
-        return new (element) element_t(std::forward<Args>(args)...);
+        allocator_traits::construct(m_allocator, element, std::forward<Args>(args)...);
+
+        return element;
     }
     element_t* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
@@ -2027,8 +2038,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element); //AllocatorAwareContainer
-        return new (element) element_t();
+        allocator_traits::construct(m_allocator, element);
+
+        return element;
     }
     element_t* acquire_producer_element_ownership(element_t&& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
@@ -2041,8 +2053,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element, std::move(value)); //AllocatorAwareContainer
-        return new (element) element_t(std::move(value));
+        allocator_traits::construct(m_allocator, element, std::move(value));
+
+        return element;
     }
     element_t* acquire_producer_element_ownership(const element_t& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
@@ -2055,8 +2068,9 @@ public:
 
         element_t* element = (m_elements + index);
 
-        //AllocatorTraits::construct(m_allocator, element, value); //AllocatorAwareContainer
-        return new (element) element_t(value);
+        allocator_traits::construct(m_allocator, element, value);
+
+        return element;
     }
     element_t* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
@@ -2186,29 +2200,22 @@ public:
 template<
     bool MultipleConsumersMultipleProducersSupport,
     bool Pausable,
-    typename BaseAllocator,
+    typename Allocator,
     typename WaitSupport
     >
-class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>
-    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>
+class lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>
+    : public impl::basic_lockfree_queue<MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>
 {
     lockfree_queue           (const lockfree_queue&) noexcept = delete;
     lockfree_queue& operator=(const lockfree_queue&) noexcept = delete;
 
 private:
-    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
-    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
+    using self_t =             lockfree_queue<void, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>;
+    using base_t = impl::basic_lockfree_queue<      MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>;
 
-public:
-    using element_t = void;
+    using allocator_traits  = std::allocator_traits<Allocator>;
 
-    using queue_producer_element_t = queue_producer_element<self_t>;
-    using queue_consumer_element_t = queue_consumer_element<self_t>;
-
-private:
-    using AllocatorTraits = std::allocator_traits<BaseAllocator>;
-
-    using allocator_value_t = typename AllocatorTraits::value_type;
+    using allocator_value_t = typename allocator_traits::value_type;
 
     static constexpr std::size_t granularity = (sizeof(allocator_value_t) >= alignof(allocator_value_t))
         ?  sizeof(allocator_value_t)
@@ -2216,43 +2223,58 @@ private:
         ;
 
 public:
+    using element_t       = void;
+
+    using value_type      = allocator_value_t;
+    using reference       = allocator_value_t&;
+    using const_reference = const allocator_value_t&;
+
+    using size_type       = std::size_t;
+    using difference_type = std::ptrdiff_t;
+
+    using allocator_type  = Allocator;
+
+    using queue_producer_element_t = queue_producer_element<self_t>;
+    using queue_consumer_element_t = queue_consumer_element<self_t>;
+
+public:
     static constexpr bool move_is_noexcept = (
         std::is_nothrow_move_assignable<base_t>::value && (
-            AllocatorTraits::is_always_equal::value || (
-                AllocatorTraits::propagate_on_container_move_assignment::value &&
-                std::is_nothrow_move_assignable<BaseAllocator>::value
+            allocator_traits::is_always_equal::value || (
+                allocator_traits::propagate_on_container_move_assignment::value &&
+                std::is_nothrow_move_assignable<Allocator>::value
                 )));
     static constexpr bool swap_is_noexcept = (
         std::is_nothrow_swappable<base_t>::value && (
-            AllocatorTraits::is_always_equal::value || (
-                AllocatorTraits::propagate_on_container_swap::value &&
-                std::is_nothrow_swappable<BaseAllocator>::value
+            allocator_traits::is_always_equal::value || (
+                allocator_traits::propagate_on_container_swap::value &&
+                std::is_nothrow_swappable<Allocator>::value
                 )));
 
 private:
-    gkr_attr_no_unique_address BaseAllocator m_allocator;
+    gkr_attr_no_unique_address Allocator m_allocator;
 
     char*       m_elements = nullptr;
     std::size_t m_size     = 0;
 
 public:
-    lockfree_queue(const BaseAllocator& allocator = BaseAllocator()) noexcept(
-        std::is_nothrow_constructible<base_t, BaseAllocator>::value &&
-        std::is_nothrow_copy_constructible<   BaseAllocator>::value
+    lockfree_queue(const Allocator& allocator = Allocator()) noexcept(
+        std::is_nothrow_constructible<base_t, Allocator>::value &&
+        std::is_nothrow_copy_constructible<   Allocator>::value
         )
         : base_t     (allocator)
         , m_allocator(allocator)
     {
     }
-    lockfree_queue(std::size_t capacity, std::size_t size, const BaseAllocator& allocator = BaseAllocator()) noexcept(false)
+    lockfree_queue(std::size_t capacity, std::size_t size, const Allocator& allocator = Allocator()) noexcept(false)
         : base_t     (allocator)
         , m_allocator(allocator)
     {
         reset(capacity, size);
     }
     ~lockfree_queue() noexcept(
-        std::is_nothrow_destructible<BaseAllocator>::value &&
-        std::is_nothrow_destructible<base_t       >::value
+        std::is_nothrow_destructible<Allocator>::value &&
+        std::is_nothrow_destructible<base_t   >::value
         )
     {
         clear();
@@ -2260,8 +2282,8 @@ public:
 
 public:
     lockfree_queue(lockfree_queue&& other) noexcept(
-        std::is_nothrow_move_constructible<base_t       >::value &&
-        std::is_nothrow_move_constructible<BaseAllocator>::value
+        std::is_nothrow_move_constructible<base_t   >::value &&
+        std::is_nothrow_move_constructible<Allocator>::value
         )
         : base_t     (std::move(other))
         , m_allocator(std::move(other.m_allocator))
@@ -2311,7 +2333,7 @@ private:
     }
 
 private:
-    void relocate_elements(std::size_t& size, char*& elements, BaseAllocator& allocator) noexcept(false)
+    void relocate_elements(std::size_t& size, char*& elements, Allocator& allocator) noexcept(false)
     {
         size = m_size;
 
@@ -2333,11 +2355,11 @@ private:
     }
     void move_elements(lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+        if_constexpr(allocator_traits::propagate_on_container_move_assignment::value)
         {
             m_allocator = std::move(other.m_allocator);
         }
-        else if_constexpr(!AllocatorTraits::is_always_equal::value)
+        else if_constexpr(!allocator_traits::is_always_equal::value)
         {
             if(m_allocator != other.m_allocator)
             {
@@ -2350,7 +2372,7 @@ private:
     }
     void swap_elements(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        if_constexpr(AllocatorTraits::propagate_on_container_move_assignment::value)
+        if_constexpr(allocator_traits::propagate_on_container_move_assignment::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }
@@ -2784,15 +2806,15 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport,
     bool Pausable,
-    typename BaseAllocator,
+    typename Allocator,
     typename WaitSupport
     >
 void swap(
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>& lhs,
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>& rhs
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>& lhs,
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>& rhs
     )
     noexcept(
-    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>::swap_is_noexcept
+    gkr::lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>::swap_is_noexcept
     )
 {
     lhs.swap(rhs);

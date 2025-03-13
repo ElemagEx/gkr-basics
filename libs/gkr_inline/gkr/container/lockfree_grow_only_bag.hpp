@@ -100,13 +100,13 @@ private:
         node_data(Args&&... args) noexcept(std::is_nothrow_constructible<Args...>::value) : value(std::forward<Args>(args)...) {}
     };
 
-private:
+public:
     using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<node_data>;
 
-    using allocator_traits = std::allocator_traits<allocator_type>;
-
-public:
     using allocator_value_type = typename allocator_type::value_type;
+
+private:
+    using allocator_traits = std::allocator_traits<allocator_type>;
 
 private:
     std::atomic<node_data*> m_first {nullptr};
@@ -122,8 +122,7 @@ private:
         {
             node_data* new_node = m_allocator.allocate(1);
 
-            //allocator_traits::construct(new_node, src_node->value); // AllocatorAwareContainer
-            new (new_node) node_data(src_node->value);
+            allocator_traits::construct(m_allocator, new_node, src_node->value);
 
             new_node->next = new_first;
 
@@ -139,8 +138,7 @@ private:
         {
             node_data* new_node = m_allocator.allocate(1);
 
-            //allocator_traits::construct(new_node, std::move(src_node->value)); // AllocatorAwareContainer
-            new (new_node) node_data(std::move(src_node->value));
+            allocator_traits::construct(m_allocator, new_node, std::move(src_node->value));
 
             new_node->next = new_first;
 
@@ -327,8 +325,7 @@ public:
         {
             node_data* next = node->next;
 
-            //allocator_traits::destroy(node); // AllocatorAwareContainer
-            node->~node_data();
+            allocator_traits::destroy(m_allocator, node);
 
             m_allocator.deallocate(node, 1);
 
@@ -485,8 +482,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
-        //allocator_traits::construct(new_node); // AllocatorAwareContainer
-        new (node) node_data();
+        allocator_traits::construct(m_allocator, node);
 
         add(node);
 
@@ -496,8 +492,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
-        //allocator_traits::construct(new_node, std::move(value)); // AllocatorAwareContainer
-        new (node) node_data(std::move(value));
+        allocator_traits::construct(m_allocator, node, std::move(value));
 
         add(node);
 
@@ -507,8 +502,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
-        //allocator_traits::construct(new_node, value); // AllocatorAwareContainer
-        new (node) node_data(value);
+        allocator_traits::construct(m_allocator, node, value);
 
         add(node);
 
@@ -519,8 +513,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
-        //allocator_traits::construct(new_node, std::forward<Args>(args)...); // AllocatorAwareContainer
-        new (node) node_data(std::forward<Args>(args)...);
+        allocator_traits::construct(m_allocator, node, std::forward<Args>(args)...);
 
         add(node);
 
@@ -534,8 +527,7 @@ private:
     {
         node_data* next = node->next;
 
-        //allocator_traits::destroy(node); // AllocatorAwareContainer
-        node->~node_data();
+        allocator_traits::destroy(m_allocator, node);
 
         m_allocator.deallocate(node, 1);
 

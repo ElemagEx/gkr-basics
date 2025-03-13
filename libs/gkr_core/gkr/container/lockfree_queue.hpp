@@ -3,11 +3,7 @@
 #include <thread>
 #include <atomic>
 #include <memory>
-#include <chrono>
 #include <utility>
-#include <cstring>
-#include <cstddef>
-#include <algorithm>
 #include <type_traits>
 
 #ifndef GKR_LOCKFREE_QUEUE_SINGLE_HEADER
@@ -83,6 +79,13 @@ T exchange(T& obj, U&& new_value) noexcept(
 #define gkr_attr_no_unique_address [[no_unique_address]]
 #else
 #define gkr_attr_no_unique_address
+#endif
+#endif
+#ifndef gkr_attr_nodiscard
+#if __has_cpp_attribute(no_unique_address)
+#define gkr_attr_nodiscard [[nodiscard]]
+#else
+#define gkr_attr_nodiscard
 #endif
 #endif
 
@@ -537,27 +540,15 @@ private:
     }
 
 protected:
-    template<typename Clock, typename Duration>
-    bool producer_wait(const std::chrono::time_point<Clock, Duration>&) noexcept
+    template<typename T=void>
+    bool producer_wait(long long timeout_ns) noexcept
     {
-        static_assert(has_wait<Clock>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
-        return false;
+        static_assert(has_wait<T>(), "You cannot wait on this queue - use another queue wait support class to activate waiting functionality");
     }
     template<typename T=void>
-    void producer_wait() noexcept
+    bool consumer_wait(long long timeout_ns) noexcept
     {
-        static_assert(has_wait<T>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
-    }
-    template<typename Clock, typename Duration>
-    bool consumer_wait(const std::chrono::time_point<Clock, Duration>&) noexcept
-    {
-        static_assert(has_wait<Clock>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
-        return false;
-    }
-    template<typename T=void>
-    void consumer_wait() noexcept
-    {
-        static_assert(has_wait<T>(), "You cannot wait on this queue - use other queue wait support class to activate waiting functionality");
+        static_assert(has_wait<T>(), "You cannot wait on this queue - use another queue wait support class to activate waiting functionality");
     }
 #endif
 };
@@ -603,14 +594,13 @@ protected:
         prevent_pause_sentry& operator=(prevent_pause_sentry&&) noexcept = delete;
 
     public:
-        [[nodiscard]] explicit
+        gkr_attr_nodiscard explicit
         prevent_pause_sentry(self_t& qp) {}
        ~prevent_pause_sentry() = default;
     };
 
 public:
-    template<typename Rep, typename Period>
-    void set_wait_a_while_duration(std::chrono::duration<Rep, Period> timeout) noexcept
+    void set_wait_a_while_duration(long long ns_to_wait) noexcept
     {
     }
 };
@@ -623,12 +613,12 @@ class queue_pausing<true, WaitSupport> : public WaitSupport
     using base_t = WaitSupport;
 
 private:
-    static constexpr long long initial_ns_to_wait = 1000000U; // 1 millisec
+    static constexpr long long INITIAL_NS_TO_WAIT = 1000; // 1 microsec
 
-    static constexpr std::size_t max_op_threads = std::size_t(-1) / 4;
+    static constexpr std::size_t MAX_OP_THREADS = 10000;
 
 private:
-    long long                m_ns_to_wait {initial_ns_to_wait};
+    long long                m_ns_to_wait {INITIAL_NS_TO_WAIT};
     std::atomic<std::size_t> m_op_threads {0};
     std::atomic<std::size_t> m_op_pausers {0};
 
@@ -638,7 +628,7 @@ protected:
 
     queue_pausing(queue_pausing&& other) noexcept(std::is_nothrow_move_constructible<base_t>::value)
         : base_t(other)
-        , m_ns_to_wait(std::exchange(other.m_ns_to_wait, initial_ns_to_wait))
+        , m_ns_to_wait(std::exchange(other.m_ns_to_wait, INITIAL_NS_TO_WAIT))
         , m_op_threads(other.m_op_threads.exchange(0))
         , m_op_pausers(other.m_op_pausers.exchange(0))
     {
@@ -647,7 +637,7 @@ protected:
     {
         base_t::operator=(std::move(other));
 
-        m_ns_to_wait = std::exchange(other.m_ns_to_wait, initial_ns_to_wait);
+        m_ns_to_wait = std::exchange(other.m_ns_to_wait, INITIAL_NS_TO_WAIT);
 
         m_op_threads = other.m_op_threads.exchange(0);
         m_op_pausers = other.m_op_pausers.exchange(0);
@@ -673,34 +663,33 @@ protected:
 private:
     void enter_pause_prevention() noexcept
     {
-        for( ; ; m_op_threads--)
+        for( ; ; --m_op_threads)
         {
             while(m_op_pausers > 0)
             {
                 wait_a_while();
             }
-            if(m_op_threads++ < max_op_threads) break;
+            if(++m_op_threads <= MAX_OP_THREADS) break;
         }
     }
     void leave_pause_prevention() noexcept
     {
-        m_op_threads--;
+        --m_op_threads;
     }
 
 private:
-    void pause(bool pause_from_current_pause_prevention_thread) noexcept
+    void pause() noexcept
     {
-        for(m_op_pausers++; ; )
+        for(++m_op_pausers; ; )
         {
-            std::size_t expected = pause_from_current_pause_prevention_thread ? 1U : 0;
-            if(m_op_threads.compare_exchange_strong(expected, max_op_threads)) break;
+            std::size_t expected = 0;
+            if(m_op_threads.compare_exchange_strong(expected, MAX_OP_THREADS)) break;
             wait_a_while();
         }
     }
-    void resume(bool pause_from_current_pause_prevention_thread) noexcept
+    void resume() noexcept
     {
-        std::size_t correction = pause_from_current_pause_prevention_thread ? 1U : 0;
-        m_op_threads -= (max_op_threads - correction);
+        m_op_threads -= MAX_OP_THREADS;
         m_op_pausers--;
     }
 
@@ -719,7 +708,7 @@ protected:
 
         queue_pausing& m_qp;
     public:
-        [[nodiscard]] explicit
+        gkr_attr_nodiscard explicit
         prevent_pause_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.enter_pause_prevention(); }
        ~prevent_pause_sentry()                             { m_qp.leave_pause_prevention(); }
     };
@@ -732,18 +721,16 @@ protected:
         pause_resume_sentry& operator=(pause_resume_sentry&&) noexcept = delete;
 
         queue_pausing& m_qp;
-        const bool     m_ex;
     public:
-        [[nodiscard]] explicit
-        pause_resume_sentry(queue_pausing& qp, bool ex) : m_qp(qp), m_ex(ex) { m_qp.pause (m_ex); }
-       ~pause_resume_sentry()                                                { m_qp.resume(m_ex); }
+        gkr_attr_nodiscard explicit
+        pause_resume_sentry(queue_pausing& qp) : m_qp(qp) { m_qp.pause (); }
+       ~pause_resume_sentry()                             { m_qp.resume(); }
     };
 
 public:
-    template<typename Rep, typename Period>
-    void set_wait_a_while_duration(std::chrono::duration<Rep, Period> timeout) noexcept
+    void set_wait_a_while_duration(long long ns_to_wait) noexcept
     {
-        m_ns_to_wait = std::chrono::duration_cast<std::chrono::nanoseconds>(timeout).count();
+        m_ns_to_wait = ns_to_wait;
     }
 };
 
@@ -928,8 +915,6 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        typename base_t::prevent_pause_sentry sentry(*this);
-
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
         if(index == queue_npos) return false;
@@ -937,8 +922,6 @@ protected:
         Check_ValidState(m_producer_tid_owner == get_current_tid(), false);
 
         Check_Arg_IsValid(index == (m_tail_pos % m_capacity), false);
-
-        m_producer_tid_owner = 0;
 
         if_constexpr(push)
         {
@@ -951,6 +934,8 @@ protected:
         {
             base_t::notify_producer_ownership_cancel();
         }
+        m_producer_tid_owner = 0;
+
         return true;
     }
 
@@ -977,8 +962,6 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        typename base_t::prevent_pause_sentry sentry(*this);
-
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
         if(index == queue_npos) return false;
@@ -986,8 +969,6 @@ protected:
         Check_ValidState(m_consumer_tid_owner == get_current_tid(), false);
 
         Check_ValidState(index == (m_head_pos % m_capacity), false);
-
-        m_consumer_tid_owner = 0;
 
         if_constexpr(pop)
         {
@@ -1000,6 +981,8 @@ protected:
         {
             base_t::notify_consumer_ownership_cancel();
         }
+        m_consumer_tid_owner = 0;
+
         return true;
     }
 
@@ -1013,23 +996,18 @@ protected:
 
         return (count == 0);
     }
+    bool other_thread_owns_elements() const noexcept
+    {
+        const queue_tid_t current_tid = get_current_tid();
+
+        if((m_producer_tid_owner != 0) && (m_producer_tid_owner != current_tid)) return true;
+        if((m_consumer_tid_owner != 0) && (m_consumer_tid_owner != current_tid)) return true;
+
+        return false;
+    }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
-    template<typename Rep, typename Period>
-    std::size_t take_producer_element_ownership(const std::chrono::duration<Rep, Period>& timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
-
-        for( ; ; )
-        {
-            const std::size_t index = try_take_producer_element_ownership();
-
-            if(index != queue_npos) return index;
-
-            if(!base_t::producer_wait(wait_time)) return queue_npos;
-        }
-    }
-    std::size_t take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t take_producer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1037,24 +1015,10 @@ protected:
 
             if(index != queue_npos) return index;
 
-            base_t::producer_wait();
+            if(!base_t::producer_wait(timeout_ns)) return queue_npos;
         }
     }
-    template<typename Rep, typename Period>
-    std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
-
-        for( ; ; )
-        {
-            const std::size_t index = try_take_consumer_element_ownership();
-
-            if(index != queue_npos) return index;
-
-            if(!base_t::consumer_wait(wait_time)) return queue_npos;
-        }
-    }
-    std::size_t take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t take_consumer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1062,7 +1026,7 @@ protected:
 
             if(index != queue_npos) return index;
 
-            base_t::consumer_wait();
+            if(!base_t::consumer_wait(timeout_ns)) return queue_npos;
         }
     }
 #endif
@@ -1396,8 +1360,6 @@ protected:
     template<bool push>
     bool drop_producer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        typename base_t::prevent_pause_sentry sentry(*this);
-
         Check_ValidState(threading.this_thread_is_valid_producer(), false);
 
         if(index == queue_npos) return false;
@@ -1405,8 +1367,6 @@ protected:
         Check_Arg_IsValid(index < m_capacity, false);
 
         Check_Arg_IsValid(m_entries[index].tid_owner == get_current_tid(), false);
-
-        m_entries[index].tid_owner = 0;
 
         if_constexpr(push)
         {
@@ -1425,6 +1385,8 @@ protected:
 
             base_t::notify_producer_ownership_cancel();
         }
+        m_entries[index].tid_owner = 0;
+
         return true;
     }
 
@@ -1452,8 +1414,6 @@ protected:
     template<bool pop>
     bool drop_consumer_element_ownership(std::size_t index) noexcept(DIAG_NOEXCEPT)
     {
-        typename base_t::prevent_pause_sentry sentry(*this);
-
         Check_ValidState(threading.this_thread_is_valid_consumer(), false);
 
         if(index == queue_npos) return false;
@@ -1461,8 +1421,6 @@ protected:
         Check_Arg_IsValid(index < m_capacity, false);
 
         Check_Arg_IsValid(m_entries[index].tid_owner == get_current_tid(), false);
-
-        m_entries[index].tid_owner = 0;
 
         if_constexpr(pop)
         {
@@ -1481,6 +1439,8 @@ protected:
 
             base_t::notify_consumer_ownership_cancel();
         }
+        m_entries[index].tid_owner = 0;
+
         return true;
     }
 
@@ -1501,23 +1461,22 @@ protected:
         }
         return (count == 0);
     }
+    bool other_thread_owns_elements() const noexcept
+    {
+        const queue_tid_t current_tid = get_current_tid();
+
+        for(std::size_t index = 0; index < m_capacity; ++index)
+        {
+            if((m_entries[index].tid_owner != 0) && (m_entries[index].tid_owner != current_tid))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
-    template<typename Rep, typename Period>
-    std::size_t take_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
-
-        for( ; ; )
-        {
-            const std::size_t index = try_take_producer_element_ownership();
-
-            if(index != queue_npos) return index;
-
-            if(!base_t::producer_wait(wait_time)) return queue_npos;
-        }
-    }
-    std::size_t take_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t take_producer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1525,24 +1484,10 @@ protected:
 
             if(index != queue_npos) return index;
 
-            base_t::producer_wait();
+            if(!base_t::producer_wait(timeout_ns)) return queue_npos;
         }
     }
-    template<typename Rep, typename Period>
-    std::size_t take_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        const auto wait_time = std::chrono::high_resolution_clock::now() + timeout;
-
-        for( ; ; )
-        {
-            const std::size_t index = try_take_consumer_element_ownership();
-
-            if(index != queue_npos) return index;
-
-            if(!base_t::consumer_wait(wait_time)) return queue_npos;
-        }
-    }
-    std::size_t take_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    std::size_t take_consumer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
     {
         for( ; ; )
         {
@@ -1550,7 +1495,7 @@ protected:
 
             if(index != queue_npos) return index;
 
-            base_t::consumer_wait();
+            if(!base_t::consumer_wait(timeout_ns)) return queue_npos;
         }
     }
 #endif
@@ -1664,6 +1609,7 @@ public:
 private:
     void destroy_element(std::size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
     {
+        //AllocatorTraits::destroy(m_allocator, m_elements + index); //AllocatorAwareContainer
         m_elements[index].~element_t();
     }
     void clear() noexcept(std::is_nothrow_destructible<element_t>::value)
@@ -1696,6 +1642,7 @@ private:
             {
                 if(base_t::element_has_value(index, pos))
                 {
+                    //AllocatorTraits::construct(m_allocator, m_allocator, m_elements + index, std::move(m_elements[index]))); //AllocatorAwareContainer
                     new (elements + index) element_t(std::move(m_elements[index]));
 
                     destroy_element(index);
@@ -1791,9 +1738,13 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this, false);
+        typename base_t::pause_resume_sentry sentry(*this);
 
         if(capacity <= base_t::count()) return false;
+
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
+
+        while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
         element_t* elements = m_allocator.allocate(capacity);
 
@@ -1801,6 +1752,7 @@ public:
         {
             if(base_t::element_has_value(index, pos))
             {
+                //AllocatorTraits::construct(m_allocator, m_elements + index, std::move(m_elements[index])); //AllocatorAwareContainer
                 new (elements + pos) element_t(std::move(m_elements[index]));
 
                 destroy_element(index);
@@ -1827,6 +1779,7 @@ public:
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element, std::forward<Args>(args)...); //AllocatorAwareContainer
         return new (element) element_t(std::forward<Args>(args)...);
     }
     element_t* try_acquire_producer_element_ownership() noexcept(
@@ -1840,6 +1793,7 @@ public:
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element); //AllocatorAwareContainer
         return new (element) element_t();
     }
     element_t* try_acquire_producer_element_ownership(element_t&& value) noexcept(
@@ -1853,6 +1807,7 @@ public:
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element, std::move(value)); //AllocatorAwareContainer
         return new (element) element_t(std::move(value));
     }
     element_t* try_acquire_producer_element_ownership(const element_t& value) noexcept(
@@ -1866,6 +1821,7 @@ public:
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element, value); //AllocatorAwareContainer
         return new (element) element_t(value);
     }
     element_t* try_acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
@@ -2045,133 +2001,66 @@ public:
     }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 public:
-    template<typename Rep, typename Period, typename... Args>
-    element_t* acquire_producer_element_ownership_ex(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_constructible<element_t, Args...>::value
-        )
-    {
-        const std::size_t index = base_t::take_producer_element_ownership(timeout);
-
-        if(index == queue_npos) return nullptr;
-
-        element_t* element = (m_elements + index);
-
-        return new (element) element_t(std::forward<Args>(args)...);
-    }
     template<typename... Args>
-    element_t* acquire_producer_element_ownership_ex(Args&&... args) noexcept(
+    element_t* acquire_producer_element_ownership_ex(long long timeout_ns, Args&&... args) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_constructible<element_t, Args...>::value
         )
     {
-        const std::size_t index = base_t::take_producer_element_ownership();
+        const std::size_t index = base_t::take_producer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element, std::forward<Args>(args)...); //AllocatorAwareContainer
         return new (element) element_t(std::forward<Args>(args)...);
     }
-
-    template<typename Rep, typename Period>
-    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(
+    element_t* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_default_constructible<element_t>::value
         )
     {
-        const std::size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element); //AllocatorAwareContainer
         return new (element) element_t();
     }
-    element_t* acquire_producer_element_ownership() noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_default_constructible<element_t>::value
-        )
-    {
-        const std::size_t index = base_t::take_producer_element_ownership();
-
-        if(index == queue_npos) return nullptr;
-
-        element_t* element = (m_elements + index);
-
-        return new (element) element_t();
-    }
-
-    template<typename Rep, typename Period>
-    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
+    element_t* acquire_producer_element_ownership(element_t&& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_constructible<element_t>::value
         )
     {
-        const std::size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element, std::move(value)); //AllocatorAwareContainer
         return new (element) element_t(std::move(value));
     }
-    element_t* acquire_producer_element_ownership(element_t&& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_move_constructible<element_t>::value
-        )
-    {
-        const std::size_t index = base_t::take_producer_element_ownership();
-
-        if(index == queue_npos) return nullptr;
-
-        element_t* element = (m_elements + index);
-
-        return new (element) element_t(std::move(value));
-    }
-
-    template<typename Rep, typename Period>
-    element_t* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
+    element_t* acquire_producer_element_ownership(const element_t& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_constructible<element_t>::value
         )
     {
-        const std::size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
         element_t* element = (m_elements + index);
 
+        //AllocatorTraits::construct(m_allocator, element, value); //AllocatorAwareContainer
         return new (element) element_t(value);
     }
-    element_t* acquire_producer_element_ownership(const element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_copy_constructible<element_t>::value
-        )
+    element_t* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
-        const std::size_t index = base_t::take_producer_element_ownership();
-
-        if(index == queue_npos) return nullptr;
-
-        element_t* element = (m_elements + index);
-
-        return new (element) element_t(value);
-    }
-
-    template<typename Rep, typename Period>
-    element_t* acquire_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        const std::size_t index = base_t::take_consumer_element_ownership(timeout);
-
-        if(index == queue_npos) return nullptr;
-
-        element_t* element = (m_elements + index);
-
-        return element;
-    }
-    element_t* acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
-    {
-        const std::size_t index = base_t::take_consumer_element_ownership();
+        const std::size_t index = base_t::take_consumer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
@@ -2181,192 +2070,96 @@ public:
     }
 
 public:
-    template<typename Rep, typename Period, typename... Args>
-    element_t* start_emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_constructible<element_t, Args...>::value
-        )
-    {
-        element_t* element = acquire_producer_element_ownership_ex(timeout, std::forward<Args>(args)...);
-
-        return queue_producer_element_t(*this, element);
-    }
     template<typename... Args>
-    element_t* start_emplace(Args&&... args) noexcept(
+    queue_producer_element_t start_emplace(long long timeout_ns, Args&&... args) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_constructible<element_t, Args...>::value
         )
     {
-        element_t* element = acquire_producer_element_ownership_ex(std::forward<Args>(args)...);
+        element_t* element = acquire_producer_element_ownership_ex(timeout_ns, std::forward<Args>(args)...);
 
         return queue_producer_element_t(*this, element);
     }
-
-    template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout) noexcept(
+    queue_producer_element_t start_push(long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_default_constructible<element_t>::value
         )
     {
-        element_t* element = acquire_producer_element_ownership(timeout);
+        element_t* element = acquire_producer_element_ownership(timeout_ns);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push() noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_default_constructible<element_t>::value
-        )
-    {
-        element_t* element = acquire_producer_element_ownership();
-
-        return queue_producer_element_t(*this, element);
-    }
-
-    template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
+    queue_producer_element_t start_push(element_t&& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_constructible<element_t>::value
         )
     {
-        element_t* element = acquire_producer_element_ownership(timeout, std::move(value));
+        element_t* element = acquire_producer_element_ownership(timeout_ns, std::move(value));
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(element_t&& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_move_constructible<element_t>::value
-        )
-    {
-        element_t* element = acquire_producer_element_ownership(std::move(value));
-
-        return queue_producer_element_t(*this, element);
-    }
-
-    template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
+    queue_producer_element_t start_push(const element_t& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_constructible<element_t>::value
         )
     {
-        element_t* element = acquire_producer_element_ownership(timeout, value);
+        element_t* element = acquire_producer_element_ownership(timeout_ns, value);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(const element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_copy_constructible<element_t>::value
-        )
+    queue_consumer_element_t start_pop(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
-        element_t* element = acquire_producer_element_ownership(value);
-
-        return queue_producer_element_t(*this, element);
-    }
-
-    template<typename Rep, typename Period>
-    queue_consumer_element_t start_pop(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        element_t* element = acquire_consumer_element_ownership(timeout);
-
-        return queue_consumer_element_t(*this, element);
-    }
-    queue_consumer_element_t start_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        element_t* element = acquire_consumer_element_ownership();
+        element_t* element = acquire_consumer_element_ownership(timeout_ns);
 
         return queue_consumer_element_t(*this, element);
     }
 
 public:
-    template<typename Rep, typename Period, typename... Args>
-    bool emplace(std::chrono::duration<Rep, Period> timeout, Args&&... args) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_constructible<element_t, Args...>::value
-        )
-    {
-        return start_emplace(timeout, std::forward<Args>(args)...).push_in_progress();
-    }
     template<typename... Args>
-    bool emplace(Args&&... args) noexcept(
+    bool emplace(long long timeout_ns, Args&&... args) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_constructible<element_t, Args...>::value
         )
     {
-        return start_emplace(std::forward<Args>(args)...).push_in_progress();
+        return start_emplace(timeout_ns, std::forward<Args>(args)...).push_in_progress();
     }
-
-    template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout) noexcept(
+    bool push(long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_default_constructible<element_t>::value
         )
     {
-        return start_push(timeout).push_in_progress();
+        return start_push(timeout_ns).push_in_progress();
     }
-    bool push() noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_default_constructible<element_t>::value
-        )
-    {
-        return start_push().push_in_progress();
-    }
-
-    template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, element_t&& value) noexcept(
+    bool push(element_t&& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_constructible<element_t>::value
         )
     {
-        return start_push(timeout, std::move(value)).push_in_progress();
+        return start_push(timeout_ns, std::move(value)).push_in_progress();
     }
-    bool push(element_t&& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_move_constructible<element_t>::value
-        )
-    {
-        return start_push(std::move(value)).push_in_progress();
-    }
-
-    template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const element_t& value) noexcept(
+    bool push(const element_t& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_constructible<element_t>::value
         )
     {
-        return start_push(timeout, value).push_in_progress();
-    }
-    bool push(const element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_copy_constructible<element_t>::value
-        )
-    {
-        return start_push(value).push_in_progress();
+        return start_push(timeout_ns, value).push_in_progress();
     }
 
 public:
-    template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout) noexcept(
+    bool pop(long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_destructible<element_t>::value
         )
     {
-        return start_pop(timeout).pop_in_progress();
+        return start_pop(timeout_ns).pop_in_progress();
     }
-    bool pop() noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_destructible<element_t>::value
-        )
-    {
-        return start_pop().pop_in_progress();
-    }
-
-    template<typename Rep, typename Period>
-    bool copy_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(
+    bool copy_and_pop(element_t& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_assignable<element_t>::value &&
         std::is_nothrow_destructible   <element_t>::value
         )
     {
-        auto consumer_element = start_pop(timeout);
+        auto consumer_element = start_pop(timeout_ns);
 
         if(!consumer_element.pop_in_progress()) return false;
 
@@ -2374,43 +2167,13 @@ public:
 
         return true;
     }
-    bool copy_and_pop(element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_copy_assignable<element_t>::value &&
-        std::is_nothrow_destructible   <element_t>::value
-        )
-    {
-        auto consumer_element = start_pop();
-
-        if(!consumer_element.pop_in_progress()) return false;
-
-        value = consumer_element.value();
-
-        return true;
-    }
-
-    template<typename Rep, typename Period>
-    bool move_and_pop(std::chrono::duration<Rep, Period> timeout, element_t& value) noexcept(
+    bool move_and_pop(element_t& value, long long timeout_ns = -1) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_assignable<element_t>::value &&
         std::is_nothrow_destructible   <element_t>::value
         )
     {
-        auto consumer_element = start_pop(timeout);
-
-        if(!consumer_element.pop_in_progress()) return false;
-
-        value = std::move(consumer_element.value());
-
-        return true;
-    }
-    bool move_and_pop(element_t& value) noexcept(
-        DIAG_NOEXCEPT &&
-        std::is_nothrow_move_assignable<element_t>::value &&
-        std::is_nothrow_destructible   <element_t>::value
-        )
-    {
-        auto consumer_element = start_pop();
+        auto consumer_element = start_pop(timeout_ns);
 
         if(!consumer_element.pop_in_progress()) return false;
 
@@ -2655,11 +2418,15 @@ public:
     {
         static_assert(Pausable, "Cannot resize not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this, false);
+        typename base_t::pause_resume_sentry sentry(*this);
 
         Check_ValidState(m_size > 0, false);
 
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
+
         if(capacity <= base_t::count()) return false;
+
+        while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
         const std::size_t pitch  = calc_pitch(m_size);
         const std::size_t count  = pitch * capacity;
@@ -2685,9 +2452,13 @@ public:
     {
         static_assert(Pausable, "Cannot change element size of not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this, false);
+        typename base_t::pause_resume_sentry sentry(*this);
+
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
         if(size <= m_size) return false;
+
+        while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
         std::size_t pos = queue_npos;
 
@@ -2721,11 +2492,13 @@ public:
     {
         static_assert(Pausable, "Cannot change element size of not pausable queue");
 
-        typename base_t::pause_resume_sentry sentry(*this, true);
+        typename base_t::pause_resume_sentry sentry(*this);
+
+        Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
 
         if(size <= m_size) return false;
 
-        Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
+        while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
         const std::size_t new_pitch = calc_pitch(  size);
         const std::size_t old_pitch = calc_pitch(m_size);
@@ -2908,131 +2681,69 @@ public:
     }
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 public:
-    template<typename Rep, typename Period>
-    void* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    void* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t stride = calc_pitch(m_size) * granularity;
 
         Check_ValidState(stride > 0, nullptr);
 
-        const std::size_t index = base_t::take_producer_element_ownership(timeout);
+        const std::size_t index = base_t::take_producer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
         void* element = m_elements + (index * stride);
 
         return element;
-    }
-    void* acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
-    {
-        const std::size_t stride = calc_pitch(m_size) * granularity;
-
-        Check_ValidState(stride > 0, nullptr);
-
-        const std::size_t index = base_t::take_producer_element_ownership();
-
-        if(index == queue_npos) return nullptr;
-
-        void* element = m_elements + (index * stride);
-
-        return element;
-    }
-
-    template<typename Element, typename Rep, typename Period>
-    Element* acquire_producer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        static_assert(alignof(Element) <= element_alignment(), "The alignment of the template type must be less or equal of the alignment of the queue");
-        Assert_Check(  sizeof(Element) <= element_size());
-        return static_cast<Element*>(acquire_producer_element_ownership(timeout));
     }
     template<typename Element>
-    Element* acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    Element* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
         static_assert(alignof(Element) <= element_alignment(), "The alignment of the template type must be less or equal of the alignment of the queue");
         Assert_Check(  sizeof(Element) <= element_size());
-        return static_cast<Element*>(acquire_producer_element_ownership());
+        return static_cast<Element*>(acquire_producer_element_ownership(timeout_ns));
     }
 
 public:
-    template<typename Rep, typename Period>
-    void* acquire_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    void* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t stride = calc_pitch(m_size) * granularity;
 
         Check_ValidState(stride > 0, nullptr);
 
-        const std::size_t index = base_t::take_consumer_element_ownership(timeout);
+        const std::size_t index = base_t::take_consumer_element_ownership(timeout_ns);
 
         if(index == queue_npos) return nullptr;
 
         void* element = m_elements + (index * stride);
 
         return element;
-    }
-    void* acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
-    {
-        const std::size_t stride = calc_pitch(m_size) * granularity;
-
-        Check_ValidState(stride > 0, nullptr);
-
-        const std::size_t index = base_t::take_consumer_element_ownership();
-
-        if(index == queue_npos) return nullptr;
-
-        void* element = m_elements + (index * stride);
-
-        return element;
-    }
-
-    template<typename Element, typename Rep, typename Period>
-    Element* acquire_consumer_element_ownership(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        static_assert(alignof(Element) <= element_alignment(), "The alignment of the template type must be less or equal of the alignment of the queue");
-        Assert_Check(  sizeof(Element) <= element_size());
-        return static_cast<Element*>(acquire_consumer_element_ownership(timeout));
     }
     template<typename Element>
-    Element* acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
+    Element* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
         static_assert(alignof(Element) <= element_alignment(), "The alignment of the template type must be less or equal of the alignment of the queue");
         Assert_Check(  sizeof(Element) <= element_size());
-        return static_cast<Element*>(acquire_consumer_element_ownership());
+        return static_cast<Element*>(acquire_consumer_element_ownership(timeout_ns));
     }
 
 public:
-    template<typename Rep, typename Period>
-    queue_producer_element_t start_push(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
-        void* element = acquire_producer_element_ownership(timeout);
+        void* element = acquire_producer_element_ownership(timeout_ns);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push() noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element_t start_pop(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
-        void* element = acquire_producer_element_ownership();
-
-        return queue_producer_element_t(*this, element);
-    }
-
-    template<typename Rep, typename Period>
-    queue_consumer_element_t start_pop(std::chrono::duration<Rep, Period> timeout) noexcept(DIAG_NOEXCEPT)
-    {
-        void* element = acquire_consumer_element_ownership(timeout);
-
-        return queue_consumer_element_t(*this, element);
-    }
-    queue_consumer_element_t start_pop() noexcept(DIAG_NOEXCEPT)
-    {
-        void* element = acquire_consumer_element_ownership();
+        void* element = acquire_consumer_element_ownership(timeout_ns);
 
         return queue_consumer_element_t(*this, element);
     }
 
 public:
-    template<typename Rep, typename Period>
-    bool push(std::chrono::duration<Rep, Period> timeout, const void* data = nullptr, std::size_t size = 0)  noexcept(DIAG_NOEXCEPT)
+    bool push(long long timeout_ns = -1, const void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
     {
-        auto producer_element = start_push(timeout);
+        auto producer_element = start_push(timeout_ns);
 
         if(!producer_element.push_in_progress()) return false;
 
@@ -3046,43 +2757,9 @@ public:
         }
         return true;
     }
-    bool push(const void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
+    bool pop(long long timeout_ns = -1, void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
     {
-        auto producer_element = start_push();
-
-        if(!producer_element.push_in_progress()) return false;
-
-        if(data != nullptr)
-        {
-            size = (size == 0)
-                ? m_size
-                : std::min(size, m_size)
-                ;
-            std::memcpy(producer_element.data(), data, size);
-        }
-        return true;
-    }
-
-    template<typename Rep, typename Period>
-    bool pop(std::chrono::duration<Rep, Period> timeout, void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
-    {
-        auto producer_element = start_pop(timeout);
-
-        if(!producer_element.pop_in_progress()) return false;
-
-        if(data != nullptr)
-        {
-            size = (size == 0)
-                ? m_size
-                : std::min(size, m_size)
-                ;
-            std::memcpy(data, producer_element.data(), size);
-        }
-        return true;
-    }
-    bool pop(void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
-    {
-        auto producer_element = start_pop();
+        auto producer_element = start_pop(timeout_ns);
 
         if(!producer_element.pop_in_progress()) return false;
 

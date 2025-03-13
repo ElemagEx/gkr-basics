@@ -13,6 +13,8 @@ using wait_result_t = unsigned long long;
 
 static constexpr std::size_t WAIT_MAX_OBJECTS = sizeof(wait_result_t) * 8 - 1;
 
+static constexpr long long WAIT_INFINITE = -1;
+
 static constexpr wait_result_t WAIT_RESULT_ERROR   = wait_result_t(1) << WAIT_MAX_OBJECTS;
 static constexpr wait_result_t WAIT_RESULT_TIMEOUT = wait_result_t(0);
 
@@ -92,19 +94,15 @@ public:
 public:
     GKR_INNER_API void close();
 
-    GKR_INNER_API bool wait(long long timeout_ns);
+    GKR_INNER_API bool wait(long long timeout_ns = WAIT_INFINITE);
 
 public:
     GKR_INNER_API static wait_result_t wait_many(long long timeout_ns, waitable_object** objects, std::size_t count);
 
 public:
-    bool wait()
-    {
-        return wait(-1);
-    }
     bool consume()
     {
-        return wait(-1);
+        return wait(WAIT_INFINITE);
     }
     bool try_consume()
     {

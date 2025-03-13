@@ -136,31 +136,21 @@ protected:
     }
 
 protected:
-    template<typename Clock, typename Duration>
-    bool producer_wait(const std::chrono::time_point<Clock, Duration>& wait_time) noexcept(DIAG_NOEXCEPT)
+    bool producer_wait(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
     {
-        return m_has_space_event.wait_until(wait_time);
+        return m_has_space_event.wait(timeout_ns);
     }
-    void producer_wait() noexcept(DIAG_NOEXCEPT)
+    bool consumer_wait(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
     {
-        m_has_space_event.wait();
-    }
-    template<typename Clock, typename Duration>
-    bool consumer_wait(const std::chrono::time_point<Clock, Duration>& wait_time) noexcept(DIAG_NOEXCEPT)
-    {
-        return m_has_items_event.wait_until(wait_time);
-    }
-    void consumer_wait() noexcept(DIAG_NOEXCEPT)
-    {
-        m_has_items_event.wait();
+        return m_has_items_event.wait(timeout_ns);
     }
 
 public:
-    waitable_object& get_producer_waitable_object()
+    waitable_object& get_producer_waitable_object() noexcept
     {
         return m_has_space_event;
     }
-    waitable_object& get_consumer_waitable_object()
+    waitable_object& get_consumer_waitable_object() noexcept
     {
         return m_has_items_event;
     }

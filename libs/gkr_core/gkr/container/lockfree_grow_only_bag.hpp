@@ -122,6 +122,7 @@ private:
         {
             node_data* new_node = m_allocator.allocate(1);
 
+            //allocator_traits::construct(new_node, src_node->value); // AllocatorAwareContainer
             new (new_node) node_data(src_node->value);
 
             new_node->next = new_first;
@@ -138,6 +139,7 @@ private:
         {
             node_data* new_node = m_allocator.allocate(1);
 
+            //allocator_traits::construct(new_node, std::move(src_node->value)); // AllocatorAwareContainer
             new (new_node) node_data(std::move(src_node->value));
 
             new_node->next = new_first;
@@ -325,6 +327,7 @@ public:
         {
             node_data* next = node->next;
 
+            //allocator_traits::destroy(node); // AllocatorAwareContainer
             node->~node_data();
 
             m_allocator.deallocate(node, 1);
@@ -482,6 +485,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
+        //allocator_traits::construct(new_node); // AllocatorAwareContainer
         new (node) node_data();
 
         add(node);
@@ -492,6 +496,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
+        //allocator_traits::construct(new_node, std::move(value)); // AllocatorAwareContainer
         new (node) node_data(std::move(value));
 
         add(node);
@@ -502,6 +507,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
+        //allocator_traits::construct(new_node, value); // AllocatorAwareContainer
         new (node) node_data(value);
 
         add(node);
@@ -513,6 +519,7 @@ public:
     {
         node_data* node = m_allocator.allocate(1);
 
+        //allocator_traits::construct(new_node, std::forward<Args>(args)...); // AllocatorAwareContainer
         new (node) node_data(std::forward<Args>(args)...);
 
         add(node);
@@ -527,6 +534,7 @@ private:
     {
         node_data* next = node->next;
 
+        //allocator_traits::destroy(node); // AllocatorAwareContainer
         node->~node_data();
 
         m_allocator.deallocate(node, 1);

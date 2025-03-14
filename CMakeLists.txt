@@ -64,21 +64,6 @@ endif()
 
 add_subdirectory(libs)
 
-if(GKR_BASICS_TESTS)
-add_executable        (t-tester "tests/main.cpp")
-target_link_libraries (t-tester PRIVATE gkr_core)
-
-add_executable        (t-logging "tests/t-logging.cpp")
-target_link_libraries (t-logging PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_log)
-target_compile_options(t-logging PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-catch_discover_tests  (t-logging)
-
-add_executable        (t-udp_socket_consumer_receiver "tests/t-udp_socket_consumer_receiver.cpp")
-target_link_libraries (t-udp_socket_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_data gkr_log gkr_comm)
-target_compile_options(t-udp_socket_consumer_receiver PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-catch_discover_tests  (t-udp_socket_consumer_receiver)
-endif()
-
 add_library(gkr::inline ALIAS gkr_inine)
 add_library(gkr::core   ALIAS gkr_core)
 add_library(gkr::data   ALIAS gkr_data)

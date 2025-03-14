@@ -91,6 +91,16 @@ target_link_libraries(gkr_log PRIVATE gkr_data  gkr_comm)
 set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 
 if(GKR_BASICS_TESTS)
+add_executable        (t-logging "tests/t-logging.cpp")
+target_link_libraries (t-logging PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_log)
+target_compile_options(t-logging PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-logging)
+
+add_executable        (t-udp_socket_consumer_receiver "tests/t-udp_socket_consumer_receiver.cpp")
+target_link_libraries (t-udp_socket_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_data gkr_log gkr_comm)
+target_compile_options(t-udp_socket_consumer_receiver PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-udp_socket_consumer_receiver)
+
 #add_executable        (t-log_fmt_output "tests/t-log_fmt_output.cpp")
 #target_link_libraries (t-log_fmt_output PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_log)
 #target_compile_options(t-log_fmt_output PRIVATE ${GKR_BASICS_TESTING_WARNINGS})

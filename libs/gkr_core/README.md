@@ -1,1 +1,1 @@
-# gkr core library
+# gkr::core library

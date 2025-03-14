@@ -1,8 +1,8 @@
 #pragma once
 
-#include <gkr/log/log.hpp>
-#include <gkr/log/logging.h>
+#include <gkr/capi/log/logging.h>
 
+#include <gkr/log/log.hpp>
 #include <gkr/log/consumer.hpp>
 
 #include <memory>
@@ -129,6 +129,19 @@ public:
     {
     }
 };
+}
+
+template<class Consumer, typename FuncFilter, typename... Args>
+inline int add_filter_consumer(void* instance, FuncFilter filter, Args&&... args)
+{
+    return gkr_log_add_consumer(
+        instance,
+        consumer_ptr_t(
+            new impl::template_filter_consumer<Consumer, FuncFilter, Args...>(
+                filter,
+                std::forward<Args>(args)...)
+                )
+        );
 }
 
 template<class Consumer, typename FuncCompose, typename... Args>

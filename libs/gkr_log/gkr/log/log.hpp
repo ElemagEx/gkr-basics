@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/log.h>
+#include <gkr/capi/log/log.h>
 
 namespace gkr
 {

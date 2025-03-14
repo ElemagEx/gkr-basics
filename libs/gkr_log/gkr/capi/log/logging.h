@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gkr/capi/api.h>
-#include <gkr/log/log.h>
+#include <gkr/capi/log/log.h>
 
 #ifdef __cplusplus
 extern "C" {

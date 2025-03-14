@@ -90,9 +90,10 @@ static void report_net_error(int error, unsigned* errors = nullptr)
             return;
         }
     }
-    [[maybe_unused]] auto text = get_net_error_text(error);
+    DIAG_VAR(std::string, text)
+    get_net_error_text(error);
     //TODO:change Check_Failure with log
-    Check_Failure();
+    Check_FailureMsg(text.c_str());
 }
 
 bool socket::open_as_tcp(bool ipv6)

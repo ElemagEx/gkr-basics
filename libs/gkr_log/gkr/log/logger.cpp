@@ -507,7 +507,8 @@ int logger::log_message(void* instance, const source_location* location, int sev
         {
             if(logging_inside_logger)
             {
-                [[maybe_unused]] bool processed = process_next_message();
+                DIAG_VAR(bool, processed)
+                process_next_message();
                 Check_ValidState(processed, 0);
                 continue;
             }
@@ -545,9 +546,9 @@ const char* logger::format_output(
 
     Check_ValidState(in_worker_thread(), nullptr);
 
-    constexpr std::size_t CCH_MAX_BUFFER = 64 * 1024;     // 64K
-    constexpr std::size_t CCH_FMT_BUFFER =      1024 / 4; // 256 bytes
-    constexpr std::size_t CCH_TXT_BUFFER =  1 * 1024;     // 1K
+    constexpr std::size_t CCH_MAX_BUFFER = 64 * std::size_t(1024);      // 64K
+    constexpr std::size_t CCH_FMT_BUFFER =      std::size_t(1024) / 4U; // 256 bytes
+    constexpr std::size_t CCH_TXT_BUFFER =  1 * std::size_t(1024);      // 1K
 
     if(m_fmt.capacity() == 0) m_fmt.reserve(CCH_FMT_BUFFER);
     if(m_txt.capacity() == 0) m_txt.reserve(CCH_TXT_BUFFER);

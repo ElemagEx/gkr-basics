@@ -1,6 +1,13 @@
 #pragma once
 
-#include <gkr/log/defs/generic.h>
+#ifndef GKR_LOG_GENERIC_X
+#define GKR_LOG_GENERIC_X
+#endif
+
+#include <gkr/capi/log/defs/generic.h>
+
+#ifndef LOG_USE_C_DEFS
+
 #include <gkr/log/log.hpp>
 
 #ifndef GKR_NO_STREAM_LOGGING
@@ -29,8 +36,18 @@ inline constexpr bool threshold(int severity)
 }
 }
 
+#if !defined(LOG_GENERIC_DEF_OLD) && !defined(LOG_GENERIC_DEF_NEW)
 #ifdef __cpp_if_constexpr
 #include <gkr/log/defs/generic_new.hpp>
 #else
 #include <gkr/log/defs/generic_old.hpp>
 #endif
+#endif
+
+#if !defined(LOG_FACILITY) && defined(__cpp_if_constexpr)
+#include <gkr/log/defs/generic_new.hpp>
+#else
+#include <gkr/log/defs/generic_old.hpp>
+#endif
+
+#endif /* ndef LOG_USE_C_DEF */

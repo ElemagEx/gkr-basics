@@ -5,11 +5,13 @@ target_include_directories(gkr_log PUBLIC "gkr/log/imposters")
 
 target_sources(gkr_log
     ${GKR_C_INTERFACE}
-    "gkr/log/log.h"
     "gkr/log/galery.h"
-    "gkr/log/logging.h"
+    "gkr/capi/log/log.h"
+    "gkr/capi/log/logging.h"
     "gkr/log/consumer.h"
-    "gkr/log/defs/generic.h"
+    "gkr/capi/log/defs/generic.h"
+    "gkr/capi/log/defs/generic_basic.h"
+    "gkr/capi/log/defs/generic_extra.h"
     "gkr/log/consumers/dummy_consumer.h"
     "gkr/log/consumers/text_file_consumer.h"
     "gkr/log/consumers/udp_socket_consumer.h"
@@ -20,12 +22,16 @@ target_sources(gkr_log
 target_sources(gkr_log
     ${GKR_CPP_INTERFACE}
     "gkr/log/log.hpp"
-    "gkr/log/galery.hpp"
     "gkr/log/logging.hpp"
+    "gkr/log/galery.hpp"
     "gkr/log/consumer.hpp"
     "gkr/log/defs/generic.hpp"
     "gkr/log/defs/generic_new.hpp"
+    "gkr/log/defs/generic_new_basic.hpp"
+    "gkr/log/defs/generic_new_extra.hpp"
     "gkr/log/defs/generic_old.hpp"
+    "gkr/log/defs/generic_old_basic.hpp"
+    "gkr/log/defs/generic_old_extra.hpp"
     "gkr/log/consumers/dummy_consumer.hpp"
     "gkr/log/consumers/text_file_consumer.hpp"
     "gkr/log/consumers/udp_socket_consumer.hpp"

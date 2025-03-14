@@ -27,9 +27,10 @@ void file_report_error(int error, unsigned* errors)
             return;
         }
     }
-    [[maybe_unused]] auto text = std::strerror(error);
+    DIAG_VAR(const char*, text)
+    std::strerror(error);
     //TODO:change Check_Failure with log
-    Check_Failure();
+    Check_FailureMsg(text);
 }
 
 bool file_is_atty(void* file)

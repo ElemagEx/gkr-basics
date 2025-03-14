@@ -45,7 +45,7 @@ public:
     virtual ~console_consumer() override = default;
 };
 
-#include <gkr/log/logging.h>
+#include <gkr/capi/log/logging.h>
 #if 0
 #define SEVERITY_FATAL   0
 #define SEVERITY_ERROR   1

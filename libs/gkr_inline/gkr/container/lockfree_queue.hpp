@@ -1005,6 +1005,20 @@ protected:
 
         return false;
     }
+
+public:
+    template<typename Func, typename... Args>
+    auto sync(Func&& func, Args&&... args)
+    {
+        static_assert(Pausable, "Cannot pause not pausable queue");
+
+        typename base_t::pause_resume_sentry sentry(*this);
+
+        while(other_thread_owns_elements()) base_t::wait_a_while();
+
+        return func(std::forward<Args>(args)...);
+    }
+
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
     std::size_t take_producer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
@@ -1016,6 +1030,8 @@ protected:
             if(index != queue_npos) return index;
 
             if(!base_t::producer_wait(timeout_ns)) return queue_npos;
+
+            //TODO:Add timeout_ns decreasing code
         }
     }
     std::size_t take_consumer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
@@ -1027,6 +1043,8 @@ protected:
             if(index != queue_npos) return index;
 
             if(!base_t::consumer_wait(timeout_ns)) return queue_npos;
+
+            //TODO:Add timeout_ns decreasing code
         }
     }
 #endif
@@ -1166,7 +1184,7 @@ private:
     {
         if(m_entries != nullptr)
         {
-            m_allocator.deallocate(m_entries, m_capacity);
+            dequeue_allocator_traits::deallocate(m_allocator, m_entries, m_capacity);
         }
     }
 
@@ -1179,11 +1197,11 @@ private:
         }
         else
         {
-            entries = allocator.allocate(m_capacity);
+            entries = dequeue_allocator_traits::allocate(m_allocator, m_capacity);
 
             std::memcpy(entries, m_entries, m_capacity * sizeof(dequeue_entry));
 
-            m_allocator.deallocate(m_entries, m_capacity);
+            dequeue_allocator_traits::deallocate(m_allocator, m_entries, m_capacity);
             m_entries = nullptr;
         }
     }
@@ -1280,7 +1298,7 @@ protected:
             }
             else
             {
-                m_entries = m_allocator.allocate(m_capacity);
+                m_entries = dequeue_allocator_traits::allocate(m_allocator, m_capacity);
             }
         }
         for(std::size_t index = 0; index < m_capacity; ++index)
@@ -1305,7 +1323,7 @@ protected:
 
         clean();
 
-        dequeue_entry* entries = m_allocator.allocate(capacity);
+        dequeue_entry* entries = dequeue_allocator_traits::allocate(m_allocator, capacity);
 
         const std::size_t count = m_count;
 
@@ -1474,6 +1492,20 @@ protected:
         }
         return false;
     }
+
+public:
+    template<typename Func, typename... Args>
+    auto sync(Func&& func, Args&&... args)
+    {
+        static_assert(Pausable, "Cannot pause not pausable queue");
+
+        typename base_t::pause_resume_sentry sentry(*this);
+
+        while(other_thread_owns_elements()) base_t::wait_a_while();
+
+        return func(std::forward<Args>(args)...);
+    }
+
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
 protected:
     std::size_t take_producer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
@@ -1485,6 +1517,8 @@ protected:
             if(index != queue_npos) return index;
 
             if(!base_t::producer_wait(timeout_ns)) return queue_npos;
+
+            //TODO:Add timeout_ns decreasing code
         }
     }
     std::size_t take_consumer_element_ownership(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
@@ -1496,6 +1530,8 @@ protected:
             if(index != queue_npos) return index;
 
             if(!base_t::consumer_wait(timeout_ns)) return queue_npos;
+
+            //TODO:Add timeout_ns decreasing code
         }
     }
 #endif
@@ -1615,6 +1651,13 @@ public:
         }
     }
 
+    Allocator get_allocator() const noexcept(
+        std::is_nothrow_copy_constructible<Allocator>::value
+        )
+    {
+        return Allocator(m_allocator);
+    }
+
 private:
     void destroy_element(std::size_t index) noexcept(std::is_nothrow_destructible<element_t>::value)
     {
@@ -1631,7 +1674,7 @@ private:
                     destroy_element(index);
                 }
             }
-            m_allocator.deallocate(m_elements, base_t::capacity());
+            allocator_traits::deallocate(m_allocator, m_elements, base_t::capacity());
         }
     }
 
@@ -1644,7 +1687,7 @@ private:
         }
         else
         {
-            elements = allocator.allocate(base_t::capacity());
+            elements = allocator_traits::allocate(allocator, base_t::capacity());
 
             for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
             {
@@ -1655,7 +1698,7 @@ private:
                     destroy_element(index);
                 }
             }
-            m_allocator.deallocate(m_elements, base_t::capacity());
+            allocator_traits::deallocate(m_allocator, m_elements, base_t::capacity());
             m_elements = nullptr;
         }
     }
@@ -1736,7 +1779,7 @@ public:
         }
         else
         {
-            m_elements = m_allocator.allocate(base_t::capacity());
+            m_elements = allocator_traits::allocate(m_allocator, base_t::capacity());
         }
     }
 
@@ -1753,7 +1796,7 @@ public:
 
         while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
-        element_t* elements = m_allocator.allocate(capacity);
+        element_t* elements = allocator_traits::allocate(m_allocator, capacity);
 
         for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
         {
@@ -1764,7 +1807,7 @@ public:
                 destroy_element(index);
             }
         }
-        m_allocator.deallocate(m_elements, base_t::capacity());
+        allocator_traits::deallocate(m_allocator, m_elements, base_t::capacity());
 
         m_elements = elements;
 
@@ -2310,6 +2353,13 @@ public:
         }
     }
 
+    Allocator get_allocator() const noexcept(
+        std::is_nothrow_copy_constructible<Allocator>::value
+        )
+    {
+        return Allocator(m_allocator);
+    }
+
 private:
     static std::size_t calc_pitch(std::size_t size) noexcept
     {
@@ -2328,7 +2378,7 @@ private:
         {
             const std::size_t count = calc_pitch(m_size) * base_t::capacity();
 
-            m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_elements), count);
+            allocator_traits::deallocate(m_allocator, reinterpret_cast<allocator_value_t*>(m_elements), count);
         }
     }
 
@@ -2345,11 +2395,11 @@ private:
         {
             const std::size_t count = calc_pitch(m_size) * base_t::capacity();
 
-            elements = reinterpret_cast<char*>(allocator.allocate(count));
+            elements = reinterpret_cast<char*>(allocator_traits::allocate(allocator, count));
 
             std::memcpy(elements, m_elements, count * granularity);
 
-            m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_elements), count);
+            allocator_traits::deallocate(m_allocator, reinterpret_cast<allocator_value_t*>(m_elements), count);
             m_elements = nullptr;
         }
     }
@@ -2431,7 +2481,7 @@ public:
         {
             const std::size_t count = calc_pitch(m_size) * base_t::capacity();
 
-            m_elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+            m_elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, count));
         }
     }
 
@@ -2454,7 +2504,7 @@ public:
         const std::size_t count  = pitch * capacity;
         const std::size_t stride = pitch * granularity;
 
-        char* elements = reinterpret_cast<char*>(m_allocator.allocate(count));
+        char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, count));
 
         for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
         {
@@ -2492,7 +2542,7 @@ public:
             const std::size_t capacity  = base_t::capacity();
             const std::size_t new_count = new_pitch * capacity;
 
-            char* elements = reinterpret_cast<char*>(m_allocator.allocate(new_count));
+            char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, new_count));
 
             const std::size_t new_stride = new_pitch * granularity;
             const std::size_t old_stride = old_pitch * granularity;
@@ -2539,7 +2589,7 @@ public:
             const std::size_t capacity  = base_t::capacity();
             const std::size_t new_count = new_pitch * capacity;
 
-            char* elements = reinterpret_cast<char*>(m_allocator.allocate(new_count));
+            char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, new_count));
 
             const std::size_t new_stride = new_pitch * granularity;
             const std::size_t old_stride = old_pitch * granularity;

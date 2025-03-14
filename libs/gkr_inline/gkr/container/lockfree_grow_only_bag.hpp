@@ -120,7 +120,7 @@ private:
 
         for(const node_data* src_node = other_first; src_node != nullptr; src_node = src_node->next)
         {
-            node_data* new_node = m_allocator.allocate(1);
+            node_data* new_node = allocator_traits::allocate(m_allocator, 1);
 
             allocator_traits::construct(m_allocator, new_node, src_node->value);
 
@@ -136,7 +136,7 @@ private:
 
         for(node_data* src_node = other_first; src_node != nullptr; src_node = src_node->next)
         {
-            node_data* new_node = m_allocator.allocate(1);
+            node_data* new_node = allocator_traits::allocate(m_allocator, 1);
 
             allocator_traits::construct(m_allocator, new_node, std::move(src_node->value));
 
@@ -327,7 +327,7 @@ public:
 
             allocator_traits::destroy(m_allocator, node);
 
-            m_allocator.deallocate(node, 1);
+            allocator_traits::deallocate(m_allocator, node, 1);
 
             node = next;
         }
@@ -480,7 +480,7 @@ private:
 public:
     iterator insert() noexcept(false)
     {
-        node_data* node = m_allocator.allocate(1);
+        node_data* node = allocator_traits::allocate(m_allocator, 1);
 
         allocator_traits::construct(m_allocator, node);
 
@@ -490,7 +490,7 @@ public:
     }
     iterator insert(value_type&& value) noexcept(false)
     {
-        node_data* node = m_allocator.allocate(1);
+        node_data* node = allocator_traits::allocate(m_allocator, 1);
 
         allocator_traits::construct(m_allocator, node, std::move(value));
 
@@ -500,7 +500,7 @@ public:
     }
     iterator insert(const value_type& value) noexcept(false)
     {
-        node_data* node = m_allocator.allocate(1);
+        node_data* node = allocator_traits::allocate(m_allocator, 1);
 
         allocator_traits::construct(m_allocator, node, value);
 
@@ -511,7 +511,7 @@ public:
     template<typename... Args>
     iterator emplace(Args&&... args) noexcept(false)
     {
-        node_data* node = m_allocator.allocate(1);
+        node_data* node = allocator_traits::allocate(m_allocator, 1);
 
         allocator_traits::construct(m_allocator, node, std::forward<Args>(args)...);
 
@@ -529,7 +529,7 @@ private:
 
         allocator_traits::destroy(m_allocator, node);
 
-        m_allocator.deallocate(node, 1);
+        allocator_traits::deallocate(m_allocator, node, 1);
 
         return next;
     }

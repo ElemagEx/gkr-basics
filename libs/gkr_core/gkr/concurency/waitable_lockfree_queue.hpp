@@ -162,9 +162,9 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool Pausable=false,
-    typename BaseAllocator=std::allocator<std::max_align_t>,
-    typename WaitSupport  =impl::queue_wait_support
+    typename Allocator  =std::allocator<impl::queue_allocator_value_type<T>>,
+    typename WaitSupport=impl::queue_wait_support
     >
-using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, BaseAllocator, WaitSupport>;
+using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>;
 
 }

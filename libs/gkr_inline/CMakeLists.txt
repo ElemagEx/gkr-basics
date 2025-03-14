@@ -36,8 +36,8 @@ target_link_libraries (t-lockfree_grow_only_bag PRIVATE Catch2::Catch2WithMain g
 target_compile_options(t-lockfree_grow_only_bag PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
 catch_discover_tests  (t-lockfree_grow_only_bag)
 
-#add_executable        (t-lockfree_queue "tests/t-lockfree_queue.cpp")
-#target_link_libraries (t-lockfree_queue PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
-#target_compile_options(t-lockfree_queue PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-#catch_discover_tests  (t-lockfree_queue)
+add_executable        (t-lockfree_queue "tests/t-lockfree_queue.cpp")
+target_link_libraries (t-lockfree_queue PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-lockfree_queue PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-lockfree_queue)
 endif()

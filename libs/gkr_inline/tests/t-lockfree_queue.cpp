@@ -3,6 +3,7 @@
 #include <catch2/catch_template_test_macros.hpp>
 
 #include <gkr/testing/allocator.hpp>
+#include <gkr/testing/named_requirements.hpp>
 
 struct V
 {
@@ -93,7 +94,7 @@ using allocatorM_t = allocator1<char>;
 #ifdef _MSC_VER
 #pragma warning(disable:4868)
 #endif
-
+#if 0
 TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. lifecycle", "", (queue1_data_t, queue2_data_t, queue3_data_t, queue4_data_t), (std_allocator_t, allocator1_t, allocator2_t, allocator3_t, allocator4_t))
 {
     using queue_t = TestType;
@@ -114,6 +115,15 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. lifecycle", "",
 
     }
     gkr::testing::get_singlethreaded_pre_allocated_storage<value_t>().reset();
+}
+#endif
+TEST_CASE("container.lockfree_queue. compliance")
+{
+    using namespace gkr;
+
+    lockfree_queue<V> queue1;
+
+    testing::is_container(queue1);
 }
 
 TEST_CASE("container.lockfree_queue. main")
@@ -170,4 +180,19 @@ TEST_CASE("container.lockfree_queue. main")
 
     q3.try_push();
     q3.try_pop();
+}
+
+TEST_CASE("container.lockfree_queue. sync")
+{
+    gkr::lockfree_queue<V, false, true> queue;
+
+    CHECK(queue.empty());
+
+    auto count = queue.sync([&queue] () {
+
+        return queue.count();
+
+    });
+
+    CHECK(count == 0);
 }

@@ -260,7 +260,7 @@ private:
                 ? (m_capacity / granularity + 0)
                 : (m_capacity / granularity + 1)
                 ;
-            data     = reinterpret_cast<char*>(allocator.allocate(count));
+            data     = reinterpret_cast<char*>(allocator_traits::allocate(allocator, count));
             size     = m_size;
             capacity = count * granularity;
 
@@ -294,7 +294,7 @@ public:
             ? (m_capacity / granularity + 0)
             : (m_capacity / granularity + 1)
             ;
-        m_allocator.deallocate(reinterpret_cast<allocator_value_t*>(m_data), count);
+        allocator_traits::deallocate(m_allocator, reinterpret_cast<allocator_value_t*>(m_data), count);
 
         m_data     = nullptr;
         m_size     = 0;
@@ -309,7 +309,7 @@ public:
             ? (capacity / granularity + 0)
             : (capacity / granularity + 1)
             ;
-        char* data = reinterpret_cast<char*>(m_allocator.allocate(count));
+        char* data = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, count));
 
         std::memcpy(data, m_data, m_size);
         clear();

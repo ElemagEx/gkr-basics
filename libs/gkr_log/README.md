@@ -10,51 +10,37 @@
 ### Facilities
 Facility are user-defined constants that are passed to log functions and later log messages can be filtered by facility value (*aka tags*)
 
-### Facility aware logging
-All generic logging macros/inlines have two NOT compatible definitions - with and without facility argument. Usually smaller projects does not use facilities/tags.
-If you define `LOG_FACILITY=<facility>` then all logging macros/inlines will not have facility argument.
-
-### Classes
+### Macro/Inline log type
 | | :x: Instance | :white_check_mark: Instance
 | :--- | :--- | :--- 
-| :x: Facility | `bLOGxxx` | `mLOGxxx`
-| :white_check_mark: Facility | `fLOGxxx` | `gLOGxxx`
+| :x: Facility | `bLOGxxx` - basic log | `mLOGxxx` - module log
+| :white_check_mark: Facility | `fLOGxxx` - facility log | `gLOGxxx` - genenral log
+
+### Macro/Inline name format
+Format: `[prefix]LOG[severity][_IF][_]`
+- `prefix` - can be one of `b`, `f`, `m`, or `g` (see table above) - if it is missing then alias is used (see below)
+- `severity`- long or short ref of severity (for compile-time eval) or missing (for run-time eval)
+- `_IF` - if it is used then the first argument of macro/inline is a run-time evaluated condition which if it is false then the log message is skipped
+- `_` - if last character of macro/inline is underscope the it only be used for printf-like message otherwise for all other types of messages
 
 ### Severity (*aka logging level*)
-| Severity Name | Define               | Letter | Value | Description
-| :---          | :---                 | :---:  | :---: | :---
-| FATAL         | LOG_SEVERITY_FATAL   | `F`    | 0     | A fatal error occured and the program must be terminated
-| ERROR         | LOG_SEVERITY_ERROR   | `E`    | 1     | A severe error occured and the program can be recovered
-| WARNING       | LOG_SEVERITY_WARNING | `W`    | 2     | A warning occured and the program will continue normally
-| INFO          | LOG_SEVERITY_INFO    | `I`    | 3     | Program general information
-| VERBOSE       | LOG_SEVERITY_VERBOSE | `V`    | 4     | Program verbose information
-| DEBUG         | LOG_SEVERITY_DEBUG   | `D`    | 5     | Program debug information
-| TRACE         | LOG_SEVERITY_TRACE   | `T`    | 6     | Program trace information
+| Name    | Define               | Long ref   | Short ref | Value | Description
+| :---    | :---                 | :---       | :---:     | :---: | :---
+| Fatal   | LOG_SEVERITY_FATAL   | `_FATAL`   | `F`       | 0     | A fatal error occured and the program must be terminated
+| Error   | LOG_SEVERITY_ERROR   | `_ERROR`   | `E`       | 1     | A severe error occured and the program can be recovered
+| Warning | LOG_SEVERITY_WARNING | `_WARNING` | `W`       | 2     | A warning occured and the program will continue normally
+| Info    | LOG_SEVERITY_INFO    | `_INFO`    | `I`       | 3     | Program general information
+| Verbose | LOG_SEVERITY_VERBOSE | `_VERBOSE` | `V`       | 4     | Program verbose information
+| Debug   | LOG_SEVERITY_DEBUG   | `_DEBUG`   | `D`       | 5     | Program debug information
+| Trace   | LOG_SEVERITY_TRACE   | `_TRACE`   | `T`       | 6     | Program trace information
 
 ### Generic defines
-- `LOG_VARIANT`  - default 0
-- `LOG_FACILITY` - all log macros/inlines do not have facility argument and their facility is the value of the define - not defined by default
-- `LOG_INSTANCE` - log instance of all macros/inlines not starting with `C` macros/inlines use to log - default is (`NULL`/`nullptr`)
-- `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time logging threshold for all log macros/inlines - only severity levels below this threshold will be logged - default is 100
+- `LOG_FACILITY` - basic and module log macros/inlines use this value for its facility argument - default is 0
+- `LOG_INSTANCE` - basic and facility log macros/inlines use this value for its intance argument - default is (`NULL`/`nullptr`)
+- `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time log threshold - all macros/inlines that are grater or equal to this value are compiled out - default is 100
 - `LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions
-
-### Log macros/inlines groups
-
-#### Macros/inlines with specific logging instance
-
-| Feature | Description
-| :---    | :---
-| starting with `C`| all such macros/inlines have an argument `instance` and all other macros/inlines uses `LOG_INSTANCE` as instance
-| containing `_IF` | all such macros/inlines have first argument run-time condition - if it is true only then the logging is performed
-- `LOGx`, `LOG_xxx` - log with compile-time severity
-- `LOG_IF` - conditional log with run-time severity
-- `LOGx_IF`, `LOG_xxx_IF` - log with compile-time severity
-- `CLOG` - log with run-time severity and instance
-- `CLOGx`, `CLOG_xxx` - log with compile-time severity and instance
-- `CLOG_IF` - conditional log with run-time severity and instance
-- `CLOGx_IF`, `CLOG_xxx_IF` - conditional log with compile-time severity and instance
-
-:information_source:***NOTE*** `x` is severity letter and `xxx` is severity name from the table above
+- `LOG_USE_CPP_LEGACY` - use old C++ (pre C++ 17) techniques for compile-time severity filtering (for C++ 17 and later `if constexpr` is used)
+- `LOG_SOURCE_LOCATION` - add source location of macros - available only with `LOG_USE_C_DEFS` - default is undefined
 
 ## Uniques
 - recursive logging - when logging is used inside logging thread from consumers
@@ -62,7 +48,7 @@ If you define `LOG_FACILITY=<facility>` then all logging macros/inlines will not
 ## Format output replace codes
 
 | Replace Code | Description
-| :--- | :---
+| :---     | :---
 | `<STMP>` | raw stamp
 | `<MSEC>` | stamp milliseconds
 | `<USEC>` | stamp microseconds
@@ -82,7 +68,7 @@ If you define `LOG_FACILITY=<facility>` then all logging macros/inlines will not
 ## Format output control codes
 
 | Control Code | Description
-| :--- | :---
+| :---     | :---
 | `<ISnn>` | insert text argument located in row indexed by `nn` and column indexed by `severity`
 | `<IFnn>` | insert text argument located in row indexed by `nn` and column indexed by `facility`
 | `<Pcnn>` | specifies left padding with `nn` width with `c` character for next replacement

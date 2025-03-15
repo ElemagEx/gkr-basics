@@ -7,6 +7,10 @@
 
 #ifndef LOG_USE_C_DEFS
 
+#ifdef LOG_SOURCE_LOCATION
+#error Log source location is available only for C macros - define LOG_USE_C_DEFS or include "generic_cdefs.hpp" to use them
+#endif
+
 #include <gkr/log/log.hpp>
 
 #ifndef LOG_USE_CPP_LEGACY

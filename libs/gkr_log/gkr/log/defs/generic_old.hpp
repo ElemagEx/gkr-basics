@@ -1,29 +1,20 @@
 #pragma once
 
-#ifndef GKR_LOG_GENERIC_X
-#error  You cannot include this header directly - define LOG_CPP_LEGACY (or C++ if constexpr is not available) and then include "generic.hpp"
+#ifndef GKR_LOG_GENERIC_OLD
+#define GKR_LOG_GENERIC_OLD
 #endif
 
-#ifdef  LOG_USE_C_DEFS
-#error  This should not be defined
+#ifndef GKR_LOG_GENERIC_X
+#if !defined(LOG_USE_C_DEFS) && !defined(LOG_USE_CPP_LEGACY)
+#define LOG_USE_CPP_LEGACY
+#endif
+#include <gkr/log/defs/generic.hpp>
 #endif
 
 namespace gkr
 {
 namespace log
 {
-inline void simple_message_rts(void* instance, int severity, int facility, const char* msg)
-{
-    gkr_log_simple_message(instance, severity, facility, msg);
-}
-inline void simple_message_rts_if(bool condition, void* instance, int severity, int facility, const char* msg)
-{
-    if(condition)
-    {
-        gkr_log_simple_message(instance, severity, facility, msg);
-    }
-}
-
 template<int severity, bool>
 inline void simple_message(void* instance, int facility, const char* msg)
 {
@@ -147,9 +138,3 @@ template<> auto stream_message_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int) 
 }
 
 #endif /*ndef GKR_NO_STREAM_LOGGING*/
-
-#ifdef LOG_FACILITY
-#include <gkr/log/defs/generic_old_basic.hpp>
-#else
-#include <gkr/log/defs/generic_old_extra.hpp>
-#endif

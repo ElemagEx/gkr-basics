@@ -10,6 +10,12 @@
 
 #include <gkr/log/log.hpp>
 
+#ifndef LOG_USE_CPP_LEGACY
+#ifndef __cpp_if_constexpr
+#define LOG_USE_CPP_LEGACY
+#endif
+#endif
+
 #ifndef GKR_NO_STREAM_LOGGING
 #define LOG_FINISH gkr::log::finish
 #endif
@@ -33,21 +39,18 @@ inline constexpr bool threshold(int severity)
     return (severity < LOG_THRESHOLD_LEVEL);
 }
 
+inline void simple_message_rts(void* instance, int severity, int facility, const char* msg)
+{
+    gkr_log_simple_message(instance, severity, facility, msg);
+}
+inline void simple_message_rts_if(bool condition, void* instance, int severity, int facility, const char* msg)
+{
+    if(condition)
+    {
+        gkr_log_simple_message(instance, severity, facility, msg);
+    }
 }
 }
-
-#if !defined(LOG_GENERIC_DEF_OLD) && !defined(LOG_GENERIC_DEF_NEW)
-#ifdef __cpp_if_constexpr
-#include <gkr/log/defs/generic_new.hpp>
-#else
-#include <gkr/log/defs/generic_old.hpp>
-#endif
-#endif
-
-#if !defined(LOG_FACILITY) && defined(__cpp_if_constexpr)
-#include <gkr/log/defs/generic_new.hpp>
-#else
-#include <gkr/log/defs/generic_old.hpp>
-#endif
+}
 
 #endif /* ndef LOG_USE_C_DEF */

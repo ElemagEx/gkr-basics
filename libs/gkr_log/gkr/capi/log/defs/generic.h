@@ -45,6 +45,9 @@
 #ifndef LOG_THRESHOLD_LEVEL
 #define LOG_THRESHOLD_LEVEL 100
 #endif
+#ifndef LOG_FACILITY
+#define LOG_FACILITY 0
+#endif
 #ifndef LOG_INSTANCE
 #ifdef __cplusplus
 #define LOG_INSTANCE nullptr
@@ -155,10 +158,8 @@ inline void gkr_log_cond_printf_message(int condition, void* instance, int sever
 #define GKR_LOG_T_PRINTF_MSG_IF GKR_LOG_NOOP
 #endif
 
-#ifdef LOG_FACILITY
+#ifndef GKR_LOG_GENERIC_C_DEFS
 #include <gkr/capi/log/defs/generic_basic.h>
-#else
-#include <gkr/capi/log/defs/generic_extra.h>
 #endif
 
 #endif /*!defined(__cplusplus) || defined(LOG_USE_C_DEFS)*/

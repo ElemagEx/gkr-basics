@@ -14,6 +14,12 @@ Facility are user-defined constants that are passed to log functions and later l
 All generic logging macros/inlines have two NOT compatible definitions - with and without facility argument. Usually smaller projects does not use facilities/tags.
 If you define `LOG_FACILITY=<facility>` then all logging macros/inlines will not have facility argument.
 
+### Classes
+| | :x: Instance | :white_check_mark: Instance
+| :--- | :--- | :--- 
+| :x: Facility | `bLOGxxx` | `mLOGxxx`
+| :white_check_mark: Facility | `fLOGxxx` | `gLOGxxx`
+
 ### Severity (*aka logging level*)
 | Severity Name | Define               | Letter | Value | Description
 | :---          | :---                 | :---:  | :---: | :---
@@ -26,6 +32,7 @@ If you define `LOG_FACILITY=<facility>` then all logging macros/inlines will not
 | TRACE         | LOG_SEVERITY_TRACE   | `T`    | 6     | Program trace information
 
 ### Generic defines
+- `LOG_VARIANT`  - default 0
 - `LOG_FACILITY` - all log macros/inlines do not have facility argument and their facility is the value of the define - not defined by default
 - `LOG_INSTANCE` - log instance of all macros/inlines not starting with `C` macros/inlines use to log - default is (`NULL`/`nullptr`)
 - `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time logging threshold for all log macros/inlines - only severity levels below this threshold will be logged - default is 100

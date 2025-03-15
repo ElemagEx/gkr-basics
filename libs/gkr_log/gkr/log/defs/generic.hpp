@@ -2,7 +2,6 @@
 
 #ifndef GKR_LOG_GENERIC_X
 #define GKR_LOG_GENERIC_X
-#endif
 
 #include <gkr/capi/log/defs/generic.h>
 
@@ -50,7 +49,33 @@ inline void simple_message_rts_if(bool condition, void* instance, int severity, 
         gkr_log_simple_message(instance, severity, facility, msg);
     }
 }
+#ifndef GKR_NO_STREAM_LOGGING
+
+inline auto stream_message_rts(void* instance, int severity, int facility)
+{
+    return ostream(instance, severity, facility);
+}
+inline auto stream_message_rts_if(bool condition, void* instance, int severity, int facility)
+{
+    if(condition)
+    {
+        return ostream(instance, severity, facility);
+    }
+    else
+    {
+        return ostream(instance);
+    }
+}
+
+#endif /*ndef GKR_NO_STREAM_LOGGING*/
 }
 }
 
-#endif /* ndef LOG_USE_C_DEF */
+#ifndef LOG_USE_CPP_LEGACY
+#include <gkr/log/defs/generic_new.hpp>
+#else
+#include <gkr/log/defs/generic_old.hpp>
+#endif
+
+#endif /*ndef LOG_USE_C_DEF*/
+#endif /*ndef GKR_LOG_GENERIC_X*/

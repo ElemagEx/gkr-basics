@@ -2,6 +2,11 @@
 
 #ifndef GKR_LOG_GENERIC_C_DEFS
 #define GKR_LOG_GENERIC_C_DEFS
+
+#ifndef __cplusplus
+#ifndef LOG_USE_C_DEFS
+#define LOG_USE_C_DEFS
+#endif
 #endif
 
 #ifndef GKR_LOG_GENERIC
@@ -11,7 +16,109 @@
 #include <gkr/capi/log/defs/generic.h>
 #endif
 
-#if !defined(__cplusplus) || defined(LOG_USE_C_DEFS)
+#ifdef LOG_USE_C_DEFS
+
+inline void gkr_log_simple_message_if(int condition, void* instance, int severity, int facility, const char* message)
+{
+    if(condition != 0) gkr_log_simple_message(instance, severity, facility, message);
+}
+inline void gkr_log_printf_message_if(int condition, void* instance, int severity, int facility, const char* format, ...)
+{
+    if(condition != 0)
+    {
+        va_list args;
+        va_start(args, format);
+        gkr_log_valist_message(instance, severity, facility, format, args);
+        va_end(args);
+    }
+}
+
+#define GKR_LOG_NOOP(...)      ((void)0)
+
+#define GKR_LOG_X_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_X_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_X_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_X_PRINTF_MSG_IF gkr_log_printf_message_if
+
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_FATAL
+#define GKR_LOG_F_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_F_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_F_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_F_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_F_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_F_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_F_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_F_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_ERROR
+#define GKR_LOG_E_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_E_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_E_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_E_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_E_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_E_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_E_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_E_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_WARNING
+#define GKR_LOG_W_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_W_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_W_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_W_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_W_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_W_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_W_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_W_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_INFO
+#define GKR_LOG_I_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_I_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_I_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_I_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_I_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_I_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_I_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_I_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_VERBOSE
+#define GKR_LOG_V_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_V_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_V_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_V_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_V_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_V_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_V_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_V_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_DEBUG
+#define GKR_LOG_D_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_D_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_D_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_D_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_D_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_D_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_D_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_D_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+#if LOG_THRESHOLD_LEVEL > LOG_SEVERITY_TRACE
+#define GKR_LOG_T_SIMPLE_MSG    (void)gkr_log_simple_message
+#define GKR_LOG_T_PRINTF_MSG    (void)gkr_log_printf_message
+#define GKR_LOG_T_SIMPLE_MSG_IF gkr_log_simple_message_if
+#define GKR_LOG_T_PRINTF_MSG_IF gkr_log_printf_message_if
+#else
+#define GKR_LOG_T_SIMPLE_MSG    GKR_LOG_NOOP
+#define GKR_LOG_T_PRINTF_MSG    GKR_LOG_NOOP
+#define GKR_LOG_T_SIMPLE_MSG_IF GKR_LOG_NOOP
+#define GKR_LOG_T_PRINTF_MSG_IF GKR_LOG_NOOP
+#endif
+
+#ifdef GKR_LOG_BASIC_KEEP
 //
 // C Defs Simple basic LOG - bLOGxxx
 //
@@ -49,6 +156,9 @@
 #define bLOG_VERBOSE_IF(condition, message)     GKR_LOG_V_SIMPLE_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
 #define bLOG_DEBUG_IF(  condition, message)     GKR_LOG_D_SIMPLE_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
 #define bLOG_TRACE_IF(  condition, message)     GKR_LOG_T_SIMPLE_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
+#endif /*def GKR_LOG_BASIC_KEEP*/
+
+#ifdef GKR_LOG_FACILITY_KEEP
 //
 // C defs Simple facility LOG - fLOGxxx
 //
@@ -86,6 +196,9 @@
 #define fLOG_VERBOSE_IF(condition, facility, message)   GKR_LOG_V_SIMPLE_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_VERBOSE, facility, message)
 #define fLOG_DEBUG_IF(  condition, facility, message)   GKR_LOG_D_SIMPLE_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_DEBUG  , facility, message)
 #define fLOG_TRACE_IF(  condition, facility, message)   GKR_LOG_T_SIMPLE_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_TRACE  , facility, message)
+#endif /*def GKR_LOG_FACILITY_KEEP*/
+
+#ifdef GKR_LOG_MODULE_KEEP
 //
 // C Defs Simple module LOG - mLOGxxx
 //
@@ -123,6 +236,9 @@
 #define mLOG_VERBOSE_IF(condition, instance, message)   GKR_LOG_V_SIMPLE_MSG_IF(condition, instance, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
 #define mLOG_DEBUG_IF(  condition, instance, message)   GKR_LOG_D_SIMPLE_MSG_IF(condition, instance, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
 #define mLOG_TRACE_IF(  condition, instance, message)   GKR_LOG_T_SIMPLE_MSG_IF(condition, instance, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
+#endif /*def GKR_LOG_MODULE_KEEP*/
+
+#ifdef GKR_LOG_GENERAL_KEEP
 //
 // C defs Simple general LOG - gLOGxxx
 //
@@ -160,8 +276,11 @@
 #define gLOG_VERBOSE_IF(condition, instance, facility, message) GKR_LOG_V_SIMPLE_MSG_IF(condition, instance, LOG_SEVERITY_VERBOSE, facility, message)
 #define gLOG_DEBUG_IF(  condition, instance, facility, message) GKR_LOG_D_SIMPLE_MSG_IF(condition, instance, LOG_SEVERITY_DEBUG  , facility, message)
 #define gLOG_TRACE_IF(  condition, instance, facility, message) GKR_LOG_T_SIMPLE_MSG_IF(condition, instance, LOG_SEVERITY_TRACE  , facility, message)
+#endif /*def GKR_LOG_GENERAL_KEEP*/
 
 #ifndef GKR_NO_PRINTF_LOGGING
+
+#ifdef GKR_LOG_BASIC_KEEP
 //
 // C Defs PrintF basic LOG - bLOGxxx
 //
@@ -199,6 +318,9 @@
 #define bLOG_VERBOSE_IF_(condition, format, ...)    GKR_LOG_V_PRINTF_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
 #define bLOG_DEBUG_IF_(  condition, format, ...)    GKR_LOG_D_PRINTF_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
 #define bLOG_TRACE_IF_(  condition, format, ...)    GKR_LOG_T_PRINTF_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
+#endif /*def GKR_LOG_BASIC_KEEP*/
+
+#ifdef GKR_LOG_FACILITY_KEEP
 //
 // C defs PrintF facility LOG - fLOGxxx
 //
@@ -236,6 +358,9 @@
 #define fLOG_VERBOSE_IF_(condition, facility, format, ...)      GKR_LOG_V_PRINTF_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_VERBOSE, facility, format, __VA_ARGS__)
 #define fLOG_DEBUG_IF_(  condition, facility, format, ...)      GKR_LOG_D_PRINTF_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_DEBUG  , facility, format, __VA_ARGS__)
 #define fLOG_TRACE_IF_(  condition, facility, format, ...)      GKR_LOG_T_PRINTF_MSG_IF(condition, LOG_INSTANCE, LOG_SEVERITY_TRACE  , facility, format, __VA_ARGS__)
+#endif /*def GKR_LOG_FACILITY_KEEP*/
+
+#ifdef GKR_LOG_MODULE_KEEP
 //
 // C defs PrintF module LOG - mLOGxxx
 //
@@ -273,6 +398,9 @@
 #define mLOG_VERBOSE_IF_(condition, instance, format, ...)      GKR_LOG_V_PRINTF_MSG_IF(condition, instance, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
 #define mLOG_DEBUG_IF_(  condition, instance, format, ...)      GKR_LOG_D_PRINTF_MSG_IF(condition, instance, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
 #define mLOG_TRACE_IF_(  condition, instance, format, ...)      GKR_LOG_T_PRINTF_MSG_IF(condition, instance, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
+#endif /*def GKR_LOG_MODULE_KEEP*/
+
+#ifdef GKR_LOG_GENERAL_KEEP
 //
 // C defs PrintF general LOG - gLOGxxx
 //
@@ -310,7 +438,9 @@
 #define gLOG_VERBOSE_IF_(condition, instance, facility, format, ...)    GKR_LOG_V_PRINTF_MSG_IF(condition, instance, LOG_SEVERITY_VERBOSE, facility, format, __VA_ARGS__)
 #define gLOG_DEBUG_IF_(  condition, instance, facility, format, ...)    GKR_LOG_D_PRINTF_MSG_IF(condition, instance, LOG_SEVERITY_DEBUG  , facility, format, __VA_ARGS__)
 #define gLOG_TRACE_IF_(  condition, instance, facility, format, ...)    GKR_LOG_T_PRINTF_MSG_IF(condition, instance, LOG_SEVERITY_TRACE  , facility, format, __VA_ARGS__)
+#endif /*def GKR_LOG_GENERAL_KEEP*/
 
 #endif /*ndef GKR_NO_PRINTF_LOGGING*/
 
-#endif /*!defined(__cplusplus) || defined(LOG_USE_C_DEFS)*/
+#endif /*def LOG_USE_C_DEFS*/
+#endif /*ndef GKR_LOG_GENERIC_C_DEFS*/

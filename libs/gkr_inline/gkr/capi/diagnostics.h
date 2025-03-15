@@ -146,7 +146,7 @@ inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 {
     return diag_true();
 }
-#endif /* def __cplusplus */
+#endif /*def __cplusplus*/
 
 #define DIAG_ARG_STMT errno = EINVAL
 #define DIAG_ARG_COND ((DIAG_ARG_STMT) != 0)
@@ -200,7 +200,7 @@ inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 #endif
 #endif
 
-#endif /* ndef DIAG_ONE_TIME_DEFS */
+#endif /*ndef DIAG_ONE_TIME_DEFS*/
 
 //
 // If DIAG_MODE is not defined in advance tries to determine the right value

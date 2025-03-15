@@ -2,17 +2,17 @@
 
 #ifndef GKR_LOG_GENERIC_NEW
 #define GKR_LOG_GENERIC_NEW
-#endif
 
 #ifndef GKR_LOG_GENERIC_X
 #if !defined(LOG_USE_C_DEFS) && !defined(LOG_USE_CPP_LEGACY)
 #ifndef __cpp_if_constexpr
 #error  You must use legacy C++ implementation of log inlines - include "generic_old.hpp"
 #endif
+#endif
 #include <gkr/log/defs/generic.hpp>
 #endif
 
-#ifndef LOG_USE_C_DEFS
+#if !defined(LOG_USE_C_DEFS) && !defined(LOG_USE_CPP_LEGACY)
 
 namespace gkr
 {
@@ -126,22 +126,6 @@ namespace gkr
 {
 namespace log
 {
-inline auto stream_message_rts(void* intance, int severity, int facility)
-{
-    return ostream(intance, severity, facility);
-}
-inline auto stream_message_rts_if(bool condition, void* intance, int severity, int facility)
-{
-    if(condition)
-    {
-        return ostream(intance, severity, facility);
-    }
-    else
-    {
-        return ostream(intance);
-    }
-}
-
 template<int severity>
 inline auto stream_message(void* intance, int facility)
 {
@@ -321,6 +305,7 @@ inline void format_message_if(bool condition, void* instance, int facility, cons
 #endif /*def __cpp_lib_format*/
 #endif /*ndef GKR_NO_FORMAT_LOGGING*/
 
+#ifdef GKR_LOG_BASIC_KEEP
 //
 // C++ Modern Simple basic LOG - bLOGxxx
 //
@@ -358,6 +343,9 @@ inline void bLOG_INFO_IF   (bool condition, const char* msg)       { gkr::log::s
 inline void bLOG_VERBOSE_IF(bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, LOG_FACILITY, msg); }
 inline void bLOG_DEBUG_IF  (bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, LOG_FACILITY, msg); }
 inline void bLOG_TRACE_IF  (bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, LOG_FACILITY, msg); }
+#endif /*def GKR_LOG_BASIC_KEEP*/
+
+#ifdef GKR_LOG_FACILITY_KEEP
 //
 // C++ Modern Simple facility LOG - fLOGxxx
 //
@@ -395,6 +383,9 @@ inline void fLOG_INFO_IF   (bool condition, int facility, const char* msg)      
 inline void fLOG_VERBOSE_IF(bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, facility, msg); }
 inline void fLOG_DEBUG_IF  (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, facility, msg); }
 inline void fLOG_TRACE_IF  (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility, msg); }
+#endif /*def GKR_LOG_FACILITY_KEEP*/
+
+#ifdef GKR_LOG_MODULE_KEEP
 //
 // C++ Modern Simple module LOG - mLOGxxx
 //
@@ -432,6 +423,9 @@ inline void mLOG_INFO_IF   (bool condition, void* instance, const char* msg)    
 inline void mLOG_VERBOSE_IF(bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, msg); }
 inline void mLOG_DEBUG_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, msg); }
 inline void mLOG_TRACE_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, msg); }
+#endif /*def GKR_LOG_MODULE_KEEP*/
+
+#ifdef GKR_LOG_GENERAL_KEEP
 //
 // C++ Modern Simple general LOG - gLOGxxx
 //
@@ -469,8 +463,11 @@ inline void gLOG_INFO_IF   (bool condition, void* instance, int facility, const 
 inline void gLOG_VERBOSE_IF(bool condition, void* instance, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, facility, msg); }
 inline void gLOG_DEBUG_IF  (bool condition, void* instance, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, facility, msg); }
 inline void gLOG_TRACE_IF  (bool condition, void* instance, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, instance, facility, msg); }
+#endif /*def GKR_LOG_GENERAL_KEEP*/
 
 #ifndef GKR_NO_PRINTF_LOGGING
+
+#ifdef GKR_LOG_BASIC_KEEP
 //
 // C++ Modern PrintF basic LOG - bLOGxxx
 //
@@ -508,6 +505,9 @@ template<typename... Args> void bLOG_INFO_IF_   (bool condition, const char* for
 template<typename... Args> void bLOG_VERBOSE_IF_(bool condition, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_DEBUG_IF_  (bool condition, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_TRACE_IF_  (bool condition, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, LOG_FACILITY, format, std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_BASIC_KEEP*/
+
+#ifdef GKR_LOG_FACILITY_KEEP
 //
 // C++ Modern PrintF facility LOG - fLOGxxx
 //
@@ -545,6 +545,9 @@ template<typename... Args> void fLOG_INFO_IF_   (bool condition, int facility, c
 template<typename... Args> void fLOG_VERBOSE_IF_(bool condition, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_DEBUG_IF_  (bool condition, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_TRACE_IF_  (bool condition, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility, format, std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_FACILITY_KEEP*/
+
+#ifdef GKR_LOG_MODULE_KEEP
 //
 // C++ Modern PrintF module LOG - mLOGxxx
 //
@@ -582,6 +585,9 @@ template<typename... Args> void mLOG_INFO_IF_   (bool condition, void* instance,
 template<typename... Args> void mLOG_VERBOSE_IF_(bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void mLOG_DEBUG_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void mLOG_TRACE_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_MODULE_KEEP*/
+
+#ifdef GKR_LOG_GENERAL_KEEP
 //
 // C++ Modern PrintF general LOG - gLOGxxx
 //
@@ -619,9 +625,13 @@ template<typename... Args> void gLOG_INFO_IF_   (bool condition, void* instance,
 template<typename... Args> void gLOG_VERBOSE_IF_(bool condition, void* instance, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_DEBUG_IF_  (bool condition, void* instance, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_TRACE_IF_  (bool condition, void* instance, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, instance, facility, format, std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_GENERAL_KEEP*/
+
 #endif /*ndef GKR_NO_PRINTF_LOGGING*/
 
 #ifndef GKR_NO_STREAM_LOGGING
+
+#ifdef GKR_LOG_BASIC_KEEP
 //
 // C++ Modern Stream basic LOG - bLOGxxx
 //
@@ -659,6 +669,9 @@ inline auto bLOG_INFO_IF   (bool condition)       { return gkr::log::stream_mess
 inline auto bLOG_VERBOSE_IF(bool condition)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, LOG_FACILITY); }
 inline auto bLOG_DEBUG_IF  (bool condition)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, LOG_FACILITY); }
 inline auto bLOG_TRACE_IF  (bool condition)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, LOG_FACILITY); }
+#endif /*def GKR_LOG_BASIC_KEEP*/
+
+#ifdef GKR_LOG_FACILITY_KEEP
 //
 // C++ Modern Stream facility LOG - fLOGxxx
 //
@@ -696,6 +709,9 @@ inline auto fLOG_INFO_IF   (bool condition, int facility)       { return gkr::lo
 inline auto fLOG_VERBOSE_IF(bool condition, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, facility); }
 inline auto fLOG_DEBUG_IF  (bool condition, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, facility); }
 inline auto fLOG_TRACE_IF  (bool condition, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility); }
+#endif /*def GKR_LOG_FACILITY_KEEP*/
+
+#ifdef GKR_LOG_MODULE_KEEP
 //
 // C++ Modern Stream module LOG - mLOGxxx
 //
@@ -733,6 +749,9 @@ inline auto mLOG_INFO_IF   (bool condition, void* instance)       { return gkr::
 inline auto mLOG_VERBOSE_IF(bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY); }
 inline auto mLOG_DEBUG_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY); }
 inline auto mLOG_TRACE_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY); }
+#endif /*def GKR_LOG_MODULE_KEEP*/
+
+#ifdef GKR_LOG_GENERAL_KEEP
 //
 // C++ Modern Stream general LOG - gLOGxxx
 //
@@ -770,10 +789,14 @@ inline auto gLOG_INFO_IF   (bool condition, void* instance, int facility)       
 inline auto gLOG_VERBOSE_IF(bool condition, void* instance, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, facility); }
 inline auto gLOG_DEBUG_IF  (bool condition, void* instance, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, facility); }
 inline auto gLOG_TRACE_IF  (bool condition, void* instance, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, instance, facility); }
+#endif /*def GKR_LOG_GENERAL_KEEP*/
+
 #endif /*ndef GKR_NO_STREAM_LOGGING*/
 
 #ifndef GKR_NO_FORMAT_LOGGING
 #ifdef __cpp_lib_format
+
+#ifdef GKR_LOG_BASIC_KEEP
 //
 // C++ Modern Format basic LOG - bLOGxxx
 //
@@ -848,6 +871,9 @@ template<typename... Args> void bLOG_INFO_IF   (bool condition, const std::local
 template<typename... Args> void bLOG_VERBOSE_IF(bool condition, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_DEBUG_IF  (bool condition, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_TRACE_IF  (bool condition, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_BASIC_KEEP*/
+
+#ifdef GKR_LOG_FACILITY_KEEP
 //
 // C++ Modern Format facility LOG - fLOGxxx
 //
@@ -922,11 +948,14 @@ template<typename... Args> void fLOG_INFO_IF   (bool condition, int facility, co
 template<typename... Args> void fLOG_VERBOSE_IF(bool condition, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)        { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, LOG_INSTANCE, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_DEBUG_IF  (bool condition, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)        { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, LOG_INSTANCE, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_TRACE_IF  (bool condition, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)        { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility, std::move(fmt), std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_FACILITY_KEEP*/
+
+#ifdef GKR_LOG_MODULE_KEEP
 //
 // C++ Modern Format module LOG - mfLOGxxx
 //
-template<typename... Args> void mLOG   (                void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (            instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_IF(bool condition, void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if((condition, instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void mLOG   (                void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void mLOG_IF(bool condition, void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void mLOGF       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void mLOGE       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
@@ -962,8 +991,8 @@ template<typename... Args> void mLOG_TRACE_IF  (bool condition, void* instance, 
 //
 // plus locale
 //
-template<typename... Args> void mLOG   (                void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (            instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_IF(bool condition, void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if((condition, instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void mLOG   (                void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void mLOG_IF(bool condition, void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void mLOGF       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void mLOGE       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
@@ -996,6 +1025,9 @@ template<typename... Args> void mLOG_INFO_IF   (bool condition, void* instance, 
 template<typename... Args> void mLOG_VERBOSE_IF(bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void mLOG_DEBUG_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void mLOG_TRACE_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_MODULE_KEEP*/
+
+#ifdef GKR_LOG_GENERAL_KEEP
 //
 // C++ Modern Format general LOG - gLOGxxx
 //
@@ -1070,7 +1102,10 @@ template<typename... Args> void gLOG_INFO_IF   (bool condition, void* instance, 
 template<typename... Args> void gLOG_VERBOSE_IF(bool condition, void* instance, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_DEBUG_IF  (bool condition, void* instance, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_TRACE_IF  (bool condition, void* instance, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_GENERAL_KEEP*/
+
 #endif /*def __cpp_lib_format*/
 #endif /*ndef GKR_NO_FORMAT_LOGGING*/
 
-#endif /*ndef LOG_USE_C_DEFS*/
+#endif /*!defined(LOG_USE_C_DEFS) && !defined(LOG_USE_CPP_LEGACY)*/
+#endif /*ndef GKR_LOG_GENERIC_NEW*/

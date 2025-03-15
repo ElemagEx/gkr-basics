@@ -5,18 +5,19 @@ target_include_directories(gkr_log PUBLIC "gkr/log/imposters")
 
 target_sources(gkr_log
     ${GKR_C_INTERFACE}
-    "gkr/log/galery.h"
+    "gkr/capi/log/galery.h"
     "gkr/capi/log/log.h"
     "gkr/capi/log/logging.h"
-    "gkr/log/consumer.h"
+    "gkr/capi/log/consumer.h"
     "gkr/capi/log/defs/generic.h"
     "gkr/capi/log/defs/generic_cdefs.h"
-    "gkr/log/consumers/dummy_consumer.h"
-    "gkr/log/consumers/text_file_consumer.h"
-    "gkr/log/consumers/udp_socket_consumer.h"
-    "gkr/log/consumers/android_log_consumer.h"
-    "gkr/log/consumers/app_console_consumer.h"
-    "gkr/log/consumers/windows_debugger_consumer.h"
+    "gkr/capi/log/consumers/dummy_consumer.h"
+    "gkr/capi/log/consumers/text_file_consumer.h"
+    "gkr/capi/log/consumers/udp_socket_consumer.h"
+    "gkr/capi/log/consumers/android_log_consumer.h"
+    "gkr/capi/log/consumers/app_console_consumer.h"
+    "gkr/capi/log/consumers/windows_debugger_consumer.h"
+    "gkr/capi/log/formatters/win32_format_message.h"
 )
 target_sources(gkr_log
     ${GKR_CPP_INTERFACE}
@@ -34,6 +35,7 @@ target_sources(gkr_log
     "gkr/log/consumers/android_log_consumer.hpp"
     "gkr/log/consumers/app_console_consumer.hpp"
     "gkr/log/consumers/windows_debugger_consumer.hpp"
+    "gkr/log/formatters/win32_format_message.hpp"
 )
 target_sources(gkr_log
     PRIVATE

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <gkr/capi/log/consumers/windows_debugger_consumer.h>
+
 #include <gkr/api.hpp>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/consumers/windows_debugger_consumer.h>
 
 namespace gkr
 {

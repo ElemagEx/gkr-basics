@@ -1,6 +1,7 @@
 #pragma once
 
-#include <gkr/log/galery.h>
+#include <gkr/capi/log/galery.h>
+
 #include <gkr/log/logging.hpp>
 #include <gkr/log/consumers/text_file_consumer.hpp>
 #include <gkr/log/consumers/android_log_consumer.hpp>

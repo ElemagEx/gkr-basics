@@ -1,8 +1,9 @@
 #pragma once
 
+#include <gkr/capi/log/consumers/udp_socket_consumer.h>
+
 #include <gkr/api.hpp>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/consumers/udp_socket_consumer.h>
 
 #include <string>
 

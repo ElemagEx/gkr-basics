@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/log/consumer.h>
+#include <gkr/capi/log/consumer.h>
 
 namespace gkr
 {

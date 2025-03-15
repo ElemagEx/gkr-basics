@@ -43,7 +43,6 @@ GKR_LOG_API const char* gkr_log_text_file_get_path(void* arg);
 GKR_LOG_API void gkr_log_text_file_write_line(void* arg, const char* line, unsigned len);
 GKR_LOG_API void gkr_log_text_file_roll(void* arg, unsigned max_files);
 
-
 #ifdef __cplusplus
 }
 #endif

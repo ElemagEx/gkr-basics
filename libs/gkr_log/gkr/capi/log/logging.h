@@ -15,7 +15,7 @@ struct gkr_log_name_id_pair
 struct gkr_log_consumer_callbacks;
 
 GKR_LOG_API int gkr_log_init(
-    const char* name,
+    const char* primary_instance_name,
     unsigned max_queue_entries,
     unsigned max_message_chars,
     const struct gkr_log_name_id_pair* severities_infos,

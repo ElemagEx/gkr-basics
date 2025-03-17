@@ -15,7 +15,7 @@ struct gkr_log_android_log_consumer_callbacks
 };
 
 GKR_LOG_API int gkr_log_add_android_log_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_android_log_consumer_callbacks* callbacks
     );
 

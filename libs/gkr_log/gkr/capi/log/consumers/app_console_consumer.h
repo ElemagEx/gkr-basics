@@ -24,7 +24,7 @@ struct gkr_log_app_console_consumer_callbacks {
 };
 
 GKR_LOG_API int gkr_log_add_app_console_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_app_console_consumer_callbacks* callbacks,
     int method
     );

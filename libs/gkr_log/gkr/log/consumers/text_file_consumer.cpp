@@ -84,13 +84,13 @@ protected:
 extern "C" {
 
 int gkr_log_add_text_file_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_text_file_consumer_callbacks* callbacks,
     const char* filepath,
     int eoln
     )
 {
-    return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_text_file_consumer>(callbacks, filepath, eoln));
+    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_text_file_consumer>(callbacks, filepath, eoln));
 }
 
 gkr_log_tfs gkr_log_text_file_get_size(void* arg)

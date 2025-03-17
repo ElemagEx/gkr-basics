@@ -11,33 +11,33 @@ namespace log
 
 class custom_message
 {
-    void*    m_instance = nullptr;
-    char*    m_buf      = nullptr;
-    unsigned m_cch      = 0;
+    void*    m_channel = nullptr;
+    char*    m_buf     = nullptr;
+    unsigned m_cch     = 0;
 
     custom_message           (const custom_message&) noexcept = delete;
     custom_message& operator=(const custom_message&) noexcept = delete;
 
 public:
     custom_message(custom_message&& other) noexcept
-        : m_instance(std::exchange(other.m_instance, nullptr))
-        , m_buf     (std::exchange(other.m_buf     , nullptr))
-        , m_cch     (std::exchange(other.m_cch     , 0U))
+        : m_channel(std::exchange(other.m_channel, nullptr))
+        , m_buf    (std::exchange(other.m_buf    , nullptr))
+        , m_cch    (std::exchange(other.m_cch    , 0U))
     {
     }
     custom_message& operator=(custom_message&& other) noexcept
     {
-        m_instance  = std::exchange(other.m_instance, nullptr);
-        m_buf       = std::exchange(other.m_buf     , nullptr);
-        m_cch       = std::exchange(other.m_cch     , 0U);
+        m_channel = std::exchange(other.m_channel, nullptr);
+        m_buf     = std::exchange(other.m_buf    , nullptr);
+        m_cch     = std::exchange(other.m_cch    , 0U);
         return *this;
     }
     custom_message() noexcept
     {
     }
-    custom_message(void* instance, int severity) : m_instance(instance)
+    custom_message(void* channel, int severity) : m_channel(channel)
     {
-        gkr_log_custom_message_start(instance, severity, &m_buf, &m_cch);
+        gkr_log_custom_message_start(channel, severity, &m_buf, &m_cch);
     }
     ~custom_message()
     {
@@ -63,18 +63,18 @@ public:
     {
         if(!is_started()) return 0;
         m_buf = nullptr;
-        return gkr_log_custom_message_finish(m_instance, severity, facility);
+        return gkr_log_custom_message_finish(m_channel, severity, facility);
     }
     int finish(const char* func, const char* file, unsigned line, int severity, int facility) {
         if(!is_started()) return 0;
         m_buf = nullptr;
-        return gkr_log_custom_message_finish_ex(m_instance, func, file, line, severity, facility);
+        return gkr_log_custom_message_finish_ex(m_channel, func, file, line, severity, facility);
     }
     int cancel()
     {
         if(!is_started()) return -1;
         m_buf = nullptr;
-        return gkr_log_custom_message_cancel(m_instance);
+        return gkr_log_custom_message_cancel(m_channel);
     }
 };
 }
@@ -190,8 +190,8 @@ public:
     {
         invalidate();
     }
-    ostream(void* instance, int severity, int facility)
-        : base_t(instance, severity)
+    ostream(void* channel, int severity, int facility)
+        : base_t(channel, severity)
         , m_ostream()
         , m_severity(severity)
         , m_facility(facility)
@@ -205,8 +205,8 @@ public:
             invalidate();
         }
     }
-    ostream(void* instance, const char* func, const char* file, unsigned line, int severity, int facility)
-        : base_t(instance, severity)
+    ostream(void* channel, const char* func, const char* file, unsigned line, int severity, int facility)
+        : base_t(channel, severity)
         , m_ostream()
         , m_func(func)
         , m_file(file)
@@ -314,9 +314,9 @@ private:
 }
 
 template<typename... Args>
-int gkr_log_format_message(void* instance, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
+int gkr_log_format_message(void* channel, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
 {
-    gkr::log::custom_message message(instance, severity);
+    gkr::log::custom_message message(channel, severity);
     if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
@@ -332,9 +332,9 @@ int gkr_log_format_message(void* instance, int severity, int facility, std::form
     return message.finish(severity, facility);
 }
 template<typename... Args>
-int gkr_log_format_message_ex(void* instance, const char* func, const char* file, unsigned line, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
+int gkr_log_format_message_ex(void* channel, const char* func, const char* file, unsigned line, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)
 {
-    gkr::log::custom_message message(instance, severity);
+    gkr::log::custom_message message(channel, severity);
     if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
@@ -350,9 +350,9 @@ int gkr_log_format_message_ex(void* instance, const char* func, const char* file
     return message.finish(func, file, line, severity, facility);
 }
 template<typename... Args>
-int gkr_log_format_message(void* instance, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
+int gkr_log_format_message(void* channel, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
 {
-    gkr::log::custom_message message(instance, severity);
+    gkr::log::custom_message message(channel, severity);
     if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;
@@ -368,9 +368,9 @@ int gkr_log_format_message(void* instance, int severity, int facility, const std
     return message.finish(severity, facility);
 }
 template<typename... Args>
-int gkr_log_format_message(void* instance, const char* func, const char* file, unsigned line, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
+int gkr_log_format_message(void* channel, const char* func, const char* file, unsigned line, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)
 {
-    gkr::log::custom_message message(instance, severity);
+    gkr::log::custom_message message(channel, severity);
     if(!message.is_started()) return 0;
 
     using container_t = gkr::log::impl::container<char>;

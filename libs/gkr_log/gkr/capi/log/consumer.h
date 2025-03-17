@@ -48,7 +48,7 @@ struct gkr_log_consumer_callbacks
 };
 
 GKR_LOG_API int gkr_log_add_c_consumer(
-    void* instance,
+    void* channel,
     const struct gkr_log_consumer_callbacks* callbacks
     );
 

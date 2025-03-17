@@ -15,7 +15,7 @@ struct gkr_log_name_id_pair
 struct gkr_log_consumer_callbacks;
 
 GKR_LOG_API int gkr_log_init(
-    const char* primary_instance_name,
+    const char* primary_channel_name,
     unsigned max_queue_entries,
     unsigned max_message_chars,
     const struct gkr_log_name_id_pair* severities_infos,
@@ -23,14 +23,14 @@ GKR_LOG_API int gkr_log_init(
     );
 GKR_LOG_API int gkr_log_done();
 
-GKR_LOG_API void* gkr_log_add_instance(
+GKR_LOG_API void* gkr_log_add_channel(
     const char* name,
     unsigned max_queue_entries,
     unsigned max_message_chars,
     const struct gkr_log_name_id_pair* severities_infos,
     const struct gkr_log_name_id_pair* facilities_infos
     );
-GKR_LOG_API int gkr_log_del_instance(void* instance);
+GKR_LOG_API int gkr_log_del_channel(void* channel);
 
 GKR_LOG_API unsigned gkr_log_get_max_queue_entries();
 GKR_LOG_API unsigned gkr_log_get_max_message_chars();
@@ -38,17 +38,17 @@ GKR_LOG_API unsigned gkr_log_get_max_message_chars();
 GKR_LOG_API int gkr_log_set_max_queue_entries(unsigned max_queue_entries);
 GKR_LOG_API int gkr_log_set_max_message_chars(unsigned max_message_chars);
 
-GKR_LOG_API int gkr_log_get_severity_threshold(void* instance);
-GKR_LOG_API int gkr_log_set_severity_threshold(void* instance, int threshold);
+GKR_LOG_API int gkr_log_get_severity_threshold(void* channel);
+GKR_LOG_API int gkr_log_set_severity_threshold(void* channel, int threshold);
 
-GKR_LOG_API int gkr_log_set_severities(void* instance, int clear_existing, const struct gkr_log_name_id_pair* severities_infos);
-GKR_LOG_API int gkr_log_set_facilities(void* instance, int clear_existing, const struct gkr_log_name_id_pair* facilities_infos);
+GKR_LOG_API int gkr_log_set_severities(void* channel, int clear_existing, const struct gkr_log_name_id_pair* severities_infos);
+GKR_LOG_API int gkr_log_set_facilities(void* channel, int clear_existing, const struct gkr_log_name_id_pair* facilities_infos);
 
-GKR_LOG_API int gkr_log_set_severity(void* instance, const struct gkr_log_name_id_pair* severity_info);
-GKR_LOG_API int gkr_log_set_facility(void* instance, const struct gkr_log_name_id_pair* facility_info);
+GKR_LOG_API int gkr_log_set_severity(void* channel, const struct gkr_log_name_id_pair* severity_info);
+GKR_LOG_API int gkr_log_set_facility(void* channel, const struct gkr_log_name_id_pair* facility_info);
 
-GKR_LOG_API int gkr_log_del_consumer_by_id(void* instance, int id);
-GKR_LOG_API int gkr_log_del_all_consumers(void* instance);
+GKR_LOG_API int gkr_log_del_consumer_by_id(void* channel, int id);
+GKR_LOG_API int gkr_log_del_all_consumers(void* channel);
 
 #ifdef __cplusplus
 }

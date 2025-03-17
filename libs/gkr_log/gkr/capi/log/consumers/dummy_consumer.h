@@ -13,7 +13,7 @@ struct gkr_log_dummy_consumer_callbacks
 };
 
 GKR_LOG_API int gkr_log_add_dummy_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_dummy_consumer_callbacks* callbacks
     );
 

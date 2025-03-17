@@ -65,11 +65,11 @@ protected:
 extern "C" {
 
 int gkr_log_add_android_log_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_android_log_consumer_callbacks* callbacks
     )
 {
-    return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_android_log_consumer>(callbacks));
+    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_android_log_consumer>(callbacks));
 }
 
 }

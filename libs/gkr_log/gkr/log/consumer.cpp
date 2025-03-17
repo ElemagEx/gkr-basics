@@ -261,7 +261,7 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
 
 extern "C" {
 
-int gkr_log_add_c_consumer(void* instance, const struct gkr_log_consumer_callbacks* callbacks)
+int gkr_log_add_c_consumer(void* channel, const struct gkr_log_consumer_callbacks* callbacks)
 {
     Check_Arg_NotNull(callbacks, 0);
     Check_Arg_NotNull(callbacks->destruct, 0);
@@ -269,7 +269,7 @@ int gkr_log_add_c_consumer(void* instance, const struct gkr_log_consumer_callbac
     Check_Arg_NotNull(callbacks->done_logging, 0);
     Check_Arg_NotNull(callbacks-> filter_log_message, 0);
     Check_Arg_NotNull(callbacks->consume_log_message, 0);
-    return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_consumer>(*callbacks));
+    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_consumer>(*callbacks));
 }
 
 unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, long long stamp, int flags)

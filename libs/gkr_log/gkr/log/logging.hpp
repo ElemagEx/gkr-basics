@@ -8,8 +8,8 @@
 #include <memory>
 #include <utility>
 
-GKR_LOG_API int gkr_log_add_consumer(void* instance, std::shared_ptr<gkr::log::consumer> consumer);
-GKR_LOG_API int gkr_log_del_consumer(void* instance, std::shared_ptr<gkr::log::consumer> consumer);
+GKR_LOG_API int gkr_log_add_consumer(void* channel, std::shared_ptr<gkr::log::consumer> consumer);
+GKR_LOG_API int gkr_log_del_consumer(void* channel, std::shared_ptr<gkr::log::consumer> consumer);
 
 namespace gkr
 {
@@ -26,7 +26,7 @@ struct logging final
     logging(
         const char* name = nullptr,
         unsigned max_queue_entries = 32,
-        unsigned max_message_chars = 427, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/instance (64bit)
+        unsigned max_message_chars = 427, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/channel (64bit)
         const name_id_pair* severities_infos = nullptr,
         const name_id_pair* facilities_infos = nullptr
         )
@@ -132,10 +132,10 @@ public:
 }
 
 template<class Consumer, typename FuncFilter, typename... Args>
-inline int add_filter_consumer(void* instance, FuncFilter filter, Args&&... args)
+inline int add_filter_consumer(void* channel, FuncFilter filter, Args&&... args)
 {
     return gkr_log_add_consumer(
-        instance,
+        channel,
         consumer_ptr_t(
             new impl::template_filter_consumer<Consumer, FuncFilter, Args...>(
                 filter,
@@ -145,10 +145,10 @@ inline int add_filter_consumer(void* instance, FuncFilter filter, Args&&... args
 }
 
 template<class Consumer, typename FuncCompose, typename... Args>
-inline int add_composer_consumer(void* instance, FuncCompose compose, Args&&... args)
+inline int add_composer_consumer(void* channel, FuncCompose compose, Args&&... args)
 {
     return gkr_log_add_consumer(
-        instance,
+        channel,
         consumer_ptr_t(
             new impl::template_composer_consumer<Consumer, FuncCompose, Args...>(
                 compose,
@@ -159,7 +159,7 @@ inline int add_composer_consumer(void* instance, FuncCompose compose, Args&&... 
 
 template<class TextFileConsumer, typename FuncCompose, typename FuncEvent1, typename FuncEvent2, typename FuncEvent3, typename FuncEvent4, typename... Args>
 inline int add_text_file_consumer(
-    void* instance,
+    void* channel,
     FuncCompose compose,
     FuncEvent1 on_opened,
     FuncEvent2 on_closing,
@@ -169,7 +169,7 @@ inline int add_text_file_consumer(
     )
 {
     return gkr_log_add_consumer(
-        instance,
+        channel,
         consumer_ptr_t(
             new impl::template_text_file_consumer<TextFileConsumer, FuncCompose, FuncEvent1, FuncEvent2, FuncEvent3, FuncEvent4, Args...>(
                 compose,

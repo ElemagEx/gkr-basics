@@ -32,11 +32,11 @@ public:
 extern "C" {
 
 int gkr_log_add_dummy_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_dummy_consumer_callbacks* callbacks
     )
 {
-    return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_dummy_consumer>(callbacks));
+    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_dummy_consumer>(callbacks));
 }
 
 }

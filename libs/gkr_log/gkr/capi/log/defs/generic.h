@@ -47,11 +47,11 @@
 #ifndef LOG_FACILITY
 #define LOG_FACILITY 0
 #endif
-#ifndef LOG_INSTANCE
+#ifndef LOG_CHANNEL
 #ifdef __cplusplus
-#define LOG_INSTANCE nullptr
+#define LOG_CHANNEL nullptr
 #else
-#define LOG_INSTANCE ((void*)0)
+#define LOG_CHANNEL ((void*)0)
 #endif
 #endif
 

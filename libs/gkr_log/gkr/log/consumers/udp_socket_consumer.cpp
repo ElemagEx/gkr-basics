@@ -41,14 +41,14 @@ public:
 extern "C" {
 
 int gkr_log_add_udp_socket_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_udp_socket_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize
     )
 {
-    return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_udp_socket_consumer>(callbacks, remoteHost, remotePort, maxPacketSize));
+    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_udp_socket_consumer>(callbacks, remoteHost, remotePort, maxPacketSize));
 }
 
 }

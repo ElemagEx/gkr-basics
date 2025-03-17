@@ -83,12 +83,12 @@ bool isOutputAtty(int method)
 extern "C" {
 
 int gkr_log_add_app_console_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_app_console_consumer_callbacks* callbacks,
     int method
     )
 {
-    return gkr_log_add_consumer(instance, std::make_shared<gkr::log::c_app_console_consumer>(callbacks, method));
+    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_app_console_consumer>(callbacks, method));
 }
 
 }

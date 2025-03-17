@@ -11,17 +11,17 @@
 Facility are user-defined constants that are passed to log functions and later log messages can be filtered by facility value (*aka tags*)
 
 ### Macro/Inline log type
-| | :x: Instance | :white_check_mark: Instance
+| | :x: Channel | :white_check_mark: Channel
 | :--- | :--- | :--- 
 | :x: Facility | `bLOGxxx` - basic log | `cLOGxxx` - channel log
 | :white_check_mark: Facility | `fLOGxxx` - facility log | `gLOGxxx` - genenral log
 
-### Macro/Inline name format
-Format: `[prefix]LOG[severity][_IF][_]`
+### Macro/Inline name structure
+Structure: `[prefix]LOG[severity][_IF][_]`
 - `prefix` - can be one of `b`, `f`, `m`, or `g` (see table above) - if it is missing then alias is used (see below)
 - `severity`- long or short ref of severity (for compile-time eval) or missing (for run-time eval)
 - `_IF` - if it is used then the first argument of macro/inline is a run-time evaluated condition which if it is false then the log message is skipped
-- `_` - if last character of macro/inline is underscope the it only be used for printf-like message otherwise for all other types of messages
+- `_` - if last character of macro/inline is underscope then it must be used for printf-like message otherwise it is used for all other types of messages
 
 ### Severity (*aka logging level*)
 | Name    | Define               | Long ref   | Short ref | Value | Description
@@ -36,7 +36,7 @@ Format: `[prefix]LOG[severity][_IF][_]`
 
 ### Generic defines
 - `LOG_FACILITY` - basic and channel log macros/inlines use this value for its facility argument - default is 0
-- `LOG_INSTANCE` - basic and facility log macros/inlines use this value for its intance argument - default is (`NULL`/`nullptr`)
+- `LOG_CHANNEL` - basic and facility log macros/inlines use this value for its channel argument - default is (`NULL`/`nullptr`)
 - `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time log threshold - all macros/inlines that are grater or equal to this value are compiled out - default is 100
 - `LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions
 - `LOG_USE_CPP_LEGACY` - use old C++ (pre C++ 17) techniques for compile-time severity filtering (for C++ 17 and later `if constexpr` is used)

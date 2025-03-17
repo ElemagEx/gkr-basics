@@ -48,32 +48,32 @@ inline constexpr bool threshold(int severity)
     return (severity < LOG_THRESHOLD_LEVEL);
 }
 
-inline void simple_message_rts(void* instance, int severity, int facility, const char* msg)
+inline void simple_message_rts(void* channel, int severity, int facility, const char* msg)
 {
-    gkr_log_simple_message(instance, severity, facility, msg);
+    gkr_log_simple_message(channel, severity, facility, msg);
 }
-inline void simple_message_rts_if(bool condition, void* instance, int severity, int facility, const char* msg)
+inline void simple_message_rts_if(bool condition, void* channel, int severity, int facility, const char* msg)
 {
     if(condition)
     {
-        gkr_log_simple_message(instance, severity, facility, msg);
+        gkr_log_simple_message(channel, severity, facility, msg);
     }
 }
 #ifndef GKR_NO_STREAM_LOGGING
 
-inline auto stream_message_rts(void* instance, int severity, int facility)
+inline auto stream_message_rts(void* channel, int severity, int facility)
 {
-    return ostream(instance, severity, facility);
+    return ostream(channel, severity, facility);
 }
-inline auto stream_message_rts_if(bool condition, void* instance, int severity, int facility)
+inline auto stream_message_rts_if(bool condition, void* channel, int severity, int facility)
 {
     if(condition)
     {
-        return ostream(instance, severity, facility);
+        return ostream(channel, severity, facility);
     }
     else
     {
-        return ostream(instance);
+        return ostream(channel);
     }
 }
 

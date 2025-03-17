@@ -12,7 +12,7 @@ struct gkr_log_windows_debugger_consumer_callbacks {
 };
 
 GKR_LOG_API int gkr_log_add_windows_debugger_consumer(
-    void* instance,
+    void* channel,
     const gkr_log_windows_debugger_consumer_callbacks* callbacks
     );
 

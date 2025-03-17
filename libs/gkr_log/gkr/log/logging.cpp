@@ -78,22 +78,22 @@ extern "C"
 {
 
 int gkr_log_init(
-    const char* name,
+    const char* primary_channel_name,
     unsigned max_queue_entries, // = 32
-    unsigned max_message_chars, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/instance (64bit)
+    unsigned max_message_chars, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/channel (64bit)
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities_infos  // = nullptr - no facility names
     )
 {
-    return (nullptr != get_logger().add_instance(true, name, max_queue_entries, max_message_chars, severities_infos, facilities_infos));
+    return (nullptr != get_logger().add_channel(true, primary_channel_name, max_queue_entries, max_message_chars, severities_infos, facilities_infos));
 }
 
 int gkr_log_done()
 {
-    return get_logger().del_instance(nullptr);
+    return get_logger().del_channel(nullptr);
 }
 
-void* gkr_log_add_instance(
+void* gkr_log_add_channel(
     const char* name,
     unsigned max_queue_entries,
     unsigned max_message_chars,
@@ -101,12 +101,12 @@ void* gkr_log_add_instance(
     const struct gkr_log_name_id_pair* facilities_infos
     )
 {
-    return get_logger().add_instance(false, name, max_queue_entries, max_message_chars, severities_infos, facilities_infos);
+    return get_logger().add_channel(false, name, max_queue_entries, max_message_chars, severities_infos, facilities_infos);
 }
 
-int gkr_log_del_instance(void* instance)
+int gkr_log_del_channel(void* channel)
 {
-    return get_logger().del_instance(instance);
+    return get_logger().del_channel(channel);
 }
 
 unsigned gkr_log_get_max_queue_entries()
@@ -129,56 +129,56 @@ int gkr_log_set_max_message_chars(unsigned max_message_chars)
     return get_logger().change_log_queue(0, max_message_chars);
 }
 
-int gkr_log_get_severity_threshold(void* instance)
+int gkr_log_get_severity_threshold(void* channel)
 {
-    return (instance == nullptr)
+    return (channel == nullptr)
         ? get_logger().get_severity_threshold()
-        : static_cast<gkr::log::instance_info*>(instance)->threshold;
+        : static_cast<gkr::log::channel_info*>(channel)->threshold;
 }
 
-int gkr_log_set_severity_threshold(void* instance, int threshold)
+int gkr_log_set_severity_threshold(void* channel, int threshold)
 {
-    if(instance == nullptr)
+    if(channel == nullptr)
     {
         get_logger().set_severity_threshold(threshold);
     }
     else
     {
-        static_cast<gkr::log::instance_info*>(instance)->threshold = threshold;
+        static_cast<gkr::log::channel_info*>(channel)->threshold = threshold;
     }
     return true;
 }
 
-int gkr_log_set_severities(void* instance, int clear_existing, const struct gkr_log_name_id_pair* severities_infos)
+int gkr_log_set_severities(void* channel, int clear_existing, const struct gkr_log_name_id_pair* severities_infos)
 {
-    return get_logger().set_severities(instance, I2B(clear_existing), severities_infos);
+    return get_logger().set_severities(channel, I2B(clear_existing), severities_infos);
 }
 
-int gkr_log_set_facilities(void* instance, int clear_existing, const struct gkr_log_name_id_pair* facilities_infos)
+int gkr_log_set_facilities(void* channel, int clear_existing, const struct gkr_log_name_id_pair* facilities_infos)
 {
-    return get_logger().set_facilities(instance, I2B(clear_existing), facilities_infos);
+    return get_logger().set_facilities(channel, I2B(clear_existing), facilities_infos);
 }
 
-int gkr_log_set_severity(void* instance, const struct gkr_log_name_id_pair* severity_info)
+int gkr_log_set_severity(void* channel, const struct gkr_log_name_id_pair* severity_info)
 {
     Check_Arg_NotNull(severity_info, false);
-    return get_logger().set_severity(instance, *severity_info);
+    return get_logger().set_severity(channel, *severity_info);
 }
 
-int gkr_log_set_facility(void* instance, const struct gkr_log_name_id_pair* facility_info)
+int gkr_log_set_facility(void* channel, const struct gkr_log_name_id_pair* facility_info)
 {
     Check_Arg_NotNull(facility_info, false);
-    return get_logger().set_facility(instance, *facility_info);
+    return get_logger().set_facility(channel, *facility_info);
 }
 
-int gkr_log_del_consumer_by_id(void* instance, int id)
+int gkr_log_del_consumer_by_id(void* channel, int id)
 {
-    return get_logger().del_consumer(instance, nullptr, id);
+    return get_logger().del_consumer(channel, nullptr, id);
 }
 
-int gkr_log_del_all_consumers(void* instance)
+int gkr_log_del_all_consumers(void* channel)
 {
-    return get_logger().del_all_consumers(instance);
+    return get_logger().del_all_consumers(channel);
 }
 
 int gkr_log_set_current_thread_name(const char* name)
@@ -199,14 +199,14 @@ int gkr_log_get_current_thread_llm_id(int id)
     return id;
 }
 
-int gkr_log_simple_message(void* instance, int severity, int facility, const char* text)
+int gkr_log_simple_message(void* channel, int severity, int facility, const char* text)
 {
     Check_Arg_NotNull(text, false);
     check_thread_name(nullptr);
-    return get_logger().log_message(instance, nullptr, severity, facility, text, nullptr);
+    return get_logger().log_message(channel, nullptr, severity, facility, text, nullptr);
 }
 
-int gkr_log_printf_message(void* instance, int severity, int facility, const char* format, ...)
+int gkr_log_printf_message(void* channel, int severity, int facility, const char* format, ...)
 {
     Check_Arg_NotNull(format, false);
     check_thread_name(nullptr);
@@ -214,29 +214,29 @@ int gkr_log_printf_message(void* instance, int severity, int facility, const cha
     va_list args;
     va_start(args, format);
 
-    const int id = get_logger().log_message(instance, nullptr, severity, facility, format, args);
+    const int id = get_logger().log_message(channel, nullptr, severity, facility, format, args);
 
     va_end(args);
     return id;
 }
 
-int gkr_log_valist_message(void* instance, int severity, int facility, const char* format, va_list args)
+int gkr_log_valist_message(void* channel, int severity, int facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
     check_thread_name(nullptr);
-    return get_logger().log_message(instance, nullptr, severity, facility, format, args);
+    return get_logger().log_message(channel, nullptr, severity, facility, format, args);
 }
 
-int gkr_log_simple_message_ex(void* instance, const char* func, const char* file, unsigned line, int severity, int facility, const char* text)
+int gkr_log_simple_message_ex(void* channel, const char* func, const char* file, unsigned line, int severity, int facility, const char* text)
 {
     Check_Arg_NotNull(text, false);
     check_thread_name(nullptr);
 
     const gkr::log::source_location location{func, file, line};
-    return get_logger().log_message(instance, &location, severity, facility, text, nullptr);
+    return get_logger().log_message(channel, &location, severity, facility, text, nullptr);
 }
 
-int gkr_log_printf_message_ex(void* instance, const char* func, const char* file, unsigned line, int severity, int facility, const char* format, ...)
+int gkr_log_printf_message_ex(void* channel, const char* func, const char* file, unsigned line, int severity, int facility, const char* format, ...)
 {
     Check_Arg_NotNull(format, false);
     check_thread_name(nullptr);
@@ -245,47 +245,47 @@ int gkr_log_printf_message_ex(void* instance, const char* func, const char* file
     va_start(args, format);
 
     const gkr::log::source_location location{func, file, line};
-    const int id = get_logger().log_message(instance, &location, severity, facility, format, args);
+    const int id = get_logger().log_message(channel, &location, severity, facility, format, args);
 
     va_end(args);
     return id;
 }
 
-int gkr_log_valist_message_ex(void* instance, const char* func, const char* file, unsigned line, int severity, int facility, const char* format, va_list args)
+int gkr_log_valist_message_ex(void* channel, const char* func, const char* file, unsigned line, int severity, int facility, const char* format, va_list args)
 {
     Check_Arg_NotNull(format, false);
     check_thread_name(nullptr);
 
     const gkr::log::source_location location{func, file, line};
-    return get_logger().log_message(instance, &location, severity, facility, format, args);
+    return get_logger().log_message(channel, &location, severity, facility, format, args);
 }
 
-int gkr_log_custom_message_start(void* instance, int severity, char** buf, unsigned* cch)
+int gkr_log_custom_message_start(void* channel, int severity, char** buf, unsigned* cch)
 {
     Check_Arg_NotNull(buf, 0);
     Check_Arg_NotNull(cch, 0);
 
-    return get_logger().start_log_message(instance, severity, *buf, *cch);
+    return get_logger().start_log_message(channel, severity, *buf, *cch);
 }
 
-int gkr_log_custom_message_cancel(void* instance)
+int gkr_log_custom_message_cancel(void* channel)
 {
-    return get_logger().cancel_log_message(instance);
+    return get_logger().cancel_log_message(channel);
 }
 
-int gkr_log_custom_message_finish(void* instance, int severity, int facility)
+int gkr_log_custom_message_finish(void* channel, int severity, int facility)
 {
     check_thread_name(nullptr);
 
-    return get_logger().finish_log_message(instance, nullptr, severity, facility);
+    return get_logger().finish_log_message(channel, nullptr, severity, facility);
 }
 
-int gkr_log_custom_message_finish_ex(void* instance, const char* func, const char* file, unsigned line, int severity, int facility)
+int gkr_log_custom_message_finish_ex(void* channel, const char* func, const char* file, unsigned line, int severity, int facility)
 {
     check_thread_name(nullptr);
 
     const gkr::log::source_location location{func, file, line};
-    return get_logger().finish_log_message(instance, &location, severity, facility);
+    return get_logger().finish_log_message(channel, &location, severity, facility);
 }
 
 const char* gkr_log_format_output(
@@ -303,18 +303,18 @@ const char* gkr_log_format_output(
 
 }
 
-int gkr_log_add_consumer(void* instance, std::shared_ptr<gkr::log::consumer> consumer)
+int gkr_log_add_consumer(void* channel, std::shared_ptr<gkr::log::consumer> consumer)
 {
     Check_Arg_NotNull(consumer, false);
 
-    return get_logger().add_consumer(instance, consumer);
+    return get_logger().add_consumer(channel, consumer);
 }
 
-int gkr_log_del_consumer(void* instance, std::shared_ptr<gkr::log::consumer> consumer)
+int gkr_log_del_consumer(void* channel, std::shared_ptr<gkr::log::consumer> consumer)
 {
     Check_Arg_NotNull(consumer, false);
 
-    return get_logger().del_consumer(instance, consumer, 0);
+    return get_logger().del_consumer(channel, consumer, 0);
 }
 
 namespace gkr

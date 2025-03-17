@@ -21,7 +21,7 @@ namespace gkr
 namespace log
 {
 
-struct instance_info
+struct channel_info
 {
     const char* name {nullptr};
     int         threshold {100};
@@ -70,7 +70,7 @@ private:
     virtual bool on_exception(except_method_t method, const std::exception* e) noexcept override;
 
 public:
-    void* add_instance(
+    void* add_channel(
         bool primary,
         const char* name,
         std::size_t max_queue_entries,
@@ -78,7 +78,7 @@ public:
         const struct gkr_log_name_id_pair* severities_infos,
         const struct gkr_log_name_id_pair* facilities_infos
         );
-    bool del_instance(void* instance);
+    bool del_channel(void* channel);
 
 public:
     void set_severity_threshold(int threshold)
@@ -103,20 +103,20 @@ public:
 public:
     bool change_log_queue(std::size_t max_queue_entries, std::size_t max_message_chars);
 
-    bool change_name(void* instance, const char* name);
+    bool change_name(void* channel, const char* name);
 
 public:
-    bool set_severities(void* instance, bool clear_existing, const name_id_pair* severities_infos);
-    bool set_facilities(void* instance, bool clear_existing, const name_id_pair* facilities_infos);
+    bool set_severities(void* channel, bool clear_existing, const name_id_pair* severities_infos);
+    bool set_facilities(void* channel, bool clear_existing, const name_id_pair* facilities_infos);
 
-    bool set_severity(void* instance, const name_id_pair& severity_info);
-    bool set_facility(void* instance, const name_id_pair& facility_info);
+    bool set_severity(void* channel, const name_id_pair& severity_info);
+    bool set_facility(void* channel, const name_id_pair& facility_info);
 
 public:
-    int  add_consumer(void* instance, consumer_ptr_t consumer);
-    bool del_consumer(void* instance, consumer_ptr_t consumer, int id);
+    int  add_consumer(void* channel, consumer_ptr_t consumer);
+    bool del_consumer(void* channel, consumer_ptr_t consumer, int id);
 
-    bool del_all_consumers(void* instance);
+    bool del_all_consumers(void* channel);
 
 public:
     using tid_t = long long;
@@ -124,11 +124,11 @@ public:
     bool set_thread_name(int* ptr, const char* name, tid_t tid = 0);
 
 public:
-    bool start_log_message(void* instance, int severity, char*& buf, unsigned& cch);
-    int cancel_log_message(void* instance);
-    int finish_log_message(void* instance, const source_location* location, int severity, int facility);
+    bool start_log_message(void* channel, int severity, char*& buf, unsigned& cch);
+    int cancel_log_message(void* channel);
+    int finish_log_message(void* channel, const source_location* location, int severity, int facility);
 
-    int log_message(void* instance, const source_location* location, int severity, int facility, const char* format, va_list args);
+    int log_message(void* channel, const source_location* location, int severity, int facility, const char* format, va_list args);
 
 public:
     const char* format_output(
@@ -145,7 +145,7 @@ private:
     struct message_head : message
     {
         int   id;
-        void* instance;
+        void* channel;
     };
     struct message_data : message_head
     {
@@ -155,7 +155,7 @@ private:
 private:
     void sync_log_message(message_data& msg);
 
-    bool compose_message(message_data& msg, std::size_t cch, void* instance, const source_location* location, int severity, int facility, const char* format, va_list args);
+    bool compose_message(message_data& msg, std::size_t cch, void* channel, const source_location* location, int severity, int facility, const char* format, va_list args);
 
     void process_message(message_data& msg);
 
@@ -172,8 +172,8 @@ private:
 private:
     enum : action_id_t
     {
-        ACTION_ADD_INSTANCE     ,
-        ACTION_DEL_INSTANCE     ,
+        ACTION_ADD_CHANNEL      ,
+        ACTION_DEL_CHANNEL     ,
         ACTION_CHANGE_LOG_QUEUE ,
         ACTION_SET_SEVERITIES   ,
         ACTION_SET_FACILITIES   ,
@@ -194,26 +194,26 @@ private:
         bool           reentry_guard {false};
         int            id {0};
     };
-    struct instance_data : instance_info
+    struct channel_data : channel_info
     {
         std::vector<consumer_info> consumers;
 
         std::unordered_map<int, const char*> severities;
         std::unordered_map<int, const char*> facilities;
     };
-    instance_data& get_data(void* instance)
+    channel_data& get_data(void* channel)
     {
-        return (instance == nullptr)
+        return (channel == nullptr)
             ? m_primary
-            : *static_cast<instance_data*>(instance);
+            : *static_cast<channel_data*>(channel);
     }
 
 private:
     log_queue_t m_log_queue;
 
-    instance_data m_primary;
+    channel_data m_primary;
 
-    std::list  <instance_data> m_instances;
+    std::list  <channel_data>  m_channels;
     std::vector<consumer_info> m_consumers;
 
     std::unordered_map<tid_t, const char*> m_thread_ids;

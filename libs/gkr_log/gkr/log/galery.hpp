@@ -50,12 +50,12 @@ constexpr const char* plog_format_strs[] = {PLOG_ONLY_MSG_FORMAT, PLOG_FUNC_MSG_
 constexpr const char* plog_format_args[] = PLOG_CONSOLE_ARGS_STRS;
 
 template<int formatter>
-inline int plog_add_appender_color_console(void* instance = nullptr, int method = plog_stream_std_out)
+inline int plog_add_appender_color_console(void* channel = nullptr, int method = plog_stream_std_out)
 {
     constexpr int       flags = value_by_inidex(formatter, plog_format_flags) | gkr_log_fo_flag_use_padding | gkr_log_fo_flag_use_inserts;
     constexpr const char* fmt = value_by_inidex(formatter, plog_format_strs );
 
-    return gkr::log::add_composer_consumer<gkr::log::app_console_consumer>(instance, [] (const gkr::log::message& msg, unsigned* len, bool colored)
+    return gkr::log::add_composer_consumer<gkr::log::app_console_consumer>(channel, [] (const gkr::log::message& msg, unsigned* len, bool colored)
     {
         const int colored_flags = flags | (colored ? gkr_log_fo_flag_use_coloring : 0);
         return gkr_log_format_output(fmt, &msg, colored_flags, plog_format_args, PLOG_CONSOLE_ARGS_ROWS, PLOG_CONSOLE_ARGS_COLS, len);
@@ -63,19 +63,19 @@ inline int plog_add_appender_color_console(void* instance = nullptr, int method 
     method);
 }
 template<int formatter>
-inline int plog_add_appender_console(void* instance = nullptr, int method = plog_stream_std_out)
+inline int plog_add_appender_console(void* channel = nullptr, int method = plog_stream_std_out)
 {
     constexpr int       flags = value_by_inidex(formatter, plog_format_flags) | gkr_log_fo_flag_use_padding;
     constexpr const char* fmt = value_by_inidex(formatter, plog_format_strs );
 
-    return gkr::log::add_composer_consumer<gkr::log::app_console_consumer>(instance, [] (const gkr::log::message& msg, unsigned* len, bool)
+    return gkr::log::add_composer_consumer<gkr::log::app_console_consumer>(channel, [] (const gkr::log::message& msg, unsigned* len, bool)
     {
         return gkr_log_format_output(fmt, &msg, flags, nullptr, 0, 0, len);
     },
     method);
 }
 template<int formatter>
-inline int plog_add_appender_android(void* instance = nullptr, const char* tag = "")
+inline int plog_add_appender_android(void* channel = nullptr, const char* tag = "")
 {
 #ifdef __ANDROID__
     constexpr int levels[] = {ANDROID_LOG_UNKNOWN, ANDROID_LOG_FATAL, ANDROID_LOG_ERROR, ANDROID_LOG_WARN, ANDROID_LOG_INFO, ANDROID_LOG_DEBUG, ANDROID_LOG_VERBOSE};
@@ -85,26 +85,26 @@ inline int plog_add_appender_android(void* instance = nullptr, const char* tag =
     constexpr int       flags = value_by_inidex(formatter, plog_format_flags);
     constexpr const char* fmt = value_by_inidex(formatter, plog_format_strs );
 
-    return gkr::log::add_composer_consumer<gkr::log::android_log_consumer_ex>(instance, [] (const gkr::log::message& msg, unsigned* len, bool)
+    return gkr::log::add_composer_consumer<gkr::log::android_log_consumer_ex>(channel, [] (const gkr::log::message& msg, unsigned* len, bool)
     {
         return gkr_log_format_output(fmt, &msg, flags, nullptr, 0, 0, len);
     },
     tag, levels, sizeof(levels)/sizeof(*levels));
 }
 template<int formatter>
-inline int plog_add_appender_debug_output(void* instance = nullptr)
+inline int plog_add_appender_debug_output(void* channel = nullptr)
 {
     constexpr int       flags = value_by_inidex(formatter, plog_format_flags);
     constexpr const char* fmt = value_by_inidex(formatter, plog_format_strs );
 
-    return gkr::log::add_composer_consumer<gkr::log::windows_debugger_consumer>(instance, [] (const gkr::log::message& msg, unsigned* len, bool)
+    return gkr::log::add_composer_consumer<gkr::log::windows_debugger_consumer>(channel, [] (const gkr::log::message& msg, unsigned* len, bool)
     {
         return gkr_log_format_output(fmt, &msg, flags, nullptr, 0, 0, len);
     });
 }
 
 template<int formatter>
-inline int plog_add_appender_rolling_file(void* instance, const char* file_name, unsigned max_file_size = 0, int max_files = 0)
+inline int plog_add_appender_rolling_file(void* channel, const char* file_name, unsigned max_file_size = 0, int max_files = 0)
 {
     constexpr bool is_csv_fmt = ((formatter == plog_formatter_csv) || (formatter == plog_formatter_csv_utc));
 
@@ -112,7 +112,7 @@ inline int plog_add_appender_rolling_file(void* instance, const char* file_name,
     constexpr const char* fmt = value_by_inidex(formatter, plog_format_strs );
 
     return gkr::log::add_text_file_consumer<gkr::log::text_file_consumer>(
-        instance,
+        channel,
         [] (const gkr::log::message& msg, unsigned* len, bool)
         {
             return gkr_log_format_output(fmt, &msg, flags, nullptr, 0, 0, len);

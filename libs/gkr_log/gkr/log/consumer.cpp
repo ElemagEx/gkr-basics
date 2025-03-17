@@ -72,9 +72,9 @@ constexpr int make_four_cc(const char* str)
         (unsigned(str[3]) <<  8) |
         (unsigned(str[4]) <<  0) );
 }
-constexpr int FOUR_CC_TEXT = make_four_cc("<TEXT>"); // Message text
+constexpr int FOUR_CC_TEXT = make_four_cc("<TEXT>"); // message text
 
-constexpr int FOUR_CC_MNAM = make_four_cc("<MNAM>"); // module name
+constexpr int FOUR_CC_CNAM = make_four_cc("<CNAM>"); // channel name
 constexpr int FOUR_CC_TNAM = make_four_cc("<TNAM>"); // thread name
 constexpr int FOUR_CC_SNAM = make_four_cc("<SNAM>"); // severity name
 constexpr int FOUR_CC_FNAM = make_four_cc("<FNAM>"); // facility name
@@ -363,7 +363,7 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
                 {
                     case FOUR_CC_TEXT: if(copy_msg_txt(msg->messageLen, buf, cap, msg->messageText, flags)) continue; break;
 
-                    case FOUR_CC_MNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->moduleName  , 0, flags)) continue; break;
+                    case FOUR_CC_CNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->channelName , 0, flags)) continue; break;
                     case FOUR_CC_TNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->threadName  , 0, flags)) continue; break;
                     case FOUR_CC_SNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->severityName, 0, flags)) continue; break;
                     case FOUR_CC_FNAM: if(copy_pad_txt(ch, padding, buf, cap, msg->facilityName, 0, flags)) continue; break;

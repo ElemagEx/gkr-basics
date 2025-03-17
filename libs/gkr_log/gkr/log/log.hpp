@@ -9,7 +9,7 @@ namespace gkr
 namespace log
 {
 
-struct custom_message
+class custom_message
 {
     void*    m_instance = nullptr;
     char*    m_buf      = nullptr;
@@ -18,17 +18,18 @@ struct custom_message
     custom_message           (const custom_message&) noexcept = delete;
     custom_message& operator=(const custom_message&) noexcept = delete;
 
+public:
     custom_message(custom_message&& other) noexcept
         : m_instance(std::exchange(other.m_instance, nullptr))
         , m_buf     (std::exchange(other.m_buf     , nullptr))
-        , m_cch     (std::exchange(other.m_cch     , 0))
+        , m_cch     (std::exchange(other.m_cch     , 0U))
     {
     }
     custom_message& operator=(custom_message&& other) noexcept
     {
         m_instance  = std::exchange(other.m_instance, nullptr);
         m_buf       = std::exchange(other.m_buf     , nullptr);
-        m_cch       = std::exchange(other.m_cch     , 0);
+        m_cch       = std::exchange(other.m_cch     , 0U);
         return *this;
     }
     custom_message() noexcept
@@ -43,6 +44,17 @@ struct custom_message
         cancel();
     }
 
+public:
+    char* buf() noexcept
+    {
+        return m_buf;
+    }
+    unsigned cch() noexcept
+    {
+        return m_cch;
+    }
+
+public:
     bool is_started() const noexcept
     {
         return (m_buf != nullptr);
@@ -178,23 +190,23 @@ public:
     {
         invalidate();
     }
-    ostream(void* instance_, int severity, int facility)
-        : base_t(instance_, severity)
+    ostream(void* instance, int severity, int facility)
+        : base_t(instance, severity)
         , m_ostream()
         , m_severity(severity)
         , m_facility(facility)
     {
         if(base_t::is_started())
         {
-            impl::init_ostringstream_allocator(base_t::buf, base_t::cch);
+            impl::init_ostringstream_allocator(base_t::buf(), base_t::cch());
         }
         else
         {
             invalidate();
         }
     }
-    ostream(void* instance_, const char* func, const char* file, unsigned line, int severity, int facility)
-        : base_t(instance_, severity)
+    ostream(void* instance, const char* func, const char* file, unsigned line, int severity, int facility)
+        : base_t(instance, severity)
         , m_ostream()
         , m_func(func)
         , m_file(file)
@@ -204,7 +216,7 @@ public:
     {
         if(base_t::is_started())
         {
-            impl::init_ostringstream_allocator(base_t::buf, base_t::cch);
+            impl::init_ostringstream_allocator(base_t::buf(), base_t::cch());
         }
         else
         {
@@ -309,7 +321,7 @@ int gkr_log_format_message(void* instance, int severity, int facility, std::form
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(message.buf, message.cch);
+    container_t container(message.buf(), message.cch());
 
     auto it = std::back_inserter(container);
 
@@ -327,7 +339,7 @@ int gkr_log_format_message_ex(void* instance, const char* func, const char* file
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(message.buf, message.cch);
+    container_t container(message.buf(), message.cch());
 
     auto it = std::back_inserter(container);
 
@@ -345,7 +357,7 @@ int gkr_log_format_message(void* instance, int severity, int facility, const std
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(message.buf, message.cch);
+    container_t container(message.buf(), message.cch());
 
     auto it = std::back_inserter(container);
 
@@ -363,7 +375,7 @@ int gkr_log_format_message(void* instance, const char* func, const char* file, u
 
     using container_t = gkr::log::impl::container<char>;
 
-    container_t container(message.buf, message.cch);
+    container_t container(message.buf(), message.cch());
 
     auto it = std::back_inserter(container);
 

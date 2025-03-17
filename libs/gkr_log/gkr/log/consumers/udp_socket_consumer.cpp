@@ -134,7 +134,7 @@ bool udp_socket_consumer::construct_data(const message& msg)
 {
     const std::size_t nameLenFunc     = std::strlen(msg.sourceFunc);
     const std::size_t nameLenFile     = std::strlen(msg.sourceFile);
-    const std::size_t nameLenModule   = std::strlen(msg.moduleName);
+    const std::size_t nameLenChannel  = std::strlen(msg.channelName);
     const std::size_t nameLenThread   = std::strlen(msg.threadName);
     const std::size_t nameLenFacility = std::strlen(msg.facilityName);
     const std::size_t nameLenSeverity = std::strlen(msg.severityName);
@@ -146,7 +146,7 @@ bool udp_socket_consumer::construct_data(const message& msg)
         + m_proc_name.size() + 1
         + nameLenFunc        + 1
         + nameLenFile        + 1
-        + nameLenModule      + 1
+        + nameLenChannel     + 1
         + nameLenThread      + 1
         + nameLenSeverity    + 1
         + nameLenFacility    + 1
@@ -173,7 +173,7 @@ bool udp_socket_consumer::construct_data(const message& msg)
     messageData.offset_to_process  = std::uint16_t(offsetToStr); offsetToStr += m_proc_name.size() + 1;
     messageData.offset_to_func     = std::uint16_t(offsetToStr); offsetToStr += nameLenFunc        + 1;
     messageData.offset_to_file     = std::uint16_t(offsetToStr); offsetToStr += nameLenFile        + 1;
-    messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenModule      + 1;
+    messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenChannel     + 1;
     messageData.offset_to_thread   = std::uint16_t(offsetToStr); offsetToStr += nameLenThread      + 1;
     messageData.offset_to_severity = std::uint16_t(offsetToStr); offsetToStr += nameLenSeverity    + 1;
     messageData.offset_to_facility = std::uint16_t(offsetToStr); offsetToStr += nameLenFacility    + 1;

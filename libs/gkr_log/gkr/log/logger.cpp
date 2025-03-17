@@ -648,7 +648,7 @@ void logger::prepare_message(message_data& msg)
     instance_data& data = get_data(msg.instance);
 
     msg.messageText = msg.buf;
-    msg.moduleName  = data.name;
+    msg.channelName = data.name;
 
     auto itThreadId =    m_thread_ids.find(msg.tid);
     auto itSeverity = data.severities.find(msg.severity);

@@ -13,7 +13,7 @@ struct gkr_log_message
     unsigned    sourceLine;
     unsigned    messageLen;
     const char* messageText;
-    const char* moduleName;
+    const char* channelName;
     const char* threadName;
     const char* severityName;
     const char* facilityName;

@@ -20,7 +20,7 @@ struct log_message : split_packet_data_head
     std::uint16_t offset_to_file;
     std::uint16_t offset_to_host;
     std::uint16_t offset_to_process;
-    std::uint16_t offset_to_module;
+    std::uint16_t offset_to_channel;
     std::uint16_t offset_to_thread;
     std::uint16_t offset_to_severity;
     std::uint16_t offset_to_facility;

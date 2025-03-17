@@ -62,8 +62,8 @@
 #ifndef GKR_LOG_FACILITY_KEEP
 #define GKR_LOG_FACILITY_KEEP
 #endif
-#ifndef GKR_LOG_MODULE_KEEP
-#define GKR_LOG_MODULE_KEEP
+#ifndef GKR_LOG_CHANNEL_KEEP
+#define GKR_LOG_CHANNEL_KEEP
 #endif
 #ifndef GKR_LOG_GENERAL_KEEP
 #define GKR_LOG_GENERAL_KEEP
@@ -75,7 +75,7 @@
 #define GKR_LOG_ALIAS 0
 #elif   defined(GKR_LOG_FACILITY_KEEP)
 #define GKR_LOG_ALIAS 1
-#elif   defined(GKR_LOG_MODULE_KEEP)
+#elif   defined(GKR_LOG_CHANNEL_KEEP)
 #define GKR_LOG_ALIAS 2
 #elif   defined(GKR_LOG_GENERAL_KEEP)
 #define GKR_LOG_ALIAS 3
@@ -246,82 +246,82 @@
 
 #elif (GKR_LOG_ALIAS == 2)
 
-#ifndef GKR_LOG_MODULE_KEEP
-#define GKR_LOG_MODULE_KEEP
+#ifndef GKR_LOG_CHANNEL_KEEP
+#define GKR_LOG_CHANNEL_KEEP
 #endif
 //
-// LOGxxx Alias is module LOG - mLOGxxx
+// LOGxxx Alias is channel LOG - cLOGxxx
 //
-#define LOG             mLOG
-#define LOG_IF          mLOG_IF
+#define LOG             cLOG
+#define LOG_IF          cLOG_IF
 
-#define LOGF            mLOGF
-#define LOGE            mLOGE
-#define LOGW            mLOGW
-#define LOGI            mLOGI
-#define LOGV            mLOGV
-#define LOGD            mLOGD
-#define LOGT            mLOGT
+#define LOGF            cLOGF
+#define LOGE            cLOGE
+#define LOGW            cLOGW
+#define LOGI            cLOGI
+#define LOGV            cLOGV
+#define LOGD            cLOGD
+#define LOGT            cLOGT
 
-#define LOG_FATAL       mLOG_FATAL
-#define LOG_ERROR       mLOG_ERROR
-#define LOG_WARNING     mLOG_WARNING
-#define LOG_INFO        mLOG_INFO
-#define LOG_VERBOSE     mLOG_VERBOSE
-#define LOG_DEBUG       mLOG_DEBUG
-#define LOG_TRACE       mLOG_TRACE
+#define LOG_FATAL       cLOG_FATAL
+#define LOG_ERROR       cLOG_ERROR
+#define LOG_WARNING     cLOG_WARNING
+#define LOG_INFO        cLOG_INFO
+#define LOG_VERBOSE     cLOG_VERBOSE
+#define LOG_DEBUG       cLOG_DEBUG
+#define LOG_TRACE       cLOG_TRACE
 
-#define LOGF_IF         mLOGF_IF
-#define LOGE_IF         mLOGE_IF
-#define LOGW_IF         mLOGW_IF
-#define LOGI_IF         mLOGI_IF
-#define LOGV_IF         mLOGV_IF
-#define LOGD_IF         mLOGD_IF
-#define LOGT_IF         mLOGT_IF
+#define LOGF_IF         cLOGF_IF
+#define LOGE_IF         cLOGE_IF
+#define LOGW_IF         cLOGW_IF
+#define LOGI_IF         cLOGI_IF
+#define LOGV_IF         cLOGV_IF
+#define LOGD_IF         cLOGD_IF
+#define LOGT_IF         cLOGT_IF
 
-#define LOG_FATAL_IF    mLOG_FATAL_IF
-#define LOG_ERROR_IF    mLOG_ERROR_IF
-#define LOG_WARNING_IF  mLOG_WARNING_IF
-#define LOG_INFO_IF     mLOG_INFO_IF
-#define LOG_VERBOSE_IF  mLOG_VERBOSE_IF
-#define LOG_DEBUG_IF    mLOG_DEBUG_IF
-#define LOG_TRACE_IF    mLOG_TRACE_IF
+#define LOG_FATAL_IF    cLOG_FATAL_IF
+#define LOG_ERROR_IF    cLOG_ERROR_IF
+#define LOG_WARNING_IF  cLOG_WARNING_IF
+#define LOG_INFO_IF     cLOG_INFO_IF
+#define LOG_VERBOSE_IF  cLOG_VERBOSE_IF
+#define LOG_DEBUG_IF    cLOG_DEBUG_IF
+#define LOG_TRACE_IF    cLOG_TRACE_IF
 
 #ifndef GKR_NO_PRINTF_LOGGING
-#define LOG_            mLOG_
-#define LOG_IF_         mLOG_IF_
+#define LOG_            cLOG_
+#define LOG_IF_         cLOG_IF_
 
-#define LOGF_           mLOGF_
-#define LOGE_           mLOGE_
-#define LOGW_           mLOGW_
-#define LOGI_           mLOGI_
-#define LOGV_           mLOGV_
-#define LOGD_           mLOGD_
-#define LOGT_           mLOGT_
+#define LOGF_           cLOGF_
+#define LOGE_           cLOGE_
+#define LOGW_           cLOGW_
+#define LOGI_           cLOGI_
+#define LOGV_           cLOGV_
+#define LOGD_           cLOGD_
+#define LOGT_           cLOGT_
 
-#define LOG_FATAL_      mLOG_FATAL_
-#define LOG_ERROR_      mLOG_ERROR_
-#define LOG_WARNING_    mLOG_WARNING_
-#define LOG_INFO_       mLOG_INFO_
-#define LOG_VERBOSE_    mLOG_VERBOSE_
-#define LOG_DEBUG_      mLOG_DEBUG_
-#define LOG_TRACE_      mLOG_TRACE_
+#define LOG_FATAL_      cLOG_FATAL_
+#define LOG_ERROR_      cLOG_ERROR_
+#define LOG_WARNING_    cLOG_WARNING_
+#define LOG_INFO_       cLOG_INFO_
+#define LOG_VERBOSE_    cLOG_VERBOSE_
+#define LOG_DEBUG_      cLOG_DEBUG_
+#define LOG_TRACE_      cLOG_TRACE_
 
-#define LOGF_IF_        mLOGF_IF_
-#define LOGE_IF_        mLOGE_IF_
-#define LOGW_IF_        mLOGW_IF_
-#define LOGI_IF_        mLOGI_IF_
-#define LOGV_IF_        mLOGV_IF_
-#define LOGD_IF_        mLOGD_IF_
-#define LOGT_IF_        mLOGT_IF_
+#define LOGF_IF_        cLOGF_IF_
+#define LOGE_IF_        cLOGE_IF_
+#define LOGW_IF_        cLOGW_IF_
+#define LOGI_IF_        cLOGI_IF_
+#define LOGV_IF_        cLOGV_IF_
+#define LOGD_IF_        cLOGD_IF_
+#define LOGT_IF_        cLOGT_IF_
 
-#define LOG_FATAL_IF_   mLOG_FATAL_IF_
-#define LOG_ERROR_IF_   mLOG_ERROR_IF_
-#define LOG_WARNING_IF_ mLOG_WARNING_IF_
-#define LOG_INFO_IF_    mLOG_INFO_IF_
-#define LOG_VERBOSE_IF_ mLOG_VERBOSE_IF_
-#define LOG_DEBUG_IF_   mLOG_DEBUG_IF_
-#define LOG_TRACE_IF_   mLOG_TRACE_IF_
+#define LOG_FATAL_IF_   cLOG_FATAL_IF_
+#define LOG_ERROR_IF_   cLOG_ERROR_IF_
+#define LOG_WARNING_IF_ cLOG_WARNING_IF_
+#define LOG_INFO_IF_    cLOG_INFO_IF_
+#define LOG_VERBOSE_IF_ cLOG_VERBOSE_IF_
+#define LOG_DEBUG_IF_   cLOG_DEBUG_IF_
+#define LOG_TRACE_IF_   cLOG_TRACE_IF_
 #endif /*ndef GKR_NO_PRINTF_LOGGING*/
 
 #elif (GKR_LOG_ALIAS == 3)

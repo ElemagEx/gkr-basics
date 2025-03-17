@@ -385,45 +385,45 @@ inline void fLOG_DEBUG_IF  (bool condition, int facility, const char* msg)      
 inline void fLOG_TRACE_IF  (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility, msg); }
 #endif /*def GKR_LOG_FACILITY_KEEP*/
 
-#ifdef GKR_LOG_MODULE_KEEP
+#ifdef GKR_LOG_CHANNEL_KEEP
 //
-// C++ Modern Simple module LOG - mLOGxxx
+// C++ Modern Simple channel LOG - cLOGxxx
 //
-inline void mLOG   (                void* instance, int severity, const char* msg) { gkr::log::simple_message_rts   (           instance, severity, LOG_FACILITY, msg); }
-inline void mLOG_IF(bool condition, void* instance, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, instance, severity, LOG_FACILITY, msg); }
+inline void cLOG   (                void* instance, int severity, const char* msg) { gkr::log::simple_message_rts   (           instance, severity, LOG_FACILITY, msg); }
+inline void cLOG_IF(bool condition, void* instance, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, instance, severity, LOG_FACILITY, msg); }
 
-inline void mLOGF       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, msg); }
-inline void mLOGE       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, msg); }
-inline void mLOGW       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, msg); }
-inline void mLOGI       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, msg); }
-inline void mLOGV       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, msg); }
-inline void mLOGD       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, msg); }
-inline void mLOGT       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, msg); }
+inline void cLOGF       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, msg); }
+inline void cLOGE       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, msg); }
+inline void cLOGW       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, msg); }
+inline void cLOGI       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, msg); }
+inline void cLOGV       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, msg); }
+inline void cLOGD       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, msg); }
+inline void cLOGT       (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, msg); }
 
-inline void mLOG_FATAL  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, msg); }
-inline void mLOG_ERROR  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, msg); }
-inline void mLOG_WARNING(void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, msg); }
-inline void mLOG_INFO   (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, msg); }
-inline void mLOG_VERBOSE(void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, msg); }
-inline void mLOG_DEBUG  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, msg); }
-inline void mLOG_TRACE  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, msg); }
+inline void cLOG_FATAL  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, msg); }
+inline void cLOG_ERROR  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, msg); }
+inline void cLOG_WARNING(void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, msg); }
+inline void cLOG_INFO   (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, msg); }
+inline void cLOG_VERBOSE(void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, msg); }
+inline void cLOG_DEBUG  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, msg); }
+inline void cLOG_TRACE  (void* instance, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, msg); }
 
-inline void mLOGF_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOGE_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOGW_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, msg); }
-inline void mLOGI_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOGV_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, msg); }
-inline void mLOGD_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOGT_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGF_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGE_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGW_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGI_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGV_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGD_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOGT_IF       (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, msg); }
 
-inline void mLOG_FATAL_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOG_ERROR_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOG_WARNING_IF(bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, msg); }
-inline void mLOG_INFO_IF   (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOG_VERBOSE_IF(bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, msg); }
-inline void mLOG_DEBUG_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, msg); }
-inline void mLOG_TRACE_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, msg); }
-#endif /*def GKR_LOG_MODULE_KEEP*/
+inline void cLOG_FATAL_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOG_ERROR_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOG_WARNING_IF(bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, msg); }
+inline void cLOG_INFO_IF   (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOG_VERBOSE_IF(bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, msg); }
+inline void cLOG_DEBUG_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, msg); }
+inline void cLOG_TRACE_IF  (bool condition, void* instance, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, msg); }
+#endif /*def GKR_LOG_CHANNEL_KEEP*/
 
 #ifdef GKR_LOG_GENERAL_KEEP
 //
@@ -547,45 +547,45 @@ template<typename... Args> void fLOG_DEBUG_IF_  (bool condition, int facility, c
 template<typename... Args> void fLOG_TRACE_IF_  (bool condition, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility, format, std::forward<Args>(args)...); }
 #endif /*def GKR_LOG_FACILITY_KEEP*/
 
-#ifdef GKR_LOG_MODULE_KEEP
+#ifdef GKR_LOG_CHANNEL_KEEP
 //
-// C++ Modern PrintF module LOG - mLOGxxx
+// C++ Modern PrintF channel LOG - cLOGxxx
 //
-template<typename... Args> void mLOG_   (                void* instance, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts   (           instance, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_IF_(bool condition, void* instance, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, instance, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_   (                void* instance, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts   (           instance, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_IF_(bool condition, void* instance, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, instance, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
-template<typename... Args> void mCLOGF_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mCLOGE_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mCLOGW_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mCLOGI_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mCLOGV_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mCLOGD_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mCLOGT_       (void* instance, const char* format, Args&&... args)                         { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGF_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGE_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGW_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGI_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGV_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGD_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGT_       (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOG_FATAL_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_ERROR_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_WARNING_(void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_INFO_   (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_VERBOSE_(void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_DEBUG_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_TRACE_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_FATAL_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_ERROR_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_WARNING_(void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_INFO_   (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_VERBOSE_(void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_DEBUG_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_TRACE_  (void* instance, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOGF_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOGE_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOGW_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOGI_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOGV_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOGD_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOGT_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGF_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGE_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGW_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGI_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGV_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGD_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOGT_IF_       (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOG_FATAL_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_ERROR_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_WARNING_IF_(bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_INFO_IF_   (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_VERBOSE_IF_(bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_DEBUG_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_TRACE_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
-#endif /*def GKR_LOG_MODULE_KEEP*/
+template<typename... Args> void cLOG_FATAL_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_ERROR_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_WARNING_IF_(bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_INFO_IF_   (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_VERBOSE_IF_(bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_DEBUG_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_TRACE_IF_  (bool condition, void* instance, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, format, std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_CHANNEL_KEEP*/
 
 #ifdef GKR_LOG_GENERAL_KEEP
 //
@@ -711,45 +711,45 @@ inline auto fLOG_DEBUG_IF  (bool condition, int facility)       { return gkr::lo
 inline auto fLOG_TRACE_IF  (bool condition, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility); }
 #endif /*def GKR_LOG_FACILITY_KEEP*/
 
-#ifdef GKR_LOG_MODULE_KEEP
+#ifdef GKR_LOG_CHANNEL_KEEP
 //
-// C++ Modern Stream module LOG - mLOGxxx
+// C++ Modern Stream channel LOG - cLOGxxx
 //
-inline auto mLOG   (                void* instance, int severity) { return gkr::log::stream_message_rts   (           instance, severity, LOG_FACILITY); }
-inline auto mLOG_IF(bool condition, void* instance, int severity) { return gkr::log::stream_message_rts_if(condition, instance, severity, LOG_FACILITY); }
+inline auto cLOG   (                void* instance, int severity) { return gkr::log::stream_message_rts   (           instance, severity, LOG_FACILITY); }
+inline auto cLOG_IF(bool condition, void* instance, int severity) { return gkr::log::stream_message_rts_if(condition, instance, severity, LOG_FACILITY); }
 
-inline auto mLOGF       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY); }
-inline auto mLOGE       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY); }
-inline auto mLOGW       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY); }
-inline auto mLOGI       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY); }
-inline auto mLOGV       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY); }
-inline auto mLOGD       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY); }
-inline auto mLOGT       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY); }
+inline auto cLOGF       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY); }
+inline auto cLOGE       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY); }
+inline auto cLOGW       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY); }
+inline auto cLOGI       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY); }
+inline auto cLOGV       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY); }
+inline auto cLOGD       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY); }
+inline auto cLOGT       (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY); }
 
-inline auto mLOG_FATAL  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY); }
-inline auto mLOG_ERROR  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY); }
-inline auto mLOG_WARNING(void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY); }
-inline auto mLOG_INFO   (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY); }
-inline auto mLOG_VERBOSE(void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY); }
-inline auto mLOG_DEBUG  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY); }
-inline auto mLOG_TRACE  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY); }
+inline auto cLOG_FATAL  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY); }
+inline auto cLOG_ERROR  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY); }
+inline auto cLOG_WARNING(void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY); }
+inline auto cLOG_INFO   (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY); }
+inline auto cLOG_VERBOSE(void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY); }
+inline auto cLOG_DEBUG  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY); }
+inline auto cLOG_TRACE  (void* instance)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY); }
 
-inline auto mLOGF_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY); }
-inline auto mLOGE_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY); }
-inline auto mLOGW_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY); }
-inline auto mLOGI_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY); }
-inline auto mLOGV_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY); }
-inline auto mLOGD_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY); }
-inline auto mLOGT_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY); }
+inline auto cLOGF_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY); }
+inline auto cLOGE_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY); }
+inline auto cLOGW_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY); }
+inline auto cLOGI_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY); }
+inline auto cLOGV_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY); }
+inline auto cLOGD_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY); }
+inline auto cLOGT_IF       (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY); }
 
-inline auto mLOG_FATAL_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY); }
-inline auto mLOG_ERROR_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY); }
-inline auto mLOG_WARNING_IF(bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY); }
-inline auto mLOG_INFO_IF   (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY); }
-inline auto mLOG_VERBOSE_IF(bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY); }
-inline auto mLOG_DEBUG_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY); }
-inline auto mLOG_TRACE_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY); }
-#endif /*def GKR_LOG_MODULE_KEEP*/
+inline auto cLOG_FATAL_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY); }
+inline auto cLOG_ERROR_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY); }
+inline auto cLOG_WARNING_IF(bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY); }
+inline auto cLOG_INFO_IF   (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY); }
+inline auto cLOG_VERBOSE_IF(bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY); }
+inline auto cLOG_DEBUG_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY); }
+inline auto cLOG_TRACE_IF  (bool condition, void* instance)       { return gkr::log::stream_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY); }
+#endif /*def GKR_LOG_CHANNEL_KEEP*/
 
 #ifdef GKR_LOG_GENERAL_KEEP
 //
@@ -950,82 +950,82 @@ template<typename... Args> void fLOG_DEBUG_IF  (bool condition, int facility, co
 template<typename... Args> void fLOG_TRACE_IF  (bool condition, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)        { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, LOG_INSTANCE, facility, std::move(fmt), std::forward<Args>(args)...); }
 #endif /*def GKR_LOG_FACILITY_KEEP*/
 
-#ifdef GKR_LOG_MODULE_KEEP
+#ifdef GKR_LOG_CHANNEL_KEEP
 //
-// C++ Modern Format module LOG - mfLOGxxx
+// C++ Modern Format channel LOG - mfLOGxxx
 //
-template<typename... Args> void mLOG   (                void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_IF(bool condition, void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG   (                void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_IF(bool condition, void* instance, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, instance, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOGF       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGE       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGW       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGI       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGV       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGD       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGT       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGF       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGE       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGW       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGI       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGV       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGD       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGT       (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOG_FATAL  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_ERROR  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_WARNING(void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_INFO   (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_VERBOSE(void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_DEBUG  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_TRACE  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_FATAL  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_ERROR  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_WARNING(void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_INFO   (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_VERBOSE(void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_DEBUG  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_TRACE  (void* instance, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOGF_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGE_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGW_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGI_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGV_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGD_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGT_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...)    ; }
+template<typename... Args> void cLOGF_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGE_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGW_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGI_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGV_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGD_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGT_IF       (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...)    ; }
 
-template<typename... Args> void mLOG_FATAL_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_ERROR_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_WARN_IF   (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_INFO_IF   (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_VERBOSE_IF(bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_DEBUG_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_TRACE_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_FATAL_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_ERROR_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_WARN_IF   (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_INFO_IF   (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_VERBOSE_IF(bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_DEBUG_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_TRACE_IF  (bool condition, void* instance, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 //
 // plus locale
 //
-template<typename... Args> void mLOG   (                void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_IF(bool condition, void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG   (                void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_IF(bool condition, void* instance, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, instance, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOGF       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGE       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGW       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGI       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGV       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGD       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGT       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...);                            }
+template<typename... Args> void cLOGF       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGE       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGW       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGI       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGV       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGD       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGT       (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...);                            }
 
-template<typename... Args> void mLOG_FATAL  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_ERROR  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_WARNING(void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_INFO   (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_VERBOSE(void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_DEBUG  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_TRACE  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_FATAL  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_ERROR  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_WARNING(void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_WARNING>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_INFO   (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_INFO   >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_VERBOSE(void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_DEBUG  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_TRACE  (void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
-template<typename... Args> void mLOGF_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGE_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGW_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGI_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGV_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGD_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOGT_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...    ); }
+template<typename... Args> void cLOGF_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGE_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGW_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGI_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGV_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGD_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOGT_IF       (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...    ); }
 
-template<typename... Args> void mLOG_FATAL_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_ERROR_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_WARN_IF   (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_INFO_IF   (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_VERBOSE_IF(bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_DEBUG_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void mLOG_TRACE_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-#endif /*def GKR_LOG_MODULE_KEEP*/
+template<typename... Args> void cLOG_FATAL_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_ERROR_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_WARN_IF   (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_WARNING>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_INFO_IF   (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_INFO   >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_VERBOSE_IF(bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_VERBOSE>(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_DEBUG_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_DEBUG  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_TRACE_IF  (bool condition, void* instance, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_TRACE  >(condition, instance, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+#endif /*def GKR_LOG_CHANNEL_KEEP*/
 
 #ifdef GKR_LOG_GENERAL_KEEP
 //

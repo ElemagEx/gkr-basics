@@ -13,7 +13,7 @@ Facility are user-defined constants that are passed to log functions and later l
 ### Macro/Inline log type
 | | :x: Instance | :white_check_mark: Instance
 | :--- | :--- | :--- 
-| :x: Facility | `bLOGxxx` - basic log | `mLOGxxx` - module log
+| :x: Facility | `bLOGxxx` - basic log | `cLOGxxx` - channel log
 | :white_check_mark: Facility | `fLOGxxx` - facility log | `gLOGxxx` - genenral log
 
 ### Macro/Inline name format
@@ -35,7 +35,7 @@ Format: `[prefix]LOG[severity][_IF][_]`
 | Trace   | LOG_SEVERITY_TRACE   | `_TRACE`   | `T`       | 6     | Program trace information
 
 ### Generic defines
-- `LOG_FACILITY` - basic and module log macros/inlines use this value for its facility argument - default is 0
+- `LOG_FACILITY` - basic and channel log macros/inlines use this value for its facility argument - default is 0
 - `LOG_INSTANCE` - basic and facility log macros/inlines use this value for its intance argument - default is (`NULL`/`nullptr`)
 - `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time log threshold - all macros/inlines that are grater or equal to this value are compiled out - default is 100
 - `LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions
@@ -57,7 +57,7 @@ Format: `[prefix]LOG[severity][_IF][_]`
 | `<S_ID>` | severity value
 | `<F_ID>` | facility value
 | `<TNAM>` | thread name
-| `<MNAM>` | module name
+| `<CNAM>` | channel name
 | `<SNAM>` | severity name
 | `<FNAM>` | facility name
 | `<FUNC>` | source function

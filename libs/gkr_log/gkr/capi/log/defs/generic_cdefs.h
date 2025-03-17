@@ -243,45 +243,45 @@ inline void gkr_log_printf_message_if(int condition LOG_MORE_ARGS, void* instanc
 #define fLOG_TRACE_IF(  condition, facility, message)   GKR_LOG_T_SIMPLE_MSG_IF(condition, LOG_INSTANCE LOG_MORE_VALS, LOG_SEVERITY_TRACE  , facility, message)
 #endif /*def GKR_LOG_FACILITY_KEEP*/
 
-#ifdef GKR_LOG_MODULE_KEEP
+#ifdef GKR_LOG_CHANNEL_KEEP
 //
-// C Defs Simple module LOG - mLOGxxx
+// C Defs Simple channel LOG - cLOGxxx
 //
-#define mLOG(              instance, severity, message) GKR_LOG_X_SIMPLE_MSG(              instance LOG_MORE_VALS, severity, LOG_FACILITY, message)
-#define mLOG_IF(condition, instance, severity, message) GKR_LOG_X_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, severity, LOG_FACILITY, message)
+#define cLOG(              instance, severity, message) GKR_LOG_X_SIMPLE_MSG(              instance LOG_MORE_VALS, severity, LOG_FACILITY, message)
+#define cLOG_IF(condition, instance, severity, message) GKR_LOG_X_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, severity, LOG_FACILITY, message)
 
-#define mLOGF(instance, message)                        GKR_LOG_F_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
-#define mLOGE(instance, message)                        GKR_LOG_E_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
-#define mLOGW(instance, message)                        GKR_LOG_W_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
-#define mLOGI(instance, message)                        GKR_LOG_I_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
-#define mLOGV(instance, message)                        GKR_LOG_V_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
-#define mLOGD(instance, message)                        GKR_LOG_D_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
-#define mLOGT(instance, message)                        GKR_LOG_T_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
+#define cLOGF(instance, message)                        GKR_LOG_F_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
+#define cLOGE(instance, message)                        GKR_LOG_E_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
+#define cLOGW(instance, message)                        GKR_LOG_W_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
+#define cLOGI(instance, message)                        GKR_LOG_I_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
+#define cLOGV(instance, message)                        GKR_LOG_V_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
+#define cLOGD(instance, message)                        GKR_LOG_D_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
+#define cLOGT(instance, message)                        GKR_LOG_T_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
 
-#define mLOG_FATAL(  instance, message)                 GKR_LOG_F_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
-#define mLOG_ERROR(  instance, message)                 GKR_LOG_E_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
-#define mLOG_WARNING(instance, message)                 GKR_LOG_W_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
-#define mLOG_INFO(   instance, message)                 GKR_LOG_I_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
-#define mLOG_VERBOSE(instance, message)                 GKR_LOG_V_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
-#define mLOG_DEBUG(  instance, message)                 GKR_LOG_D_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
-#define mLOG_TRACE(  instance, message)                 GKR_LOG_T_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
+#define cLOG_FATAL(  instance, message)                 GKR_LOG_F_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
+#define cLOG_ERROR(  instance, message)                 GKR_LOG_E_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
+#define cLOG_WARNING(instance, message)                 GKR_LOG_W_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
+#define cLOG_INFO(   instance, message)                 GKR_LOG_I_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
+#define cLOG_VERBOSE(instance, message)                 GKR_LOG_V_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
+#define cLOG_DEBUG(  instance, message)                 GKR_LOG_D_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
+#define cLOG_TRACE(  instance, message)                 GKR_LOG_T_SIMPLE_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
 
-#define mLOGF_IF(condition, instance, message)          GKR_LOG_F_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
-#define mLOGE_IF(condition, instance, message)          GKR_LOG_E_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
-#define mLOGW_IF(condition, instance, message)          GKR_LOG_W_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
-#define mLOGI_IF(condition, instance, message)          GKR_LOG_I_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
-#define mLOGV_IF(condition, instance, message)          GKR_LOG_V_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
-#define mLOGD_IF(condition, instance, message)          GKR_LOG_D_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
-#define mLOGT_IF(condition, instance, message)          GKR_LOG_T_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
+#define cLOGF_IF(condition, instance, message)          GKR_LOG_F_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
+#define cLOGE_IF(condition, instance, message)          GKR_LOG_E_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
+#define cLOGW_IF(condition, instance, message)          GKR_LOG_W_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
+#define cLOGI_IF(condition, instance, message)          GKR_LOG_I_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
+#define cLOGV_IF(condition, instance, message)          GKR_LOG_V_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
+#define cLOGD_IF(condition, instance, message)          GKR_LOG_D_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
+#define cLOGT_IF(condition, instance, message)          GKR_LOG_T_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
 
-#define mLOG_FATAL_IF(  condition, instance, message)   GKR_LOG_F_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
-#define mLOG_ERROR_IF(  condition, instance, message)   GKR_LOG_E_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
-#define mLOG_WARNING_IF(condition, instance, message)   GKR_LOG_W_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
-#define mLOG_INFO_IF(   condition, instance, message)   GKR_LOG_I_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
-#define mLOG_VERBOSE_IF(condition, instance, message)   GKR_LOG_V_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
-#define mLOG_DEBUG_IF(  condition, instance, message)   GKR_LOG_D_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
-#define mLOG_TRACE_IF(  condition, instance, message)   GKR_LOG_T_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
-#endif /*def GKR_LOG_MODULE_KEEP*/
+#define cLOG_FATAL_IF(  condition, instance, message)   GKR_LOG_F_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, message)
+#define cLOG_ERROR_IF(  condition, instance, message)   GKR_LOG_E_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, message)
+#define cLOG_WARNING_IF(condition, instance, message)   GKR_LOG_W_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, message)
+#define cLOG_INFO_IF(   condition, instance, message)   GKR_LOG_I_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, message)
+#define cLOG_VERBOSE_IF(condition, instance, message)   GKR_LOG_V_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, message)
+#define cLOG_DEBUG_IF(  condition, instance, message)   GKR_LOG_D_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, message)
+#define cLOG_TRACE_IF(  condition, instance, message)   GKR_LOG_T_SIMPLE_MSG_IF(condition, instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, message)
+#endif /*def GKR_LOG_CHANNEL_KEEP*/
 
 #ifdef GKR_LOG_GENERAL_KEEP
 //
@@ -405,45 +405,45 @@ inline void gkr_log_printf_message_if(int condition LOG_MORE_ARGS, void* instanc
 #define fLOG_TRACE_IF_(  condition, facility, format, ...)      GKR_LOG_T_PRINTF_MSG_IF(condition LOG_MORE_VALS, LOG_INSTANCE, LOG_SEVERITY_TRACE  , facility, format, __VA_ARGS__)
 #endif /*def GKR_LOG_FACILITY_KEEP*/
 
-#ifdef GKR_LOG_MODULE_KEEP
+#ifdef GKR_LOG_CHANNEL_KEEP
 //
-// C defs PrintF module LOG - mLOGxxx
+// C defs PrintF channel LOG - cLOGxxx
 //
-#define mLOG_(              instance, severity, format, ...)    GKR_LOG_X_PRINTF_MSG(              instance LOG_MORE_VALS, severity, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_IF_(condition, instance, severity, format, ...)    GKR_LOG_X_PRINTF_MSG_IF(condition, instance LOG_MORE_VALS, severity, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_(              instance, severity, format, ...)    GKR_LOG_X_PRINTF_MSG(              instance LOG_MORE_VALS, severity, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_IF_(condition, instance, severity, format, ...)    GKR_LOG_X_PRINTF_MSG_IF(condition, instance LOG_MORE_VALS, severity, LOG_FACILITY, format, __VA_ARGS__)
 
-#define mLOGF_(instance, format, ...)                           GKR_LOG_F_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGE_(instance, format, ...)                           GKR_LOG_E_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGW_(instance, format, ...)                           GKR_LOG_W_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGI_(instance, format, ...)                           GKR_LOG_I_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGV_(instance, format, ...)                           GKR_LOG_V_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGD_(instance, format, ...)                           GKR_LOG_D_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGT_(instance, format, ...)                           GKR_LOG_T_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGF_(instance, format, ...)                           GKR_LOG_F_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGE_(instance, format, ...)                           GKR_LOG_E_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGW_(instance, format, ...)                           GKR_LOG_W_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGI_(instance, format, ...)                           GKR_LOG_I_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGV_(instance, format, ...)                           GKR_LOG_V_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGD_(instance, format, ...)                           GKR_LOG_D_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGT_(instance, format, ...)                           GKR_LOG_T_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
 
-#define mLOG_FATAL_(  instance, message, ...)                   GKR_LOG_F_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_ERROR_(  instance, message, ...)                   GKR_LOG_E_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_WARNING_(instance, message, ...)                   GKR_LOG_W_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_INFO_(   instance, message, ...)                   GKR_LOG_I_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_VERBOSE_(instance, message, ...)                   GKR_LOG_V_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_DEBUG_(  instance, message, ...)                   GKR_LOG_D_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_TRACE_(  instance, message, ...)                   GKR_LOG_T_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_FATAL_(  instance, message, ...)                   GKR_LOG_F_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_ERROR_(  instance, message, ...)                   GKR_LOG_E_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_WARNING_(instance, message, ...)                   GKR_LOG_W_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_INFO_(   instance, message, ...)                   GKR_LOG_I_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_VERBOSE_(instance, message, ...)                   GKR_LOG_V_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_DEBUG_(  instance, message, ...)                   GKR_LOG_D_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_TRACE_(  instance, message, ...)                   GKR_LOG_T_PRINTF_MSG(instance LOG_MORE_VALS, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
 
-#define mLOGF_IF_(condition, instance, format, ...)             GKR_LOG_F_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGE_IF_(condition, instance, format, ...)             GKR_LOG_E_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGW_IF_(condition, instance, format, ...)             GKR_LOG_W_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGI_IF_(condition, instance, format, ...)             GKR_LOG_I_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGV_IF_(condition, instance, format, ...)             GKR_LOG_V_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGD_IF_(condition, instance, format, ...)             GKR_LOG_D_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOGT_IF_(condition, instance, format, ...)             GKR_LOG_T_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGF_IF_(condition, instance, format, ...)             GKR_LOG_F_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGE_IF_(condition, instance, format, ...)             GKR_LOG_E_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGW_IF_(condition, instance, format, ...)             GKR_LOG_W_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGI_IF_(condition, instance, format, ...)             GKR_LOG_I_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGV_IF_(condition, instance, format, ...)             GKR_LOG_V_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGD_IF_(condition, instance, format, ...)             GKR_LOG_D_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOGT_IF_(condition, instance, format, ...)             GKR_LOG_T_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
 
-#define mLOG_FATAL_IF_(  condition, instance, format, ...)      GKR_LOG_F_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_ERROR_IF_(  condition, instance, format, ...)      GKR_LOG_E_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_WARNING_IF_(condition, instance, format, ...)      GKR_LOG_W_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_INFO_IF_(   condition, instance, format, ...)      GKR_LOG_I_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_VERBOSE_IF_(condition, instance, format, ...)      GKR_LOG_V_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_DEBUG_IF_(  condition, instance, format, ...)      GKR_LOG_D_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
-#define mLOG_TRACE_IF_(  condition, instance, format, ...)      GKR_LOG_T_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
-#endif /*def GKR_LOG_MODULE_KEEP*/
+#define cLOG_FATAL_IF_(  condition, instance, format, ...)      GKR_LOG_F_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_FATAL  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_ERROR_IF_(  condition, instance, format, ...)      GKR_LOG_E_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_ERROR  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_WARNING_IF_(condition, instance, format, ...)      GKR_LOG_W_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_WARNING, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_INFO_IF_(   condition, instance, format, ...)      GKR_LOG_I_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_INFO   , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_VERBOSE_IF_(condition, instance, format, ...)      GKR_LOG_V_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_VERBOSE, LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_DEBUG_IF_(  condition, instance, format, ...)      GKR_LOG_D_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_DEBUG  , LOG_FACILITY, format, __VA_ARGS__)
+#define cLOG_TRACE_IF_(  condition, instance, format, ...)      GKR_LOG_T_PRINTF_MSG_IF(condition LOG_MORE_VALS, instance, LOG_SEVERITY_TRACE  , LOG_FACILITY, format, __VA_ARGS__)
+#endif /*def GKR_LOG_CHANNEL_KEEP*/
 
 #ifdef GKR_LOG_GENERAL_KEEP
 //

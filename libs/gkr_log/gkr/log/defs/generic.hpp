@@ -5,6 +5,22 @@
 
 #include <gkr/capi/log/defs/generic.h>
 
+namespace gkr
+{
+namespace log
+{
+constexpr const char* severities_names[] = LOG_SEVERITIES_NAMES;
+
+inline constexpr const char* severity_name_by_value(int severity)
+{
+    return (unsigned(severity) < (sizeof(severities_names)/sizeof(*severities_names)))
+        ? severities_names[severity]
+        : "N/A"
+        ;
+}
+}
+}
+
 #ifndef LOG_USE_C_DEFS
 
 #ifdef LOG_SOURCE_LOCATION
@@ -27,16 +43,6 @@ namespace gkr
 {
 namespace log
 {
-constexpr const char* severities_names[] = LOG_SEVERITIES_NAMES;
-
-inline constexpr const char* severity_name_by_value(int severity)
-{
-    return (unsigned(severity) < (sizeof(severities_names)/sizeof(*severities_names)))
-        ? severities_names[severity]
-        : "N/A"
-        ;
-}
-
 inline constexpr bool threshold(int severity)
 {
     return (severity < LOG_THRESHOLD_LEVEL);

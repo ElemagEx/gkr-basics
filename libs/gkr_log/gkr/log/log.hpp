@@ -2,6 +2,8 @@
 
 #include <gkr/capi/log/log.h>
 
+#include <utility>
+
 namespace gkr
 {
 namespace log
@@ -9,57 +11,58 @@ namespace log
 
 struct custom_message
 {
-    void*    instance;
-    char*    buf = nullptr;
-    unsigned cch = 0;
+    void*    m_instance = nullptr;
+    char*    m_buf      = nullptr;
+    unsigned m_cch      = 0;
 
     custom_message           (const custom_message&) noexcept = delete;
     custom_message& operator=(const custom_message&) noexcept = delete;
 
-    custom_message(custom_message&& other) noexcept : instance(other.instance), buf(other.buf), cch(other.cch)
+    custom_message(custom_message&& other) noexcept
+        : m_instance(std::exchange(other.m_instance, nullptr))
+        , m_buf     (std::exchange(other.m_buf     , nullptr))
+        , m_cch     (std::exchange(other.m_cch     , 0))
     {
-        other.buf = nullptr;
     }
     custom_message& operator=(custom_message&& other) noexcept
     {
-        instance  = other.instance;
-        buf       = other.buf;
-        cch       = other.cch;
-        other.buf = nullptr;
+        m_instance  = std::exchange(other.m_instance, nullptr);
+        m_buf       = std::exchange(other.m_buf     , nullptr);
+        m_cch       = std::exchange(other.m_cch     , 0);
         return *this;
     }
-    custom_message() : instance(nullptr)
+    custom_message() noexcept
     {
     }
-    custom_message(void* instance_, int severity) : instance(instance_)
+    custom_message(void* instance, int severity) : m_instance(instance)
     {
-        gkr_log_custom_message_start(instance, severity, &buf, &cch);
+        gkr_log_custom_message_start(instance, severity, &m_buf, &m_cch);
     }
     ~custom_message()
     {
         cancel();
     }
 
-    bool is_started() const
+    bool is_started() const noexcept
     {
-        return (buf != nullptr);
+        return (m_buf != nullptr);
     }
     int finish(int severity, int facility)
     {
         if(!is_started()) return 0;
-        buf = nullptr;
-        return gkr_log_custom_message_finish(instance, severity, facility);
+        m_buf = nullptr;
+        return gkr_log_custom_message_finish(m_instance, severity, facility);
     }
     int finish(const char* func, const char* file, unsigned line, int severity, int facility) {
         if(!is_started()) return 0;
-        buf = nullptr;
-        return gkr_log_custom_message_finish_ex(instance, func, file, line, severity, facility);
+        m_buf = nullptr;
+        return gkr_log_custom_message_finish_ex(m_instance, func, file, line, severity, facility);
     }
     int cancel()
     {
         if(!is_started()) return -1;
-        buf = nullptr;
-        return gkr_log_custom_message_cancel(instance);
+        m_buf = nullptr;
+        return gkr_log_custom_message_cancel(m_instance);
     }
 };
 }
@@ -70,9 +73,12 @@ struct custom_message
 #include <memory>
 #include <sstream>
 
-namespace gkr {
-namespace log {
-namespace impl{
+namespace gkr
+{
+namespace log
+{
+namespace impl
+{
 
 GKR_LOG_API void init_ostringstream_allocator(char* buf, std::size_t cch);
 GKR_LOG_API void done_ostringstream_allocator(std::size_t len);

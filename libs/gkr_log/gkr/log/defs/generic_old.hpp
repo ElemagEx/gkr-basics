@@ -144,8 +144,7 @@ template<> auto stream_message_if<LOG_SEVERITY_TRACE  ,false>(bool, void*, int) 
 //
 // C++ Legacy Simple basic LOG - bLOGxxx
 //
-inline void bLOG   (                int severity, const char* msg) { gkr::log::simple_message_rts   (           LOG_CHANNEL, severity, LOG_FACILITY, msg); }
-inline void bLOG_IF(bool condition, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, msg); }
+inline void bLOG(int severity, const char* msg)                    { gkr::log::simple_message_rts(LOG_CHANNEL, severity, LOG_FACILITY, msg); }
 
 inline void bLOGF       (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOGE       (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_CHANNEL, LOG_FACILITY, msg); }
@@ -162,6 +161,8 @@ inline void bLOG_INFO   (const char* msg)                          { gkr::log::s
 inline void bLOG_VERBOSE(const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOG_DEBUG  (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOG_TRACE  (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_CHANNEL, LOG_FACILITY, msg); }
+
+inline void bLOG_IF(bool condition, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, msg); }
 
 inline void bLOGF_IF       (bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOGE_IF       (bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_CHANNEL, LOG_FACILITY, msg); }
@@ -184,8 +185,7 @@ inline void bLOG_TRACE_IF  (bool condition, const char* msg)       { gkr::log::s
 //
 // C++ Legacy Simple facility LOG - fLOGxxx
 //
-inline void fLOG   (                int severity, int facility, const char* msg) { gkr::log::simple_message_rts   (           LOG_CHANNEL, severity, facility, msg); }
-inline void fLOG_IF(bool condition, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, facility, msg); }
+inline void fLOG(int severity, int facility, const char* msg)                    { gkr::log::simple_message_rts(LOG_CHANNEL, severity, facility, msg); }
 
 inline void fLOGF       (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_CHANNEL, facility, msg); }
 inline void fLOGE       (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_CHANNEL, facility, msg); }
@@ -202,6 +202,8 @@ inline void fLOG_INFO   (int facility, const char* msg)                         
 inline void fLOG_VERBOSE(int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_CHANNEL, facility, msg); }
 inline void fLOG_DEBUG  (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_CHANNEL, facility, msg); }
 inline void fLOG_TRACE  (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_CHANNEL, facility, msg); }
+
+inline void fLOG_IF(bool condition, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, facility, msg); }
 
 inline void fLOGF_IF       (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_CHANNEL, facility, msg); }
 inline void fLOGE_IF       (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_CHANNEL, facility, msg); }
@@ -224,8 +226,7 @@ inline void fLOG_TRACE_IF  (bool condition, int facility, const char* msg)      
 //
 // C++ Legacy Simple channel LOG - cLOGxxx
 //
-inline void cLOG   (                void* channel, int severity, const char* msg) { gkr::log::simple_message_rts   (           channel, severity, LOG_FACILITY, msg); }
-inline void cLOG_IF(bool condition, void* channel, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, LOG_FACILITY, msg); }
+inline void cLOG(void* channel, int severity, const char* msg)                    { gkr::log::simple_message_rts(channel, severity, LOG_FACILITY, msg); }
 
 inline void cLOGF       (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(channel, LOG_FACILITY, msg); }
 inline void cLOGE       (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(channel, LOG_FACILITY, msg); }
@@ -242,6 +243,8 @@ inline void cLOG_INFO   (void* channel, const char* msg)                        
 inline void cLOG_VERBOSE(void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(channel, LOG_FACILITY, msg); }
 inline void cLOG_DEBUG  (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(channel, LOG_FACILITY, msg); }
 inline void cLOG_TRACE  (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(channel, LOG_FACILITY, msg); }
+
+inline void cLOG_IF(bool condition, void* channel, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, LOG_FACILITY, msg); }
 
 inline void cLOGF_IF       (bool condition, void* channel, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, channel, LOG_FACILITY, msg); }
 inline void cLOGE_IF       (bool condition, void* channel, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, channel, LOG_FACILITY, msg); }
@@ -264,8 +267,7 @@ inline void cLOG_TRACE_IF  (bool condition, void* channel, const char* msg)     
 //
 // C++ Legacy Simple general LOG - gLOGxxx
 //
-inline void gLOG   (                void* channel, int severity, int facility, const char* msg) { gkr::log::simple_message_rts   (           channel, severity, facility, msg); }
-inline void gLOG_IF(bool condition, void* channel, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, facility, msg); }
+inline void gLOG(void* channel, int severity, int facility, const char* msg)                    { gkr::log::simple_message_rts(channel, severity, facility, msg); }
 
 inline void gLOGF       (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(channel, facility, msg); }
 inline void gLOGE       (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(channel, facility, msg); }
@@ -282,6 +284,8 @@ inline void gLOG_INFO   (void* channel, int facility, const char* msg)          
 inline void gLOG_VERBOSE(void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(channel, facility, msg); }
 inline void gLOG_DEBUG  (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(channel, facility, msg); }
 inline void gLOG_TRACE  (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(channel, facility, msg); }
+
+inline void gLOG_IF(bool condition, void* channel, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, facility, msg); }
 
 inline void gLOGF_IF        (bool condition, void* channel, int facility, const char* msg)      { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, channel, facility, msg); }
 inline void gLOGE_IF        (bool condition, void* channel, int facility, const char* msg)      { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, channel, facility, msg); }
@@ -306,8 +310,7 @@ inline void gLOG_TRACE_IF   (bool condition, void* channel, int facility, const 
 //
 // C++ Legacy PrintF basic LOG - bLOGxxx
 //
-inline void bLOG_   (                int severity, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts   (           LOG_CHANNEL, severity, LOG_FACILITY, format, args); va_end(args); }
-inline void bLOG_IF_(bool condition, int severity, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, format, args); va_end(args); }
+inline void bLOG_(int severity, const char* format, ...)                    { va_list args; va_start(args, format); gkr::log::printf_message_rts(LOG_CHANNEL, severity, LOG_FACILITY, format, args); va_end(args); }
 
 inline void bLOGF_       (const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
 inline void bLOGE_       (const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
@@ -324,6 +327,8 @@ inline void bLOG_INFO_   (const char* format, ...)                          { va
 inline void bLOG_VERBOSE_(const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
 inline void bLOG_DEBUG_  (const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
 inline void bLOG_TRACE_  (const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
+
+inline void bLOG_IF_(bool condition, int severity, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, format, args); va_end(args); }
 
 inline void bLOGF_IF_       (bool condition, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
 inline void bLOGE_IF_       (bool condition, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_CHANNEL, LOG_FACILITY, format, args); va_end(args); }
@@ -346,8 +351,7 @@ inline void bLOG_TRACE_IF_  (bool condition, const char* format, ...)       { va
 //
 // C++ Legacy PrintF facility LOG - fLOGxxx
 //
-inline void fLOG_   (                int severity, int facility, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts   (           LOG_CHANNEL, severity, facility, format, args); va_end(args); }
-inline void fLOG_IF_(bool condition, int severity, int facility, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, facility, format, args); va_end(args); }
+inline void fLOG_(int severity, int facility, const char* format, ...)                    { va_list args; va_start(args, format); gkr::log::printf_message_rts(LOG_CHANNEL, severity, facility, format, args); va_end(args); }
 
 inline void fLOGF_       (int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_CHANNEL, facility, format, args); va_end(args); }
 inline void fLOGE_       (int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_CHANNEL, facility, format, args); va_end(args); }
@@ -364,6 +368,8 @@ inline void fLOG_INFO_   (int facility, const char* format, ...)                
 inline void fLOG_VERBOSE_(int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_CHANNEL, facility, format, args); va_end(args); }
 inline void fLOG_DEBUG_  (int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_CHANNEL, facility, format, args); va_end(args); }
 inline void fLOG_TRACE_  (int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_CHANNEL, facility, format, args); va_end(args); }
+
+inline void fLOG_IF_(bool condition, int severity, int facility, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, facility, format, args); va_end(args); }
 
 inline void fLOGF_IF_       (bool condition, int facility, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_CHANNEL, facility, format, args); va_end(args); }
 inline void fLOGE_IF_       (bool condition, int facility, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_CHANNEL, facility, format, args); va_end(args); }
@@ -386,8 +392,7 @@ inline void fLOG_TRACE_IF_  (bool condition, int facility, const char* format, .
 //
 // C++ Legacy PrintF channel LOG - cLOGxxx
 //
-inline void cLOG_   (                void* channel, int severity, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts   (           channel, severity, LOG_FACILITY, format, args); va_end(args); }
-inline void cLOG_IF_(bool condition, void* channel, int severity, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, channel, severity, LOG_FACILITY, format, args); va_end(args); }
+inline void cLOG_(void* channel, int severity, const char* format, ...)                    { va_list args; va_start(args, format); gkr::log::printf_message_rts(channel, severity, LOG_FACILITY, format, args); va_end(args); }
 
 inline void cLOGF_       (void* channel, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(channel, LOG_FACILITY, format, args); va_end(args); }
 inline void cLOGE_       (void* channel, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(channel, LOG_FACILITY, format, args); va_end(args); }
@@ -404,6 +409,8 @@ inline void cLOG_INFO_   (void* channel, const char* format, ...)               
 inline void cLOG_VERBOSE_(void* channel, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(channel, LOG_FACILITY, format, args); va_end(args); }
 inline void cLOG_DEBUG_  (void* channel, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(channel, LOG_FACILITY, format, args); va_end(args); }
 inline void cLOG_TRACE_  (void* channel, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(channel, LOG_FACILITY, format, args); va_end(args); }
+
+inline void cLOG_IF_(bool condition, void* channel, int severity, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, channel, severity, LOG_FACILITY, format, args); va_end(args); }
 
 inline void cLOGF_IF_       (bool condition, void* channel, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, channel, LOG_FACILITY, format, args); va_end(args); }
 inline void cLOGE_IF_       (bool condition, void* channel, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, channel, LOG_FACILITY, format, args); va_end(args); }
@@ -426,8 +433,7 @@ inline void cLOG_TRACE_IF_  (bool condition, void* channel, const char* format, 
 //
 // C++ Legacy PrintF general LOG - gLOGxxx
 //
-inline void gLOG_   (                void* channel, int severity, int facility, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts   (           channel, severity, facility, format, args); va_end(args); }
-inline void gLOG_IF_(bool condition, void* channel, int severity, int facility, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, channel, severity, facility, format, args); va_end(args); }
+inline void gLOG_(void* channel, int severity, int facility, const char* format, ...)                    { va_list args; va_start(args, format); gkr::log::printf_message_rts(channel, severity, facility, format, args); va_end(args); }
 
 inline void gLOGF_       (void* channel, int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(channel, facility, format, args); va_end(args); }
 inline void gLOGE_       (void* channel, int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(channel, facility, format, args); va_end(args); }
@@ -444,6 +450,8 @@ inline void gLOG_INFO_   (void* channel, int facility, const char* format, ...) 
 inline void gLOG_VERBOSE_(void* channel, int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(channel, facility, format, args); va_end(args); }
 inline void gLOG_DEBUG_  (void* channel, int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(channel, facility, format, args); va_end(args); }
 inline void gLOG_TRACE_  (void* channel, int facility, const char* format, ...)                          { va_list args; va_start(args, format); gkr::log::printf_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(channel, facility, format, args); va_end(args); }
+
+inline void gLOG_IF_(bool condition, void* channel, int severity, int facility, const char* format, ...) { va_list args; va_start(args, format); gkr::log::printf_message_rts_if(condition, channel, severity, facility, format, args); va_end(args); }
 
 inline void gLOGF_IF_       (bool condition, void* channel, int facility, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, channel, facility, format, args); va_end(args); }
 inline void gLOGE_IF_       (bool condition, void* channel, int facility, const char* format, ...)       { va_list args; va_start(args, format); gkr::log::printf_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, channel, facility, format, args); va_end(args); }
@@ -470,8 +478,7 @@ inline void gLOG_TRACE_IF_  (bool condition, void* channel, int facility, const 
 //
 // C++ Legacy Stream basic LOG - bLOGxxx
 //
-inline auto bLOG   (                int severity) { return gkr::log::stream_message_rts   (           LOG_CHANNEL, severity, LOG_FACILITY); }
-inline auto bLOG_IF(bool condition, int severity) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY); }
+inline auto bLOG(int severity)                    { return gkr::log::stream_message_rts(LOG_CHANNEL, severity, LOG_FACILITY); }
 
 inline auto bLOGF       ()                        { return gkr::log::stream_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOGE       ()                        { return gkr::log::stream_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_CHANNEL, LOG_FACILITY); }
@@ -488,6 +495,8 @@ inline auto bLOG_INFO   ()                        { return gkr::log::stream_mess
 inline auto bLOG_VERBOSE()                        { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOG_DEBUG  ()                        { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOG_TRACE  ()                        { return gkr::log::stream_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_CHANNEL, LOG_FACILITY); }
+
+inline auto bLOG_IF(bool condition, int severity) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY); }
 
 inline auto bLOGF_IF        (bool condition)      { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOGE_IF        (bool condition)      { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_CHANNEL, LOG_FACILITY); }
@@ -510,8 +519,7 @@ inline auto bLOG_TRACE_IF   (bool condition)      { return gkr::log::stream_mess
 //
 // C++ Legacy Stream facility LOG - fLOGxxx
 //
-inline auto fLOG   (                int severity, int facility) { return gkr::log::stream_message_rts   (           LOG_CHANNEL, severity, facility); }
-inline auto fLOG_IF(bool condition, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, facility); }
+inline auto fLOG(int severity, int facility)                    { return gkr::log::stream_message_rts(LOG_CHANNEL, severity, facility); }
 
 inline auto fLOGF       (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(LOG_CHANNEL, facility); }
 inline auto fLOGE       (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(LOG_CHANNEL, facility); }
@@ -528,6 +536,8 @@ inline auto fLOG_INFO   (int facility)                          { return gkr::lo
 inline auto fLOG_VERBOSE(int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(LOG_CHANNEL, facility); }
 inline auto fLOG_DEBUG  (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(LOG_CHANNEL, facility); }
 inline auto fLOG_TRACE  (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(LOG_CHANNEL, facility); }
+
+inline auto fLOG_IF(bool condition, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, facility); }
 
 inline auto fLOGF_IF        (bool condition, int facility)      { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, LOG_CHANNEL, facility); }
 inline auto fLOGE_IF        (bool condition, int facility)      { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, LOG_CHANNEL, facility); }
@@ -550,8 +560,7 @@ inline auto fLOG_TRACE_IF  (bool condition, int facility)       { return gkr::lo
 //
 // C++ Legacy Stream channel LOG - cLOGxxx
 //
-inline auto cLOG   (                void* channel, int severity) { return gkr::log::stream_message_rts   (           channel, severity, LOG_FACILITY); }
-inline auto cLOG_IF(bool condition, void* channel, int severity) { return gkr::log::stream_message_rts_if(condition, channel, severity, LOG_FACILITY); }
+inline auto cLOG(void* channel, int severity)                    { return gkr::log::stream_message_rts(channel, severity, LOG_FACILITY); }
 
 inline auto cLOGF       (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(channel, LOG_FACILITY); }
 inline auto cLOGE       (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(channel, LOG_FACILITY); }
@@ -568,6 +577,8 @@ inline auto cLOG_INFO   (void* channel)                          { return gkr::l
 inline auto cLOG_VERBOSE(void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(channel, LOG_FACILITY); }
 inline auto cLOG_DEBUG  (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(channel, LOG_FACILITY); }
 inline auto cLOG_TRACE  (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(channel, LOG_FACILITY); }
+
+inline auto cLOG_IF(bool condition, void* channel, int severity) { return gkr::log::stream_message_rts_if(condition, channel, severity, LOG_FACILITY); }
 
 inline auto cLOGF_IF        (bool condition, void* channel)      { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, channel, LOG_FACILITY); }
 inline auto cLOGE_IF        (bool condition, void* channel)      { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, channel, LOG_FACILITY); }
@@ -590,8 +601,7 @@ inline auto cLOG_TRACE_IF   (bool condition, void* channel)      { return gkr::l
 //
 // C++ Legacy Stream general LOG - gLOGxxx
 //
-inline auto gLOG   (                void* channel, int severity, int facility) { return gkr::log::stream_message_rts   (           channel, severity, facility); }
-inline auto gLOG_IF(bool condition, void* channel, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, channel, severity, facility); }
+inline auto gLOG(void* channel, int severity, int facility)                    { return gkr::log::stream_message_rts(channel, severity, facility); }
 
 inline auto gLOGF       (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(channel, facility); }
 inline auto gLOGE       (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(channel, facility); }
@@ -608,6 +618,8 @@ inline auto gLOG_INFO   (void* channel, int facility)                          {
 inline auto gLOG_VERBOSE(void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE, gkr::log::threshold(LOG_SEVERITY_VERBOSE)>(channel, facility); }
 inline auto gLOG_DEBUG  (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  , gkr::log::threshold(LOG_SEVERITY_DEBUG  )>(channel, facility); }
 inline auto gLOG_TRACE  (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  , gkr::log::threshold(LOG_SEVERITY_TRACE  )>(channel, facility); }
+
+inline auto gLOG_IF(bool condition, void* channel, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, channel, severity, facility); }
 
 inline auto gLOGF_IF        (bool condition, void* channel, int facility)      { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  , gkr::log::threshold(LOG_SEVERITY_FATAL  )>(condition, channel, facility); }
 inline auto gLOGE_IF        (bool condition, void* channel, int facility)      { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  , gkr::log::threshold(LOG_SEVERITY_ERROR  )>(condition, channel, facility); }

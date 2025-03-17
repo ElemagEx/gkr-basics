@@ -309,8 +309,7 @@ inline void format_message_if(bool condition, void* channel, int facility, const
 //
 // C++ Modern Simple basic LOG - bLOGxxx
 //
-inline void bLOG   (                int severity, const char* msg) { gkr::log::simple_message_rts   (           LOG_CHANNEL, severity, LOG_FACILITY, msg); }
-inline void bLOG_IF(bool condition, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, msg); }
+inline void bLOG(int severity, const char* msg)                    { gkr::log::simple_message_rts(LOG_CHANNEL, severity, LOG_FACILITY, msg); }
 
 inline void bLOGF       (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOGE       (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, LOG_FACILITY, msg); }
@@ -327,6 +326,8 @@ inline void bLOG_INFO   (const char* msg)                          { gkr::log::s
 inline void bLOG_VERBOSE(const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOG_DEBUG  (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOG_TRACE  (const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, LOG_FACILITY, msg); }
+
+inline void bLOG_IF(bool condition, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, msg); }
 
 inline void bLOGF_IF       (bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, LOG_FACILITY, msg); }
 inline void bLOGE_IF       (bool condition, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, LOG_FACILITY, msg); }
@@ -349,8 +350,7 @@ inline void bLOG_TRACE_IF  (bool condition, const char* msg)       { gkr::log::s
 //
 // C++ Modern Simple facility LOG - fLOGxxx
 //
-inline void fLOG   (                int severity, int facility, const char* msg) { gkr::log::simple_message_rts   (           LOG_CHANNEL, severity, facility, msg); }
-inline void fLOG_IF(bool condition, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, facility, msg); }
+inline void fLOG(int severity, int facility, const char* msg)                    { gkr::log::simple_message_rts(LOG_CHANNEL, severity, facility, msg); }
 
 inline void fLOGF       (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, facility, msg); }
 inline void fLOGE       (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, facility, msg); }
@@ -367,6 +367,8 @@ inline void fLOG_INFO   (int facility, const char* msg)                         
 inline void fLOG_VERBOSE(int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, facility, msg); }
 inline void fLOG_DEBUG  (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, facility, msg); }
 inline void fLOG_TRACE  (int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, facility, msg); }
+
+inline void fLOG_IF(bool condition, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, LOG_CHANNEL, severity, facility, msg); }
 
 inline void fLOGF_IF       (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, facility, msg); }
 inline void fLOGE_IF       (bool condition, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, facility, msg); }
@@ -389,8 +391,7 @@ inline void fLOG_TRACE_IF  (bool condition, int facility, const char* msg)      
 //
 // C++ Modern Simple channel LOG - cLOGxxx
 //
-inline void cLOG   (                void* channel, int severity, const char* msg) { gkr::log::simple_message_rts   (           channel, severity, LOG_FACILITY, msg); }
-inline void cLOG_IF(bool condition, void* channel, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, LOG_FACILITY, msg); }
+inline void cLOG(void* channel, int severity, const char* msg)                    { gkr::log::simple_message_rts(channel, severity, LOG_FACILITY, msg); }
 
 inline void cLOGF       (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(channel, LOG_FACILITY, msg); }
 inline void cLOGE       (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(channel, LOG_FACILITY, msg); }
@@ -407,6 +408,8 @@ inline void cLOG_INFO   (void* channel, const char* msg)                        
 inline void cLOG_VERBOSE(void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(channel, LOG_FACILITY, msg); }
 inline void cLOG_DEBUG  (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(channel, LOG_FACILITY, msg); }
 inline void cLOG_TRACE  (void* channel, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(channel, LOG_FACILITY, msg); }
+
+inline void cLOG_IF(bool condition, void* channel, int severity, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, LOG_FACILITY, msg); }
 
 inline void cLOGF_IF       (bool condition, void* channel, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, channel, LOG_FACILITY, msg); }
 inline void cLOGE_IF       (bool condition, void* channel, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, channel, LOG_FACILITY, msg); }
@@ -429,8 +432,7 @@ inline void cLOG_TRACE_IF  (bool condition, void* channel, const char* msg)     
 //
 // C++ Modern Simple general LOG - gLOGxxx
 //
-inline void gLOG   (                void* channel, int severity, int facility, const char* msg) { gkr::log::simple_message_rts   (           channel, severity, facility, msg); }
-inline void gLOG_IF(bool condition, void* channel, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, facility, msg); }
+inline void gLOG(void* channel, int severity, int facility, const char* msg)                    { gkr::log::simple_message_rts(channel, severity, facility, msg); }
 
 inline void gLOGF       (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_FATAL  >(channel, facility, msg); }
 inline void gLOGE       (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_ERROR  >(channel, facility, msg); }
@@ -447,6 +449,8 @@ inline void gLOG_INFO   (void* channel, int facility, const char* msg)          
 inline void gLOG_VERBOSE(void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_VERBOSE>(channel, facility, msg); }
 inline void gLOG_DEBUG  (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_DEBUG  >(channel, facility, msg); }
 inline void gLOG_TRACE  (void* channel, int facility, const char* msg)                          { gkr::log::simple_message<LOG_SEVERITY_TRACE  >(channel, facility, msg); }
+
+inline void gLOG_IF(bool condition, void* channel, int severity, int facility, const char* msg) { gkr::log::simple_message_rts_if(condition, channel, severity, facility, msg); }
 
 inline void gLOGF_IF       (bool condition, void* channel, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_FATAL  >(condition, channel, facility, msg); }
 inline void gLOGE_IF       (bool condition, void* channel, int facility, const char* msg)       { gkr::log::simple_message_if<LOG_SEVERITY_ERROR  >(condition, channel, facility, msg); }
@@ -471,8 +475,7 @@ inline void gLOG_TRACE_IF  (bool condition, void* channel, int facility, const c
 //
 // C++ Modern PrintF basic LOG - bLOGxxx
 //
-template<typename... Args> void bLOG_   (                int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts   (           LOG_CHANNEL, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void bLOG_IF_(bool condition, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void bLOG_(int severity, const char* format, Args&&... args)                    { gkr::log::printf_message_rts(LOG_CHANNEL, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void bLOGF_       (const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void bLOGE_       (const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
@@ -489,6 +492,8 @@ template<typename... Args> void bLOG_INFO_   (const char* format, Args&&... args
 template<typename... Args> void bLOG_VERBOSE_(const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_DEBUG_  (const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_TRACE_  (const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
+
+template<typename... Args> void bLOG_IF_(bool condition, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void bLOGF_IF_       (bool condition, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void bLOGE_IF_       (bool condition, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, LOG_FACILITY, format, std::forward<Args>(args)...); }
@@ -511,8 +516,7 @@ template<typename... Args> void bLOG_TRACE_IF_  (bool condition, const char* for
 //
 // C++ Modern PrintF facility LOG - fLOGxxx
 //
-template<typename... Args> void fLOG_   (                int severity, int facility, const char* format, Args&&... args) { gkr::log::printf_message_rts   (           LOG_CHANNEL, severity, facility, format, std::forward<Args>(args)...); }
-template<typename... Args> void fLOG_IF_(bool condition, int severity, int facility, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, facility, format, std::forward<Args>(args)...); }
+template<typename... Args> void fLOG_(int severity, int facility, const char* format, Args&&... args)                    { gkr::log::printf_message_rts(LOG_CHANNEL, severity, facility, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void fLOGF_       (int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void fLOGE_       (int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
@@ -529,6 +533,8 @@ template<typename... Args> void fLOG_INFO_   (int facility, const char* format, 
 template<typename... Args> void fLOG_VERBOSE_(int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_DEBUG_  (int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_TRACE_  (int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
+
+template<typename... Args> void fLOG_IF_(bool condition, int severity, int facility, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, LOG_CHANNEL, severity, facility, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void fLOGF_IF_       (bool condition, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void fLOGE_IF_       (bool condition, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, facility, format, std::forward<Args>(args)...); }
@@ -551,8 +557,7 @@ template<typename... Args> void fLOG_TRACE_IF_  (bool condition, int facility, c
 //
 // C++ Modern PrintF channel LOG - cLOGxxx
 //
-template<typename... Args> void cLOG_   (                void* channel, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts   (           channel, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
-template<typename... Args> void cLOG_IF_(bool condition, void* channel, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, channel, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
+template<typename... Args> void cLOG_(void* channel, int severity, const char* format, Args&&... args)                    { gkr::log::printf_message_rts(channel, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void cLOGF_       (void* channel, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void cLOGE_       (void* channel, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
@@ -569,6 +574,8 @@ template<typename... Args> void cLOG_INFO_   (void* channel, const char* format,
 template<typename... Args> void cLOG_VERBOSE_(void* channel, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void cLOG_DEBUG_  (void* channel, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void cLOG_TRACE_  (void* channel, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
+
+template<typename... Args> void cLOG_IF_(bool condition, void* channel, int severity, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, channel, severity, LOG_FACILITY, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void cLOGF_IF_       (bool condition, void* channel, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
 template<typename... Args> void cLOGE_IF_       (bool condition, void* channel, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, channel, LOG_FACILITY, format, std::forward<Args>(args)...); }
@@ -591,8 +598,7 @@ template<typename... Args> void cLOG_TRACE_IF_  (bool condition, void* channel, 
 //
 // C++ Modern PrintF general LOG - gLOGxxx
 //
-template<typename... Args> void gLOG_   (                void* channel, int severity, int facility, const char* format, Args&&... args) { gkr::log::printf_message_rts   (           channel, severity, facility, format, std::forward<Args>(args)...); }
-template<typename... Args> void gLOG_IF_(bool condition, void* channel, int severity, int facility, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, channel, severity, facility, format, std::forward<Args>(args)...); }
+template<typename... Args> void gLOG_(void* channel, int severity, int facility, const char* format, Args&&... args)                    { gkr::log::printf_message_rts(channel, severity, facility, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void gLOGF_       (void* channel, int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_FATAL  >(channel, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void gLOGE_       (void* channel, int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_ERROR  >(channel, facility, format, std::forward<Args>(args)...); }
@@ -609,6 +615,8 @@ template<typename... Args> void gLOG_INFO_   (void* channel, int facility, const
 template<typename... Args> void gLOG_VERBOSE_(void* channel, int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_VERBOSE>(channel, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_DEBUG_  (void* channel, int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_DEBUG  >(channel, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_TRACE_  (void* channel, int facility, const char* format, Args&&... args)                          { gkr::log::printf_message<LOG_SEVERITY_TRACE  >(channel, facility, format, std::forward<Args>(args)...); }
+
+template<typename... Args> void gLOG_IF_(bool condition, void* channel, int severity, int facility, const char* format, Args&&... args) { gkr::log::printf_message_rts_if(condition, channel, severity, facility, format, std::forward<Args>(args)...); }
 
 template<typename... Args> void gLOGF_IF_       (bool condition, void* channel, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_FATAL  >(condition, channel, facility, format, std::forward<Args>(args)...); }
 template<typename... Args> void gLOGE_IF_       (bool condition, void* channel, int facility, const char* format, Args&&... args)       { gkr::log::printf_message_if<LOG_SEVERITY_ERROR  >(condition, channel, facility, format, std::forward<Args>(args)...); }
@@ -635,8 +643,7 @@ template<typename... Args> void gLOG_TRACE_IF_  (bool condition, void* channel, 
 //
 // C++ Modern Stream basic LOG - bLOGxxx
 //
-inline auto bLOG   (                int severity) { return gkr::log::stream_message_rts   (           LOG_CHANNEL, severity, LOG_FACILITY); }
-inline auto bLOG_IF(bool condition, int severity) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY); }
+inline auto bLOG(int severity)                    { return gkr::log::stream_message_rts(LOG_CHANNEL, severity, LOG_FACILITY); }
 
 inline auto bLOGF       ()                        { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOGE       ()                        { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, LOG_FACILITY); }
@@ -653,6 +660,8 @@ inline auto bLOG_INFO   ()                        { return gkr::log::stream_mess
 inline auto bLOG_VERBOSE()                        { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOG_DEBUG  ()                        { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOG_TRACE  ()                        { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, LOG_FACILITY); }
+
+inline auto bLOG_IF(bool condition, int severity) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY); }
 
 inline auto bLOGF_IF       (bool condition)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, LOG_FACILITY); }
 inline auto bLOGE_IF       (bool condition)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, LOG_FACILITY); }
@@ -675,8 +684,7 @@ inline auto bLOG_TRACE_IF  (bool condition)       { return gkr::log::stream_mess
 //
 // C++ Modern Stream facility LOG - fLOGxxx
 //
-inline auto fLOG   (                int severity, int facility) { return gkr::log::stream_message_rts   (           LOG_CHANNEL, severity, facility); }
-inline auto fLOG_IF(bool condition, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, facility); }
+inline auto fLOG(int severity, int facility)                    { return gkr::log::stream_message_rts(LOG_CHANNEL, severity, facility); }
 
 inline auto fLOGF       (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, facility); }
 inline auto fLOGE       (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, facility); }
@@ -693,6 +701,8 @@ inline auto fLOG_INFO   (int facility)                          { return gkr::lo
 inline auto fLOG_VERBOSE(int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, facility); }
 inline auto fLOG_DEBUG  (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, facility); }
 inline auto fLOG_TRACE  (int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, facility); }
+
+inline auto fLOG_IF(bool condition, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, LOG_CHANNEL, severity, facility); }
 
 inline auto fLOGF_IF       (bool condition, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, facility); }
 inline auto fLOGE_IF       (bool condition, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, facility); }
@@ -715,8 +725,7 @@ inline auto fLOG_TRACE_IF  (bool condition, int facility)       { return gkr::lo
 //
 // C++ Modern Stream channel LOG - cLOGxxx
 //
-inline auto cLOG   (                void* channel, int severity) { return gkr::log::stream_message_rts   (           channel, severity, LOG_FACILITY); }
-inline auto cLOG_IF(bool condition, void* channel, int severity) { return gkr::log::stream_message_rts_if(condition, channel, severity, LOG_FACILITY); }
+inline auto cLOG(void* channel, int severity)                    { return gkr::log::stream_message_rts(channel, severity, LOG_FACILITY); }
 
 inline auto cLOGF       (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(channel, LOG_FACILITY); }
 inline auto cLOGE       (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(channel, LOG_FACILITY); }
@@ -733,6 +742,8 @@ inline auto cLOG_INFO   (void* channel)                          { return gkr::l
 inline auto cLOG_VERBOSE(void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(channel, LOG_FACILITY); }
 inline auto cLOG_DEBUG  (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(channel, LOG_FACILITY); }
 inline auto cLOG_TRACE  (void* channel)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(channel, LOG_FACILITY); }
+
+inline auto cLOG_IF(bool condition, void* channel, int severity) { return gkr::log::stream_message_rts_if(condition, channel, severity, LOG_FACILITY); }
 
 inline auto cLOGF_IF       (bool condition, void* channel)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, channel, LOG_FACILITY); }
 inline auto cLOGE_IF       (bool condition, void* channel)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, channel, LOG_FACILITY); }
@@ -755,8 +766,7 @@ inline auto cLOG_TRACE_IF  (bool condition, void* channel)       { return gkr::l
 //
 // C++ Modern Stream general LOG - gLOGxxx
 //
-inline auto gLOG   (                void* channel, int severity, int facility) { return gkr::log::stream_message_rts   (           channel, severity, facility); }
-inline auto gLOG_IF(bool condition, void* channel, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, channel, severity, facility); }
+inline auto gLOG(void* channel, int severity, int facility)                    { return gkr::log::stream_message_rts(channel, severity, facility); }
 
 inline auto gLOGF       (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_FATAL  >(channel, facility); }
 inline auto gLOGE       (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_ERROR  >(channel, facility); }
@@ -773,6 +783,8 @@ inline auto gLOG_INFO   (void* channel, int facility)                          {
 inline auto gLOG_VERBOSE(void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_VERBOSE>(channel, facility); }
 inline auto gLOG_DEBUG  (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_DEBUG  >(channel, facility); }
 inline auto gLOG_TRACE  (void* channel, int facility)                          { return gkr::log::stream_message<LOG_SEVERITY_TRACE  >(channel, facility); }
+
+inline auto gLOG_IF(bool condition, void* channel, int severity, int facility) { return gkr::log::stream_message_rts_if(condition, channel, severity, facility); }
 
 inline auto gLOGF_IF       (bool condition, void* channel, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_FATAL  >(condition, channel, facility); }
 inline auto gLOGE_IF       (bool condition, void* channel, int facility)       { return gkr::log::stream_message_if<LOG_SEVERITY_ERROR  >(condition, channel, facility); }
@@ -800,8 +812,7 @@ inline auto gLOG_TRACE_IF  (bool condition, void* channel, int facility)       {
 //
 // C++ Modern Format basic LOG - bLOGxxx
 //
-template<typename... Args> void bLOG   (                int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts  (            LOG_CHANNEL, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void bLOG_IF(bool condition, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void bLOG(int severity, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts(LOG_CHANNEL, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void bLOGF       (std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOGE       (std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
@@ -818,6 +829,8 @@ template<typename... Args> void bLOG_INFO   (std::format_string<Args...> fmt, Ar
 template<typename... Args> void bLOG_VERBOSE(std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_DEBUG  (std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_TRACE  (std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void bLOG_IF(bool condition, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void bLOGF_IF       (bool condition, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOGE_IF       (bool condition, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
@@ -837,8 +850,7 @@ template<typename... Args> void bLOG_TRACE_IF  (bool condition, std::format_stri
 //
 // plus locale
 //
-template<typename... Args> void bLOG   (                int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts  (            LOG_CHANNEL, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void bLOG_IF(bool condition, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void bLOG(int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts(LOG_CHANNEL, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void bLOGF       (const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOGE       (const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
@@ -855,6 +867,8 @@ template<typename... Args> void bLOG_INFO   (const std::locale& loc, std::format
 template<typename... Args> void bLOG_VERBOSE(const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_DEBUG  (const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOG_TRACE  (const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void bLOG_IF(bool condition, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void bLOGF_IF       (bool condition, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void bLOGE_IF       (bool condition, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
@@ -877,8 +891,7 @@ template<typename... Args> void bLOG_TRACE_IF  (bool condition, const std::local
 //
 // C++ Modern Format facility LOG - fLOGxxx
 //
-template<typename... Args> void fLOG   (                int severity, int facility, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts  (            LOG_CHANNEL, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void fLOG_IF(bool condition, int severity, int facility, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void fLOG(int severity, int facility, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts(LOG_CHANNEL, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void fLOGF       (int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOGE       (int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
@@ -895,6 +908,8 @@ template<typename... Args> void fLOG_INFO   (int facility, std::format_string<Ar
 template<typename... Args> void fLOG_VERBOSE(int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_DEBUG  (int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_TRACE  (int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void fLOG_IF(bool condition, int severity, int facility, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void fLOGF_IF       (bool condition, int facility, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOGE_IF       (bool condition, int facility, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
@@ -914,8 +929,7 @@ template<typename... Args> void fLOG_TRACE_IF  (bool condition, int facility, st
 //
 // plus locale
 //
-template<typename... Args> void fLOG    (                int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts  (            LOG_CHANNEL, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void fLOG_IF (bool condition, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void fLOG(int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                     { gkr::log::format_message_rts(LOG_CHANNEL, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void fLOGF       (int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                           { gkr::log::format_message<LOG_SEVERITY_FATAL  >(LOG_CHANNEL, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOGE       (int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                           { gkr::log::format_message<LOG_SEVERITY_ERROR  >(LOG_CHANNEL, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
@@ -932,6 +946,8 @@ template<typename... Args> void fLOG_INFO   (int facility, const std::locale& lo
 template<typename... Args> void fLOG_VERBOSE(int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                           { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(LOG_CHANNEL, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_DEBUG  (int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                           { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(LOG_CHANNEL, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOG_TRACE  (int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                           { gkr::log::format_message<LOG_SEVERITY_TRACE  >(LOG_CHANNEL, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void fLOG_IF (bool condition, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, LOG_CHANNEL, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void fLOGF_IF       (bool condition, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)        { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void fLOGE_IF       (bool condition, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)        { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, LOG_CHANNEL, facility, std::move(fmt), std::forward<Args>(args)...); }
@@ -954,8 +970,7 @@ template<typename... Args> void fLOG_TRACE_IF  (bool condition, int facility, co
 //
 // C++ Modern Format channel LOG - mfLOGxxx
 //
-template<typename... Args> void cLOG   (                void* channel, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           channel, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void cLOG_IF(bool condition, void* channel, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG(void* channel, int severity, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts(channel, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void cLOGF       (void* channel, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOGE       (void* channel, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
@@ -972,6 +987,8 @@ template<typename... Args> void cLOG_INFO   (void* channel, std::format_string<A
 template<typename... Args> void cLOG_VERBOSE(void* channel, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOG_DEBUG  (void* channel, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOG_TRACE  (void* channel, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void cLOG_IF(bool condition, void* channel, int severity, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void cLOGF_IF       (bool condition, void* channel, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOGE_IF       (bool condition, void* channel, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, channel, LOG_FACILITY, std::move(fmt), std::forward<Args>(args)...); }
@@ -991,8 +1008,7 @@ template<typename... Args> void cLOG_TRACE_IF  (bool condition, void* channel, s
 //
 // plus locale
 //
-template<typename... Args> void cLOG   (                void* channel, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           channel, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void cLOG_IF(bool condition, void* channel, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void cLOG(void* channel, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts   (           channel, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void cLOGF       (void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOGE       (void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
@@ -1009,6 +1025,8 @@ template<typename... Args> void cLOG_INFO   (void* channel, const std::locale& l
 template<typename... Args> void cLOG_VERBOSE(void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOG_DEBUG  (void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOG_TRACE  (void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void cLOG_IF(bool condition, void* channel, int severity, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void cLOGF_IF       (bool condition, void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void cLOGE_IF       (bool condition, void* channel, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, channel, LOG_FACILITY, loc, std::move(fmt), std::forward<Args>(args)...); }
@@ -1031,8 +1049,7 @@ template<typename... Args> void cLOG_TRACE_IF  (bool condition, void* channel, c
 //
 // C++ Modern Format general LOG - gLOGxxx
 //
-template<typename... Args> void gLOG   (                void* channel, int severity, int facility, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           channel, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void gLOG_IF(bool condition, void* channel, int severity, int facility, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void gLOG(void* channel, int severity, int facility, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts(channel, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void gLOGF       (void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(channel, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOGE       (void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(channel, facility, std::move(fmt), std::forward<Args>(args)...); }
@@ -1049,6 +1066,8 @@ template<typename... Args> void gLOG_INFO   (void* channel, int facility, std::f
 template<typename... Args> void gLOG_VERBOSE(void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(channel, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_DEBUG  (void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(channel, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_TRACE  (void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(channel, facility, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void gLOG_IF(bool condition, void* channel, int severity, int facility, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, facility, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void gLOGF_IF       (bool condition, void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, channel, facility, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOGE_IF       (bool condition, void* channel, int facility, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, channel, facility, std::move(fmt), std::forward<Args>(args)...); }
@@ -1068,8 +1087,7 @@ template<typename... Args> void gLOG_TRACE_IF  (bool condition, void* channel, i
 //
 // plus locale
 //
-template<typename... Args> void gLOG   (                void* channel, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts   (           channel, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
-template<typename... Args> void gLOG_IF(bool condition, void* channel, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
+template<typename... Args> void gLOG(void* channel, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                    { gkr::log::format_message_rts   (           channel, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void gLOGF       (void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_FATAL  >(channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOGE       (void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_ERROR  >(channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
@@ -1086,6 +1104,8 @@ template<typename... Args> void gLOG_INFO   (void* channel, int facility, const 
 template<typename... Args> void gLOG_VERBOSE(void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_VERBOSE>(channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_DEBUG  (void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_DEBUG  >(channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOG_TRACE  (void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)                          { gkr::log::format_message<LOG_SEVERITY_TRACE  >(channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
+
+template<typename... Args> void gLOG_IF(bool condition, void* channel, int severity, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args) { gkr::log::format_message_rts_if(condition, channel, severity, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 
 template<typename... Args> void gLOGF_IF       (bool condition, void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_FATAL  >(condition, channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }
 template<typename... Args> void gLOGE_IF       (bool condition, void* channel, int facility, const std::locale& loc, std::format_string<Args...> fmt, Args&&... args)       { gkr::log::format_message_if<LOG_SEVERITY_ERROR  >(condition, channel, facility, loc, std::move(fmt), std::forward<Args>(args)...); }

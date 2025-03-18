@@ -1,16 +1,11 @@
 # gkr::logging library
 
-## Logging filter defines
-- `GENERIC_LOG_SKIP_PRINTF` - disables logging with `printf` style
-- `GENERIC_LOG_SKIP_STREAM` - disables logging with C++ output streams
-- `GENERIC_LOG_SKIP_FORMAT` - disables logging with C++20 format
-
 ## Generic logging
 
 ### Facilities
 Facility are user-defined constants that are passed to log functions and later log messages can be filtered by facility value (*aka tags*)
 
-### Macro/Inline log type
+### Macro/Inline log args
 | | :x: Channel | :white_check_mark: Channel
 | :--- | :--- | :--- 
 | :x: Facility | `bLOGxxx` - basic log | `cLOGxxx` - channel log
@@ -18,7 +13,7 @@ Facility are user-defined constants that are passed to log functions and later l
 
 ### Macro/Inline name structure
 Structure: `[prefix]LOG[severity][_IF][_]`
-- `prefix` - can be one of `b`, `f`, `m`, or `g` (see table above) - if it is missing then alias is used (see below)
+- `prefix` - can be one of `b`, `f`, `c`, or `g` (see table above) - if it is missing then alias is used (see below)
 - `severity`- long or short ref of severity (for compile-time eval) or missing (for run-time eval)
 - `_IF` - if it is used then the first argument of macro/inline is a run-time evaluated condition which if it is false then the log message is skipped
 - `_` - if last character of macro/inline is underscope then it must be used for printf-like message otherwise it is used for all other types of messages
@@ -38,9 +33,13 @@ Structure: `[prefix]LOG[severity][_IF][_]`
 - `LOG_FACILITY` - basic and channel log macros/inlines use this value for its facility argument - default is 0
 - `LOG_CHANNEL` - basic and facility log macros/inlines use this value for its channel argument - default is (`NULL`/`nullptr`)
 - `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time log threshold - all macros/inlines that are grater or equal to this value are compiled out - default is 100
+- `LOG_SOURCE_LOCATION` - add source location of macros - available only with `GENERIC_LOG_USE_C_DEFS` - default is undefined
+
 - `GENERIC_LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions
 - `GENERIC_LOG_USE_CPP_LEGACY` - use old C++ (pre C++ 17) techniques for compile-time severity filtering (for C++ 17 and later `if constexpr` is used)
-- `LOG_SOURCE_LOCATION` - add source location of macros - available only with `GENERIC_LOG_USE_C_DEFS` - default is undefined
+- `GENERIC_LOG_SKIP_PRINTF` - disables logging with `printf` style
+- `GENERIC_LOG_SKIP_STREAM` - disables logging with C++ output streams
+- `GENERIC_LOG_SKIP_FORMAT` - disables logging with C++20 format
 
 ## Uniques
 - recursive logging - when logging is used inside logging thread from consumers

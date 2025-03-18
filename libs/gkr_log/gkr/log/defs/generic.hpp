@@ -51,11 +51,11 @@ inline void _log_simple_msg_rts_if(bool condition, void* channel, int severity, 
 }
 #ifndef GENERIC_LOG_SKIP_STREAM
 
-inline auto _log_stream_message_rts_uc(void* channel, int severity, int facility)
+inline auto _log_stream_msg_rts_uc(void* channel, int severity, int facility)
 {
     return gkr::log::ostream(channel, severity, facility);
 }
-inline auto _log_stream_message_rts_if(bool condition, void* channel, int severity, int facility)
+inline auto _log_stream_msg_rts_if(bool condition, void* channel, int severity, int facility)
 {
     if(condition)
     {

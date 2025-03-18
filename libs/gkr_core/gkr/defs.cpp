@@ -11,7 +11,8 @@ void gkr_diag_report(int, const char*, const char*, const char*, int)
 std::atomic<GKR_DIAG_REPORT_FUNC> s_reportFunction { gkr_diag_report };
 }
 
-extern "C" {
+extern "C"
+{
 
 GKR_DIAG_REPORT_FUNC gkr_diag_hook_report_func(GKR_DIAG_REPORT_FUNC fn)
 {

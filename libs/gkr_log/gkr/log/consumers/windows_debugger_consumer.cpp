@@ -9,33 +9,21 @@
 
 #ifdef _WIN32
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char*);
-
-inline void output_to_windows_debugger(const char* output, const gkr_log_message& msg)
-{
-    if(output == nullptr)
-    {
-        output = gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, nullptr);
-    }
-    OutputDebugStringA(output);
-    OutputDebugStringA("\n");
-}
-#else
-inline void output_to_windows_debugger(const char* output, const gkr_log_message& msg)
-{
-}
 #endif
 
 namespace gkr
 {
 namespace log
 {
-class c_windows_debugger_consumer : public c_consumer
+class c_windows_debugger_consumer : public c_consumer<windows_debugger_consumer>
 {
-     const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
+    using base_t = c_consumer<windows_debugger_consumer>;
+
+    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
 
 public:
-    c_windows_debugger_consumer(void* param, const gkr_log_windows_debugger_consumer_callbacks& callbacks) noexcept
-        : c_consumer(param, callbacks.opt_callbacks)
+    c_windows_debugger_consumer(void* param, const gkr_log_windows_debugger_consumer_callbacks& callbacks)
+        : base_t   (param, callbacks.opt_callbacks )
         , m_compose_output(callbacks.compose_output)
     {
     }
@@ -44,19 +32,23 @@ public:
     }
 
 protected:
-    void consume_log_message(const message& msg)
+    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
     {
-        const char* output = (m_compose_output == nullptr)
-            ? nullptr
-            : (*m_compose_output)(m_param, &msg, nullptr, 0);
-
-        output_to_windows_debugger(output, msg);
+        if(m_compose_output != nullptr)
+        {
+            return (*m_compose_output)(m_param, &msg, nullptr, flags);
+        }
+        else
+        {
+            return windows_debugger_consumer::compose_output(msg, len, flags);
+        }
     }
 };
 }
 }
 
-extern "C" {
+extern "C"
+{
 
 int gkr_log_add_windows_debugger_consumer(
     void* channel,
@@ -78,7 +70,7 @@ namespace gkr
 namespace log
 {
 
-windows_debugger_consumer::windows_debugger_consumer() noexcept
+windows_debugger_consumer::windows_debugger_consumer()
 {
 }
 
@@ -88,11 +80,7 @@ windows_debugger_consumer::~windows_debugger_consumer()
 
 bool windows_debugger_consumer::init_logging()
 {
-#ifdef _WIN32
     return true;
-#else
-    return false;
-#endif
 }
 
 void windows_debugger_consumer::done_logging()
@@ -106,12 +94,20 @@ bool windows_debugger_consumer::filter_log_message(const message& msg)
 
 void windows_debugger_consumer::consume_log_message(const message& msg)
 {
-    const char* output = compose_output(msg);
+#ifdef _WIN32
+    const int flags = gkr_log_fo_flag_append_eoln_lf;
 
-    output_to_windows_debugger(output, msg);
+    const char* output = compose_output(msg, nullptr, flags);
+
+    if(output == nullptr)
+    {
+        output = gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, flags, nullptr, 0, 0, nullptr);
+    }
+    OutputDebugStringA(output);
+#endif
 }
 
-const char* windows_debugger_consumer::compose_output(const message& msg, unsigned* len, bool colored)
+const char* windows_debugger_consumer::compose_output(const message& msg, unsigned* len, int flags)
 {
     return nullptr;
 }

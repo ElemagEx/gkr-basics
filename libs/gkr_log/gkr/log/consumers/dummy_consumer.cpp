@@ -10,13 +10,15 @@ namespace gkr
 {
 namespace log
 {
-class c_dummy_consumer : public c_consumer
+class c_dummy_consumer : public c_consumer<dummy_consumer>
 {
+    using base_t = c_consumer<dummy_consumer>;
+
     const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
 
 public:
     c_dummy_consumer(void* param, const gkr_log_dummy_consumer_callbacks& callbacks) noexcept
-        : c_consumer(param, callbacks.opt_callbacks)
+        : base_t   (param, callbacks.opt_callbacks )
         , m_compose_output(callbacks.compose_output)
     {
     }
@@ -25,18 +27,23 @@ public:
     }
 
 protected:
-    virtual void consume_log_message(const message& msg) override
+    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
     {
         if(m_compose_output != nullptr)
         {
-            (*m_compose_output)(m_param, &msg, nullptr, 0);
+            return (*m_compose_output)(m_param, &msg, nullptr, flags);
+        }
+        else
+        {
+            return dummy_consumer::compose_output(msg, len, flags);
         }
     }
 };
 }
 }
 
-extern "C" {
+extern "C"
+{
 
 int gkr_log_add_dummy_consumer(
     void* channel,
@@ -82,7 +89,7 @@ bool dummy_consumer::filter_log_message(const message& msg)
 
 void dummy_consumer::consume_log_message(const message& msg)
 {
-    compose_output(msg);
+    compose_output(msg, nullptr, 0);
 }
 
 const char* dummy_consumer::compose_output(const message& msg, unsigned* len, int flags)

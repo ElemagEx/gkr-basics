@@ -13,44 +13,6 @@
 
 namespace 
 {
-void output_to_console(int method, int flags, const char* text, const gkr_log_message& msg)
-{
-    if(text == nullptr)
-    {
-        constexpr const char* args[] = GENERIC_CONSOLE_ARGS_STRS;
-
-        flags |= gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding;
-
-        text = gkr_log_format_output(
-            GENERIC_FMT_MESSAGE,
-            &msg,
-            flags,
-            args,
-            GENERIC_CONSOLE_ARGS_ROWS,
-            GENERIC_CONSOLE_ARGS_COLS,
-            nullptr
-            );
-    }
-    switch(method)
-    {
-        default:
-            printf("%s\n", text);
-            break;
-
-        case gkr_log_appConsoleWriteMethod_fputs2stderr:
-            std::fputs(text, stderr);
-            std::fputs("\n", stderr);
-            break;
-        case gkr_log_appConsoleWriteMethod_fputs2stdout:
-            std::fputs(text, stdout);
-            std::fputs("\n", stdout);
-            break;
-
-        case gkr_log_appConsoleWriteMethod_stream2cout: std::cout << text << std::endl; break;
-        case gkr_log_appConsoleWriteMethod_stream2cerr: std::cerr << text << std::endl; break;
-        case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << text << std::endl; break;
-    }
-}
 bool is_output_atty(int method)
 {
     switch(method)
@@ -66,7 +28,7 @@ bool is_output_atty(int method)
             return gkr::sys::file_is_atty(stdout);
     }
 }
-inline int calc_flags(int method, int colorless) noexcept
+inline int calc_flags(int method, int colorless)
 {
     return (is_output_atty(method) && !colorless)
         ? gkr_log_fo_flag_use_coloring
@@ -78,19 +40,16 @@ namespace gkr
 {
 namespace log
 {
-class c_app_console_consumer : public c_consumer
+class c_app_console_consumer : public c_consumer<app_console_consumer>
 {
+    using base_t = c_consumer<app_console_consumer>;
+
     const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
 
-    int m_method;
-    int m_flags;
-
 public:
-    c_app_console_consumer(void* param, const gkr_log_app_console_consumer_callbacks& callbacks, int method, int colorless) noexcept
-        : c_consumer(param, callbacks.opt_callbacks)
+    c_app_console_consumer(void* param, const gkr_log_app_console_consumer_callbacks& callbacks, int method, int colorless)
+        : base_t   (param, callbacks.opt_callbacks , method, !!colorless)
         , m_compose_output(callbacks.compose_output)
-        , m_method(method)
-        , m_flags(calc_flags(method, colorless))
     {
     }
     virtual ~c_app_console_consumer() override
@@ -98,13 +57,16 @@ public:
     }
 
 protected:
-    virtual void consume_log_message(const message& msg) override
+    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
     {
-        const char* output = (m_compose_output == nullptr)
-            ? nullptr
-            : (*m_compose_output)(m_param, &msg, nullptr, m_flags);
-
-        output_to_console(m_method, m_flags, output, msg);
+        if(m_compose_output != nullptr)
+        {
+            return (*m_compose_output)(m_param, &msg, len, flags);
+        }
+        else
+        {
+            return app_console_consumer::compose_output(msg, len, flags);
+        }
     }
 };
 }
@@ -135,7 +97,7 @@ namespace gkr
 namespace log
 {
 
-app_console_consumer::app_console_consumer(int method, bool colorless) noexcept
+app_console_consumer::app_console_consumer(int method, bool colorless)
     : m_method(method)
     , m_flags(calc_flags(method, colorless))
 {
@@ -161,9 +123,40 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    const char* output = compose_output(msg, nullptr, m_flags);
+    const int flags = m_flags | gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding | gkr_log_fo_flag_append_eoln_lf;
 
-    output_to_console(m_method, m_flags, output, msg);
+    const char* output = compose_output(msg, nullptr, flags);
+
+    if(output == nullptr)
+    {
+        constexpr const char* args[] = GENERIC_CONSOLE_ARGS_STRS;
+
+        output = gkr_log_format_output(
+            GENERIC_FMT_MESSAGE,
+            &msg,
+            flags,
+            args,
+            GENERIC_CONSOLE_ARGS_ROWS,
+            GENERIC_CONSOLE_ARGS_COLS,
+            nullptr);
+    }
+    switch(m_method)
+    {
+        default:
+            std::puts(output);
+            break;
+
+        case gkr_log_appConsoleWriteMethod_fputs2stdout:
+            std::fputs(output, stdout);
+            break;
+        case gkr_log_appConsoleWriteMethod_fputs2stderr:
+            std::fputs(output, stderr);
+            break;
+
+        case gkr_log_appConsoleWriteMethod_stream2cout: std::cout << output; break;
+        case gkr_log_appConsoleWriteMethod_stream2cerr: std::cerr << output; break;
+        case gkr_log_appConsoleWriteMethod_stream2clog: std::clog << output; break;
+    }
 }
 
 const char* app_console_consumer::compose_output(const message& msg, unsigned* len, int flags)

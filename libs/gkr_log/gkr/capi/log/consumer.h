@@ -29,7 +29,12 @@ enum
     gkr_log_fo_flag_ignore_text_fmt    = 0x0020,
     gkr_log_fo_flag_unescape_text      = 0x0100,
     gkr_log_fo_flag_escape_text_dquote = 0x0200,
-    //TODO:add flags - append eoln and apply to app-console and windows-debugger
+
+    gkr_log_fo_flag_append_eoln_none   = 0x0000,
+    gkr_log_fo_flag_append_eoln_lf     = 0x0400,
+    gkr_log_fo_flag_append_eoln_cr     = 0x0800,
+    gkr_log_fo_flag_append_eoln_crlf   = 0x0C00,
+    gkr_log_fo_flag_append_eoln_mask   = 0x0C00,
 };
 
 #ifdef __cplusplus

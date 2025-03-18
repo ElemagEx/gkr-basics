@@ -1,6 +1,8 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/udp_socket_consumer.hpp>
 
+#include <gkr/log/c_consumer.hxx>
+
 #include <gkr/comm/udp_socket_sender.hpp>
 
 #include <gkr/data/log_message.hpp>
@@ -16,39 +18,47 @@ namespace gkr
 {
 namespace log
 {
-class c_udp_socket_consumer : public udp_socket_consumer
+
+class c_udp_socket_consumer : public c_consumer<udp_socket_consumer>
 {
-    gkr_log_udp_socket_consumer_callbacks m_callbacks {};
+    using base_t = c_consumer<udp_socket_consumer>;
 
 public:
     c_udp_socket_consumer(
-        const gkr_log_udp_socket_consumer_callbacks* callbacks,
+        void* param,
+        const gkr_log_udp_socket_consumer_callbacks& callbacks,
         const char*    remoteHost,
         unsigned short remotePort,
         unsigned maxPacketSize
         )
-        : udp_socket_consumer(remoteHost, remotePort, maxPacketSize)
+        : base_t(param, callbacks.opt_callbacks, remoteHost, remotePort, maxPacketSize)
     {
-        if(callbacks != nullptr) m_callbacks = *callbacks;
     }
     virtual ~c_udp_socket_consumer() override
     {
     }
 };
+
 }
 }
 
-extern "C" {
+extern "C"
+{
 
 int gkr_log_add_udp_socket_consumer(
     void* channel,
+    void* param,
     const gkr_log_udp_socket_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize
     )
 {
-    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_udp_socket_consumer>(callbacks, remoteHost, remotePort, maxPacketSize));
+    Check_Arg_NotNull(callbacks, -1);
+
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_udp_socket_consumer(param, *callbacks, remoteHost, remotePort, maxPacketSize));
+
+    return gkr_log_add_consumer(channel, consumer);
 }
 
 }
@@ -66,7 +76,7 @@ udp_socket_consumer::udp_socket_consumer(
     unsigned maxPacketSize
     )
     : m_sender(new comm::udp_socket_sender(maxPacketSize))
-    , m_processId(sys::get_current_process_id())
+    , m_process_id(sys::get_current_process_id())
 {
     update_buffer(std::size_t(gkr_log_get_max_message_chars()) + 257);
 
@@ -160,7 +170,7 @@ bool udp_socket_consumer::construct_data(const message& msg)
 
     messageData.stamp     = msg.stamp;
     messageData.tid       = msg.tid;
-    messageData.pid       = m_processId;
+    messageData.pid       = m_process_id;
     messageData.severity  = msg.severity;
     messageData.facility  = msg.facility;
     messageData._reserved = 0;

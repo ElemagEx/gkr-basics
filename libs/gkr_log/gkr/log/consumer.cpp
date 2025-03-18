@@ -1,12 +1,48 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumer.hpp>
-#include <gkr/log/logging.hpp>
 
-#include <gkr/diagnostics.hpp>
+#include <gkr/log/c_consumer.hxx>
+
 #include <gkr/stamp.hpp>
+#include <gkr/diagnostics.hpp>
+#include <gkr/log/logging.hpp>
 
 #include <cstring>
 #include <ctime>
+
+namespace gkr
+{
+namespace log
+{
+
+class c_raw_consumer : public consumer
+{
+public:
+    c_raw_consumer()
+    {
+    }
+    virtual ~c_raw_consumer() override
+    {
+    }
+public:
+    virtual bool init_logging() override
+    {
+        return true;
+    }
+    virtual void done_logging() override
+    {
+    }
+    virtual bool filter_log_message(const message& msg) override
+    {
+        return false;
+    }
+    virtual void consume_log_message(const message& msg) override
+    {
+    }
+};
+
+}
+}
 
 namespace
 {
@@ -217,6 +253,15 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
 extern "C"
 {
 
+int gkr_log_add_raw_consumer(void* channel, void* param, const struct gkr_log_consumer_raw_callbacks* callbacks)
+{
+    Check_Arg_NotNull(callbacks, -1);
+    Check_Arg_NotNull(callbacks->consume_log_message, -1);
+
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::c_raw_consumer>(param, *callbacks));
+
+    return gkr_log_add_consumer(channel, consumer);
+}
 unsigned gkr_log_apply_time_format(char* buf, unsigned cch, const char* fmt, long long stamp, int flags)
 {
     Check_Arg_NotNull(fmt    , 0U);
@@ -332,7 +377,13 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
         }
         break;
     }
-    if(cch == 0) return 0;
+    switch(flags & gkr_log_fo_flag_append_eoln_mask)
+    {
+        case gkr_log_fo_flag_append_eoln_lf  : if(copy_str_text(1, buf, cap, "\n"  )) break; errno = ENOTSUP; return 0;
+        case gkr_log_fo_flag_append_eoln_cr  : if(copy_str_text(1, buf, cap, "\r"  )) break; errno = ENOTSUP; return 0;
+        case gkr_log_fo_flag_append_eoln_crlf: if(copy_str_text(2, buf, cap, "\r\n")) break; errno = ENOTSUP; return 0;
+    }
+    if(cap == 0) return 0;
     *buf = 0;
     return unsigned(buf - start);
 }

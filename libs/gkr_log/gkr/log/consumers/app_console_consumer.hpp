@@ -16,7 +16,7 @@ class app_console_consumer : public consumer
     int m_flags;
 
 public:
-    GKR_LOG_API app_console_consumer(int method = gkr_log_appConsoleWriteMethod_stream2cout, bool colorless = false) noexcept;
+    GKR_LOG_API app_console_consumer(int method = gkr_log_appConsoleWriteMethod_puts, bool colorless = false);
     GKR_LOG_API virtual ~app_console_consumer() override;
 
 protected:

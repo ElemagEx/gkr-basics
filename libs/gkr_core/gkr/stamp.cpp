@@ -6,7 +6,8 @@
 #include <chrono>
 #include <cerrno>
 
-extern "C" {
+extern "C"
+{
 
 stamp_t gkr_stamp_now()
 {

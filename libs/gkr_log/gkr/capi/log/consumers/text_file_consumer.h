@@ -1,8 +1,11 @@
 #pragma once
 
 #include <gkr/capi/api.h>
+#include <gkr/capi/log/consumer.h>
 
-enum {
+enum
+{
+    gkr_log_tf_eoln_none,
     gkr_log_tf_eoln_lf,
     gkr_log_tf_eoln_cr,
     gkr_log_tf_eoln_crlf,
@@ -23,7 +26,8 @@ extern "C" {
 
 struct gkr_log_text_file_consumer_callbacks
 {
-    void         *param;
+    struct gkr_log_consumer_opt_callbacks opt_callbacks;
+
     const char* (*compose_output     )(void*, const struct gkr_log_message*, unsigned*, int);
     void        (*on_file_opened     )(void*, void*);
     void        (*on_file_closing    )(void*, void*);
@@ -33,6 +37,7 @@ struct gkr_log_text_file_consumer_callbacks
 
 GKR_LOG_API int gkr_log_add_text_file_consumer(
     void* channel,
+    void* param,
     const gkr_log_text_file_consumer_callbacks* callbacks,
     const char* filepath,
     int eoln
@@ -40,7 +45,7 @@ GKR_LOG_API int gkr_log_add_text_file_consumer(
 
 GKR_LOG_API gkr_log_tfs gkr_log_text_file_get_size(void* arg);
 GKR_LOG_API const char* gkr_log_text_file_get_path(void* arg);
-GKR_LOG_API void gkr_log_text_file_write_line(void* arg, const char* line, unsigned len);
+GKR_LOG_API void gkr_log_text_file_write_text(void* arg, const char* text, unsigned len, int add_eoln);
 GKR_LOG_API void gkr_log_text_file_roll(void* arg, unsigned max_files);
 
 #ifdef __cplusplus

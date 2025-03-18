@@ -5,9 +5,9 @@
 
 enum
 {
-    gkr_log_appConsoleWriteMethod_printf,
-    gkr_log_appConsoleWriteMethod_fputs2stderr,
+    gkr_log_appConsoleWriteMethod_puts,
     gkr_log_appConsoleWriteMethod_fputs2stdout,
+    gkr_log_appConsoleWriteMethod_fputs2stderr,
 #ifdef __cplusplus
     gkr_log_appConsoleWriteMethod_stream2cout,
     gkr_log_appConsoleWriteMethod_stream2cerr,

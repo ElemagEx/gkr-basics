@@ -26,7 +26,7 @@ class udp_socket_consumer : public consumer
     char*       m_buf = nullptr;
     std::size_t m_cap = 0;
 
-    unsigned m_processId = 0;
+    unsigned m_process_id = 0;
 
 public:
     static constexpr std::size_t OPTIMAL_UDP_PACKET_SIZE = 1400;

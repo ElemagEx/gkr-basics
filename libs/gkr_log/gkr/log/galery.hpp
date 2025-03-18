@@ -121,7 +121,7 @@ inline int plog_add_appender_rolling_file(void* channel, const char* file_name, 
         {
             if_constexpr(is_csv_fmt)
             {
-                parent.write_line(PLOG_CSV_HEAD, sizeof(PLOG_CSV_HEAD)-1);
+                parent.write_text(PLOG_CSV_HEAD, sizeof(PLOG_CSV_HEAD)-1, true);
             }
         },
         [] (gkr::log::text_file_consumer&) //on_closing

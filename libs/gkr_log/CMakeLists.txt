@@ -44,6 +44,7 @@ target_sources(gkr_log
 target_sources(gkr_log
     PRIVATE
     "gkr/log/logger.hxx"
+    "gkr/log/c_consumer.hxx"
 )
 target_sources(gkr_log
     PRIVATE
@@ -51,7 +52,6 @@ target_sources(gkr_log
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
     "gkr/log/consumer.cpp"
-    "gkr/log/c_consumer.cpp"
     "gkr/log/consumers/dummy_consumer.cpp"
     "gkr/log/consumers/text_file_consumer.cpp"
     "gkr/log/consumers/udp_socket_consumer.cpp"

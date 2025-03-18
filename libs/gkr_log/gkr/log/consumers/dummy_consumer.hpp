@@ -13,7 +13,7 @@ namespace log
 class dummy_consumer : public consumer
 {
 public:
-    GKR_LOG_API dummy_consumer();
+    GKR_LOG_API dummy_consumer() noexcept;
     GKR_LOG_API virtual ~dummy_consumer() override;
 
 protected:
@@ -24,7 +24,7 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned* len = nullptr, bool colored = false);
+    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned* len = nullptr, int flags = 0);
 };
 
 }

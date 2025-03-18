@@ -29,29 +29,36 @@ enum
     gkr_log_fo_flag_ignore_text_fmt    = 0x0020,
     gkr_log_fo_flag_unescape_text      = 0x0100,
     gkr_log_fo_flag_escape_text_dquote = 0x0200,
+    //TODO:add flags - append eoln and apply to app-console and windows-debugger
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct gkr_log_consumer_callbacks
+struct gkr_log_consumer_opt_callbacks
 {
-    void  *param;
     void (*destruct)(void*);
 
     int  (*init_logging)(void*);
     void (*done_logging)(void*);
 
-    int  (* filter_log_message)(void*, const struct gkr_log_message*);
+    int  (*filter_log_message)(void*, const struct gkr_log_message*);
+};
+struct gkr_log_consumer_raw_callbacks
+{
+    struct gkr_log_consumer_opt_callbacks opt_callbacks;
+
     void (*consume_log_message)(void*, const struct gkr_log_message*);
 };
 
-GKR_LOG_API int gkr_log_add_c_consumer(
+GKR_LOG_API int gkr_log_add_raw_consumer(
     void* channel,
-    const struct gkr_log_consumer_callbacks* callbacks
+    void* param,
+    const struct gkr_log_consumer_raw_callbacks* callbacks
     );
 
+//TODO:Change return type to -1
 GKR_LOG_API unsigned gkr_log_apply_time_format(
     char* buf,
     unsigned cch,
@@ -59,6 +66,7 @@ GKR_LOG_API unsigned gkr_log_apply_time_format(
     long long stamp,
     int flags
     );
+//TODO:Change return type to -1
 GKR_LOG_API unsigned gkr_log_apply_text_format(
     char* buf,
     unsigned cch,

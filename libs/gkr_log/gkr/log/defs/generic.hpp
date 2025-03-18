@@ -29,10 +29,6 @@ inline constexpr const char* log_severity_name_by_value(int severity)
 #endif
 #endif
 
-#ifndef GENERIC_LOG_SKIP_STREAM
-#define LOG_FINISH gkr::log::finish
-#endif
-
 inline constexpr bool _log_threshold(int severity)
 {
     return (severity < LOG_THRESHOLD_LEVEL);
@@ -50,6 +46,8 @@ inline void _log_simple_msg_rts_if(bool condition, void* channel, int severity, 
     }
 }
 #ifndef GENERIC_LOG_SKIP_STREAM
+
+#define LOG_FINISH gkr::log::finish
 
 inline auto _log_stream_msg_rts_uc(void* channel, int severity, int facility)
 {

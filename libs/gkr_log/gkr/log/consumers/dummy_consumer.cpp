@@ -1,29 +1,36 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/dummy_consumer.hpp>
 
-#include <gkr/stamp.hpp>
+#include <gkr/log/c_consumer.hxx>
+
 #include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
-
-#include <cstdio>
-#include <cstdlib>
 
 namespace gkr
 {
 namespace log
 {
-class c_dummy_consumer : public dummy_consumer
+class c_dummy_consumer : public c_consumer
 {
-    gkr_log_dummy_consumer_callbacks m_callbacks {};
+    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
 
 public:
-    c_dummy_consumer(const gkr_log_dummy_consumer_callbacks* callbacks)
-        : dummy_consumer()
+    c_dummy_consumer(void* param, const gkr_log_dummy_consumer_callbacks& callbacks) noexcept
+        : c_consumer(param, callbacks.opt_callbacks)
+        , m_compose_output(callbacks.compose_output)
     {
-        if(callbacks != nullptr) m_callbacks = *callbacks;
     }
     virtual ~c_dummy_consumer() override
     {
+    }
+
+protected:
+    virtual void consume_log_message(const message& msg) override
+    {
+        if(m_compose_output != nullptr)
+        {
+            (*m_compose_output)(m_param, &msg, nullptr, 0);
+        }
     }
 };
 }
@@ -33,10 +40,15 @@ extern "C" {
 
 int gkr_log_add_dummy_consumer(
     void* channel,
+    void* param,
     const gkr_log_dummy_consumer_callbacks* callbacks
     )
 {
-    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_dummy_consumer>(callbacks));
+    Check_Arg_NotNull(callbacks, -1);
+
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_dummy_consumer(param, *callbacks));
+
+    return gkr_log_add_consumer(channel, consumer);
 }
 
 }
@@ -46,7 +58,7 @@ namespace gkr
 namespace log
 {
 
-dummy_consumer::dummy_consumer()
+dummy_consumer::dummy_consumer() noexcept
 {
 }
 
@@ -73,9 +85,9 @@ void dummy_consumer::consume_log_message(const message& msg)
     compose_output(msg);
 }
 
-const char* dummy_consumer::compose_output(const message& msg, unsigned* len, bool colored)
+const char* dummy_consumer::compose_output(const message& msg, unsigned* len, int flags)
 {
-    return "";
+    return nullptr;
 }
 
 }

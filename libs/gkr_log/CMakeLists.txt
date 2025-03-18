@@ -25,10 +25,6 @@ target_sources(gkr_log
     "gkr/log/logging.hpp"
     "gkr/log/galery.hpp"
     "gkr/log/consumer.hpp"
-    "gkr/log/defs/generic.hpp"
-    "gkr/log/defs/generic_new.hpp"
-    "gkr/log/defs/generic_old.hpp"
-    "gkr/log/defs/generic_old_cdefs.hpp"
     "gkr/log/consumers/dummy_consumer.hpp"
     "gkr/log/consumers/text_file_consumer.hpp"
     "gkr/log/consumers/udp_socket_consumer.hpp"
@@ -36,6 +32,14 @@ target_sources(gkr_log
     "gkr/log/consumers/app_console_consumer.hpp"
     "gkr/log/consumers/windows_debugger_consumer.hpp"
     "gkr/log/formatters/win32_format_message.hpp"
+)
+target_sources(gkr_log
+    ${GKR_CPP_INTERFACE}
+    "gkr/log/defs/generic.hpp"
+    "gkr/log/defs/generic_new.hpp"
+    "gkr/log/defs/generic_old.hpp"
+    "gkr/log/defs/generic_old_cdefs.hpp"
+    "gkr/log/defs/plog.h"
 )
 target_sources(gkr_log
     PRIVATE
@@ -47,6 +51,7 @@ target_sources(gkr_log
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
     "gkr/log/consumer.cpp"
+    "gkr/log/c_consumer.cpp"
     "gkr/log/consumers/dummy_consumer.cpp"
     "gkr/log/consumers/text_file_consumer.cpp"
     "gkr/log/consumers/udp_socket_consumer.cpp"

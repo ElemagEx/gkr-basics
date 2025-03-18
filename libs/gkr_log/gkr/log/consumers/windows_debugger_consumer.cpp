@@ -1,24 +1,26 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/windows_debugger_consumer.hpp>
 
-#include <gkr/stamp.hpp>
-#include <gkr/diagnostics.hpp>
-#include <gkr/log/galery.hpp>
-#include <gkr/log/logging.hpp>
+#include <gkr/log/c_consumer.hxx>
 
-#include <cstdio>
-#include <cstdlib>
+#include <gkr/diagnostics.hpp>
+#include <gkr/log/logging.hpp>
+#include <gkr/log/galery.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char*);
 
-inline void outputToWindowsDebugger(const char* text)
+inline void output_to_windows_debugger(const char* output, const gkr_log_message& msg)
 {
-    OutputDebugStringA(text);
+    if(output == nullptr)
+    {
+        output = gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, nullptr);
+    }
+    OutputDebugStringA(output);
     OutputDebugStringA("\n");
 }
 #else
-inline void outputToWindowsDebugger(const char* text)
+inline void output_to_windows_debugger(const char* output, const gkr_log_message& msg)
 {
 }
 #endif
@@ -27,28 +29,28 @@ namespace gkr
 {
 namespace log
 {
-class c_windows_debugger_consumer : public windows_debugger_consumer
+class c_windows_debugger_consumer : public c_consumer
 {
-    gkr_log_windows_debugger_consumer_callbacks m_callbacks {};
+     const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
 
 public:
-    c_windows_debugger_consumer(const gkr_log_windows_debugger_consumer_callbacks* callbacks)
-        : windows_debugger_consumer()
+    c_windows_debugger_consumer(void* param, const gkr_log_windows_debugger_consumer_callbacks& callbacks) noexcept
+        : c_consumer(param, callbacks.opt_callbacks)
+        , m_compose_output(callbacks.compose_output)
     {
-        if(callbacks != nullptr) m_callbacks = *callbacks;
     }
     virtual ~c_windows_debugger_consumer() override
     {
     }
 
 protected:
-    virtual const char* compose_output(const message& msg, unsigned* len, bool colored) override
+    void consume_log_message(const message& msg)
     {
-        if(m_callbacks.compose_output != nullptr) {
-            return (*m_callbacks.compose_output)(m_callbacks.param, &msg, len, colored);
-        } else {
-            return windows_debugger_consumer::compose_output(msg, len, colored);
-        }
+        const char* output = (m_compose_output == nullptr)
+            ? nullptr
+            : (*m_compose_output)(m_param, &msg, nullptr, 0);
+
+        output_to_windows_debugger(output, msg);
     }
 };
 }
@@ -58,10 +60,15 @@ extern "C" {
 
 int gkr_log_add_windows_debugger_consumer(
     void* channel,
+    void* param,
     const gkr_log_windows_debugger_consumer_callbacks* callbacks
     )
 {
-    return gkr_log_add_consumer(channel, std::make_shared<gkr::log::c_windows_debugger_consumer>(callbacks));
+    Check_Arg_NotNull(callbacks, -1);
+
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_windows_debugger_consumer(param, *callbacks));
+
+    return gkr_log_add_consumer(channel, consumer);
 }
 
 }
@@ -71,7 +78,7 @@ namespace gkr
 namespace log
 {
 
-windows_debugger_consumer::windows_debugger_consumer()
+windows_debugger_consumer::windows_debugger_consumer() noexcept
 {
 }
 
@@ -101,12 +108,12 @@ void windows_debugger_consumer::consume_log_message(const message& msg)
 {
     const char* output = compose_output(msg);
 
-    outputToWindowsDebugger(output);
+    output_to_windows_debugger(output, msg);
 }
 
 const char* windows_debugger_consumer::compose_output(const message& msg, unsigned* len, bool colored)
 {
-    return gkr_log_format_output(GENERIC_FMT_MESSAGE, &msg, 0, nullptr, 0, 0, len);
+    return nullptr;
 }
 
 }

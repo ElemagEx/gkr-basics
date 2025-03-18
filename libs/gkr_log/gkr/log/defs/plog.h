@@ -1,11 +1,9 @@
 #pragma once
 
-#ifdef GENERIC_LOG_SKIP_STREAM
-#error Stream logging is disabled
-#endif
-
-namespace plog {
-enum Severity {
+namespace plog
+{
+enum Severity
+{
     none    = 0,
     fatal   = 1,
     error   = 2,
@@ -17,7 +15,8 @@ enum Severity {
 }
 constexpr const char* plog_severities_names[] = {"NONE", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "VERB"};
 
-inline constexpr const char* plog_severity2string(plog::Severity severity) noexcept {
+inline constexpr const char* plog_severity2string(plog::Severity severity) noexcept
+{
     return (unsigned(severity) < unsigned(sizeof(plog_severities_names)/sizeof(char*)))
         ?  plog_severities_names[severity]
         : *plog_severities_names

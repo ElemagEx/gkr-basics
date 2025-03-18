@@ -13,7 +13,7 @@ namespace log
 class windows_debugger_consumer : public consumer
 {
 public:
-    GKR_LOG_API windows_debugger_consumer();
+    GKR_LOG_API windows_debugger_consumer() noexcept;
     GKR_LOG_API virtual ~windows_debugger_consumer() override;
 
 protected:

@@ -13,7 +13,7 @@ namespace log
 class android_log_consumer : public consumer
 {
 public:
-    GKR_LOG_API android_log_consumer();
+    GKR_LOG_API android_log_consumer() noexcept;
     GKR_LOG_API virtual ~android_log_consumer() override;
 
 protected:
@@ -24,7 +24,7 @@ protected:
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
 protected:
-    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned* len = nullptr, bool colored = false);
+    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned* len = nullptr, int flags = 0);
 
     GKR_LOG_API virtual const char* get_tag(const message& msg);
 
@@ -38,7 +38,7 @@ class android_log_consumer_ex : public android_log_consumer
     unsigned    m_count;
 
 public:
-    android_log_consumer_ex(const char* tag, const int* levels, unsigned count) : m_tag(tag), m_levels(levels), m_count(count)
+    android_log_consumer_ex(const char* tag, const int* levels, unsigned count) noexcept : m_tag(tag), m_levels(levels), m_count(count)
     {
     }
 

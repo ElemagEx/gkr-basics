@@ -93,7 +93,6 @@
 // LOGxxx Alias is basic LOG - bLOGxxx
 //
 #define LOG             bLOG
-#define LOG_IF          bLOG_IF
 
 #define LOGF            bLOGF
 #define LOGE            bLOGE
@@ -110,6 +109,8 @@
 #define LOG_VERBOSE     bLOG_VERBOSE
 #define LOG_DEBUG       bLOG_DEBUG
 #define LOG_TRACE       bLOG_TRACE
+
+#define LOG_IF          bLOG_IF
 
 #define LOGF_IF         bLOGF_IF
 #define LOGE_IF         bLOGE_IF
@@ -129,7 +130,6 @@
 
 #ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            bLOG_
-#define LOG_IF_         bLOG_IF_
 
 #define LOGF_           bLOGF_
 #define LOGE_           bLOGE_
@@ -146,6 +146,8 @@
 #define LOG_VERBOSE_    bLOG_VERBOSE_
 #define LOG_DEBUG_      bLOG_DEBUG_
 #define LOG_TRACE_      bLOG_TRACE_
+
+#define LOG_IF_         bLOG_IF_
 
 #define LOGF_IF_        bLOGF_IF_
 #define LOGE_IF_        bLOGE_IF_
@@ -173,7 +175,6 @@
 // LOGxxx Alias is facility LOG - fLOGxxx
 //
 #define LOG             fLOG
-#define LOG_IF          fLOG_IF
 
 #define LOGF            fLOGF
 #define LOGE            fLOGE
@@ -190,6 +191,8 @@
 #define LOG_VERBOSE     fLOG_VERBOSE
 #define LOG_DEBUG       fLOG_DEBUG
 #define LOG_TRACE       fLOG_TRACE
+
+#define LOG_IF          fLOG_IF
 
 #define LOGF_IF         fLOGF_IF
 #define LOGE_IF         fLOGE_IF
@@ -209,7 +212,6 @@
 
 #ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            fLOG_
-#define LOG_IF_         fLOG_IF_
 
 #define LOGF_           fLOGF_
 #define LOGE_           fLOGE_
@@ -226,6 +228,8 @@
 #define LOG_VERBOSE_    fLOG_VERBOSE_
 #define LOG_DEBUG_      fLOG_DEBUG_
 #define LOG_TRACE_      fLOG_TRACE_
+
+#define LOG_IF_         fLOG_IF_
 
 #define LOGF_IF_        fLOGF_IF_
 #define LOGE_IF_        fLOGE_IF_
@@ -253,7 +257,6 @@
 // LOGxxx Alias is channel LOG - cLOGxxx
 //
 #define LOG             cLOG
-#define LOG_IF          cLOG_IF
 
 #define LOGF            cLOGF
 #define LOGE            cLOGE
@@ -270,6 +273,8 @@
 #define LOG_VERBOSE     cLOG_VERBOSE
 #define LOG_DEBUG       cLOG_DEBUG
 #define LOG_TRACE       cLOG_TRACE
+
+#define LOG_IF          cLOG_IF
 
 #define LOGF_IF         cLOGF_IF
 #define LOGE_IF         cLOGE_IF
@@ -289,7 +294,6 @@
 
 #ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            cLOG_
-#define LOG_IF_         cLOG_IF_
 
 #define LOGF_           cLOGF_
 #define LOGE_           cLOGE_
@@ -306,6 +310,8 @@
 #define LOG_VERBOSE_    cLOG_VERBOSE_
 #define LOG_DEBUG_      cLOG_DEBUG_
 #define LOG_TRACE_      cLOG_TRACE_
+
+#define LOG_IF_         cLOG_IF_
 
 #define LOGF_IF_        cLOGF_IF_
 #define LOGE_IF_        cLOGE_IF_
@@ -333,7 +339,6 @@
 // LOGxxx Alias is general LOG - gLOGxxx
 //
 #define LOG             gLOG
-#define LOG_IF          gLOG_IF
 
 #define LOGF            gLOGF
 #define LOGE            gLOGE
@@ -350,6 +355,8 @@
 #define LOG_VERBOSE     gLOG_VERBOSE
 #define LOG_DEBUG       gLOG_DEBUG
 #define LOG_TRACE       gLOG_TRACE
+
+#define LOG_IF          gLOG_IF
 
 #define LOGF_IF         gLOGF_IF
 #define LOGE_IF         gLOGE_IF
@@ -369,7 +376,6 @@
 
 #ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            gLOG_
-#define LOG_IF_         gLOG_IF_
 
 #define LOGF_           gLOGF_
 #define LOGE_           gLOGE_
@@ -386,6 +392,8 @@
 #define LOG_VERBOSE_    gLOG_VERBOSE_
 #define LOG_DEBUG_      gLOG_DEBUG_
 #define LOG_TRACE_      gLOG_TRACE_
+
+#define LOG_IF_         gLOG_IF_
 
 #define LOGF_IF_        gLOGF_IF_
 #define LOGE_IF_        gLOGE_IF_

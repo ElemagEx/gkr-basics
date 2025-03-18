@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef GKR_LOG_GENERIC
-#define GKR_LOG_GENERIC
+#ifndef GENERIC_H
+#define GENERIC_H
 
 #include <gkr/capi/log/log.h>
 
@@ -55,39 +55,39 @@
 #endif
 #endif
 
-#ifdef GKR_LOG_ALL_KEEP
-#ifndef GKR_LOG_BASIC_KEEP
-#define GKR_LOG_BASIC_KEEP
+#ifdef GENERIC_LOG_ALL_KEEP
+#ifndef GENERIC_LOG_BASIC_KEEP
+#define GENERIC_LOG_BASIC_KEEP
 #endif
-#ifndef GKR_LOG_FACILITY_KEEP
-#define GKR_LOG_FACILITY_KEEP
+#ifndef GENERIC_LOG_FACILITY_KEEP
+#define GENERIC_LOG_FACILITY_KEEP
 #endif
-#ifndef GKR_LOG_CHANNEL_KEEP
-#define GKR_LOG_CHANNEL_KEEP
+#ifndef GENERIC_LOG_CHANNEL_KEEP
+#define GENERIC_LOG_CHANNEL_KEEP
 #endif
-#ifndef GKR_LOG_GENERAL_KEEP
-#define GKR_LOG_GENERAL_KEEP
+#ifndef GENERIC_LOG_GENERAL_KEEP
+#define GENERIC_LOG_GENERAL_KEEP
 #endif
 #endif
 
-#ifndef GKR_LOG_ALIAS
-#if     defined(GKR_LOG_BASIC_KEEP)
-#define GKR_LOG_ALIAS 0
-#elif   defined(GKR_LOG_FACILITY_KEEP)
-#define GKR_LOG_ALIAS 1
-#elif   defined(GKR_LOG_CHANNEL_KEEP)
-#define GKR_LOG_ALIAS 2
-#elif   defined(GKR_LOG_GENERAL_KEEP)
-#define GKR_LOG_ALIAS 3
+#ifndef GENERIC_LOG_ALIAS
+#if     defined(GENERIC_LOG_BASIC_KEEP)
+#define GENERIC_LOG_ALIAS 0
+#elif   defined(GENERIC_LOG_FACILITY_KEEP)
+#define GENERIC_LOG_ALIAS 1
+#elif   defined(GENERIC_LOG_CHANNEL_KEEP)
+#define GENERIC_LOG_ALIAS 2
+#elif   defined(GENERIC_LOG_GENERAL_KEEP)
+#define GENERIC_LOG_ALIAS 3
 #else
-#define GKR_LOG_ALIAS 0
+#define GENERIC_LOG_ALIAS 0
 #endif
 #endif
 
-#if (GKR_LOG_ALIAS == 0)
+#if (GENERIC_LOG_ALIAS == 0)
 
-#ifndef GKR_LOG_BASIC_KEEP
-#define GKR_LOG_BASIC_KEEP
+#ifndef GENERIC_LOG_BASIC_KEEP
+#define GENERIC_LOG_BASIC_KEEP
 #endif
 //
 // LOGxxx Alias is basic LOG - bLOGxxx
@@ -127,7 +127,7 @@
 #define LOG_DEBUG_IF    bLOG_DEBUG_IF
 #define LOG_TRACE_IF    bLOG_TRACE_IF
 
-#ifndef GKR_NO_PRINTF_LOGGING
+#ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            bLOG_
 #define LOG_IF_         bLOG_IF_
 
@@ -162,12 +162,12 @@
 #define LOG_VERBOSE_IF_ bLOG_VERBOSE_IF_
 #define LOG_DEBUG_IF_   bLOG_DEBUG_IF_
 #define LOG_TRACE_IF_   bLOG_TRACE_IF_
-#endif /*ndef GKR_NO_PRINTF_LOGGING*/
+#endif /*ndef GENERIC_LOG_SKIP_PRINTF*/
 
-#elif (GKR_LOG_ALIAS == 1)
+#elif (GENERIC_LOG_ALIAS == 1)
 
-#ifndef GKR_LOG_FACILITY_KEEP
-#define GKR_LOG_FACILITY_KEEP
+#ifndef GENERIC_LOG_FACILITY_KEEP
+#define GENERIC_LOG_FACILITY_KEEP
 #endif
 //
 // LOGxxx Alias is facility LOG - fLOGxxx
@@ -207,7 +207,7 @@
 #define LOG_DEBUG_IF    fLOG_DEBUG_IF
 #define LOG_TRACE_IF    fLOG_TRACE_IF
 
-#ifndef GKR_NO_PRINTF_LOGGING
+#ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            fLOG_
 #define LOG_IF_         fLOG_IF_
 
@@ -242,12 +242,12 @@
 #define LOG_VERBOSE_IF_ fLOG_VERBOSE_IF_
 #define LOG_DEBUG_IF_   fLOG_DEBUG_IF_
 #define LOG_TRACE_IF_   fLOG_TRACE_IF_
-#endif /*ndef GKR_NO_PRINTF_LOGGING*/
+#endif /*ndef GENERIC_LOG_SKIP_PRINTF*/
 
-#elif (GKR_LOG_ALIAS == 2)
+#elif (GENERIC_LOG_ALIAS == 2)
 
-#ifndef GKR_LOG_CHANNEL_KEEP
-#define GKR_LOG_CHANNEL_KEEP
+#ifndef GENERIC_LOG_CHANNEL_KEEP
+#define GENERIC_LOG_CHANNEL_KEEP
 #endif
 //
 // LOGxxx Alias is channel LOG - cLOGxxx
@@ -287,7 +287,7 @@
 #define LOG_DEBUG_IF    cLOG_DEBUG_IF
 #define LOG_TRACE_IF    cLOG_TRACE_IF
 
-#ifndef GKR_NO_PRINTF_LOGGING
+#ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            cLOG_
 #define LOG_IF_         cLOG_IF_
 
@@ -322,12 +322,12 @@
 #define LOG_VERBOSE_IF_ cLOG_VERBOSE_IF_
 #define LOG_DEBUG_IF_   cLOG_DEBUG_IF_
 #define LOG_TRACE_IF_   cLOG_TRACE_IF_
-#endif /*ndef GKR_NO_PRINTF_LOGGING*/
+#endif /*ndef GENERIC_LOG_SKIP_PRINTF*/
 
-#elif (GKR_LOG_ALIAS == 3)
+#elif (GENERIC_LOG_ALIAS == 3)
 
-#ifndef GKR_LOG_GENERAL_KEEP
-#define GKR_LOG_GENERAL_KEEP
+#ifndef GENERIC_LOG_GENERAL_KEEP
+#define GENERIC_LOG_GENERAL_KEEP
 #endif
 //
 // LOGxxx Alias is general LOG - gLOGxxx
@@ -367,7 +367,7 @@
 #define LOG_DEBUG_IF    gLOG_DEBUG_IF
 #define LOG_TRACE_IF    gLOG_TRACE_IF
 
-#ifndef GKR_NO_PRINTF_LOGGING
+#ifndef GENERIC_LOG_SKIP_PRINTF
 #define LOG_            gLOG_
 #define LOG_IF_         gLOG_IF_
 
@@ -402,12 +402,12 @@
 #define LOG_VERBOSE_IF_ gLOG_VERBOSE_IF_
 #define LOG_DEBUG_IF_   gLOG_DEBUG_IF_
 #define LOG_TRACE_IF_   gLOG_TRACE_IF_
-#endif /*ndef GKR_NO_PRINTF_LOGGING*/
+#endif /*ndef GENERIC_LOG_SKIP_PRINTF*/
 
-#endif /*GKR_LOG_ALIAS != 0, 1, 2, 3*/
+#endif /*GENERIC_LOG_ALIAS != 0, 1, 2, 3*/
 
-#if !defined(__cplusplus) || defined(LOG_USE_C_DEFS)
+#if !defined(__cplusplus) || defined(GENERIC_LOG_USE_C_DEFS)
 #include <gkr/capi/log/defs/generic_cdefs.h>
 #endif
 
-#endif /*ndef GKR_LOG_GENERIC*/
+#endif /*ndef GENERIC_H*/

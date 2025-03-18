@@ -5,7 +5,7 @@
 #include <gkr/testing/log_defs.hpp>
 
 #define LOG_THRESHOLD_LEVEL LOG_SEVERITY_INFO
-#define LOG_USE_C_DEFS
+#define GENERIC_LOG_USE_C_DEFS
 #include <gkr/log/galery.hpp>
 #include <gkr/log/defs/generic.hpp>
 
@@ -52,7 +52,7 @@ TEST_CASE("logging.logger.defs.generic. main")
     };
 #endif
 
-#ifndef LOG_USE_C_DEFS
+#ifndef GENERIC_LOG_USE_C_DEFS
     LOGV(FACILITY_NETWORK) << "Hello There!";
     LOGV(FACILITY_NETWORK, "Hello There!");
 #ifdef __cpp_lib_format

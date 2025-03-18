@@ -80,7 +80,7 @@ public:
 }
 }
 
-#ifndef GKR_NO_STREAM_LOGGING
+#ifndef GENERIC_LOG_SKIP_STREAM
 
 #include <memory>
 #include <sstream>
@@ -274,9 +274,9 @@ inline int finish(ostream& os)
 }
 }
 
-#endif /*GKR_NO_STREAM_LOGGING*/
+#endif /*GENERIC_LOG_SKIP_STREAM*/
 
-#ifndef GKR_NO_FORMAT_LOGGING
+#ifndef GENERIC_LOG_SKIP_FORMAT
 #ifdef __cpp_lib_format
 
 #include <format>
@@ -387,4 +387,4 @@ int gkr_log_format_message(void* channel, const char* func, const char* file, un
 }
 
 #endif /*__cpp_lib_format*/
-#endif /*GKR_NO_FORMAT_LOGGING*/
+#endif /*GENERIC_LOG_SKIP_FORMAT*/

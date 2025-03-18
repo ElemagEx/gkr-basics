@@ -6,7 +6,7 @@
 
 #include <exception>
 
-#ifdef GKR_NO_STREAM_LOGGING
+#ifdef GENERIC_LOG_SKIP_STREAM
 #error This project must be compiled w/out this define
 #endif
 

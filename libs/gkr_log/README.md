@@ -1,9 +1,9 @@
 # gkr::logging library
 
 ## Logging filter defines
-- `GKR_NO_PRINTF_LOGGING` - disables logging with `printf` style
-- `GKR_NO_STREAM_LOGGING` - disables logging with C++ output streams
-- `GKR_NO_FORMAT_LOGGING` - disables logging with C++20 format
+- `GENERIC_LOG_SKIP_PRINTF` - disables logging with `printf` style
+- `GENERIC_LOG_SKIP_STREAM` - disables logging with C++ output streams
+- `GENERIC_LOG_SKIP_FORMAT` - disables logging with C++20 format
 
 ## Generic logging
 
@@ -38,9 +38,9 @@ Structure: `[prefix]LOG[severity][_IF][_]`
 - `LOG_FACILITY` - basic and channel log macros/inlines use this value for its facility argument - default is 0
 - `LOG_CHANNEL` - basic and facility log macros/inlines use this value for its channel argument - default is (`NULL`/`nullptr`)
 - `LOG_THRESHOLD_LEVEL=<integer>` - define compile-time log threshold - all macros/inlines that are grater or equal to this value are compiled out - default is 100
-- `LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions
-- `LOG_USE_CPP_LEGACY` - use old C++ (pre C++ 17) techniques for compile-time severity filtering (for C++ 17 and later `if constexpr` is used)
-- `LOG_SOURCE_LOCATION` - add source location of macros - available only with `LOG_USE_C_DEFS` - default is undefined
+- `GENERIC_LOG_USE_C_DEFS` - use C style logging macros instead C++ inline overloaded functions
+- `GENERIC_LOG_USE_CPP_LEGACY` - use old C++ (pre C++ 17) techniques for compile-time severity filtering (for C++ 17 and later `if constexpr` is used)
+- `LOG_SOURCE_LOCATION` - add source location of macros - available only with `GENERIC_LOG_USE_C_DEFS` - default is undefined
 
 ## Uniques
 - recursive logging - when logging is used inside logging thread from consumers

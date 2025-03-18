@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef GKR_NO_STREAM_LOGGING
+#ifdef GENERIC_LOG_SKIP_STREAM
 #error Stream logging is disabled
 #endif
 

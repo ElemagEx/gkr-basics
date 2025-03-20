@@ -570,7 +570,7 @@ protected:
    ~queue_pausing() noexcept(std::is_nothrow_destructible         <base_t>::value) = default;
 
     queue_pausing(queue_pausing&& other) noexcept(std::is_nothrow_move_constructible<base_t>::value)
-        : base_t(other)
+        : base_t(std::move(other))
     {
     }
     queue_pausing& operator=(queue_pausing&& other) noexcept(std::is_nothrow_move_assignable<base_t>::value)
@@ -2282,6 +2282,8 @@ private:
         std::size_t m_pos   = 0U;
 
     public:
+        using queue_t = Queue;
+
         iterator_t(Queue* queue, std::size_t pos) noexcept : m_queue(queue), m_pos(pos)
         {
         }
@@ -2399,6 +2401,25 @@ public:
     reverse_iterator rend() noexcept
     {
         return reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
+
+public:
+    bool operator==(const self_t& other) const noexcept
+    {
+        if(this == &other) return true;
+
+        if(base_t::count() != other.base_t::count()) return false;
+
+        auto it_self  =       cbegin(), end_self  =       cend();
+        auto it_other = other.cbegin(), end_other = other.cend();
+
+        for( ; it_self != end_self; ++it_self, ++it_other)
+        {
+            if(it_other == end_other) return false;
+
+            if(!(*it_self == *it_other)) return false;
+        }
+        return (it_other == end_other);
     }
 };
 template<
@@ -3036,6 +3057,8 @@ private:
         std::size_t m_pos   = 0U;
 
     public:
+        using queue_t = Queue;
+
         iterator_t(Queue* queue, std::size_t pos) noexcept : m_queue(queue), m_pos(pos)
         {
         }
@@ -3148,6 +3171,29 @@ public:
     reverse_iterator rend() noexcept
     {
         return reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
+
+public:
+    bool operator==(const self_t& other) const noexcept
+    {
+        if(this == &other) return true;
+
+        if(base_t::count() != other.count()) return false;
+
+        const std::size_t size = element_size();
+
+        if(size != other.element_size()) return false;
+
+        auto it_self  =       cbegin(), end_self  =       cend();
+        auto it_other = other.cbegin(), end_other = other.cend();
+
+        for( ; it_self != end_self; ++it_self, ++it_other)
+        {
+            if(it_other == end_other) return false;
+
+            if(0 != std::memcmp(*it_self, *it_other, size)) return false;
+        }
+        return (it_other == end_other);
     }
 };
 

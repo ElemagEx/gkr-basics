@@ -1086,13 +1086,13 @@ private:
 
     using dequeue_allocator_traits = std::allocator_traits<dequeue_allocator_type>;
 
-    static constexpr bool move_is_noexcept = (
+    static constexpr bool basic_move_is_noexcept = (
         std::is_nothrow_move_assignable<base_t>::value && (
             dequeue_allocator_traits::is_always_equal::value || (
                 dequeue_allocator_traits::propagate_on_container_move_assignment::value &&
                 std::is_nothrow_move_assignable<dequeue_allocator_type>::value
                 )));
-    static constexpr bool swap_is_noexcept = (
+    static constexpr bool basic_swap_is_noexcept = (
         std::is_nothrow_swappable<base_t>::value && (
             dequeue_allocator_traits::is_always_equal::value || (
                 dequeue_allocator_traits::propagate_on_container_swap::value &&
@@ -1152,7 +1152,7 @@ protected:
         , m_busy_head(other.m_busy_head.exchange(0))
     {
     }
-    basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
+    basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(basic_move_is_noexcept)
     {
         free_entries();
 
@@ -1173,7 +1173,7 @@ protected:
         m_capacity  = std::exchange(other.m_capacity, 0);
         return *this;
     }
-    void swap(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
+    void swap(basic_lockfree_queue& other) noexcept(basic_swap_is_noexcept)
     {
         base_t::swap(other);
 
@@ -1218,7 +1218,7 @@ private:
             m_entries = nullptr;
         }
     }
-    void move_entries(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
+    void move_entries(basic_lockfree_queue&& other) noexcept(basic_move_is_noexcept)
     {
         if_constexpr(dequeue_allocator_traits::propagate_on_container_move_assignment::value)
         {
@@ -1234,7 +1234,7 @@ private:
         }
         m_entries = std::exchange(other.m_entries, nullptr);
     }
-    void swap_entries(basic_lockfree_queue& other) noexcept(swap_is_noexcept)
+    void swap_entries(basic_lockfree_queue& other) noexcept(basic_swap_is_noexcept)
     {
         if_constexpr(dequeue_allocator_traits::propagate_on_container_swap::value)
         {
@@ -1244,12 +1244,6 @@ private:
         {
             if(m_allocator != other.m_allocator)
             {
-                Check_Recovery(
-                    "According to the standard"
-                    " (see AllocatorAwareContainer at https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer)"
-                    " this case is undefined behaviour."
-                    " Recovery code follows"
-                    );
                 dequeue_entry* entries;
 
                 this->relocate_entries(  entries, other.m_allocator);
@@ -1595,12 +1589,12 @@ public:
 
     using allocator_type  = Allocator;
 
+    using allocator_traits = std::allocator_traits<Allocator>;
+
     using queue_producer_element_t = queue_producer_element<self_t>;
     using queue_consumer_element_t = queue_consumer_element<self_t>;
 
-private:
-    using allocator_traits = std::allocator_traits<Allocator>;
-
+public:
     static constexpr bool move_is_noexcept = (
         std::is_nothrow_move_assignable<base_t>::value && (
             allocator_traits::is_always_equal::value || (
@@ -1614,6 +1608,7 @@ private:
                 std::is_nothrow_swappable<Allocator>::value
                 )));
 
+private:
     gkr_attr_no_unique_address Allocator m_allocator;
 
     element_t* m_elements = nullptr;
@@ -1753,12 +1748,6 @@ private:
         {
             if(m_allocator != other.m_allocator)
             {
-                Check_Recovery(
-                    "According to the standard"
-                    " (see AllocatorAwareContainer at https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer)"
-                    " this case is undefined behaviour."
-                    " Recovery code follows"
-                    );
                 element_t* elements;
 
                 this->relocate_elements(  elements, other.m_allocator);
@@ -1788,15 +1777,10 @@ public:
         base_t::reset(0);
         m_elements = nullptr;
     }
-    void reset(std::size_t capacity = queue_npos) noexcept(false)
+    void reset(std::size_t capacity) noexcept(false)
     {
-        if(capacity == queue_npos) capacity = base_t::capacity();
-
-        base_t::reset(capacity);
-
-        if(capacity == base_t::capacity()) return;
-
         free_elements();
+        base_t::reset(capacity);
 
         if(base_t::capacity() == 0)
         {
@@ -2521,7 +2505,7 @@ public:
         }
         return *this;
     }
-    void swap(lockfree_queue&& other) noexcept(swap_is_noexcept)
+    void swap(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
         if(this != &other)
         {
@@ -2598,20 +2582,14 @@ private:
     }
     void swap_elements(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        if_constexpr(allocator_traits::propagate_on_container_swap_assignment::value)
+        if_constexpr(allocator_traits::propagate_on_container_swap::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }
-        else if_constexpr(!swap_is_noexcept)
+        else if_constexpr(!allocator_traits::is_always_equal::value)
         {
             if(m_allocator != other.m_allocator)
             {
-                Check_Recovery(
-                    "According to the standard"
-                    " (see AllocatorAwareContainer at https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer)"
-                    " this case is undefined behaviour."
-                    " Recovery code follows"
-                    );
                 std::size_t size;
                 char*       elements;
 
@@ -2646,13 +2624,9 @@ public:
     }
     void reset(std::size_t capacity = queue_npos, std::size_t size = queue_npos) noexcept(false)
     {
-        if(capacity == queue_npos) capacity = base_t::capacity();
-        if(size     == queue_npos) size     = m_size; else m_size = size;
+        if(size != queue_npos) m_size = size;
 
         base_t::reset(capacity);
-
-        if((capacity == base_t::capacity()) && (size == m_size)) return;
-
         free_elements();
 
         if((base_t::capacity() == 0) || (m_size == 0))

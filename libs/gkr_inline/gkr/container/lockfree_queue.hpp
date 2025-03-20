@@ -830,6 +830,19 @@ public:
     }
 
 protected:
+    std::size_t head_pos() const
+    {
+        return m_head_pos;
+    }
+    std::size_t tail_pos() const
+    {
+        return m_tail_pos;
+    }
+    std::size_t index_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(m_capacity > 0);
+        return (pos % m_capacity);
+    }
     bool element_has_value(std::size_t index, std::size_t& pos) const noexcept
     {
         if(index >= m_capacity) return false;
@@ -1268,6 +1281,19 @@ public:
     }
 
 protected:
+    std::size_t head_pos() const
+    {
+        return m_busy_head;
+    }
+    std::size_t tail_pos() const
+    {
+        return m_busy_tail;
+    }
+    std::size_t index_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_Check(m_capacity > 0);
+        return m_entries[pos % m_capacity].busy_index;
+    }
     bool element_has_value(std::size_t index, std::size_t& pos) const noexcept
     {
         if(index >= m_capacity) return false;
@@ -1889,6 +1915,14 @@ public:
     }
 
 private:
+    element_t* element_by_pos(std::size_t pos) noexcept(DIAG_NOEXCEPT)
+    {
+        return m_elements + base_t::index_by_pos(pos);
+    }
+    const element_t* element_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
+    {
+        return m_elements + base_t::index_by_pos(pos);
+    }
     std::size_t index_of_element(element_t* element) const noexcept(DIAG_NOEXCEPT)
     {
         if(element == nullptr) return queue_npos;
@@ -2239,6 +2273,133 @@ public:
         return true;
     }
 #endif
+
+private:
+    template<typename Queue, typename Element, bool reverse>
+    class iterator_t
+    {
+        Queue*      m_queue = nullptr;
+        std::size_t m_pos   = 0U;
+
+    public:
+        iterator_t(Queue* queue, std::size_t pos) noexcept : m_queue(queue), m_pos(pos)
+        {
+        }
+
+        iterator_t() noexcept = default;
+       ~iterator_t() noexcept = default;
+
+        iterator_t(      iterator_t&& other) noexcept = default;
+        iterator_t(const iterator_t&  other) noexcept = default;
+
+        iterator_t& operator=(      iterator_t&& other) noexcept = default;
+        iterator_t& operator=(const iterator_t&  other) noexcept = default;
+
+    public:
+        bool operator==(const iterator_t& other) const noexcept
+        {
+            return (m_pos == other.m_pos);
+        }
+        bool operator!=(const iterator_t& other) const noexcept
+        {
+            return (m_pos != other.m_pos);
+        }
+
+    public:
+        void increment() noexcept
+        {
+            if_constexpr(reverse)
+            {
+                --m_pos;
+            }
+            else
+            {
+                ++m_pos;
+            }
+        }
+        iterator_t& operator++() noexcept
+        {
+            increment();
+            return *this;
+        }
+        iterator_t operator++(int) noexcept
+        {
+            iterator_t prev = *this;
+            increment();
+            return prev;
+        }
+
+    public:
+        Element& operator*() noexcept(DIAG_NOEXCEPT)
+        {
+            Assert_NotNullPtr(m_queue);
+            return *m_queue->element_by_pos(m_pos);
+        }
+        Element* operator->() noexcept(DIAG_NOEXCEPT)
+        {
+            Assert_NotNullPtr(m_queue);
+            return m_queue->element_by_pos(m_pos);
+        }
+    };
+
+public:
+    using               iterator = iterator_t<      self_t,       element_t, false>;
+    using         const_iterator = iterator_t<const self_t, const element_t, false>;
+
+    using       reverse_iterator = iterator_t<      self_t,       element_t, true>;
+    using const_reverse_iterator = iterator_t<const self_t, const element_t, true>;
+
+public:
+    const_iterator begin() const noexcept
+    {
+        return const_iterator(this, base_t::head_pos());
+    }
+    const_iterator end() const noexcept
+    {
+        return const_iterator(nullptr, base_t::tail_pos());
+    }
+    const_iterator cbegin() const noexcept
+    {
+        return const_iterator(this, base_t::head_pos());
+    }
+    const_iterator cend() const noexcept
+    {
+        return const_iterator(nullptr, base_t::tail_pos());
+    }
+    const_reverse_iterator rbegin() const noexcept
+    {
+        return const_reverse_iterator(this, base_t::tail_pos()-1);
+    }
+    const_reverse_iterator rend() const noexcept
+    {
+        return const_reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
+    const_reverse_iterator crbegin() const noexcept
+    {
+        return const_reverse_iterator(this, base_t::tail_pos()-1);
+    }
+    const_reverse_iterator crend() const noexcept
+    {
+        return const_reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
+
+public:
+    iterator begin() noexcept
+    {
+        return iterator(this, base_t::head_pos());
+    }
+    iterator end() noexcept
+    {
+        return iterator(nullptr, base_t::tail_pos());
+    }
+    reverse_iterator rbegin() noexcept
+    {
+        return reverse_iterator(this, base_t::tail_pos()-1);
+    }
+    reverse_iterator rend() noexcept
+    {
+        return reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
 };
 template<
     bool MultipleConsumersMultipleProducersSupport,
@@ -2662,6 +2823,26 @@ public:
     }
 
 private:
+    void* element_by_pos(std::size_t pos) noexcept(DIAG_NOEXCEPT)
+    {
+        const std::size_t stride = calc_pitch(m_size) * granularity;
+
+        Check_ValidState(stride > 0, nullptr);
+
+        void* element = m_elements + (base_t::index_by_pos(pos) * stride);
+
+        return element;
+    }
+    const void* element_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
+    {
+        const std::size_t stride = calc_pitch(m_size) * granularity;
+
+        Check_ValidState(stride > 0, nullptr);
+
+        void* element = m_elements + (base_t::index_by_pos(pos) * stride);
+
+        return element;
+    }
     std::size_t index_of_element(void* element) const noexcept(DIAG_NOEXCEPT)
     {
         if(element == nullptr) return queue_npos;
@@ -2846,6 +3027,128 @@ public:
         return true;
     }
 #endif
+
+private:
+    template<typename Queue, typename Element, bool reverse>
+    class iterator_t
+    {
+        Queue*      m_queue = nullptr;
+        std::size_t m_pos   = 0U;
+
+    public:
+        iterator_t(Queue* queue, std::size_t pos) noexcept : m_queue(queue), m_pos(pos)
+        {
+        }
+
+        iterator_t() noexcept = default;
+       ~iterator_t() noexcept = default;
+
+        iterator_t(      iterator_t&& other) noexcept = default;
+        iterator_t(const iterator_t&  other) noexcept = default;
+
+        iterator_t& operator=(      iterator_t&& other) noexcept = default;
+        iterator_t& operator=(const iterator_t&  other) noexcept = default;
+
+    public:
+        bool operator==(const iterator_t& other) const noexcept
+        {
+            return (m_pos == other.m_pos);
+        }
+        bool operator!=(const iterator_t& other) const noexcept
+        {
+            return (m_pos != other.m_pos);
+        }
+
+    public:
+        void increment() noexcept
+        {
+            if_constexpr(reverse)
+            {
+                --m_pos;
+            }
+            else
+            {
+                ++m_pos;
+            }
+        }
+        iterator_t& operator++() noexcept
+        {
+            increment();
+            return *this;
+        }
+        iterator_t operator++(int) noexcept
+        {
+            iterator_t prev = *this;
+            increment();
+            return prev;
+        }
+
+    public:
+        Element* operator*() noexcept(DIAG_NOEXCEPT)
+        {
+            Assert_NotNullPtr(m_queue);
+            return m_queue->element_by_pos(m_pos);
+        }
+    };
+
+public:
+    using               iterator = iterator_t<      self_t,       void, false>;
+    using         const_iterator = iterator_t<const self_t, const void, false>;
+
+    using       reverse_iterator = iterator_t<      self_t,       void, true>;
+    using const_reverse_iterator = iterator_t<const self_t, const void, true>;
+
+public:
+    const_iterator begin() const noexcept
+    {
+        return const_iterator(this, base_t::head_pos());
+    }
+    const_iterator end() const noexcept
+    {
+        return const_iterator(nullptr, base_t::tail_pos());
+    }
+    const_iterator cbegin() const noexcept
+    {
+        return const_iterator(this, base_t::head_pos());
+    }
+    const_iterator cend() const noexcept
+    {
+        return const_iterator(nullptr, base_t::tail_pos());
+    }
+    const_reverse_iterator rbegin() const noexcept
+    {
+        return const_reverse_iterator(this, base_t::tail_pos()-1);
+    }
+    const_reverse_iterator rend() const noexcept
+    {
+        return const_reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
+    const_reverse_iterator crbegin() const noexcept
+    {
+        return const_reverse_iterator(this, base_t::tail_pos()-1);
+    }
+    const_reverse_iterator crend() const noexcept
+    {
+        return const_reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
+
+public:
+    iterator begin() noexcept
+    {
+        return iterator(this, base_t::head_pos());
+    }
+    iterator end() noexcept
+    {
+        return iterator(nullptr, base_t::tail_pos());
+    }
+    reverse_iterator rbegin() noexcept
+    {
+        return reverse_iterator(this, base_t::tail_pos()-1);
+    }
+    reverse_iterator rend() noexcept
+    {
+        return reverse_iterator(nullptr, base_t::head_pos()-1);
+    }
 };
 
 }

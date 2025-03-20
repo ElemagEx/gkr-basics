@@ -5,9 +5,9 @@
 #include <gkr/testing/allocator.hpp>
 #include <gkr/testing/named_requirements.hpp>
 
-struct V
+struct Vec3
 {
-    float x, y, z;
+    int x, y, z;
 };
 struct Data
 {
@@ -117,21 +117,119 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. lifecycle", "",
     gkr::testing::get_singlethreaded_pre_allocated_storage<value_t>().reset();
 }
 #endif
+
+template<bool TYPELESS, typename Value, typename Iterator>
+void test_iterator_old(Iterator begin, Iterator end)
+{
+    for(auto it = begin; it != end; ++it)
+    {
+        if constexpr(TYPELESS)
+        {
+            Value& val = *static_cast<Value*>(*it);
+            CHECK(val.x > 0);
+        }
+        else
+        {
+            Value& val = *it;
+            CHECK(val.x == it->x);
+        }
+    }
+}
+template<bool TYPELESS, typename Value, typename Queue>
+void test_iterator_new(Queue& queue)
+{
+    if constexpr(TYPELESS)
+    {
+        for(auto element : queue)
+        {
+            Value& val = *static_cast<Value*>(element);
+            CHECK(val.x > 0);
+        }
+    }
+    else
+    {
+        for(auto& element : queue)
+        {
+            Value& val = element;
+            CHECK(val.x > 0);
+        }
+    }
+}
+template<bool TYPELESS, typename Queue>
+void test_iterators(Queue& queue)
+{
+    REQUIRE(queue.count() == 3);
+
+    test_iterator_new<TYPELESS,       Vec3>(queue);
+
+    test_iterator_old<TYPELESS,       Vec3>(queue.  begin(), queue.  end());
+    test_iterator_old<TYPELESS,       Vec3>(queue. rbegin(), queue. rend());
+    test_iterator_old<TYPELESS, const Vec3>(queue. cbegin(), queue. cend());
+    test_iterator_old<TYPELESS, const Vec3>(queue.crbegin(), queue.crend());
+
+    const Queue& cqueue = queue;
+
+    test_iterator_new<TYPELESS, const Vec3>(cqueue);
+
+    test_iterator_old<TYPELESS, const Vec3>(cqueue.  begin(), cqueue.  end());
+    test_iterator_old<TYPELESS, const Vec3>(cqueue. rbegin(), cqueue. rend());
+    test_iterator_old<TYPELESS, const Vec3>(cqueue. cbegin(), cqueue. cend());
+    test_iterator_old<TYPELESS, const Vec3>(cqueue.crbegin(), cqueue.crend());
+}
+
+TEST_CASE("container.lockfree_queue. iterators")
+{
+    using namespace gkr;
+
+    SECTION("typefull, single")
+    {
+        lockfree_queue<Vec3, false> queue(8);
+        queue.try_push(Vec3{1, 2, 3});
+        queue.try_push(Vec3{2, 3, 4});
+        queue.try_push(Vec3{3, 4, 5});
+        test_iterators<false>(queue);
+    }
+    SECTION("typefull, multiple")
+    {
+        lockfree_queue<Vec3, true > queue(8);
+        queue.try_push(Vec3{1, 2, 3});
+        queue.try_push(Vec3{2, 3, 4});
+        queue.try_push(Vec3{3, 4, 5});
+        test_iterators<false>(queue);
+    }
+    SECTION("typeless, single")
+    {
+        lockfree_queue<void, false> queue(8, sizeof(Vec3));
+        queue.try_start_push().as<Vec3>() = Vec3{1, 2, 3};
+        queue.try_start_push().as<Vec3>() = Vec3{2, 3, 4};
+        queue.try_start_push().as<Vec3>() = Vec3{3, 4, 5};
+        test_iterators<true >(queue);
+    }
+    SECTION("typeless, multiple")
+    {
+        lockfree_queue<void, true > queue(8, sizeof(Vec3));
+        queue.try_start_push().as<Vec3>() = Vec3{1, 2, 3};
+        queue.try_start_push().as<Vec3>() = Vec3{2, 3, 4};
+        queue.try_start_push().as<Vec3>() = Vec3{3, 4, 5};
+        test_iterators<true >(queue);
+    }
+}
+
 TEST_CASE("container.lockfree_queue. compliance")
 {
     using namespace gkr;
 
-    lockfree_queue<V> queue1;
+    lockfree_queue<Vec3> queue1;
 
     testing::is_container(queue1);
 }
 
 TEST_CASE("container.lockfree_queue. main")
 {
-    gkr::lockfree_queue<V, false> queue2;
+    gkr::lockfree_queue<Vec3, false> queue2;
     queue2.reset(20);
 
-    gkr::lockfree_queue<V, false> queue;
+    gkr::lockfree_queue<Vec3, false> queue;
 
     queue = std::move(queue2);
 
@@ -141,13 +239,13 @@ TEST_CASE("container.lockfree_queue. main")
     queue.count();
 
     {
-        auto element = queue.try_start_push({1.f, 2.f, 3.f});
+        auto element = queue.try_start_push({1, 2, 3});
 
         if(element.push_in_progress())
         {
-            element->x += 1.f;
-            element->y += 2.f;
-            element->z += 3.f;
+            element->x += 1;
+            element->y += 2;
+            element->z += 3;
         }
     }
 
@@ -161,7 +259,7 @@ TEST_CASE("container.lockfree_queue. main")
 
     q1 = std::move(q2);
 
-    float s = 0.f;
+    int s = 0;
 
     while(!queue.empty())
     {
@@ -184,7 +282,7 @@ TEST_CASE("container.lockfree_queue. main")
 
 TEST_CASE("container.lockfree_queue. sync")
 {
-    gkr::lockfree_queue<V, false, true> queue;
+    gkr::lockfree_queue<Vec3, false, true> queue;
 
     CHECK(queue.empty());
 

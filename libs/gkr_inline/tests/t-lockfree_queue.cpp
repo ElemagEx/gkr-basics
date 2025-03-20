@@ -9,6 +9,7 @@ struct Vec3
 {
     int x, y, z;
 };
+#if 0
 struct Data
 {
     Data() noexcept = default;
@@ -94,7 +95,7 @@ using allocatorM_t = allocator1<char>;
 #ifdef _MSC_VER
 #pragma warning(disable:4868)
 #endif
-#if 0
+
 TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. lifecycle", "", (queue1_data_t, queue2_data_t, queue3_data_t, queue4_data_t), (std_allocator_t, allocator1_t, allocator2_t, allocator3_t, allocator4_t))
 {
     using queue_t = TestType;
@@ -181,9 +182,13 @@ TEST_CASE("container.lockfree_queue. iterators")
 {
     using namespace gkr;
 
+    using Allocator = testing::ref_counting_allocator<Vec3>;
+
+    CHECK(Allocator::check());
+
     SECTION("typefull, single")
     {
-        lockfree_queue<Vec3, false> queue(8);
+        lockfree_queue<Vec3, false, false, Allocator> queue(8);
         queue.try_push(Vec3{1, 2, 3});
         queue.try_push(Vec3{2, 3, 4});
         queue.try_push(Vec3{3, 4, 5});
@@ -191,7 +196,7 @@ TEST_CASE("container.lockfree_queue. iterators")
     }
     SECTION("typefull, multiple")
     {
-        lockfree_queue<Vec3, true > queue(8);
+        lockfree_queue<Vec3, true , false, Allocator> queue(8);
         queue.try_push(Vec3{1, 2, 3});
         queue.try_push(Vec3{2, 3, 4});
         queue.try_push(Vec3{3, 4, 5});
@@ -199,7 +204,7 @@ TEST_CASE("container.lockfree_queue. iterators")
     }
     SECTION("typeless, single")
     {
-        lockfree_queue<void, false> queue(8, sizeof(Vec3));
+        lockfree_queue<void, false, false, Allocator> queue(8, sizeof(Vec3));
         queue.try_start_push().as<Vec3>() = Vec3{1, 2, 3};
         queue.try_start_push().as<Vec3>() = Vec3{2, 3, 4};
         queue.try_start_push().as<Vec3>() = Vec3{3, 4, 5};
@@ -207,12 +212,14 @@ TEST_CASE("container.lockfree_queue. iterators")
     }
     SECTION("typeless, multiple")
     {
-        lockfree_queue<void, true > queue(8, sizeof(Vec3));
+        lockfree_queue<void, true , false, Allocator> queue(8, sizeof(Vec3));
         queue.try_start_push().as<Vec3>() = Vec3{1, 2, 3};
         queue.try_start_push().as<Vec3>() = Vec3{2, 3, 4};
         queue.try_start_push().as<Vec3>() = Vec3{3, 4, 5};
         test_iterators<true >(queue);
     }
+
+    CHECK(Allocator::check());
 }
 
 TEST_CASE("container.lockfree_queue. compliance")

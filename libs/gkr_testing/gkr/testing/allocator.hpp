@@ -2,6 +2,7 @@
 
 #include <new>
 #include <mutex>
+#include <atomic>
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>
@@ -308,6 +309,100 @@ public:
     void deallocate(T* ptr, std::size_t n)
     {
         m_pre_allocated_storage.deallocate(ptr, n);
+    }
+};
+
+template<typename T>
+class ref_counting_allocator
+{
+public:
+    using      value_type = T;
+    using       size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+
+public:
+    using propagate_on_container_move_assignment = std::true_type;
+
+private:
+    inline static std::atomic_int m_allocations   { 0 };
+    inline static std::atomic_int m_constructions { 0 };
+
+public:
+    static bool check()
+    {
+        return ((m_allocations == 0) && (m_constructions == 0));
+    }
+
+public:
+    ref_counting_allocator() noexcept = default;
+   ~ref_counting_allocator() noexcept = default;
+
+    ref_counting_allocator(const ref_counting_allocator<T>& ) noexcept = default;
+    ref_counting_allocator(      ref_counting_allocator<T>&&) noexcept = default;
+
+    template<class U>
+    ref_counting_allocator(const ref_counting_allocator<U>& other) noexcept
+    {
+    }
+
+    ref_counting_allocator& operator=(const ref_counting_allocator& ) noexcept = default;
+    ref_counting_allocator& operator=(      ref_counting_allocator&&) noexcept = default;
+
+public:
+#ifdef __cpp_lib_allocate_at_least
+    [[nodiscard]]
+    std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n)
+    {
+        T* ptr = static_cast<T*>(std::malloc(sizeof(T) * n));
+
+        if(ptr == nullptr) throw std::bad_alloc();
+
+        m_allocations.fetch_add(int(n));
+
+        return {ptr, n};
+    }
+#endif
+    [[nodiscard]]
+    T* allocate(std::size_t n)
+    {
+        T* ptr = static_cast<T*>(std::malloc(sizeof(T) * n));
+
+        if(ptr == nullptr) throw std::bad_alloc();
+
+        m_allocations.fetch_add(int(n));
+
+        return ptr;
+    }
+    void deallocate(T* ptr, std::size_t n)
+    {
+        if(ptr == nullptr) throw std::invalid_argument("ptr");
+
+        if(m_allocations.fetch_add(-int(n)) < 0)
+        {
+            Assert_Failure();
+        }
+
+        std::free(ptr);
+    }
+public:
+    template<class U, class... Args>
+    void construct(U* ptr, Args&&... args)
+    {
+        ::new(ptr) U(std::forward<Args>(args)...);
+
+        if(++m_constructions > m_allocations)
+        {
+            Assert_Failure();
+        }
+    }
+    template<class U>
+    void destroy(U* ptr)
+    {
+        if(--m_constructions < 0)
+        {
+            Assert_Failure();
+        }
+        ptr->~U();
     }
 };
 

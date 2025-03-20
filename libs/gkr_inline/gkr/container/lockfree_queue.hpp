@@ -2583,7 +2583,7 @@ private:
     }
     void swap_elements(lockfree_queue& other) noexcept(swap_is_noexcept)
     {
-        if_constexpr(allocator_traits::propagate_on_container_move_assignment::value)
+        if_constexpr(allocator_traits::propagate_on_container_swap_assignment::value)
         {
             std::swap(m_allocator, other.m_allocator);
         }

@@ -65,7 +65,7 @@ protected:
         }
         m_has_items_event.reset();
     }
-    void resize(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
+    void reserve(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
     {
         m_free_count = capacity - m_busy_count;
 
@@ -162,9 +162,8 @@ template<
     typename T,
     bool MultipleConsumersMultipleProducersSupport=false,
     bool Pausable=false,
-    typename Allocator  =std::allocator<impl::queue_allocator_value_type<T>>,
-    typename WaitSupport=impl::queue_wait_support
+    typename Allocator=std::allocator<impl::queue_allocator_value_type<T>>
     >
-using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, WaitSupport>;
+using waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, impl::queue_wait_support>;
 
 }

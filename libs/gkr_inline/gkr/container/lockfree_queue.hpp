@@ -499,7 +499,7 @@ protected:
     void reset(std::size_t) noexcept
     {
     }
-    void resize(std::size_t) noexcept
+    void reserve(std::size_t) noexcept
     {
     }
 
@@ -877,11 +877,11 @@ protected:
         m_producer_tid_owner = 0;
         m_consumer_tid_owner = 0;
     }
-    void resize(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
+    void reserve(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
     {
-        Assert_Check(capacity >= m_count);
+        Assert_Check(capacity > m_capacity);
 
-        base_t::resize(capacity);
+        base_t::reserve(capacity);
 
         m_capacity = capacity;
 
@@ -1130,7 +1130,7 @@ protected:
         std::is_nothrow_destructible<base_t>::value
         )
     {
-        clean();
+        free_entries();
     }
 
 protected:
@@ -1154,7 +1154,7 @@ protected:
     }
     basic_lockfree_queue& operator=(basic_lockfree_queue&& other) noexcept(move_is_noexcept)
     {
-        clean();
+        free_entries();
 
         base_t::operator=(std::move(other));
 
@@ -1193,7 +1193,7 @@ protected:
     }
 
 private:
-    void clean() noexcept
+    void free_entries() noexcept
     {
         if(m_entries != nullptr)
         {
@@ -1314,7 +1314,7 @@ protected:
 
         if(capacity != m_capacity)
         {
-            clean();
+            free_entries();
 
             m_capacity = capacity;
 
@@ -1341,21 +1341,20 @@ protected:
         m_free_head = 0;
         m_free_tail = m_capacity;
     }
-    void resize(std::size_t capacity) noexcept(false)
+    void reserve(std::size_t capacity) noexcept(false)
     {
-        Assert_Check(capacity >= m_count);
+        Assert_Check(capacity > m_capacity);
 
-        base_t::resize(capacity);
+        base_t::reserve(capacity);
 
-        clean();
-
-        dequeue_entry* entries = dequeue_allocator_traits::allocate(m_allocator, capacity);
+        free_entries();
+        m_entries = dequeue_allocator_traits::allocate(m_allocator, capacity);
 
         const std::size_t count = m_count;
 
         for(std::size_t index = 0; index < capacity; ++index)
         {
-            entries[index] = dequeue_entry{index + count, index, 0};
+            m_entries[index] = dequeue_entry{index + count, index, 0};
         }
         m_busy_head = 0;
         m_busy_tail = count;
@@ -1640,7 +1639,7 @@ public:
         std::is_nothrow_destructible<base_t   >::value
         )
     {
-        clear();
+        free_elements();
     }
 
 public:
@@ -1660,7 +1659,7 @@ public:
     {
         if(this != &other)
         {
-            clear();
+            free_elements();
             move_elements(std::move(other));
 
             base_t::operator=(std::move(other));
@@ -1689,7 +1688,7 @@ private:
     {
         allocator_traits::destroy(m_allocator, m_elements + index);
     }
-    void clear() noexcept(std::is_nothrow_destructible<element_t>::value)
+    void free_elements() noexcept(std::is_nothrow_destructible<element_t>::value)
     {
         if(m_elements != nullptr)
         {
@@ -1783,21 +1782,21 @@ public:
     }
 
 public:
-    void reset() noexcept(!MultipleConsumersMultipleProducersSupport && std::is_nothrow_destructible<element_t>::value)
+    void clear() noexcept(!MultipleConsumersMultipleProducersSupport && std::is_nothrow_destructible<element_t>::value)
     {
-        for(std::size_t pos = queue_npos, index = 0; index < base_t::capacity(); ++index)
-        {
-            if(base_t::element_has_value(index, pos))
-            {
-                destroy_element(index);
-            }
-        }
-        base_t::reset(base_t::capacity());
+        free_elements();
+        base_t::reset(0);
+        m_elements = nullptr;
     }
-    void reset(std::size_t capacity) noexcept(false)
+    void reset(std::size_t capacity = queue_npos) noexcept(false)
     {
-        clear();
+        if(capacity == queue_npos) capacity = base_t::capacity();
+
         base_t::reset(capacity);
+
+        if(capacity == base_t::capacity()) return;
+
+        free_elements();
 
         if(base_t::capacity() == 0)
         {
@@ -1810,13 +1809,13 @@ public:
     }
 
 public:
-    bool resize(std::size_t capacity) noexcept(false)
+    bool reserve(std::size_t capacity) noexcept(false)
     {
-        static_assert(Pausable, "Cannot resize not pausable queue");
+        static_assert(Pausable, "Cannot reserve in not pausable queue");
 
         typename base_t::pause_resume_sentry sentry(*this);
 
-        if(capacity <= base_t::count()) return false;
+        if(capacity <= base_t::capacity()) return false;
 
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
@@ -1829,15 +1828,11 @@ public:
             if(base_t::element_has_value(index, pos))
             {
                 allocator_traits::construct(m_allocator, elements + pos, std::move(m_elements[index]));
-
-                destroy_element(index);
             }
         }
-        allocator_traits::deallocate(m_allocator, m_elements, base_t::capacity());
-
+        free_elements();
+        base_t::reserve(capacity);
         m_elements = elements;
-
-        base_t::resize(capacity);
         return true;
     }
 
@@ -2502,7 +2497,7 @@ public:
         std::is_nothrow_destructible<base_t   >::value
         )
     {
-        clear();
+        free_elements();
     }
 
 public:
@@ -2520,7 +2515,7 @@ public:
     {
         if(this != &other)
         {
-            clear();
+            free_elements();
             move_elements(std::move(other));
             base_t::operator=(std::move(other));
         }
@@ -2545,7 +2540,6 @@ public:
 private:
     static std::size_t calc_pitch(std::size_t size) noexcept
     {
-        Check_ValidState(size > 0, 0);
         const std::size_t pitch = ((size % granularity) == 0)
             ? (size / granularity + 0)
             : (size / granularity + 1)
@@ -2554,7 +2548,7 @@ private:
     }
 
 private:
-    void clear() noexcept
+    void free_elements() noexcept
     {
         if(m_elements != nullptr)
         {
@@ -2644,16 +2638,22 @@ public:
     }
 
 public:
-    void reset() noexcept(!MultipleConsumersMultipleProducersSupport)
+    void clear() noexcept(!MultipleConsumersMultipleProducersSupport)
     {
-        base_t::reset(base_t::capacity());
+        free_elements();
+        base_t::reset(0);
+        m_elements = nullptr;
     }
-    void reset(std::size_t capacity, std::size_t size = queue_npos) noexcept(false)
+    void reset(std::size_t capacity = queue_npos, std::size_t size = queue_npos) noexcept(false)
     {
-        clear();
+        if(capacity == queue_npos) capacity = base_t::capacity();
+        if(size     == queue_npos) size     = m_size; else m_size = size;
+
         base_t::reset(capacity);
 
-        if(size != queue_npos) m_size = size;
+        if((capacity == base_t::capacity()) && (size == m_size)) return;
+
+        free_elements();
 
         if((base_t::capacity() == 0) || (m_size == 0))
         {
@@ -2668,9 +2668,9 @@ public:
     }
 
 public:
-    bool resize(std::size_t capacity) noexcept(false)
+    bool reserve(std::size_t capacity) noexcept(false)
     {
-        static_assert(Pausable, "Cannot resize not pausable queue");
+        static_assert(Pausable, "Cannot reserve in not pausable queue");
 
         typename base_t::pause_resume_sentry sentry(*this);
 
@@ -2678,7 +2678,7 @@ public:
 
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
-        if(capacity <= base_t::count()) return false;
+        if(capacity <= base_t::capacity()) return false;
 
         while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
@@ -2695,11 +2695,11 @@ public:
                 std::memcpy(elements + pos * stride, m_elements + index * stride, m_size);
             }
         }
-        clear();
+        free_elements();
 
         m_elements = elements;
 
-        base_t::resize(capacity);
+        base_t::reserve(capacity);
         return true;
     }
     bool change_element_size(std::size_t size) noexcept(false)
@@ -2736,7 +2736,7 @@ public:
                     std::memcpy(elements + pos * new_stride, m_elements + index * old_stride, m_size);
                 }
             }
-            clear();
+            free_elements();
             m_elements = elements;
         }
         m_size = size;
@@ -2790,7 +2790,7 @@ public:
                     std::memcpy(elements + pos * new_stride, m_elements + index * old_stride, m_size);
                 }
             }
-            clear();
+            free_elements();
             m_elements = elements;
         }
         m_size = size;

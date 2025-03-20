@@ -210,7 +210,7 @@ bool logger::change_log_queue(std::size_t max_queue_entries, std::size_t max_mes
     {
         if(max_queue_entries > get_max_queue_entries())
         {
-            m_log_queue.resize(max_queue_entries);
+            m_log_queue.reserve(max_queue_entries);
         }
         if(max_message_chars > get_max_message_chars())
         {

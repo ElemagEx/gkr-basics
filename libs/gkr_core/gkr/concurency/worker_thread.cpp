@@ -91,7 +91,7 @@ bool worker_thread::resize_actions_queue(size_t capacity)
     if(running())
     {
         Check_ValidState(!in_worker_thread(), false);
-        return m_actions_queue.resize(capacity);
+        return m_actions_queue.reserve(capacity);
     }
     else
     {

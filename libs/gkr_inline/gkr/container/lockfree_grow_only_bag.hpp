@@ -9,12 +9,27 @@
 
 #include <gkr/diagnostics.hpp>
 
+#ifndef __cpp_lib_is_swappable
+#include <gkr/cpp/lib_is_swappable.hpp>
+#endif
 #ifndef __cpp_lib_exchange_function
 #include <gkr/cpp/lib_exchange_function.hpp>
 #endif
 
 #else
 
+#ifndef __cpp_lib_is_swappable
+namespace std
+{
+template<typename T>
+struct is_nothrow_swappable
+{
+    static constexpr bool value =
+        std::is_nothrow_move_constructible<T>::value &&
+        std::is_nothrow_move_assignable<T>::value;
+};
+}
+#endif
 #ifndef __cpp_lib_exchange_function
 namespace std
 {
@@ -107,6 +122,18 @@ public:
 
 private:
     using allocator_traits = std::allocator_traits<allocator_type>;
+
+public:
+    static constexpr bool move_is_noexcept = std::is_nothrow_destructible<node_data>::value && (
+        allocator_traits::is_always_equal::value
+        ||
+        (allocator_traits::propagate_on_container_move_assignment::value && std::is_nothrow_move_constructible<allocator_type>::value)
+        );
+    static constexpr bool swap_is_noexcept = (
+        allocator_traits::is_always_equal::value
+        ||
+        (allocator_traits::propagate_on_container_swap::value && std::is_nothrow_swappable<allocator_type>::value)
+        );
 
 private:
     std::atomic<node_data*> m_first {nullptr};
@@ -216,13 +243,7 @@ public:
             other.clear();
         }
     }
-    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept(
-        std::is_nothrow_destructible<node_data>::value && (
-            allocator_traits::is_always_equal::value
-            ||
-            (allocator_traits::propagate_on_container_move_assignment::value &&
-            std::is_nothrow_move_constructible<allocator_type>::value))
-        )
+    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept(move_is_noexcept)
     {
         if(this != &other)
         {
@@ -253,13 +274,6 @@ public:
     }
 
 public:
-    static constexpr bool swap_is_noexcept = (
-        allocator_traits::is_always_equal::value
-        ||
-        (allocator_traits::propagate_on_container_swap::value &&
-        std::is_nothrow_move_constructible<allocator_type>::value &&
-        std::is_nothrow_move_assignable   <allocator_type>::value )
-        );
     void swap(lockfree_grow_only_bag& other) noexcept(swap_is_noexcept)
     {
         if(this != &other)
@@ -280,12 +294,6 @@ public:
             }
             else
             {
-                Check_Recovery(
-                    "According to the standard"
-                    " (see AllocatorAwareContainer at https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer)"
-                    " this case is undefined behaviour."
-                    " Recovery code follows"
-                    );
                 auto    first = this->move_elements(other.m_first); other.clear();
                 other.m_first = other.move_elements(this->m_first); this->clear();
 
@@ -316,6 +324,18 @@ public:
         )
     {
         return Allocator(m_allocator);
+    }
+
+public:
+    const_reference front() const noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_first);
+        return m_first->value;
+    }
+    reference front() noexcept(DIAG_NOEXCEPT)
+    {
+        Assert_NotNullPtr(m_first);
+        return m_first->value;
     }
 
 public:
@@ -398,16 +418,8 @@ public:
         return iterator(nullptr);
     }
 
-private:
-    const value_type& sample() const noexcept
-    {
-        return m_first.load()->value;
-    }
-
 public:
-    bool operator==(const lockfree_grow_only_bag& other) const noexcept(
-        noexcept(sample() == sample())
-        )
+    bool operator==(const lockfree_grow_only_bag& other) const noexcept
     {
         if(this == &other) return true;
 
@@ -459,9 +471,7 @@ public:
         }
         return true;
     }
-    bool operator!=(const lockfree_grow_only_bag& other) const noexcept(
-        noexcept(sample() == sample())
-        )
+    bool operator!=(const lockfree_grow_only_bag& other) const noexcept
     {
         return !operator==(other);
     }
@@ -620,7 +630,6 @@ public:
     }
 
     size_type erase(const value_type& value) noexcept(
-        noexcept(sample() == value) &&
         std::is_nothrow_destructible<node_data>::value
         )
     {
@@ -654,9 +663,7 @@ public:
     }
 
 public:
-    iterator find(const value_type& value) noexcept(
-        noexcept(sample() == value)
-        )
+    iterator find(const value_type& value) noexcept
     {
         for(iterator it = begin(); it != end(); ++it)
         {
@@ -667,9 +674,7 @@ public:
         }
         return end();
     }
-    const_iterator find(const value_type& value) const noexcept(
-        noexcept(sample() == value)
-        )
+    const_iterator find(const value_type& value) const noexcept
     {
         for(const_iterator it = begin(); it != end(); ++it)
         {
@@ -682,16 +687,12 @@ public:
     }
 
 public:
-    bool contains(const value_type& value) const noexcept(
-        noexcept(sample() == value)
-        )
+    bool contains(const value_type& value) const noexcept
     {
         return (find(value) != end());
     }
 
-    size_type count(const value_type& value) const noexcept(
-        noexcept(sample() == value)
-        )
+    size_type count(const value_type& value) const noexcept
     {
         size_type count = 0;
 

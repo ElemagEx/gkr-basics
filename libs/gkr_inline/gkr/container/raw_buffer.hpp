@@ -10,11 +10,11 @@
 
 #include <gkr/diagnostics.hpp>
 
-#ifndef __cpp_lib_exchange_function
-#include <gkr/cpp/lib_exchange_function.hpp>
-#endif
 #ifndef __cpp_lib_is_swappable
 #include <gkr/cpp/lib_is_swappable.hpp>
+#endif
+#ifndef __cpp_lib_exchange_function
+#include <gkr/cpp/lib_exchange_function.hpp>
 #endif
 
 #else
@@ -123,7 +123,9 @@ public:
         : m_allocator(allocator)
     {
     }
-    ~basic_raw_buffer() noexcept
+    ~basic_raw_buffer() noexcept(
+        std::is_nothrow_destructible<Allocator>::value
+        )
     {
         clear();
     }

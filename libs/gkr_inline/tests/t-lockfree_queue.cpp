@@ -173,10 +173,10 @@ TEST_CASE("container.lockfree_queue. lifecycle")
     CHECK(objects_ref_counting::check());
 }
 
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_move_op_0, flag::PropagatesOnMoveAssignment);
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_move_op_1, flag::EqualsAlways );
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_move_op_2, flag::EqualsByValue);
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_move_op_3, flag::EqualsNever  );
+DEFINE_TEST_ALLOCATOR(Allocator_move_op_0, flag::PropagatesOnMoveAssignment);
+DEFINE_TEST_ALLOCATOR(Allocator_move_op_1, flag::EqualsAlways );
+DEFINE_TEST_ALLOCATOR(Allocator_move_op_2, flag::EqualsByValue);
+DEFINE_TEST_ALLOCATOR(Allocator_move_op_3, flag::EqualsNever  );
 
 template<typename Type, typename Queue>
 void test_move_assignment()
@@ -239,10 +239,10 @@ TEST_CASE("container.lockfree_queue. move_assignment")
     CHECK(objects_ref_counting::check());
 }
 
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_swap_op_0, flag::PropagatesOnSwap);
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_swap_op_1, flag::EqualsAlways );
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_swap_op_2, flag::EqualsByValue);
-DEFINE_REF_COUNTING_ALLOCATOR(Allocator_swap_op_3, flag::EqualsNever  );
+DEFINE_TEST_ALLOCATOR(Allocator_swap_op_0, flag::PropagatesOnSwap);
+DEFINE_TEST_ALLOCATOR(Allocator_swap_op_1, flag::EqualsAlways );
+DEFINE_TEST_ALLOCATOR(Allocator_swap_op_2, flag::EqualsByValue);
+DEFINE_TEST_ALLOCATOR(Allocator_swap_op_3, flag::EqualsNever  );
 
 template<typename Type, typename Queue>
 void test_swap()

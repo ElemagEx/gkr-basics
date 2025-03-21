@@ -1216,7 +1216,7 @@ private:
         }
         else
         {
-            entries = dequeue_allocator_traits::allocate(m_allocator, m_capacity);
+            entries = dequeue_allocator_traits::allocate(allocator, m_capacity);
 
             std::memcpy(entries, m_entries, m_capacity * sizeof(dequeue_entry));
 

@@ -1760,6 +1760,26 @@ private:
         std::swap(m_elements, other.m_elements);
     }
 
+private:
+    element_t* element_by_pos(std::size_t pos) noexcept(DIAG_NOEXCEPT)
+    {
+        return m_elements + base_t::index_by_pos(pos);
+    }
+    const element_t* element_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
+    {
+        return m_elements + base_t::index_by_pos(pos);
+    }
+    std::size_t index_of_element(element_t* element) const noexcept(DIAG_NOEXCEPT)
+    {
+        if(element == nullptr) return queue_npos;
+
+        const std::size_t index = std::size_t(element - m_elements);
+
+        Check_ValidState(index < base_t::capacity(), queue_npos);
+
+        return index;
+    }
+
 public:
     static constexpr std::size_t element_alignment() noexcept
     {
@@ -1799,9 +1819,9 @@ public:
 
         typename base_t::pause_resume_sentry sentry(*this);
 
-        if(capacity <= base_t::capacity()) return false;
-
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
+
+        if(capacity <= base_t::capacity()) return false;
 
         while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
@@ -1891,26 +1911,6 @@ public:
         element_t* element = (m_elements + index);
 
         return element;
-    }
-
-private:
-    element_t* element_by_pos(std::size_t pos) noexcept(DIAG_NOEXCEPT)
-    {
-        return m_elements + base_t::index_by_pos(pos);
-    }
-    const element_t* element_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
-    {
-        return m_elements + base_t::index_by_pos(pos);
-    }
-    std::size_t index_of_element(element_t* element) const noexcept(DIAG_NOEXCEPT)
-    {
-        if(element == nullptr) return queue_npos;
-
-        const std::size_t index = std::size_t(element - m_elements);
-
-        Check_ValidState(index < base_t::capacity(), queue_npos);
-
-        return index;
     }
 
 public:
@@ -2389,8 +2389,8 @@ public:
 
         if(base_t::count() != other.base_t::count()) return false;
 
-        auto it_self  =       cbegin(), end_self  =       cend();
-        auto it_other = other.cbegin(), end_other = other.cend();
+        auto it_self  =       begin(), end_self  =       end();
+        auto it_other = other.begin(), end_other = other.end();
 
         for( ; it_self != end_self; ++it_self, ++it_other)
         {
@@ -2605,6 +2605,42 @@ private:
         std::swap(m_size    , other.m_size    );
     }
 
+private:
+    void* element_by_pos(std::size_t pos) noexcept(DIAG_NOEXCEPT)
+    {
+        const std::size_t stride = calc_pitch(m_size) * granularity;
+
+        Check_ValidState(stride > 0, nullptr);
+
+        void* element = m_elements + (base_t::index_by_pos(pos) * stride);
+
+        return element;
+    }
+    const void* element_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
+    {
+        const std::size_t stride = calc_pitch(m_size) * granularity;
+
+        Check_ValidState(stride > 0, nullptr);
+
+        void* element = m_elements + (base_t::index_by_pos(pos) * stride);
+
+        return element;
+    }
+    std::size_t index_of_element(void* element) const noexcept(DIAG_NOEXCEPT)
+    {
+        if(element == nullptr) return queue_npos;
+
+        const std::size_t stride = calc_pitch(m_size) * granularity;
+
+        Check_ValidState(stride > 0, queue_npos);
+
+        const std::size_t index = std::size_t(static_cast<char*>(element) - m_elements) / stride;
+
+        Check_ValidState(index < base_t::capacity(), queue_npos);
+
+        return index;
+    }
+
 public:
     static constexpr std::size_t element_alignment() noexcept
     {
@@ -2622,12 +2658,12 @@ public:
         base_t::reset(0);
         m_elements = nullptr;
     }
-    void reset(std::size_t capacity = queue_npos, std::size_t size = queue_npos) noexcept(false)
+    void reset(std::size_t capacity, std::size_t size = queue_npos) noexcept(false)
     {
         if(size != queue_npos) m_size = size;
 
-        base_t::reset(capacity);
         free_elements();
+        base_t::reset(capacity);
 
         if((base_t::capacity() == 0) || (m_size == 0))
         {
@@ -2648,11 +2684,10 @@ public:
 
         typename base_t::pause_resume_sentry sentry(*this);
 
-        Check_ValidState(m_size > 0, false);
-
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
         if(capacity <= base_t::capacity()) return false;
+        if(m_size == 0) return false;
 
         while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
@@ -2670,7 +2705,6 @@ public:
             }
         }
         free_elements();
-
         m_elements = elements;
 
         base_t::reserve(capacity);
@@ -2685,25 +2719,24 @@ public:
         Check_ValidState(base_t::this_thread_owns_elements(0), false);
 
         if(size <= m_size) return false;
+        if(base_t::capacity() == 0) return false;
 
         while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
-
-        std::size_t pos = queue_npos;
 
         const std::size_t new_pitch = calc_pitch(  size);
         const std::size_t old_pitch = calc_pitch(m_size);
 
         if(new_pitch != old_pitch)
         {
-            const std::size_t capacity  = base_t::capacity();
-            const std::size_t new_count = new_pitch * capacity;
+            const std::size_t capacity = base_t::capacity();
+            const std::size_t count    = new_pitch * capacity;
 
-            char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, new_count));
+            char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, count));
 
             const std::size_t new_stride = new_pitch * granularity;
             const std::size_t old_stride = old_pitch * granularity;
 
-            for(std::size_t index = 0; index < capacity; ++index)
+            for(std::size_t pos, index = 0; index < capacity; ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -2725,6 +2758,7 @@ public:
         Check_ValidState(base_t::this_thread_owns_elements(count_elements), false);
 
         if(size <= m_size) return false;
+        if(base_t::capacity() == 0) return false;
 
         while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
 
@@ -2733,8 +2767,7 @@ public:
 
         if(new_pitch != old_pitch)
         {
-            std::size_t pos = queue_npos;
-            for(std::size_t element_no = 0; element_no < count_elements; ++element_no)
+            for(std::size_t pos, element_no = 0; element_no < count_elements; ++element_no)
             {
                 if(!base_t::element_has_value(index_of_element(owned_elements[element_no]), pos))
                 {
@@ -2742,15 +2775,15 @@ public:
                 }
                 owned_elements[element_no] = reinterpret_cast<void*>(pos * 2 + 1);
             }
-            const std::size_t capacity  = base_t::capacity();
-            const std::size_t new_count = new_pitch * capacity;
+            const std::size_t capacity = base_t::capacity();
+            const std::size_t count    = new_pitch * capacity;
 
-            char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, new_count));
+            char* elements = reinterpret_cast<char*>(allocator_traits::allocate(m_allocator, count));
 
             const std::size_t new_stride = new_pitch * granularity;
             const std::size_t old_stride = old_pitch * granularity;
 
-            for(std::size_t index = 0; index < capacity; ++index)
+            for(std::size_t pos, index = 0; index < capacity; ++index)
             {
                 if(base_t::element_has_value(index, pos))
                 {
@@ -2817,42 +2850,6 @@ public:
         return static_cast<Element*>(try_acquire_consumer_element_ownership());
     }
 
-private:
-    void* element_by_pos(std::size_t pos) noexcept(DIAG_NOEXCEPT)
-    {
-        const std::size_t stride = calc_pitch(m_size) * granularity;
-
-        Check_ValidState(stride > 0, nullptr);
-
-        void* element = m_elements + (base_t::index_by_pos(pos) * stride);
-
-        return element;
-    }
-    const void* element_by_pos(std::size_t pos) const noexcept(DIAG_NOEXCEPT)
-    {
-        const std::size_t stride = calc_pitch(m_size) * granularity;
-
-        Check_ValidState(stride > 0, nullptr);
-
-        void* element = m_elements + (base_t::index_by_pos(pos) * stride);
-
-        return element;
-    }
-    std::size_t index_of_element(void* element) const noexcept(DIAG_NOEXCEPT)
-    {
-        if(element == nullptr) return queue_npos;
-
-        const std::size_t stride = calc_pitch(m_size) * granularity;
-
-        Check_ValidState(stride > 0, queue_npos);
-
-        const std::size_t index = std::size_t(static_cast<char*>(element) - m_elements) / stride;
-
-        Check_ValidState(index < base_t::capacity(), queue_npos);
-
-        return index;
-    }
-
 public:
     bool release_producer_element_ownership(void* element) noexcept(DIAG_NOEXCEPT)
     {
@@ -2913,9 +2910,9 @@ public:
     }
     bool try_pop(void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
     {
-        auto producer_element = try_start_pop();
+        auto consumer_element = try_start_pop();
 
-        if(!producer_element.pop_in_progress()) return false;
+        if(!consumer_element.pop_in_progress()) return false;
 
         if(data != nullptr)
         {
@@ -2923,7 +2920,7 @@ public:
                 ? m_size
                 : std::min(size, m_size)
                 ;
-            std::memcpy(data, producer_element.data(), size);
+            std::memcpy(data, consumer_element.data(), size);
         }
         return true;
     }
@@ -2989,7 +2986,7 @@ public:
     }
 
 public:
-    bool push(long long timeout_ns = -1, const void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
+    bool push(const void* data, std::size_t size, long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = start_push(timeout_ns);
 
@@ -2997,27 +2994,23 @@ public:
 
         if(data != nullptr)
         {
-            size = (size == 0)
-                ? m_size
-                : std::min(size, m_size)
-                ;
+            if(size > m_size) size = m_size;
+
             std::memcpy(producer_element.data(), data, size);
         }
         return true;
     }
-    bool pop(long long timeout_ns = -1, void* data = nullptr, std::size_t size = 0) noexcept(DIAG_NOEXCEPT)
+    bool pop(void* data, std::size_t size, long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
     {
-        auto producer_element = start_pop(timeout_ns);
+        auto consumer_element = start_pop(timeout_ns);
 
-        if(!producer_element.pop_in_progress()) return false;
+        if(!consumer_element.pop_in_progress()) return false;
 
         if(data != nullptr)
         {
-            size = (size == 0)
-                ? m_size
-                : std::min(size, m_size)
-                ;
-            std::memcpy(data, producer_element.data(), size);
+            if(size > m_size) size = m_size;
+
+            std::memcpy(data, consumer_element.data(), size);
         }
         return true;
     }
@@ -3158,8 +3151,8 @@ public:
 
         if(size != other.element_size()) return false;
 
-        auto it_self  =       cbegin(), end_self  =       cend();
-        auto it_other = other.cbegin(), end_other = other.cend();
+        auto it_self  =       begin(), end_self  =       end();
+        auto it_other = other.begin(), end_other = other.end();
 
         for( ; it_self != end_self; ++it_self, ++it_other)
         {

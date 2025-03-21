@@ -6,6 +6,7 @@
 #include <gkr/testing/named_requirements.hpp>
 
 using flag = gkr::testing::allocator_flag;
+using objects_ref_counting = gkr::testing::objects_ref_counting;
 
 struct Vec3
 {
@@ -63,65 +64,6 @@ struct Data
     int  a = 0;
     bool b = false;
 };
-
-using uint = unsigned int;
-
-template<typename Allocator> using queue1_uint_t = gkr::lockfree_queue<uint, false, false, Allocator>;
-template<typename Allocator> using queue2_uint_t = gkr::lockfree_queue<uint, true , false, Allocator>;
-template<typename Allocator> using queue3_uint_t = gkr::lockfree_queue<uint, false, true , Allocator>;
-template<typename Allocator> using queue4_uint_t = gkr::lockfree_queue<uint, true , true , Allocator>;
-
-template<typename Allocator> using queue1_data_t = gkr::lockfree_queue<Data, false, false, Allocator>;
-template<typename Allocator> using queue2_data_t = gkr::lockfree_queue<Data, true , false, Allocator>;
-template<typename Allocator> using queue3_data_t = gkr::lockfree_queue<Data, false, true , Allocator>;
-template<typename Allocator> using queue4_data_t = gkr::lockfree_queue<Data, true , true , Allocator>;
-
-template<typename Allocator> using queue1_void_t = gkr::lockfree_queue<void, false, false, Allocator>;
-template<typename Allocator> using queue2_void_t = gkr::lockfree_queue<void, true , false, Allocator>;
-template<typename Allocator> using queue3_void_t = gkr::lockfree_queue<void, false, true , Allocator>;
-template<typename Allocator> using queue4_void_t = gkr::lockfree_queue<void, true , true , Allocator>;
-
-DEFINE_TEST_ALLOCATOR(allocator1, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesNever ));
-DEFINE_TEST_ALLOCATOR(allocator2, (flag::SingleThreaded | flag::EqualsAlways  | flag::PropagatesAlways));
-DEFINE_TEST_ALLOCATOR(allocator3, (flag::SingleThreaded | flag::EqualsByValue | flag::PropagatesNever ));
-DEFINE_TEST_ALLOCATOR(allocator4, (flag::SingleThreaded | flag::EqualsNever   | flag::PropagatesNever ));
-
-DEFINE_TEST_ALLOCATOR(allocatorM, (flag::MultiThreaded  | flag::EqualsAlways  | flag::PropagatesNever ));
-
-using std_allocator_t = std::allocator<char>;
-
-using allocator1_t = allocator1<char>;
-using allocator2_t = allocator1<char>;
-using allocator3_t = allocator1<char>;
-using allocator4_t = allocator1<char>;
-
-using allocatorM_t = allocator1<char>;
-
-#ifdef _MSC_VER
-#pragma warning(disable:4868)
-#endif
-
-TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_queue.fixed_type. lifecycle", "", (queue1_data_t, queue2_data_t, queue3_data_t, queue4_data_t), (std_allocator_t, allocator1_t, allocator2_t, allocator3_t, allocator4_t))
-{
-    using queue_t = TestType;
-    using allocator_t = typename queue_t::TypeAllocator;
-
-    using value_t = typename allocator_t::value_type;
-
-    gkr::testing::get_singlethreaded_pre_allocated_storage<value_t>().reset(16);
-    {
-        queue_t queue1;
-        queue1.reset(8);
-
-        CHECK(queue1.empty());
-
-        REQUIRE(queue1.try_push(value_t(1)));
-        REQUIRE(queue1.try_push(value_t(2)));
-        REQUIRE(queue1.try_push(value_t(3)));
-
-    }
-    gkr::testing::get_singlethreaded_pre_allocated_storage<value_t>().reset();
-}
 #endif
 
 template<bool Typeless, typename Type>
@@ -209,9 +151,7 @@ void test_lifecycle()
 }
 TEST_CASE("container.lockfree_queue. lifecycle")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -230,7 +170,7 @@ TEST_CASE("container.lockfree_queue. lifecycle")
         test_lifecycle<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 
 DEFINE_REF_COUNTING_ALLOCATOR(Allocator_move_op_0, flag::PropagatesOnMoveAssignment);
@@ -277,9 +217,7 @@ void test_move_assignments()
 }
 TEST_CASE("container.lockfree_queue. move_assignment")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -298,7 +236,7 @@ TEST_CASE("container.lockfree_queue. move_assignment")
         test_move_assignments<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 
 DEFINE_REF_COUNTING_ALLOCATOR(Allocator_swap_op_0, flag::PropagatesOnSwap);
@@ -353,9 +291,7 @@ void test_swaps()
 }
 TEST_CASE("container.lockfree_queue. swap")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -374,7 +310,7 @@ TEST_CASE("container.lockfree_queue. swap")
         test_swaps<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 
 template<typename Type, bool Typeless, bool Multiple, bool Pausable>
@@ -424,9 +360,7 @@ void test_getters()
 }
 TEST_CASE("container.lockfree_queue. getters")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -445,7 +379,7 @@ TEST_CASE("container.lockfree_queue. getters")
         test_swaps<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 
 template<typename Type, bool Typeless, bool Multiple, bool Pausable>
@@ -475,9 +409,7 @@ void test_clear()
 }
 TEST_CASE("container.lockfree_queue. clear")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -496,7 +428,7 @@ TEST_CASE("container.lockfree_queue. clear")
         test_clear<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 
 template<typename Type, bool Typeless, bool Multiple, bool Pausable>
@@ -541,9 +473,7 @@ void test_reset()
 }
 TEST_CASE("container.lockfree_queue. reset")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -562,7 +492,7 @@ TEST_CASE("container.lockfree_queue. reset")
         test_reset<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 template<typename Value, typename Iterator>
 void test_iterator_old(Iterator begin, Iterator end)
@@ -632,9 +562,7 @@ void test_iterator_all()
 }
 TEST_CASE("container.lockfree_queue. iterators")
 {
-    using Allocator = gkr::testing::ref_counting_allocator<Vec3>;
-
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 
     SECTION("typefull, single")
     {
@@ -653,7 +581,7 @@ TEST_CASE("container.lockfree_queue. iterators")
         test_iterator_all<Vec3, true , true , false>();
     }
 
-    CHECK(Allocator::check());
+    CHECK(objects_ref_counting::check());
 }
 
 TEST_CASE("container.lockfree_queue. compliance")

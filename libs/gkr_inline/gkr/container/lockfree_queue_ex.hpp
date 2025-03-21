@@ -3,17 +3,10 @@
 #include <gkr/container/lockfree_queue.hpp>
 
 #ifdef _WIN32
-#ifndef _WINBASE_
-#ifndef _APISETHANDLE_
-extern "C" __declspec(dllimport) int __stdcall CloseHandle(void*);
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
-#ifndef _SYNCHAPI_H_
-extern "C" __declspec(dllimport) int __stdcall SetEvent(void*);
-extern "C" __declspec(dllimport) int __stdcall ResetEvent(void*);
-extern "C" __declspec(dllimport) void* __stdcall CreateEventA(void*, int, int, const char*);
-extern "C" __declspec(dllimport) unsigned __stdcall WaitForSingleObject(void*, unsigned);
-#endif
-#endif
+#include <Windows.h>
 #else
 #include <poll.h>
 #include <unistd.h>
@@ -34,15 +27,15 @@ private:
 #ifdef _WIN32
     using handle_t = void*;
 
-    static void fire(handle_t event)
+    static void fire(handle_t event) noexcept
     {
         ::SetEvent(SetEvent);
     }
-    static void reset(handle_t event)
+    static void reset(handle_t event) noexcept
     {
         ::ResetEvent(event);
     }
-    static bool wait(handle_t event, long long timeout_ns)
+    static bool wait(handle_t event, long long timeout_ns) noexcept
     {
         const unsigned timeout = (timeout_ns == -1)
             ? unsigned(-1)
@@ -53,17 +46,17 @@ private:
 #else
     using handle_t = int;
 
-    static void fire(handle_t event)
+    static void fire(handle_t event) noexcept
     {
         unsigned long long value = 1;
         ::write(event, &value, sizeof(value));
     }
-    static void reset(handle_t event)
+    static void reset(handle_t event) noexcept
     {
         unsigned long long value;
         ::read(event, &value, sizeof(value));
     }
-    static bool wait(handle_t event, long long timeout_ns)
+    static bool wait(handle_t event, long long timeout_ns) noexcept
     {
         const unsigned timeout = (timeout_ns == -1)
             ? unsigned(-1)
@@ -144,7 +137,7 @@ protected:
     }
 
 protected:
-    void reset(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
+    void reset(std::size_t capacity) noexcept
     {
         m_busy_count = 0;
         m_free_count = capacity;
@@ -159,7 +152,7 @@ protected:
         }
         reset(m_has_items_event);
     }
-    void reserve(std::size_t capacity) noexcept(DIAG_NOEXCEPT)
+    void reserve(std::size_t capacity) noexcept
     {
         m_free_count = capacity - m_busy_count;
 
@@ -174,26 +167,26 @@ protected:
     }
 
 protected:
-    void notify_producer_ownership_fail() noexcept(DIAG_NOEXCEPT)
+    void notify_producer_ownership_fail() noexcept
     {
         reset(m_has_space_event);
         fire(m_has_items_event);
     }
-    void notify_producer_ownership_start() noexcept(DIAG_NOEXCEPT)
+    void notify_producer_ownership_start() noexcept
     {
         if(m_free_count-- == 1)
         {
             reset(m_has_space_event);
         }
     }
-    void notify_producer_ownership_finish() noexcept(DIAG_NOEXCEPT)
+    void notify_producer_ownership_finish() noexcept
     {
         if(m_busy_count++ == 0)
         {
             fire(m_has_items_event);
         }
     }
-    void notify_producer_ownership_cancel() noexcept(DIAG_NOEXCEPT)
+    void notify_producer_ownership_cancel() noexcept
     {
         if(m_free_count++ == 0)
         {
@@ -202,26 +195,26 @@ protected:
     }
 
 protected:
-    void notify_consumer_ownership_fail() noexcept(DIAG_NOEXCEPT)
+    void notify_consumer_ownership_fail() noexcept
     {
         fire(m_has_space_event);
         reset(m_has_items_event);
     }
-    void notify_consumer_ownership_start() noexcept(DIAG_NOEXCEPT)
+    void notify_consumer_ownership_start() noexcept
     {
         if(m_busy_count-- == 1)
         {
             reset(m_has_items_event);
         }
     }
-    void notify_consumer_ownership_finish() noexcept(DIAG_NOEXCEPT)
+    void notify_consumer_ownership_finish() noexcept
     {
         if(m_free_count++ == 0)
         {
             fire(m_has_space_event);
         }
     }
-    void notify_consumer_ownership_cancel() noexcept(DIAG_NOEXCEPT)
+    void notify_consumer_ownership_cancel() noexcept
     {
         if(m_busy_count++ == 0)
         {
@@ -230,11 +223,11 @@ protected:
     }
 
 protected:
-    bool producer_wait(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
+    bool producer_wait(long long timeout_ns) noexcept
     {
         return wait(m_has_space_event, timeout_ns);
     }
-    bool consumer_wait(long long timeout_ns) noexcept(DIAG_NOEXCEPT)
+    bool consumer_wait(long long timeout_ns) noexcept
     {
         return wait(m_has_items_event, timeout_ns);
     }
@@ -258,5 +251,5 @@ template<
     bool Pausable=false,
     typename Allocator=std::allocator<impl::queue_allocator_value_type<T>>
     >
-using os_waitable_lockfree_queue = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, impl::os_wait_support>;
+using lockfree_queue_ex = lockfree_queue<T, MultipleConsumersMultipleProducersSupport, Pausable, Allocator, impl::os_wait_support>;
 }

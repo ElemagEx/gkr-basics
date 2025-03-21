@@ -94,6 +94,10 @@ namespace gkr
 
 constexpr std::size_t queue_npos = std::size_t(-1);
 
+constexpr long long queue_wait_infinite = -1;
+
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
+
 namespace impl
 {
 template<typename Queue, typename Element>
@@ -387,6 +391,8 @@ public:
         }
     }
 };
+
+#endif
 
 namespace impl
 {
@@ -1591,8 +1597,10 @@ public:
 
     using allocator_traits = std::allocator_traits<Allocator>;
 
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
     using queue_producer_element_t = queue_producer_element<self_t>;
     using queue_consumer_element_t = queue_consumer_element<self_t>;
+#endif
 
 public:
     static constexpr bool move_is_noexcept = (
@@ -1840,7 +1848,11 @@ public:
         return true;
     }
 
+#ifndef GKR_LOCKFREE_QUEUE_HIDE_LOW_LEVEL_OWNERSHIP
 public:
+#else
+protected:
+#endif
     template<typename... Args>
     element_t* try_acquire_producer_element_ownership_ex(Args&&... args) noexcept(
         DIAG_NOEXCEPT &&
@@ -1913,7 +1925,6 @@ public:
         return element;
     }
 
-public:
     bool release_producer_element_ownership(element_t* element) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t index = index_of_element(element);
@@ -1948,6 +1959,7 @@ public:
         return base_t::template drop_consumer_element_ownership<false>(index);
     }
 
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
 public:
     template<typename... Args>
     queue_producer_element_t try_start_emplace(Args&&... args) noexcept(
@@ -2065,8 +2077,13 @@ public:
 
         return true;
     }
+#endif
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
+#ifndef GKR_LOCKFREE_QUEUE_HIDE_LOW_LEVEL_OWNERSHIP
 public:
+#else
+protected:
+#endif
     template<typename... Args>
     element_t* acquire_producer_element_ownership_ex(long long timeout_ns, Args&&... args) noexcept(
         DIAG_NOEXCEPT &&
@@ -2083,7 +2100,7 @@ public:
 
         return element;
     }
-    element_t* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(
+    element_t* acquire_producer_element_ownership(long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_default_constructible<element_t>::value
         )
@@ -2098,7 +2115,7 @@ public:
 
         return element;
     }
-    element_t* acquire_producer_element_ownership(element_t&& value, long long timeout_ns = -1) noexcept(
+    element_t* acquire_producer_element_ownership(element_t&& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_constructible<element_t>::value
         )
@@ -2113,7 +2130,7 @@ public:
 
         return element;
     }
-    element_t* acquire_producer_element_ownership(const element_t& value, long long timeout_ns = -1) noexcept(
+    element_t* acquire_producer_element_ownership(const element_t& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_constructible<element_t>::value
         )
@@ -2128,7 +2145,7 @@ public:
 
         return element;
     }
-    element_t* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    element_t* acquire_consumer_element_ownership(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t index = base_t::take_consumer_element_ownership(timeout_ns);
 
@@ -2139,6 +2156,7 @@ public:
         return element;
     }
 
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
 public:
     template<typename... Args>
     queue_producer_element_t start_emplace(long long timeout_ns, Args&&... args) noexcept(
@@ -2150,7 +2168,7 @@ public:
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(long long timeout_ns = -1) noexcept(
+    queue_producer_element_t start_push(long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_default_constructible<element_t>::value
         )
@@ -2159,7 +2177,7 @@ public:
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(element_t&& value, long long timeout_ns = -1) noexcept(
+    queue_producer_element_t start_push(element_t&& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_constructible<element_t>::value
         )
@@ -2168,7 +2186,7 @@ public:
 
         return queue_producer_element_t(*this, element);
     }
-    queue_producer_element_t start_push(const element_t& value, long long timeout_ns = -1) noexcept(
+    queue_producer_element_t start_push(const element_t& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_constructible<element_t>::value
         )
@@ -2177,7 +2195,7 @@ public:
 
         return queue_producer_element_t(*this, element);
     }
-    queue_consumer_element_t start_pop(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element_t start_pop(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         element_t* element = acquire_consumer_element_ownership(timeout_ns);
 
@@ -2193,37 +2211,37 @@ public:
     {
         return start_emplace(timeout_ns, std::forward<Args>(args)...).push_in_progress();
     }
-    bool push(long long timeout_ns = -1) noexcept(
+    bool push(long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_default_constructible<element_t>::value
         )
     {
         return start_push(timeout_ns).push_in_progress();
     }
-    bool push(element_t&& value, long long timeout_ns = -1) noexcept(
+    bool push(element_t&& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_constructible<element_t>::value
         )
     {
-        return start_push(timeout_ns, std::move(value)).push_in_progress();
+        return start_push(std::move(value), timeout_ns).push_in_progress();
     }
-    bool push(const element_t& value, long long timeout_ns = -1) noexcept(
+    bool push(const element_t& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_constructible<element_t>::value
         )
     {
-        return start_push(timeout_ns, value).push_in_progress();
+        return start_push(value, timeout_ns).push_in_progress();
     }
 
 public:
-    bool pop(long long timeout_ns = -1) noexcept(
+    bool pop(long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_destructible<element_t>::value
         )
     {
         return start_pop(timeout_ns).pop_in_progress();
     }
-    bool copy_and_pop(element_t& value, long long timeout_ns = -1) noexcept(
+    bool copy_and_pop(element_t& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_copy_assignable<element_t>::value &&
         std::is_nothrow_destructible   <element_t>::value
@@ -2237,7 +2255,7 @@ public:
 
         return true;
     }
-    bool move_and_pop(element_t& value, long long timeout_ns = -1) noexcept(
+    bool move_and_pop(element_t& value, long long timeout_ns = queue_wait_infinite) noexcept(
         DIAG_NOEXCEPT &&
         std::is_nothrow_move_assignable<element_t>::value &&
         std::is_nothrow_destructible   <element_t>::value
@@ -2251,6 +2269,7 @@ public:
 
         return true;
     }
+#endif
 #endif
 
 private:
@@ -2438,8 +2457,10 @@ public:
 
     using allocator_type  = Allocator;
 
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
     using queue_producer_element_t = queue_producer_element<self_t>;
     using queue_consumer_element_t = queue_consumer_element<self_t>;
+#endif
 
 public:
     static constexpr bool move_is_noexcept = (
@@ -2804,7 +2825,11 @@ public:
         return true;
     }
 
+#ifndef GKR_LOCKFREE_QUEUE_HIDE_LOW_LEVEL_OWNERSHIP
 public:
+#else
+protected:
+#endif
     void* try_acquire_producer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t stride = calc_pitch(m_size) * granularity;
@@ -2827,7 +2852,6 @@ public:
         return static_cast<Element*>(try_acquire_producer_element_ownership());
     }
 
-public:
     void* try_acquire_consumer_element_ownership() noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t stride = calc_pitch(m_size) * granularity;
@@ -2850,7 +2874,6 @@ public:
         return static_cast<Element*>(try_acquire_consumer_element_ownership());
     }
 
-public:
     bool release_producer_element_ownership(void* element) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t index = index_of_element(element);
@@ -2877,6 +2900,7 @@ public:
         return base_t::template drop_consumer_element_ownership<false>(index);
     }
 
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
 public:
     queue_producer_element_t try_start_push() noexcept(DIAG_NOEXCEPT)
     {
@@ -2924,9 +2948,14 @@ public:
         }
         return true;
     }
+#endif
 #ifndef GKR_LOCKFREE_QUEUE_EXCLUDE_WAITING
+#ifndef GKR_LOCKFREE_QUEUE_HIDE_LOW_LEVEL_OWNERSHIP
 public:
-    void* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+#else
+protected:
+#endif
+    void* acquire_producer_element_ownership(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t stride = calc_pitch(m_size) * granularity;
 
@@ -2941,15 +2970,14 @@ public:
         return element;
     }
     template<typename Element>
-    Element* acquire_producer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    Element* acquire_producer_element_ownership(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         static_assert(alignof(Element) <= element_alignment(), "The alignment of the template type must be less or equal of the alignment of the queue");
         Assert_Check(  sizeof(Element) <= element_size());
         return static_cast<Element*>(acquire_producer_element_ownership(timeout_ns));
     }
 
-public:
-    void* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    void* acquire_consumer_element_ownership(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         const std::size_t stride = calc_pitch(m_size) * granularity;
 
@@ -2964,21 +2992,22 @@ public:
         return element;
     }
     template<typename Element>
-    Element* acquire_consumer_element_ownership(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    Element* acquire_consumer_element_ownership(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         static_assert(alignof(Element) <= element_alignment(), "The alignment of the template type must be less or equal of the alignment of the queue");
         Assert_Check(  sizeof(Element) <= element_size());
         return static_cast<Element*>(acquire_consumer_element_ownership(timeout_ns));
     }
 
+#ifndef GKR_LOCKFREE_QUEUE_SKIP_HIGH_LEVEL_OWNERSHIP
 public:
-    queue_producer_element_t start_push(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    queue_producer_element_t start_push(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         void* element = acquire_producer_element_ownership(timeout_ns);
 
         return queue_producer_element_t(*this, element);
     }
-    queue_consumer_element_t start_pop(long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    queue_consumer_element_t start_pop(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         void* element = acquire_consumer_element_ownership(timeout_ns);
 
@@ -2986,7 +3015,11 @@ public:
     }
 
 public:
-    bool push(const void* data, std::size_t size, long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+    bool push(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
+    {
+        return start_push(timeout_ns).push_in_progress();
+    }
+    bool push(const void* data, std::size_t size, long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         auto producer_element = start_push(timeout_ns);
 
@@ -3000,7 +3033,12 @@ public:
         }
         return true;
     }
-    bool pop(void* data, std::size_t size, long long timeout_ns = -1) noexcept(DIAG_NOEXCEPT)
+
+    bool pop(long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
+    {
+        return start_pop(timeout_ns).push_in_progress();
+    }
+    bool copy_and_pop(void* data, std::size_t size, long long timeout_ns = queue_wait_infinite) noexcept(DIAG_NOEXCEPT)
     {
         auto consumer_element = start_pop(timeout_ns);
 
@@ -3014,6 +3052,7 @@ public:
         }
         return true;
     }
+#endif
 #endif
 
 private:

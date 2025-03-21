@@ -55,8 +55,8 @@ T exchange(T& obj, U&& new_value) noexcept(
 #ifndef Assert_NotNullPtr
 #define Assert_NotNullPtr(cond) assert(cond)
 #endif
-#ifndef Check_Arg_IsValid
-#define Check_Arg_IsValid(check, ...) if(!(check)) return __VA_ARGS__
+#ifndef Assert_Check
+#define Assert_Check(cond) assert(cond)
 #endif
 
 #endif
@@ -93,15 +93,12 @@ class basic_raw_buffer
 public:
     static constexpr std::size_t alignment = alignof(allocator_value_t);
 
-    static constexpr bool move_constructor_is_nothrow = (
-        std::is_nothrow_move_constructible<Allocator>::value
-        );
-    static constexpr bool move_assignment_is_nothrow = (
+    static constexpr bool move_is_noexcept = (
         allocator_traits::is_always_equal::value
         ||
         (allocator_traits::propagate_on_container_move_assignment::value && std::is_nothrow_move_constructible<Allocator>::value)
         );
-    static constexpr bool swap_is_nothrow = (
+    static constexpr bool swap_is_noexcept = (
         allocator_traits::is_always_equal::value
         ||
         (allocator_traits::propagate_on_container_swap::value && std::is_nothrow_swappable<Allocator>::value)
@@ -115,7 +112,7 @@ private:
     gkr_attr_no_unique_address Allocator m_allocator;
 
 public:
-    basic_raw_buffer(std::size_t capacity, const Allocator& allocator = Allocator())
+    basic_raw_buffer(std::size_t capacity, const Allocator& allocator = Allocator()) noexcept(false)
         : m_allocator(allocator)
     {
         reserve(capacity);
@@ -126,23 +123,23 @@ public:
         : m_allocator(allocator)
     {
     }
-    ~basic_raw_buffer()
+    ~basic_raw_buffer() noexcept
     {
         clear();
     }
 
 public:
-    basic_raw_buffer(const basic_raw_buffer& other, const Allocator& allocator)
+    basic_raw_buffer(const basic_raw_buffer& other, const Allocator& allocator) noexcept(false)
         : m_allocator(allocator)
     {
         copy_data(other.m_data, other.m_size, other.m_capacity);
     }
-    basic_raw_buffer(const basic_raw_buffer& other)
+    basic_raw_buffer(const basic_raw_buffer& other) noexcept(false)
         : m_allocator(allocator_traits::select_on_container_copy_construction(other.m_allocator))
     {
         copy_data(other.m_data, other.m_size, other.m_capacity);
     }
-    basic_raw_buffer& operator=(const basic_raw_buffer& other)
+    basic_raw_buffer& operator=(const basic_raw_buffer& other) noexcept(false)
     {
         if(this != &other)
         {
@@ -174,14 +171,16 @@ public:
         m_size     = std::exchange(other.m_size    , 0);
         m_capacity = std::exchange(other.m_capacity, 0);
     }
-    basic_raw_buffer(basic_raw_buffer&& other) noexcept(move_constructor_is_nothrow)
-        : m_allocator(std::move(other.m_allocator))
+    basic_raw_buffer(basic_raw_buffer&& other) noexcept(
+        std::is_nothrow_move_constructible<Allocator>::value
+        )
+        : m_data     (std::exchange(other.m_data    , nullptr))
+        , m_size     (std::exchange(other.m_size    , 0U))
+        , m_capacity (std::exchange(other.m_capacity, 0U))
+        , m_allocator(std::move    (other.m_allocator))
     {
-        m_data     = std::exchange(other.m_data    , nullptr);
-        m_size     = std::exchange(other.m_size    , 0U);
-        m_capacity = std::exchange(other.m_capacity, 0U);
     }
-    basic_raw_buffer& operator=(basic_raw_buffer&& other) noexcept(move_assignment_is_nothrow)
+    basic_raw_buffer& operator=(basic_raw_buffer&& other) noexcept(move_is_noexcept)
     {
         if(this != &other)
         {
@@ -206,7 +205,7 @@ public:
     }
 
 public:
-    void swap(basic_raw_buffer& other) noexcept(swap_is_nothrow)
+    void swap(basic_raw_buffer& other) noexcept(swap_is_noexcept)
     {
         if(this != &other)
         {
@@ -238,7 +237,7 @@ public:
     }
 
 private:
-    void copy_data(const char* data, std::size_t size, std::size_t capacity, Allocator& allocator)
+    void copy_data(const char* data, std::size_t size, std::size_t capacity, Allocator& allocator) noexcept(false)
     {
         reserve(capacity);
 
@@ -246,7 +245,7 @@ private:
 
         std::memcpy(m_data, data, m_size);
     }
-    void relocate_data(char*& data, std::size_t& size, std::size_t& capacity, Allocator& allocator)
+    void relocate_data(char*& data, std::size_t& size, std::size_t& capacity, Allocator& allocator) noexcept(false)
     {
         if(m_capacity == 0)
         {
@@ -286,7 +285,7 @@ public:
     }
 
 public:
-    void clear()
+    void clear() noexcept
     {
         if(m_data == nullptr) return;
 
@@ -300,7 +299,7 @@ public:
         m_size     = 0;
         m_capacity = 0;
     }
-    void reserve(std::size_t capacity)
+    void reserve(std::size_t capacity) noexcept(false)
     {
         if(capacity <= m_capacity) return;
 
@@ -318,7 +317,7 @@ public:
         m_size     = size;
         m_capacity = count * granularity;
     }
-    void resize(std::size_t size)
+    void resize(std::size_t size) noexcept(false)
     {
         if(size > m_capacity)
         {
@@ -326,9 +325,9 @@ public:
         }
         m_size = size;
     }
-    bool change_size(std::size_t size) noexcept(DIAG_NOEXCEPT)
+    bool change_size(std::size_t size) noexcept
     {
-        Check_Arg_IsValid(size <= m_capacity, false);
+        if(size > m_capacity) return false;
         m_size = size;
         return true;
     }
@@ -411,7 +410,7 @@ void swap(
     gkr::basic_raw_buffer<Allocator>& lhs,
     gkr::basic_raw_buffer<Allocator>& rhs
     )
-    noexcept(gkr::basic_raw_buffer<Allocator>::swap_is_nothrow)
+    noexcept(gkr::basic_raw_buffer<Allocator>::swap_is_noexcept)
 {
     lhs.swap(rhs);
 }

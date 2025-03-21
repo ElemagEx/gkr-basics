@@ -321,15 +321,9 @@ public:
     }
 };
 
-template<typename T>
-class ref_counting_allocator
+class objects_ref_counting
 {
-public:
-    using      value_type = T;
-    using       size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-
-private:
+protected:
     inline static std::atomic_int m_allocations   { 0 };
     inline static std::atomic_int m_constructions { 0 };
 
@@ -338,6 +332,15 @@ public:
     {
         return ((m_allocations == 0) && (m_constructions == 0));
     }
+};
+
+template<typename T>
+class ref_counting_allocator : public objects_ref_counting
+{
+public:
+    using      value_type = T;
+    using       size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
 
 public:
     ref_counting_allocator() noexcept = default;
@@ -361,6 +364,8 @@ public:
     [[nodiscard]]
     std::allocation_result<T*, std::size_t> allocate_at_least(std::size_t n) noexcept(false)
     {
+        if(n >= 1024*1024*1024) throw std::bad_alloc();
+
         T* ptr = static_cast<T*>(std::malloc(sizeof(T) * n));
 
         if(ptr == nullptr) throw std::bad_alloc();

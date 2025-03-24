@@ -46,7 +46,7 @@ public:
 };
 
 #include <gkr/capi/log/logging.h>
-#if 0
+
 #define SEVERITY_FATAL   0
 #define SEVERITY_ERROR   1
 #define SEVERITY_WARNING 2
@@ -73,8 +73,21 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
     {"Synchro", FACILITY_SYNCHRO},
     {nullptr  , 0               }
 };
-#endif
+
 #include <thread>
+
+TEST_CASE("logging.logger. console")
+{
+    gkr_log_init(nullptr, 16, 1023/*63*/, g_severities_infos, g_facilities_infos);
+
+    gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::app_console_consumer>());
+
+    gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
+    gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");
+
+    gkr_log_done();
+}
+
 #if 0
 TEST_CASE("logging.logger. main")
 {
@@ -112,15 +125,15 @@ TEST_CASE("logging.imposter.plog. main")
     //plog::init<plog::FuncMessageFormatter>(plog::debug, plog::streamStdOut);
 
 
-    PLOGV << "Hello log!";
-    PLOG_DEBUG << "Hello log!";
-    PLOG(plog::info) << "Hello log!";
-    
-    LOGW << "Hello log!";
-    LOG_ERROR << "Hello log!";
-    LOG(plog::fatal) << "Hello log!";
-
-    PLOG_NONE << "Hello log!";
+//    PLOGV << "Hello log!";
+//    PLOG_DEBUG << "Hello log!";
+//    PLOG(plog::info) << "Hello log!";
+//    
+//    LOGW << "Hello log!";
+//    LOG_ERROR << "Hello log!";
+//    LOG(plog::fatal) << "Hello log!";
+//
+//    PLOG_NONE << "Hello log!";
 
     //TODO:Decrement logging refCount
 }

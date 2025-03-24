@@ -30,9 +30,11 @@ bool is_output_atty(int method)
 }
 inline int calc_flags(int method, int colorless)
 {
-    return (is_output_atty(method) && !colorless)
-        ? gkr_log_fo_flag_use_coloring
-        : 0;
+    int flags = (method < gkr_log_appConsoleWriteMethod_stream2cout) ? 0 : gkr_log_fo_flag_append_eoln_lf;
+
+    if(!colorless && is_output_atty(method)) flags |= gkr_log_fo_flag_use_coloring;
+
+    return flags;
 }
 }
 
@@ -123,7 +125,7 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    const int flags = m_flags | gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding | gkr_log_fo_flag_append_eoln_lf;
+    int flags = m_flags | gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding;
 
     const char* output = compose_output(msg, nullptr, flags);
 

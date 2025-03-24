@@ -244,6 +244,8 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
 
     const char* arg = args[index];
 
+    flags &= ~gkr_log_fo_flag_append_eoln_mask;
+
     unsigned cch = gkr_log_apply_text_format(buf, unsigned(cap), arg, msg, flags, args, rows, cols);
 
     if(errno != 0) return false;

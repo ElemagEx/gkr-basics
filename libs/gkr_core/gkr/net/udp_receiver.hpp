@@ -16,23 +16,23 @@ namespace data
 {
     struct split_packet_head;
 }
-namespace comm
+namespace net
 {
 
-class udp_socket_receiver : private net::lib
+class udp_receiver : private net::lib
 {
-    udp_socket_receiver           (const udp_socket_receiver&) noexcept = delete;
-    udp_socket_receiver& operator=(const udp_socket_receiver&) noexcept = delete;
+    udp_receiver           (const udp_receiver&) noexcept = delete;
+    udp_receiver& operator=(const udp_receiver&) noexcept = delete;
 
 public:
-    udp_socket_receiver(udp_socket_receiver&& other) noexcept(
+    udp_receiver(udp_receiver&& other) noexcept(
         std::is_nothrow_move_assignable<raw_buffer>::value
         )
         : m_socket(std::move(other.m_socket))
         , m_packet(std::move(other.m_packet))
     {
     }
-    udp_socket_receiver& operator=(udp_socket_receiver&& other) noexcept(
+    udp_receiver& operator=(udp_receiver&& other) noexcept(
         std::is_nothrow_move_assignable<raw_buffer>::value
         )
     {
@@ -42,19 +42,19 @@ public:
     }
 
 public:
-    GKR_COMM_API  udp_socket_receiver(std::size_t maxPacketSize = 2*1024, bool useIPv6 = false);
-    GKR_COMM_API ~udp_socket_receiver();
+    GKR_INNER_API  udp_receiver(std::size_t maxPacketSize = 2*1024, bool useIPv6 = false);
+    GKR_INNER_API ~udp_receiver();
 
 public:
-    GKR_COMM_API bool setWaitPacketTimeout(unsigned waitPacketTimeout);
+    GKR_INNER_API bool setWaitPacketTimeout(unsigned waitPacketTimeout);
 
 public:
-    GKR_COMM_API bool startReceivingPackets(unsigned short port);
-    GKR_COMM_API void  stopReceivingPackets();
+    GKR_INNER_API bool startReceivingPackets(unsigned short port);
+    GKR_INNER_API void  stopReceivingPackets();
 
 public:
-    GKR_COMM_API bool receivePacket();
-    GKR_COMM_API bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
+    GKR_INNER_API bool receivePacket();
+    GKR_INNER_API bool getReadyPacketData(net::address& addr, const void*& data, std::size_t& size);
 
 private:
     void handleUnsplittedPacket();

@@ -1,9 +1,9 @@
 #include <gkr/defs.hpp>
-#include <gkr/log/consumers/udp_socket_consumer.hpp>
+#include <gkr/log/consumers/udp_consumer.hpp>
 
 #include <gkr/log/c_consumer.hxx>
 
-#include <gkr/comm/udp_socket_sender.hpp>
+#include <gkr/net/udp_sender.hpp>
 
 #include <gkr/data/log_message.hpp>
 #include <gkr/log/logging.hpp>
@@ -19,14 +19,14 @@ namespace gkr
 namespace log
 {
 
-class c_udp_socket_consumer : public c_consumer<udp_socket_consumer>
+class c_udp_consumer : public c_consumer<udp_consumer>
 {
-    using base_t = c_consumer<udp_socket_consumer>;
+    using base_t = c_consumer<udp_consumer>;
 
 public:
-    c_udp_socket_consumer(
+    c_udp_consumer(
         void* param,
-        const gkr_log_udp_socket_consumer_callbacks& callbacks,
+        const gkr_log_udp_consumer_callbacks& callbacks,
         const char*    remoteHost,
         unsigned short remotePort,
         unsigned maxPacketSize
@@ -34,7 +34,7 @@ public:
         : base_t(param, callbacks.opt_callbacks, remoteHost, remotePort, maxPacketSize)
     {
     }
-    virtual ~c_udp_socket_consumer() override
+    virtual ~c_udp_consumer() override
     {
     }
 };
@@ -45,10 +45,10 @@ public:
 extern "C"
 {
 
-int gkr_log_add_udp_socket_consumer(
+int gkr_log_add_udp_consumer(
     void* channel,
     void* param,
-    const gkr_log_udp_socket_consumer_callbacks* callbacks,
+    const gkr_log_udp_consumer_callbacks* callbacks,
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize
@@ -56,7 +56,7 @@ int gkr_log_add_udp_socket_consumer(
 {
     Check_Arg_NotNull(callbacks, -1);
 
-    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_udp_socket_consumer(param, *callbacks, remoteHost, remotePort, maxPacketSize));
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_udp_consumer(param, *callbacks, remoteHost, remotePort, maxPacketSize));
 
     return gkr_log_add_consumer(channel, consumer);
 }
@@ -68,14 +68,14 @@ namespace gkr
 namespace log
 {
 
-static_assert(udp_socket_consumer::MINIMUM_UDP_PACKET_SIZE > sizeof(data::split_packet_head), "Minimum size is not enough to deliver data");
+static_assert(udp_consumer::MINIMUM_UDP_PACKET_SIZE > sizeof(data::split_packet_head), "Minimum size is not enough to deliver data");
 
-udp_socket_consumer::udp_socket_consumer(
+udp_consumer::udp_consumer(
     const char*    remoteHost,
     unsigned short remotePort,
     unsigned maxPacketSize
     )
-    : m_sender(new comm::udp_socket_sender(maxPacketSize))
+    : m_sender(new net::udp_sender(maxPacketSize))
     , m_process_id(sys::get_current_process_id())
 {
     update_buffer(std::size_t(gkr_log_get_max_message_chars()) + 257);
@@ -85,14 +85,14 @@ udp_socket_consumer::udp_socket_consumer(
     m_sender->change_remote_address(remoteHost, remotePort);
 }
 
-udp_socket_consumer::~udp_socket_consumer()
+udp_consumer::~udp_consumer()
 {
     update_buffer(0);
 
     if(m_sender != nullptr) delete m_sender;
 }
 
-bool udp_socket_consumer::init_logging()
+bool udp_consumer::init_logging()
 {
     Check_ValidState(m_sender->max_packet_size() >= MINIMUM_UDP_PACKET_SIZE, false);
 
@@ -105,17 +105,17 @@ bool udp_socket_consumer::init_logging()
     return m_sender->start_sending_packets();
 }
 
-void udp_socket_consumer::done_logging()
+void udp_consumer::done_logging()
 {
     m_sender->stop_sending_packets();
 }
 
-bool udp_socket_consumer::filter_log_message(const message& msg)
+bool udp_consumer::filter_log_message(const message& msg)
 {
     return false;
 }
 
-void udp_socket_consumer::consume_log_message(const message& msg)
+void udp_consumer::consume_log_message(const message& msg)
 {
     if(construct_data(msg))
     {
@@ -128,7 +128,7 @@ void udp_socket_consumer::consume_log_message(const message& msg)
     }
 }
 
-void udp_socket_consumer::update_buffer(std::size_t size)
+void udp_consumer::update_buffer(std::size_t size)
 {
     if((size > 0) && (size <= m_cap)) return;
 
@@ -140,7 +140,7 @@ void udp_socket_consumer::update_buffer(std::size_t size)
         ;
 }
 
-bool udp_socket_consumer::construct_data(const message& msg)
+bool udp_consumer::construct_data(const message& msg)
 {
     const std::size_t nameLenFunc     = std::strlen(msg.sourceFunc);
     const std::size_t nameLenFile     = std::strlen(msg.sourceFile);

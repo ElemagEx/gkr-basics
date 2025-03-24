@@ -1,6 +1,5 @@
 add_subdirectory(gkr_testing)
 add_subdirectory(gkr_inline)
-add_subdirectory(gkr_core)
 add_subdirectory(gkr_data)
-add_subdirectory(gkr_comm)
+add_subdirectory(gkr_core)
 add_subdirectory(gkr_log)

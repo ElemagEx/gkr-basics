@@ -11,9 +11,9 @@ target_sources(gkr_log
     "gkr/capi/log/consumer.h"
     "gkr/capi/log/defs/generic.h"
     "gkr/capi/log/defs/generic_cdefs.h"
+    "gkr/capi/log/consumers/udp_consumer.h"
     "gkr/capi/log/consumers/dummy_consumer.h"
     "gkr/capi/log/consumers/text_file_consumer.h"
-    "gkr/capi/log/consumers/udp_socket_consumer.h"
     "gkr/capi/log/consumers/android_log_consumer.h"
     "gkr/capi/log/consumers/app_console_consumer.h"
     "gkr/capi/log/consumers/windows_debugger_consumer.h"
@@ -25,9 +25,9 @@ target_sources(gkr_log
     "gkr/log/logging.hpp"
     "gkr/log/galery.hpp"
     "gkr/log/consumer.hpp"
+    "gkr/log/consumers/udp_consumer.hpp"
     "gkr/log/consumers/dummy_consumer.hpp"
     "gkr/log/consumers/text_file_consumer.hpp"
-    "gkr/log/consumers/udp_socket_consumer.hpp"
     "gkr/log/consumers/android_log_consumer.hpp"
     "gkr/log/consumers/app_console_consumer.hpp"
     "gkr/log/consumers/windows_debugger_consumer.hpp"
@@ -52,9 +52,9 @@ target_sources(gkr_log
     "gkr/log/logger.cpp"
     "gkr/log/logging.cpp"
     "gkr/log/consumer.cpp"
+    "gkr/log/consumers/udp_consumer.cpp"
     "gkr/log/consumers/dummy_consumer.cpp"
     "gkr/log/consumers/text_file_consumer.cpp"
-    "gkr/log/consumers/udp_socket_consumer.cpp"
     "gkr/log/consumers/android_log_consumer.cpp"
     "gkr/log/consumers/app_console_consumer.cpp"
     "gkr/log/consumers/windows_debugger_consumer.cpp"
@@ -94,8 +94,7 @@ target_sources(gkr_log
     "gkr/log/imposters/plog/Wrapper.h"
 )
 
-target_link_libraries(gkr_log PUBLIC  gkr_inline gkr_core)
-target_link_libraries(gkr_log PRIVATE gkr_data   gkr_comm)
+target_link_libraries(gkr_log PUBLIC  gkr_inline gkr_data gkr_core)
 
 set_target_properties(gkr_log PROPERTIES DEFINE_SYMBOL BUILDING_GKR_LOG)
 
@@ -105,10 +104,10 @@ target_link_libraries (t-logging PRIVATE Catch2::Catch2WithMain gkr_testing gkr_
 target_compile_options(t-logging PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
 catch_discover_tests  (t-logging)
 
-add_executable        (t-udp_socket_consumer_receiver "tests/t-udp_socket_consumer_receiver.cpp")
-target_link_libraries (t-udp_socket_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_data gkr_log gkr_comm)
-target_compile_options(t-udp_socket_consumer_receiver PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
-catch_discover_tests  (t-udp_socket_consumer_receiver)
+add_executable        (t-udp_consumer_receiver "tests/t-udp_consumer_receiver.cpp")
+target_link_libraries (t-udp_consumer_receiver PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_log)
+target_compile_options(t-udp_consumer_receiver PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-udp_consumer_receiver)
 
 #add_executable        (t-log_fmt_output "tests/t-log_fmt_output.cpp")
 #target_link_libraries (t-log_fmt_output PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core gkr_log)

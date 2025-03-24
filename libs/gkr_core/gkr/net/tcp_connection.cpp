@@ -1,14 +1,14 @@
 #include <gkr/defs.hpp>
-#include <gkr/comm/tcp_socket_connection.hpp>
+#include <gkr/net/tcp_connection.hpp>
 
 #include <gkr/diagnostics.hpp>
 
 namespace gkr
 {
-namespace comm
+namespace net
 {
 
-void tcp_socket_connection::close()
+void tcp_connection::close()
 {
     if(m_socket.is_open())
     {
@@ -16,7 +16,7 @@ void tcp_socket_connection::close()
     }
 }
 
-bool tcp_socket_connection::attach(net::socket&& socket)
+bool tcp_connection::attach(net::socket&& socket)
 {
     Check_ValidState(!is_connected(), false);
 
@@ -25,7 +25,7 @@ bool tcp_socket_connection::attach(net::socket&& socket)
     return false;
 }
 
-bool tcp_socket_connection::connect(const net::address& addr)
+bool tcp_connection::connect(const net::address& addr)
 {
     Check_Arg_IsValid(addr.is_valid(), false);
 
@@ -36,7 +36,7 @@ bool tcp_socket_connection::connect(const net::address& addr)
     return m_socket.connect(addr, &errors);
 }
 
-std::size_t tcp_socket_connection::read_data(void* buffer, std::size_t size)
+std::size_t tcp_connection::read_data(void* buffer, std::size_t size)
 {
     unsigned errors = net::socket::error_timeout | net::socket::error_conn_aborted;
 
@@ -45,7 +45,7 @@ std::size_t tcp_socket_connection::read_data(void* buffer, std::size_t size)
     return read;
 }
 
-std::size_t tcp_socket_connection::write_data(const void* buffer, std::size_t size)
+std::size_t tcp_connection::write_data(const void* buffer, std::size_t size)
 {
     unsigned errors = net::socket::error_timeout | net::socket::error_conn_aborted;
 

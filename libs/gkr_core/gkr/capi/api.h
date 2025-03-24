@@ -28,11 +28,6 @@
 #else
 #define GKR_CORE_API    GKR_API_IMPORT
 #endif
-#ifdef BUILDING_GKR_COMM
-#define GKR_COMM_API    GKR_API_EXPORT
-#else
-#define GKR_COMM_API    GKR_API_IMPORT
-#endif
 #ifdef BUILDING_GKR_LOG
 #define GKR_LOG_API     GKR_API_EXPORT
 #else

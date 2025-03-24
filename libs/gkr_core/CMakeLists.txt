@@ -33,7 +33,11 @@ target_sources(gkr_core
     "gkr/net/lib.hpp"
     "gkr/net/address.hpp"
     "gkr/net/socket.hpp"
-    )
+    "gkr/net/udp_sender.hpp"
+    "gkr/net/udp_receiver.hpp"
+    "gkr/net/tcp_listener.hpp"
+    "gkr/net/tcp_connection.hpp"
+)
 target_sources(gkr_core
     PRIVATE
     "gkr/defs.cpp"
@@ -49,13 +53,17 @@ target_sources(gkr_core
     "gkr/net/lib.cpp"
     "gkr/net/address.cpp"
     "gkr/net/socket.cpp"
+    "gkr/net/udp_sender.cpp"
+    "gkr/net/udp_receiver.cpp"
+    "gkr/net/tcp_listener.cpp"
+    "gkr/net/tcp_connection.cpp"
 )
 if(WIN32)
 target_sources(gkr_core PUBLIC "gkr/gkr_core.natvis")
 target_link_libraries(gkr_core PRIVATE ws2_32)
 endif()
 
-target_link_libraries(gkr_core PUBLIC gkr_inline)
+target_link_libraries(gkr_core PUBLIC gkr_inline gkr_data)
 
 set_target_properties(gkr_core PROPERTIES DEFINE_SYMBOL BUILDING_GKR_CORE)
 

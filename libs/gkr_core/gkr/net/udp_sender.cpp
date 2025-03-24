@@ -1,39 +1,39 @@
 #include <gkr/defs.hpp>
-#include <gkr/comm/udp_socket_sender.hpp>
+#include <gkr/net/udp_sender.hpp>
 
 #include <gkr/data/split_packet.hpp>
 #include <gkr/sys/process.hpp>
 
 namespace gkr
 {
-namespace comm
+namespace net
 {
 
-udp_socket_sender::udp_socket_sender(std::size_t maxPacketSize)
+udp_sender::udp_sender(std::size_t maxPacketSize)
 {
     m_buffer.resize(maxPacketSize);
 
     m_packetId = packet_id_t(sys::get_current_process_id()) << 32;
 }
 
-udp_socket_sender::~udp_socket_sender()
+udp_sender::~udp_sender()
 {
     m_socket.close();
 }
 
-bool udp_socket_sender::start_sending_packets()
+bool udp_sender::start_sending_packets()
 {
     if(!m_address.is_valid()) return false;
 
     return m_socket.open_as_udp(m_address.is_ipv6());
 }
 
-void udp_socket_sender::stop_sending_packets()
+void udp_sender::stop_sending_packets()
 {
     m_socket.close();
 }
 
-bool udp_socket_sender::send_data(const char* data, std::size_t size)
+bool udp_sender::send_data(const char* data, std::size_t size)
 {
     constexpr std::size_t DATA_OFFSET = sizeof(data::split_packet_head);
 

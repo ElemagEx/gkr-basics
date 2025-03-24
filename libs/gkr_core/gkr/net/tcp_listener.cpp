@@ -1,16 +1,16 @@
 #include <gkr/defs.hpp>
-#include <gkr/comm/tcp_socket_listener.hpp>
+#include <gkr/net/tcp_listener.hpp>
 
-#include <gkr/comm/tcp_socket_connection.hpp>
+#include <gkr/net/tcp_connection.hpp>
 
 #include <gkr/diagnostics.hpp>
 
 namespace gkr
 {
-namespace comm
+namespace net
 {
 
-bool tcp_socket_listener::start_listening(unsigned short listeniningPort, bool useIPv6)
+bool tcp_listener::start_listening(unsigned short listeniningPort, bool useIPv6)
 {
     Check_ValidState(!is_listening(), false);
 
@@ -31,7 +31,7 @@ bool tcp_socket_listener::start_listening(unsigned short listeniningPort, bool u
     return true;
 }
 
-void tcp_socket_listener::stop_listening()
+void tcp_listener::stop_listening()
 {
     if(m_socket.is_open())
     {
@@ -39,7 +39,7 @@ void tcp_socket_listener::stop_listening()
     }
 }
 
-bool tcp_socket_listener::accept(net::address& addr, tcp_socket_connection& connection, unsigned timeout)
+bool tcp_listener::accept(net::address& addr, tcp_connection& connection, unsigned timeout)
 {
     unsigned errors = net::socket::error_timeout;
 

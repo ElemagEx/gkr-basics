@@ -9,30 +9,30 @@
 
 namespace gkr
 {
-namespace comm
+namespace net
 {
 
-class tcp_socket_connection
+class tcp_connection
 {
-    tcp_socket_connection           (const tcp_socket_connection&) noexcept = delete;
-    tcp_socket_connection& operator=(const tcp_socket_connection&) noexcept = delete;
+    tcp_connection           (const tcp_connection&) noexcept = delete;
+    tcp_connection& operator=(const tcp_connection&) noexcept = delete;
 
 public:
-    tcp_socket_connection(tcp_socket_connection&& other) noexcept
+    tcp_connection(tcp_connection&& other) noexcept
         : m_socket(std::move(other.m_socket))
     {
     }
-    tcp_socket_connection& operator=(tcp_socket_connection&& other) noexcept
+    tcp_connection& operator=(tcp_connection&& other) noexcept
     {
         m_socket = std::move(other.m_socket);
         return *this;
     }
 
 public:
-    tcp_socket_connection() noexcept
+    tcp_connection() noexcept
     {
     }
-    ~tcp_socket_connection()
+    ~tcp_connection()
     {
         close();
     }
@@ -52,19 +52,19 @@ public:
     }
 
 private:
-    friend class tcp_socket_listener;
+    friend class tcp_listener;
 
     bool attach(net::socket&& socket);
 
 public:
-    GKR_COMM_API bool connect(const net::address& addr);
+    GKR_INNER_API bool connect(const net::address& addr);
 
-    GKR_COMM_API void close();
+    GKR_INNER_API void close();
 
 public:
-    GKR_COMM_API std::size_t read_data(void* buffer, std::size_t size);
+    GKR_INNER_API std::size_t read_data(void* buffer, std::size_t size);
 
-    GKR_COMM_API std::size_t write_data(const void* buffer, std::size_t size);
+    GKR_INNER_API std::size_t write_data(const void* buffer, std::size_t size);
 
 private:
     net::socket m_socket;

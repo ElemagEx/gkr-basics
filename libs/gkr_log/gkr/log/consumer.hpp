@@ -2,6 +2,8 @@
 
 #include <gkr/capi/log/consumer.h>
 
+#include <gkr/api.hpp>
+
 namespace gkr
 {
 namespace log
@@ -12,7 +14,7 @@ using message = gkr_log_message;
 class consumer
 {
 public:
-    virtual ~consumer() = default;
+    GKR_LOG_API virtual ~consumer();
 
     virtual bool init_logging() = 0;
     virtual void done_logging() = 0;

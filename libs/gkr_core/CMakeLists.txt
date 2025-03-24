@@ -55,7 +55,7 @@ target_sources(gkr_core PUBLIC "gkr/gkr_core.natvis")
 target_link_libraries(gkr_core PRIVATE ws2_32)
 endif()
 
-target_link_libraries(gkr_core PUBLIC gkr_inine)
+target_link_libraries(gkr_core PUBLIC gkr_inline)
 
 set_target_properties(gkr_core PROPERTIES DEFINE_SYMBOL BUILDING_GKR_CORE)
 

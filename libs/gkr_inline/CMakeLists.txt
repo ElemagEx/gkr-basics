@@ -1,12 +1,12 @@
-add_library(gkr_inine INTERFACE)
+add_library(gkr_inline INTERFACE)
 
-target_include_directories(gkr_inine INTERFACE ".")
+target_include_directories(gkr_inline INTERFACE ".")
 
-target_sources(gkr_inine
+target_sources(gkr_inline
     ${GKR_C_INTERFACE}
     "gkr/capi/diagnostics.h"
 )
-target_sources(gkr_inine
+target_sources(gkr_inline
     ${GKR_CPP_INTERFACE}
     "gkr/diagnostics.hpp"
     "gkr/container/raw_buffer.hpp"
@@ -17,7 +17,7 @@ target_sources(gkr_inine
 )
 
 if(WIN32)
-target_sources(gkr_inine PUBLIC "gkr/gkr_inline.natvis")
+target_sources(gkr_inline PUBLIC "gkr/gkr_inline.natvis")
 endif()
 
 if(GKR_BASICS_TESTS)

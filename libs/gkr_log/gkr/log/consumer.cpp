@@ -15,6 +15,10 @@ namespace gkr
 namespace log
 {
 
+consumer::~consumer()
+{
+}
+
 class c_raw_consumer : public consumer
 {
 public:

@@ -25,6 +25,7 @@ target_sources(gkr_log
     "gkr/log/logging.hpp"
     "gkr/log/galery.hpp"
     "gkr/log/consumer.hpp"
+    "gkr/log/c_consumer.hpp"
     "gkr/log/consumers/udp_consumer.hpp"
     "gkr/log/consumers/dummy_consumer.hpp"
     "gkr/log/consumers/text_file_consumer.hpp"
@@ -44,7 +45,6 @@ target_sources(gkr_log
 target_sources(gkr_log
     PRIVATE
     "gkr/log/logger.hxx"
-    "gkr/log/c_consumer.hxx"
 )
 target_sources(gkr_log
     PRIVATE

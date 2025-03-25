@@ -1,11 +1,10 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/android_log_consumer.hpp>
 
-#include <gkr/log/c_consumer.hxx>
-
 #include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>
+#include <gkr/log/c_consumer.hpp>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -17,11 +16,11 @@ namespace log
 {
 class c_android_log_consumer : public c_consumer<android_log_consumer>
 {
-     using base_t = c_consumer<android_log_consumer>;
+    using base_t = c_consumer<android_log_consumer>;
 
-     const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
-     const char* (*m_get_tag       )(void*, const struct gkr_log_message*);
-     int         (*m_get_priority  )(void*, const struct gkr_log_message*);
+    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
+    const char* (*m_get_tag       )(void*, const struct gkr_log_message*);
+    int         (*m_get_priority  )(void*, const struct gkr_log_message*);
 
 public:
     c_android_log_consumer(void* param, const gkr_log_android_log_consumer_callbacks& callbacks)

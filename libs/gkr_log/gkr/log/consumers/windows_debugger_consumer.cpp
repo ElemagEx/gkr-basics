@@ -1,11 +1,10 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/windows_debugger_consumer.hpp>
 
-#include <gkr/log/c_consumer.hxx>
-
 #include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>
+#include <gkr/log/c_consumer.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char*);

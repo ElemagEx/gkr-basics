@@ -1,11 +1,11 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/app_console_consumer.hpp>
 
-#include <gkr/log/c_consumer.hxx>
-
 #include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>
+#include <gkr/log/c_consumer.hpp>
+
 #include <gkr/sys/file.hpp>
 
 #include <cstdio>

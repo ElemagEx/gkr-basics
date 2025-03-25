@@ -1,12 +1,11 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/text_file_consumer.hpp>
 
-#include <gkr/log/c_consumer.hxx>
-
 #include <gkr/stamp.hpp>
 #include <gkr/diagnostics.hpp>
 #include <gkr/log/logging.hpp>
 #include <gkr/log/galery.hpp>
+#include <gkr/log/c_consumer.hpp>
 
 #include <gkr/sys/process.hpp>
 #include <gkr/sys/path.hpp>

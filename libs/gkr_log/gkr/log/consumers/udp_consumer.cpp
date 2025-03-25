@@ -1,12 +1,12 @@
 #include <gkr/defs.hpp>
 #include <gkr/log/consumers/udp_consumer.hpp>
 
-#include <gkr/log/c_consumer.hxx>
-
 #include <gkr/net/udp_sender.hpp>
 
 #include <gkr/data/log_message.hpp>
 #include <gkr/log/logging.hpp>
+#include <gkr/log/c_consumer.hpp>
+
 #include <gkr/sys/process.hpp>
 #include <gkr/net/lib.hpp>
 

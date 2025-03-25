@@ -337,7 +337,7 @@ int logger::add_consumer(void* channel, consumer_ptr_t consumer)
     if(!init_consumer(*consumer))
     {
         done_consumer(*consumer);
-        Check_Failure(0);
+        return 0;
     }
     data.consumers.emplace_back();
 

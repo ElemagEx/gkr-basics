@@ -239,7 +239,7 @@ public:
     }
 
 private:
-    void copy_data(const char* data, std::size_t size, std::size_t capacity, Allocator& allocator) noexcept(false)
+    void copy_data(const char* data, std::size_t size, std::size_t capacity) noexcept(false)
     {
         reserve(capacity);
 

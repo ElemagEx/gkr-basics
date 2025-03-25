@@ -5,6 +5,7 @@ target_include_directories(gkr_core PUBLIC ".")
 target_sources(gkr_core
     ${GKR_C_INTERFACE}
     "gkr/capi/api.h"
+    "gkr/capi/url.h"
     "gkr/capi/defs.h"
     "gkr/capi/stamp.h"
     "gkr/capi/stack_alloc.h"
@@ -12,6 +13,7 @@ target_sources(gkr_core
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}
     "gkr/api.hpp"
+    "gkr/url.hpp"
     "gkr/defs.hpp"
     "gkr/stamp.hpp"
     "gkr/concurency/waitable_lockfree_queue.hpp"
@@ -40,6 +42,7 @@ target_sources(gkr_core
 )
 target_sources(gkr_core
     PRIVATE
+    "gkr/url.cpp"
     "gkr/defs.cpp"
     "gkr/stamp.cpp"
     "gkr/concurency/waitable_semaphore.cpp"

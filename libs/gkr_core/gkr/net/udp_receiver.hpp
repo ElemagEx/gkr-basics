@@ -5,7 +5,6 @@
 #include <gkr/container/raw_buffer.hpp>
 #include <gkr/net/address.hpp>
 #include <gkr/net/socket.hpp>
-#include <gkr/net/lib.hpp>
 
 #include <vector>
 #include <chrono>
@@ -19,7 +18,7 @@ namespace data
 namespace net
 {
 
-class udp_receiver : private net::lib
+class udp_receiver
 {
     udp_receiver           (const udp_receiver&) noexcept = delete;
     udp_receiver& operator=(const udp_receiver&) noexcept = delete;

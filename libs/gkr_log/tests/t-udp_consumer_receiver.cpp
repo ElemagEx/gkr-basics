@@ -9,6 +9,7 @@
 #include <gkr/net/udp_receiver.hpp>
 #include <gkr/data/log_message.hpp>
 
+#include <gkr/net/lib.hpp>
 #include <gkr/net/address.hpp>
 #include <gkr/concurency/worker_thread.hpp>
 
@@ -16,6 +17,8 @@
 
 #include <thread>
 #include <iostream>
+
+static gkr::net::lib networking;
 
 #define COMMON_SEVERITIES_INFOS LOG_SEVERITIES_INFOS
 constexpr gkr::log::name_id_pair g_severities_infos[] = COMMON_SEVERITIES_INFOS;

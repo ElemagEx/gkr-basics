@@ -5,14 +5,13 @@
 #include <gkr/container/raw_buffer.hpp>
 #include <gkr/net/address.hpp>
 #include <gkr/net/socket.hpp>
-#include <gkr/net/lib.hpp>
 
 namespace gkr
 {
 namespace net
 {
 
-class udp_sender : private net::lib
+class udp_sender
 {
     udp_sender           (const udp_sender&) noexcept = delete;
     udp_sender& operator=(const udp_sender&) noexcept = delete;

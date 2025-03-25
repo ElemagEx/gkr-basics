@@ -286,6 +286,17 @@ public:
         return m_capacity;
     }
 
+    template<typename T>
+    std::size_t count() const noexcept
+    {
+        return (size() / sizeof(T));
+    }
+    template<typename T>
+    std::size_t max_count() const noexcept
+    {
+        return (size() / sizeof(T));
+    }
+
 public:
     void clear() noexcept
     {
@@ -329,6 +340,28 @@ public:
     }
     bool change_size(std::size_t size) noexcept
     {
+        if(size > m_capacity) return false;
+        m_size = size;
+        return true;
+    }
+
+public:
+    template<typename T>
+    void reserve(std::size_t count) noexcept(false)
+    {
+        static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        return reserve(count * sizeof(T));
+    }
+    template<typename T>
+    void resize(std::size_t count) noexcept(false)
+    {
+        static_assert(alignof(T) <= alignment, "Alignment mismatch");
+        return reserve(count * sizeof(T));
+    }
+    template<typename T>
+    bool change_size(std::size_t count) noexcept
+    {
+        const std::size_t size = count * sizeof(T);
         if(size > m_capacity) return false;
         m_size = size;
         return true;

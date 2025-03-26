@@ -32,7 +32,10 @@ GKR_CORE_API int  gkr_diag_warn(int id, const char* text, const char* func, cons
 }
 #endif
 
-inline int gkr_b2i(bool value)
+#ifdef __cplusplus
+inline constexpr int gkr_b2i(bool value)
 {
     return value ? 1 : 0;
 }
+#endif
+

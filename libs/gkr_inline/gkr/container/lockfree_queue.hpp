@@ -1563,7 +1563,7 @@ protected:
 };
 
 template<typename T>
-using queue_allocator_value_type = std::conditional<std::is_void<T>::value, std::max_align_t, T>::type;
+using queue_allocator_value_type = typename std::conditional<std::is_void<T>::value, std::max_align_t, T>::type;
 }
 
 template<

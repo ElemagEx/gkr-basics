@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gkr/api.hpp>
+#include <gkr/capi/net/lib.h>
 
 #include <string>
 
@@ -9,10 +9,23 @@ namespace gkr
 namespace net
 {
 
-GKR_INNER_API bool startup();
-GKR_INNER_API void shutdown();
+bool startup()
+{
+    return (gkr_net_lib_startup() == 0);
+}
+void shutdown()
+{
+    gkr_net_lib_shutdown();
+}
 
-GKR_INNER_API std::string get_hostname();
+std::string get_hostname()
+{
+    char buf[64] {0};
+
+    gkr_net_lib_get_hostname(buf, sizeof(buf));
+
+    return std::string(buf);
+}
 
 struct lib final
 {
@@ -26,12 +39,12 @@ struct lib final
         if(initialed) shutdown();
     }
 
-    lib           (lib&& other) noexcept : initialed(other.initialed) {}
-    lib& operator=(lib&&      ) noexcept { return *this; }
-
 private:
     lib           (const lib& other) noexcept = delete;
     lib& operator=(const lib&      ) noexcept = delete;
+
+    lib           (lib&& other) noexcept = delete;
+    lib& operator=(lib&&      ) noexcept = delete;
 };
 
 }

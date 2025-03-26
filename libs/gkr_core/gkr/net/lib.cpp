@@ -15,12 +15,10 @@ using sockaddr_inet = SOCKADDR_INET;
 
 #include <cstring>
 
-namespace gkr
-{
-namespace net
+extern "C"
 {
 
-bool startup()
+int gkr_net_lib_startup()
 {
 #ifdef _WIN32
     WSADATA wsaData;
@@ -28,33 +26,26 @@ bool startup()
 
     const int error = WSAStartup(versionRequested, &wsaData);
 
-    return (error == 0);
-#elif defined(__ANDROID__)
-    //TODO:By calling some networking function (ex: socket) check
-    //whether networking support permision is enabled for this app
-    return true;
+    return error;
 #else
-    return true;
+    return 0;
 #endif
 }
 
-void shutdown()
+int gkr_net_lib_shutdown()
 {
 #ifdef _WIN32
     WSACleanup();
 #endif
+    return 0;
 }
 
-std::string get_hostname()
+int gkr_net_lib_get_hostname(char* buf, int cb)
 {
-    char hostname[256];
+    Check_Arg_NotNull(buf   , -1);
+    Check_Arg_IsValid(cb > 0, -1);
 
-    if(0 != gethostname(hostname, 256))
-    {
-        return {};
-    }
-    return std::string(hostname);
+    return gethostname(buf, cb);
 }
 
-}
 }

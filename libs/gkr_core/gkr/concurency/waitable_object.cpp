@@ -3,6 +3,8 @@
 
 #include <gkr/stack_alloc.hpp>
 
+#include <vector>
+
 namespace gkr
 {
 

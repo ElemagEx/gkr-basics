@@ -9,6 +9,7 @@ target_sources(gkr_core
     "gkr/capi/defs.h"
     "gkr/capi/stamp.h"
     "gkr/capi/stack_alloc.h"
+    "gkr/capi/net/lib.h"
 )
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}

@@ -8,6 +8,7 @@ target_sources(gkr_core
     "gkr/capi/url.h"
     "gkr/capi/defs.h"
     "gkr/capi/stamp.h"
+    "gkr/capi/params.h"
     "gkr/capi/stack_alloc.h"
     "gkr/capi/net/lib.h"
 )
@@ -17,6 +18,7 @@ target_sources(gkr_core
     "gkr/url.hpp"
     "gkr/defs.hpp"
     "gkr/stamp.hpp"
+    "gkr/params.hpp"
     "gkr/concurency/waitable_lockfree_queue.hpp"
     "gkr/concurency/waitable_semaphore.hpp"
     "gkr/concurency/waitable_object.hpp"
@@ -46,6 +48,7 @@ target_sources(gkr_core
     "gkr/url.cpp"
     "gkr/defs.cpp"
     "gkr/stamp.cpp"
+    "gkr/params.cpp"
     "gkr/concurency/waitable_semaphore.cpp"
     "gkr/concurency/waitable_object.cpp"
     "gkr/concurency/waitable_event.cpp"

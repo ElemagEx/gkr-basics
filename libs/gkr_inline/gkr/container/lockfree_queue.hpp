@@ -633,7 +633,7 @@ protected:
    ~queue_pausing() noexcept(std::is_nothrow_destructible         <base_t>::value) = default;
 
     queue_pausing(queue_pausing&& other) noexcept(std::is_nothrow_move_constructible<base_t>::value)
-        : base_t(other)
+        : base_t(std::move(other))
         , m_ns_to_wait(std::exchange(other.m_ns_to_wait, INITIAL_NS_TO_WAIT))
         , m_op_threads(other.m_op_threads.exchange(0))
         , m_op_pausers(other.m_op_pausers.exchange(0))

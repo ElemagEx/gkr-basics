@@ -82,8 +82,10 @@ namespace gkr
 template<typename Allocator>
 class basic_raw_buffer
 {
+public:
     using allocator_traits = std::allocator_traits<Allocator>;
 
+private:
     using allocator_value_t = typename allocator_traits::value_type;
 
     static constexpr std::size_t granularity = (sizeof(allocator_value_t) >= alignof(allocator_value_t))

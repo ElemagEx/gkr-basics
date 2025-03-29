@@ -126,7 +126,7 @@ public:
     {
         static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type not convertible to param value");
 
-        return T(get_value(find_value(key), long long(def_val)));
+        return T(get_value(find_value(key), (long long)(def_val)));
     }
 
     template<>

@@ -41,7 +41,11 @@ public:
     }
 
 public:
-    bool is_valid()
+    bool is_empty() const
+    {
+        return (m_data.size() == 0);
+    }
+    bool is_valid() const
     {
         return (m_parts.path != nullptr);
     }

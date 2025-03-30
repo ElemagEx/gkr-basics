@@ -37,6 +37,10 @@ inline constexpr int gkr_b2i(bool value)
 {
     return value ? 1 : 0;
 }
+inline constexpr bool gkr_i2b(int value)
+{
+    return (value != 0);
+}
 #endif
 
 #if defined(_MSC_VER)

@@ -147,11 +147,7 @@ public:
     {
         if(this != &other)
         {
-            clear();
-            if_constexpr(allocator_traits::propagate_on_container_copy_assignment::value)
-            {
-                m_allocator = other.m_allocator;
-            }
+            on_copy_assignment(other);
             copy_data(other.m_data, other.m_size, other.m_capacity);
         }
         return *this;
@@ -237,6 +233,19 @@ public:
             std::swap(m_data    , other.m_data);
             std::swap(m_size    , other.m_size);
             std::swap(m_capacity, other.m_capacity);
+        }
+    }
+
+public:
+    void on_copy_assignment(const basic_raw_buffer& other) noexcept(
+        allocator_traits::propagate_on_container_copy_assignment::value ||
+        std::is_nothrow_copy_assignable<Allocator>::value
+        )
+    {
+        clear();
+        if_constexpr(allocator_traits::propagate_on_container_copy_assignment::value)
+        {
+            m_allocator = other.m_allocator;
         }
     }
 

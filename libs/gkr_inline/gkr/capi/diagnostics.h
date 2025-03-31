@@ -173,15 +173,15 @@ inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 #ifdef __cplusplus
 #ifdef _WIN32
 #ifdef _WIN64
-#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>((long long)(val)))
+#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>(static_cast<long long>(val)))
 #else
-#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>((int      )(val)))
+#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>(static_cast<int      >(val)))
 #endif
 #else
 #if (__SIZEOF_SIZE_T__ == 8)
-#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>((long long)(val)))
+#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>(static_cast<long long>(val)))
 #else
-#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>((int      )(val)))
+#define DIAG_I2S(val) static_cast<const char*>(reinterpret_cast<const void*>(static_cast<int      >(val)))
 #endif
 #endif
 #else

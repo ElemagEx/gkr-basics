@@ -68,7 +68,7 @@ public:
         m_data.resize(size);
         std::memcpy(m_data.data(), str, size);
 
-        gkr_url_decompose(m_data.data<char>(), gkr_b2i(unescape), &m_parts);
+        gkr_url_decompose(m_data.template data<char>(), gkr_b2i(unescape), &m_parts);
     }
     void reset(const std::string& str, bool unescape = false)
     {
@@ -77,7 +77,7 @@ public:
         m_data.resize(size);
         std::memcpy(m_data.data(), str.c_str(), size);
 
-        gkr_url_decompose(m_data.data<char>(), gkr_b2i(unescape), &m_parts);
+        gkr_url_decompose(m_data.template data<char>(), gkr_b2i(unescape), &m_parts);
     }
 };
 

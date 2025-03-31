@@ -123,8 +123,8 @@ public:
     std::size_t insert_value(const char* key, T value)
     {
         static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
-
-        return insert_value(key, (long long)(value));
+        using longlong = long long;
+        return insert_value(key, longlong(value));
     }
 
 public:
@@ -149,39 +149,7 @@ public:
 
 public:
     template<typename T>
-    T get_value(const char* key, T def_val) const
-    {
-        static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
-
-        return T(get_value(find_value(key), (long long)(def_val)));
-    }
-
-    template<>
-    const char* get_value<const char*>(const char* key, const char* def_val) const
-    {
-        return get_value(find_value(key), def_val);
-    }
-    template<>
-    bool get_value<bool>(const char* key, bool def_val) const
-    {
-        return get_value(find_value(key), def_val);
-    }
-
-    template<>
-    float get_value<float>(const char* key, float def_val) const
-    {
-        return float(get_value(find_value(key), double(def_val)));
-    }
-    template<>
-    double get_value<double>(const char* key, double def_val) const
-    {
-        return double(get_value(find_value(key), double(def_val)));
-    }
-    template<>
-    long double get_value<long double>(const char* key, long double def_val) const
-    {
-        return long double(get_value(find_value(key), double(def_val)));
-    }
+    T get_value(const char* key, T def_val) const;
 
 public:
     void get_info(std::size_t& count, std::size_t& size, std::size_t& depth) const;
@@ -214,5 +182,41 @@ private:
 private:
     void collect_info(bool has_name, std::size_t index, std::size_t level, std::size_t& count, std::size_t& size, std::size_t& depth) const;
 };
+
+template<typename T>
+inline T params::get_value(const char* key, T def_val) const
+{
+    static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
+    using longlong = long long;
+    return T(get_value(find_value(key), longlong(def_val)));
+}
+
+template<>
+const char* params::get_value<const char*>(const char* key, const char* def_val) const
+{
+    return get_value(find_value(key), def_val);
+}
+template<>
+bool params::get_value<bool>(const char* key, bool def_val) const
+{
+    return get_value(find_value(key), def_val);
+}
+
+template<>
+float params::get_value<float>(const char* key, float def_val) const
+{
+    return float(get_value(find_value(key), double(def_val)));
+}
+template<>
+double params::get_value<double>(const char* key, double def_val) const
+{
+    return double(get_value(find_value(key), double(def_val)));
+}
+template<>
+long double params::get_value<long double>(const char* key, long double def_val) const
+{
+    using long_double = long double;
+    return long_double(get_value(find_value(key), double(def_val)));
+}
 
 }

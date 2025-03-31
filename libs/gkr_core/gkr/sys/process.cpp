@@ -140,7 +140,7 @@ int get_current_process_command_line(struct command_line& cmd_line)
                 if(inDoubleQuotes) { if(str[1] == '\"') ++str; }
                 break;
         }
-        if(arg < str) *arg++ = *str++; else ++arg, ++str;
+        if(arg < str) *arg++ = *str++; else { ++arg; ++str; }
     }
     *arg = 0;
 
@@ -259,7 +259,6 @@ int get_current_process_command_line(struct command_line& cmd_line)
             if(read == 0)
             {
                 Check_std_Fail(0);
-                return 0;
             }
             break;
         }

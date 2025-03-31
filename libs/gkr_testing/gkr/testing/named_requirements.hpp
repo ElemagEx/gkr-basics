@@ -26,10 +26,10 @@ void is_container(C& c)
 {
     using allocator_type  = typename C::allocator_type;
     using value_type      = typename C::value_type;
-    using reference       = typename C::reference;
-    using const_reference = typename C::const_reference;
-    using size_type       = typename C::size_type;
-    using difference_type = typename C::difference_type;
+//  using reference       = typename C::reference;
+//  using const_reference = typename C::const_reference;
+//  using size_type       = typename C::size_type;
+//  using difference_type = typename C::difference_type;
 
     allocator_type allocator = c.get_allocator();
 

@@ -43,10 +43,13 @@ inline constexpr bool gkr_i2b(int value)
 }
 #endif
 
-#if defined(_MSC_VER)
-#define GKR_WARNING_DISABLE(MSC_NUM, GCC_IDENT) __pragma(warning(disable:MSC_NUM))
-#define GKR_WARNING_DEFAULT(MSC_NUM, GCC_IDENT) __pragma(warning(disable:MSC_NUM))
-#else
-#define GKR_WARNING_DISABLE(MSC_NUM, GCC_IDENT)
-#define GKR_WARNING_DEFAULT(MSC_NUM, GCC_IDENT)
+#if defined(__clang__)
+#define GKR_WARNING_DISABLE(MSC_NUM, GCC_DIAG, CLANG_DIAG)  _Pragma("clang diagnostic push") _Pragma(CLANG_DIAG)
+#define GKR_WARNING_DEFAULT(MSC_NUM)                        _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__)
+#define GKR_WARNING_DISABLE(MSC_NUM, GCC_DIAG, CLANG_DIAG)  _Pragma("GCC diagnostic push") _Pragma(GCC_DIAG)
+#define GKR_WARNING_DEFAULT(MSC_NUM)                        _Pragma("GCC diagnostic pop")
+#else defined(_MSC_VER)
+#define GKR_WARNING_DISABLE(MSC_NUM, GCC_DIAG, CLANG_DIAG)  __pragma(warning(disable:MSC_NUM))
+#define GKR_WARNING_DEFAULT(MSC_NUM)                        __pragma(warning(default:MSC_NUM))
 #endif

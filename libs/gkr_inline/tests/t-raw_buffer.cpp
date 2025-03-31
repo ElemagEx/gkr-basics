@@ -59,7 +59,7 @@ void raw_buffer_test_reserve()
     CHECK(buff.data    () != nullptr);
     CHECK_FALSE(std::memcmp(buff.data(), sample, buff.size()));
 
-    std::size_t TOO_LARGE_SIZE_TO_ALLOC = std::allocator_traits<Allocator>::max_size(buff.get_allocator());
+    std::size_t TOO_LARGE_SIZE_TO_ALLOC = std::allocator_traits<Allocator>::max_size(buff.get_allocator()) / 2;
 
     CHECK_THROWS_AS(buff.reserve(TOO_LARGE_SIZE_TO_ALLOC), std::bad_alloc);
 };

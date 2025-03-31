@@ -40,12 +40,12 @@ int gkr_net_lib_shutdown()
     return 0;
 }
 
-int gkr_net_lib_get_hostname(char* buf, int cb)
+int gkr_net_lib_get_hostname(char* buf, unsigned cb)
 {
     Check_Arg_NotNull(buf   , -1);
     Check_Arg_IsValid(cb > 0, -1);
 
-    return gethostname(buf, cb);
+    return gethostname(buf, int(cb));
 }
 
 }

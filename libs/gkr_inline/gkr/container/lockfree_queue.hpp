@@ -3,6 +3,8 @@
 #include <thread>
 #include <atomic>
 #include <memory>
+#include <cstddef>
+#include <cstring>
 #include <utility>
 #include <type_traits>
 
@@ -550,11 +552,13 @@ protected:
     bool producer_wait(long long timeout_ns) noexcept
     {
         static_assert(has_wait<T>(), "You cannot wait on this queue - use another queue wait support class to activate waiting functionality");
+        return false;
     }
     template<typename T=void>
     bool consumer_wait(long long timeout_ns) noexcept
     {
         static_assert(has_wait<T>(), "You cannot wait on this queue - use another queue wait support class to activate waiting functionality");
+        return false;
     }
 #endif
 };

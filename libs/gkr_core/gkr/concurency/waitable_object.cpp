@@ -4,6 +4,7 @@
 #include <gkr/stack_alloc.hpp>
 
 #include <vector>
+#include <exception>
 
 namespace gkr
 {

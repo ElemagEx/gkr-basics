@@ -1,8 +1,5 @@
 #include <gkr/defs.hpp>
 
-#ifndef GKR_DONT_HIDE_CDEFS
-#define GKR_DONT_HIDE_CDEFS
-#endif
 #include <gkr/params.hpp>
 
 #include <gkr/diagnostics.hpp>
@@ -90,7 +87,7 @@ size_t gkr_params_find_value(struct gkr_params* params, const char* key)
 enum gkr_param_type gkr_params_get_type(struct gkr_params* params, const char* key)
 {
     Check_Arg_NotNull(params, gkr_param_type_none);
-    return (enum gkr_param_type)reinterpret_cast<gkr::params*>(params)->get_type(key);
+    return gkr_param_type(reinterpret_cast<gkr::params*>(params)->get_type(key));
 }
 const char* gkr_params_get_string_value(struct gkr_params* params, size_t index, const char* def_val)
 {
@@ -116,7 +113,7 @@ int gkr_params_get_boolean_value(struct gkr_params* params, size_t index, int de
 
 namespace gkr
 {
-std::size_t align(std::size_t size, std::size_t pitch) noexcept
+inline std::size_t align(std::size_t size, std::size_t pitch) noexcept
 {
     if(pitch <= 1) return size;
 
@@ -155,11 +152,11 @@ static_assert(alignof(node_t) ==  8, "Keep it  8 bytes");
 
 struct head_t
 {
-    GKR_WARNING_DISABLE(4200, abcd)
+    GKR_WARNING_DISABLE(4200, "GCC diagnostic ignored \"-Wpedantic\"", "GCC diagnostic ignored \"-Wzero-length-array\"")
     index_t     ref;
     len_t       len;
     char        str[0];
-    GKR_WARNING_DEFAULT(4200, abcd)
+    GKR_WARNING_DEFAULT(4200)
 };
 static_assert( sizeof(head_t) ==  4, "Keep it  4 bytes");
 static_assert(alignof(head_t) ==  2, "Keep it  2 bytes");
@@ -527,7 +524,7 @@ bool params::peek_array_pos(const char* key, std::size_t len, std::size_t& pos) 
 
     for(pos = 0; std::isdigit(*key); ++key, --len)
     {
-        pos = (pos * 10) + (*key - '0');
+        pos = (pos * 10) + std::size_t(*key - '0');
     }
     return (len == 0);
 }
@@ -629,7 +626,7 @@ std::size_t params::lookup_node(const char* key, std::size_t parent)
     const bool last = (sep == nullptr);
 
     const std::size_t len = !last
-        ? (sep - key)
+        ? std::size_t(sep - key)
         : std::strlen(key)
         ;
     if(len == 0) return 0;
@@ -715,7 +712,7 @@ std::size_t params::mirror_node(bool has_name, const params& other, std::size_t 
         }
 
         self_prev   = self_index;
-        other_index = other_node.next;;
+        other_index = other_node.next;
     }
     return 0;
 }
@@ -739,7 +736,7 @@ std::size_t params::search_node(const char* key, std::size_t parent) const
     const bool last = (sep == nullptr);
 
     const std::size_t len = !last
-        ? (sep - key)
+        ? std::size_t(sep - key)
         : std::strlen(key)
         ;
     if(len == 0) return 0;

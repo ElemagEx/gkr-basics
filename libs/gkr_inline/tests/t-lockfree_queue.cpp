@@ -67,7 +67,7 @@ struct Data
 #endif
 
 template<bool Typeless, typename Type>
-using queue_value_type = std::conditional<Typeless, void, Type>::type;
+using queue_value_type = typename std::conditional<Typeless, void, Type>::type;
 
 template<typename Queue>
 constexpr bool is_typeless()
@@ -81,7 +81,7 @@ void push_elements(Queue& queue, unsigned number)
     {
         if constexpr(is_typeless<Queue>())
         {
-            queue.try_start_push().as<Type>() = Type{index+1, index+2, index+3};
+            queue.try_start_push().template as<Type>() = Type{index+1, index+2, index+3};
         }
         else
         {

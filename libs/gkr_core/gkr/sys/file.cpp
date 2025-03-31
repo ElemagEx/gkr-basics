@@ -30,7 +30,7 @@ void file_report_error(int error, unsigned* errors)
     DIAG_VAR(const char*, text)
     std::strerror(error);
     //TODO:change Check_Failure with log
-    Check_FailureMsg(text);
+    Check_FailureMsg(text, );
 }
 
 bool file_is_atty(void* file)

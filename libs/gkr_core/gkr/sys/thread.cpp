@@ -63,7 +63,7 @@ namespace sys
 {
 bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 {
-    Check_Arg_NotNull(name);
+    Check_Arg_NotNull(name, false);
 
     DIAG_VAR(int, res)
     prctl(PR_SET_NAME, long(name), 0, 0, 0);
@@ -73,7 +73,7 @@ bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 }
 bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 {
-    Check_Arg_NotNull(name);
+    Check_Arg_NotNull(name, false);
 
     DIAG_VAR(int, res)
     prctl(PR_GET_NAME, long(name), 0, 0, 0);

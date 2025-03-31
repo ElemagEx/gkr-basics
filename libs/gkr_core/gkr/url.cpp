@@ -121,7 +121,7 @@ int gkr_url_decompose(char* url, int unescape, gkr_url_parts* parts)
         {
             parts->username = url;
             char* sep = std::strchr(url, ':');
-            if((sep == 0) || (pos > sep))
+            if((sep == nullptr) || (pos > sep))
             {
                 parts->password = nullptr;
             }

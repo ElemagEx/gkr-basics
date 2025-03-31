@@ -151,6 +151,8 @@ public:
 template<typename T, int FLAGS>
 class ref_counting_allocator_ex : public ref_counting_allocator<T>
 {
+    using base_t = ref_counting_allocator<T>;
+
 public:
     using is_always_equal = std::integral_constant<bool, (FLAGS & EqualsAlways) != 0>;
 
@@ -159,17 +161,17 @@ public:
     using propagate_on_container_swap            = std::integral_constant<bool, (FLAGS & PropagatesOnSwap          ) != 0>;
 
 protected:
-    ref_counting_allocator_ex() noexcept(std::integral_constant<bool, (FLAGS & ExceptDestructor    ) == 0>::value) {}
+    ref_counting_allocator_ex() noexcept(std::integral_constant<bool, (FLAGS & ExceptDestructor    ) == 0>::value) : base_t() {}
    ~ref_counting_allocator_ex() noexcept(std::integral_constant<bool, (FLAGS & ExceptDefConstructor) == 0>::value) {}
 
-    ref_counting_allocator_ex(const ref_counting_allocator_ex& ) noexcept(std::integral_constant<bool, (FLAGS & ExceptCopyConstructor) == 0>::value) {}
-    ref_counting_allocator_ex(      ref_counting_allocator_ex&&) noexcept(std::integral_constant<bool, (FLAGS & ExceptMoveConstructor) == 0>::value) {}
+    ref_counting_allocator_ex(const ref_counting_allocator_ex&  other) noexcept(std::integral_constant<bool, (FLAGS & ExceptCopyConstructor) == 0>::value) : base_t(          other ) {}
+    ref_counting_allocator_ex(      ref_counting_allocator_ex&& other) noexcept(std::integral_constant<bool, (FLAGS & ExceptMoveConstructor) == 0>::value) : base_t(std::move(other)) {}
 
     template<class U>
-    ref_counting_allocator_ex(const ref_counting_allocator<U>& other) noexcept(std::integral_constant<bool, (FLAGS & ExceptRebindConstructor) == 0>::value) {}
+    ref_counting_allocator_ex(const ref_counting_allocator<U>& other) noexcept(std::integral_constant<bool, (FLAGS & ExceptRebindConstructor) == 0>::value) : base_t(other) {}
 
-    ref_counting_allocator_ex& operator=(const ref_counting_allocator_ex& ) noexcept(std::integral_constant<bool, (FLAGS & ExceptCopyOperatorEq) == 0>::value) { return *this; }
-    ref_counting_allocator_ex& operator=(      ref_counting_allocator_ex&&) noexcept(std::integral_constant<bool, (FLAGS & ExceptMoveOperatorEq) == 0>::value) { return *this; }
+    ref_counting_allocator_ex& operator=(const ref_counting_allocator_ex&  other) noexcept(std::integral_constant<bool, (FLAGS & ExceptCopyOperatorEq) == 0>::value) { base_t::operator=(          other ); return *this; }
+    ref_counting_allocator_ex& operator=(      ref_counting_allocator_ex&& other) noexcept(std::integral_constant<bool, (FLAGS & ExceptMoveOperatorEq) == 0>::value) { base_t::operator=(std::move(other)); return *this; }
 
     void swap(ref_counting_allocator_ex&) noexcept(std::integral_constant<bool, (FLAGS & ExceptSwapOperation) == 0>::value) {}
 

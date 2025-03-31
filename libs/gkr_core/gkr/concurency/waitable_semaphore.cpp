@@ -53,7 +53,8 @@ void waitable_semaphore::set_max_count(unsigned max_count)
 
     if(max_count != m_max_count)
     {
-        *this = std::move(waitable_semaphore(max_count));
+        waitable_semaphore semaphore(max_count);
+        *this = std::move(semaphore);
     }
 }
 
@@ -78,13 +79,13 @@ bool waitable_semaphore::handle_poll_data(unsigned long long value)
 
 int waitable_semaphore::create(unsigned max_count, unsigned init_count)
 {
-    Check_Arg_IsValid((max_count > 0U) && (max_count < MAXIMUM_COUNT), nullptr);
+    Check_Arg_IsValid((max_count > 0U) && (max_count < MAXIMUM_COUNT), -1);
 
-    Check_Arg_IsValid(init_count <= max_count, nullptr);
+    Check_Arg_IsValid(init_count <= max_count, -1);
 
     int fd = eventfd(init_count, EFD_NONBLOCK);
 
-    Check_Sys_Result(fd != -1, );
+    Check_Sys_Result(fd != -1, -1);
 
     return fd;
 }
@@ -95,7 +96,7 @@ bool waitable_semaphore::release(unsigned count)
 
     Check_ValidState(is_valid(), false);
 
-    Check_Arg_IsValid((count > 0U) && (count < max_count), );
+    Check_Arg_IsValid((count > 0U) && (count < max_count), false);
 
     eventfd_t value;
     const ssize_t len = read(handle(), &value, sizeof(value));

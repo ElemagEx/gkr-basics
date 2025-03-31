@@ -9,16 +9,16 @@ namespace gkr
 namespace net
 {
 
-bool startup()
+inline bool lib_startup()
 {
     return (gkr_net_lib_startup() == 0);
 }
-void shutdown()
+inline void lib_shutdown()
 {
     gkr_net_lib_shutdown();
 }
 
-std::string get_hostname()
+inline std::string get_hostname()
 {
     char buf[64] {0};
 
@@ -31,12 +31,12 @@ struct lib final
 {
     const bool initialed;
 
-    lib() : initialed(startup())
+    lib() : initialed(lib_startup())
     {
     }
     ~lib()
     {
-        if(initialed) shutdown();
+        if(initialed) lib_shutdown();
     }
 
 private:

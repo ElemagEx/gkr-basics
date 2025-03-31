@@ -52,7 +52,8 @@ void waitable_event::set_manual_reset(bool manual_reset)
 
     if(manual_reset != m_manual_reset)
     {
-        *this = std::move(waitable_event(manual_reset));
+        waitable_event event(manual_reset);
+        *this = std::move(event);
     }
 }
 
@@ -77,7 +78,7 @@ bool waitable_event::handle_poll_data(unsigned long long value)
         value = 1;
         DIAG_VAR(ssize_t, res)
         write(handle(), &value, sizeof(value));
-        Check_Sys_Result((res != -1) || (errno == EAGAIN), );
+        Check_Sys_Result((res != -1) || (errno == EAGAIN), false);
     }
     return true;
 }
@@ -88,7 +89,7 @@ int waitable_event::create(bool manual_reset, bool create_fired)
 
     int fd = eventfd(initial_value, EFD_NONBLOCK);
 
-    Check_Sys_Result(fd != -1, );
+    Check_Sys_Result(fd != -1, -1);
 
     return fd;
 }

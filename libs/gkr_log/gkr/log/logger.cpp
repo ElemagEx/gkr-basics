@@ -107,7 +107,7 @@ void logger::on_wait_timeout()
 
 void logger::on_wait_success(std::size_t index)
 {
-    Check_ValidState(index == 0);
+    Check_ValidState(index == 0, );
 
     DIAG_VAR(bool, processed)
     process_next_message();

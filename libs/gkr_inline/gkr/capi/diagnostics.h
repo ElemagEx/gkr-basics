@@ -401,10 +401,10 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)    && DIAG_ARG_WARN(D
 #endif
 
 #ifdef _WIN32
-#define Check_Sys_Error(err,     ...)   if(((int)(err) <   0) && DIAG_SYS_WARN(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Error(err,     ...)   if(((int)(err) <   0) && DIAG_SYS_WARN(DIAG_ID_SYS_ERROR      , DIAG_I2S(err) DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_Sys_Result(res,    ...)   if(((int)(res) ==  0) && DIAG_SYS_WARN(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)) return __VA_ARGS__
 #else
-#define Check_Sys_Error(err,     ...)   if(((int)(err) !=  0) && DIAG_SYS_WARN(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Error(err,     ...)   if(((int)(err) !=  0) && DIAG_SYS_WARN(DIAG_ID_SYS_ERROR      , DIAG_I2S(err) DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_Sys_Result(res,    ...)   if(((int)(res) == -1) && DIAG_SYS_WARN(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)) return __VA_ARGS__
 #endif
 #define Check_Sys_Inspect(check, ...)   if(!(check)           && DIAG_SYS_WARN(DIAG_ID_SYS_INSPECT    , #check        DIAG_SRC_LOCATION)) return __VA_ARGS__
@@ -433,10 +433,10 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check))  DIAG_HALT(DIAG_ID_A
 #endif
 
 #ifdef _WIN32
-#define Check_Sys_Error(err,     ...)   if((int)(err) <   0) DIAG_HALT(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)
+#define Check_Sys_Error(err,     ...)   if((int)(err) <   0) DIAG_HALT(DIAG_ID_SYS_ERROR      , DIAG_I2S(err) DIAG_SRC_LOCATION)
 #define Check_Sys_Result(res,    ...)   if((int)(res) ==  0) DIAG_HALT(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)
 #else
-#define Check_Sys_Error(err,     ...)   if((int)(err) !=  0) DIAG_HALT(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)
+#define Check_Sys_Error(err,     ...)   if((int)(err) !=  0) DIAG_HALT(DIAG_ID_SYS_ERROR      , DIAG_I2S(err) DIAG_SRC_LOCATION)
 #define Check_Sys_Result(res,    ...)   if((int)(res) == -1) DIAG_HALT(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)
 #endif
 #define Check_Sys_Inspect(check, ...)   if(!(check))         DIAG_HALT(DIAG_ID_SYS_INSPECT    , #check        DIAG_SRC_LOCATION)

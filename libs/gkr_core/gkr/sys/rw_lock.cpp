@@ -13,16 +13,16 @@ namespace gkr
 namespace sys
 {
 
-inline RTL_SRWLOCK* srw_lock_ptr(rw_lock::native_handle_type& handle)
+inline RTL_SRWLOCK* rw_lock_ptr(char* data)
 {
-    return reinterpret_cast<RTL_SRWLOCK*>(&handle);
+    return reinterpret_cast<RTL_SRWLOCK*>(data);
 }
 
-rw_lock::rw_lock() noexcept : m_handle(nullptr)
+rw_lock::rw_lock() noexcept
 {
-    static_assert(sizeof(RTL_SRWLOCK) == sizeof(m_handle), "Check it");
+    static_assert(sizeof(RTL_SRWLOCK) == sizeof(m_data), "The m_data must be with the same size as sizeof(RTL_SRWLOCK)");
 
-    InitializeSRWLock(srw_lock_ptr(m_handle));
+    InitializeSRWLock(rw_lock_ptr(m_data));
 }
 
 rw_lock::~rw_lock() noexcept
@@ -31,32 +31,32 @@ rw_lock::~rw_lock() noexcept
 
 void rw_lock::lock() noexcept
 {
-    AcquireSRWLockExclusive(srw_lock_ptr(m_handle));
+    AcquireSRWLockExclusive(rw_lock_ptr(m_data));
 }
 
 void rw_lock::unlock() noexcept
 {
-    ReleaseSRWLockExclusive(srw_lock_ptr(m_handle));
+    ReleaseSRWLockExclusive(rw_lock_ptr(m_data));
 }
 
 bool rw_lock::try_lock() noexcept
 {
-    return TryAcquireSRWLockExclusive(srw_lock_ptr(m_handle));
+    return TryAcquireSRWLockExclusive(rw_lock_ptr(m_data));
 }
 
 void rw_lock::lock_shared() noexcept
 {
-    AcquireSRWLockShared(srw_lock_ptr(m_handle));
+    AcquireSRWLockShared(rw_lock_ptr(m_data));
 }
 
 void rw_lock::unlock_shared() noexcept
 {
-    ReleaseSRWLockShared(srw_lock_ptr(m_handle));
+    ReleaseSRWLockShared(rw_lock_ptr(m_data));
 }
 
 bool rw_lock::try_lock_shared() noexcept
 {
-    return TryAcquireSRWLockShared(srw_lock_ptr(m_handle));
+    return TryAcquireSRWLockShared(rw_lock_ptr(m_data));
 }
 
 }
@@ -70,6 +70,71 @@ namespace gkr
 {
 namespace sys
 {
+
+inline pthread_rwlock_t* rw_lock_ptr(char* data)
+{
+    return reinterpret_cast<pthread_rwlock_t*>(data);
+}
+
+rw_lock::rw_lock() noexcept
+{
+    static_assert(sizeof(pthread_rwlock_t) == sizeof(m_data), "The m_data must be with the same size as sizeof(pthread_rwlock_t)");
+
+    DIAG_VAR(int, rc)
+    pthread_rwlock_init(rw_lock_ptr(m_data), nullptr);
+    Check_Sys_Error(rc, );
+}
+
+rw_lock::~rw_lock() noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_rwlock_destroy(rw_lock_ptr(m_data));
+    Check_Sys_Error(rc, );
+}
+
+void rw_lock::lock() noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_rwlock_wrlock(rw_lock_ptr(m_data));
+    Check_Sys_Error(rc, );
+}
+
+void rw_lock::unlock() noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_rwlock_unlock(rw_lock_ptr(m_data));
+    Check_Sys_Error(rc, );
+}
+
+bool rw_lock::try_lock() noexcept
+{
+    int rc = pthread_rwlock_trywrlock(rw_lock_ptr(m_data));
+    if(rc == EBUSY) return false;
+    Check_Sys_Error(rc, false);
+    return true;
+}
+
+void rw_lock::lock_shared() noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_rwlock_rdlock(rw_lock_ptr(m_data));
+    Check_Sys_Error(rc, );
+}
+
+void rw_lock::unlock_shared() noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_rwlock_unlock(rw_lock_ptr(m_data));
+    Check_Sys_Error(rc, );
+}
+
+bool rw_lock::try_lock_shared() noexcept
+{
+    int rc = pthread_rwlock_tryrdlock(rw_lock_ptr(m_data));
+    if(rc == EBUSY) return false;
+    Check_Sys_Error(rc, false);
+    return true;
+}
 
 }
 }

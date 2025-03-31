@@ -9,27 +9,15 @@ namespace sys
 
 class rw_lock
 {
-    rw_lock           (const rw_lock&) noexcept = delete;
-    rw_lock& operator=(const rw_lock&) noexcept = delete;
+    rw_lock(      rw_lock&&) noexcept = delete;
+    rw_lock(const rw_lock& ) noexcept = delete;
+
+    rw_lock& operator=(      rw_lock&&) noexcept = delete;
+    rw_lock& operator=(const rw_lock& ) noexcept = delete;
 
 public:
     GKR_INNER_API  rw_lock() noexcept;
     GKR_INNER_API ~rw_lock() noexcept;
-
-public:
-    rw_lock(rw_lock&& other) noexcept : m_handle(other.m_handle)
-    {
-        other.m_handle = nullptr;
-    }
-    rw_lock& operator=(rw_lock&& other) noexcept
-    {
-        if(this != &other)
-        {
-            m_handle = other.m_handle;
-            other.m_handle = nullptr;
-        }
-        return *this;
-    }
 
 public:
     GKR_INNER_API void lock() noexcept;
@@ -40,11 +28,15 @@ public:
     GKR_INNER_API void unlock_shared() noexcept;
     GKR_INNER_API bool try_lock_shared() noexcept;
 
-public:
-    using native_handle_type = void*;
+private:
+#ifdef _WIN32
+    static constexpr unsigned SIZE_IN_BYTES = sizeof(void*);
+#else
+    static constexpr unsigned SIZE_IN_BYTES = 4 * sizeof(void*) + 24;
+#endif
 
 private:
-    native_handle_type m_handle;
+    alignas(void*) char m_data[SIZE_IN_BYTES] = {0};
 };
 
 }

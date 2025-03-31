@@ -104,7 +104,7 @@ bool waitable_object::wait(long long timeout_ns)
 
     if(waitResult == WAIT_TIMEOUT) return false;
 
-    Check_Sys_Result(waitResult == WAIT_OBJECT_0, false);
+    Check_Sys_Inspect(waitResult == WAIT_OBJECT_0, false);
 
     return true;
 }
@@ -146,7 +146,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
     DWORD res = WaitForMultipleObjects(DWORD(count), handles, false, timeout);
 
-    Check_Sys_Result(res != WAIT_FAILED, WAIT_RESULT_ERROR);
+    Check_Sys_Inspect(res != WAIT_FAILED, WAIT_RESULT_ERROR);
 
     if(res == WAIT_TIMEOUT)
     {
@@ -192,7 +192,7 @@ static long long now()
     struct timespec ts;
     DIAG_VAR(int, res)
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    Check_Sys_Result(res != -1, false);
+    Check_Sys_Result(res, false);
     long long ns = ts.tv_sec * 1000000000 + ts.tv_nsec;
     return ns;
 }
@@ -217,7 +217,7 @@ void waitable_object::close()
         DIAG_VAR(int, res)
         ::close(m_handle);
         m_handle = INVALID_OBJECT_HANDLE_VALUE;
-        Check_Sys_Result(res != -1, );
+        Check_Sys_Result(res, );
     }
 }
 bool waitable_object::wait(long long timeout_ns)
@@ -242,7 +242,7 @@ bool waitable_object::wait(long long timeout_ns)
             DIAG_VAR(int, poll_result)
             poll(&pfd, 1U, -1);
 
-            Check_Sys_Result(poll_result == 1, false);
+            Check_Sys_Inspect(poll_result == 1, false);
 
             Assert_CheckMsg(0 == (pfd.revents & POLLNVAL), "This waitable object is closed/destructed during wait");
 
@@ -255,7 +255,7 @@ bool waitable_object::wait(long long timeout_ns)
                 pfd.revents = 0;
                 continue;
             }
-            Check_Sys_Result(res != -1, false);
+            Check_Sys_Result(res, false);
 
             return handle_poll_data(value);
         }
@@ -268,7 +268,7 @@ bool waitable_object::wait(long long timeout_ns)
         {
             const int poll_result = poll(&pfd, 1U, 0);
 
-            Check_Sys_Result(poll_result != -1, false);
+            Check_Sys_Result(poll_result, false);
 
             if(poll_result == 0) return false;
 
@@ -280,7 +280,7 @@ bool waitable_object::wait(long long timeout_ns)
 
             if((res == -1) && (errno == EAGAIN)) return false;
 
-            Check_Sys_Result(res != -1, false);
+            Check_Sys_Result(res, false);
 
             return handle_poll_data(value);
         }
@@ -296,7 +296,7 @@ bool waitable_object::wait(long long timeout_ns)
 
             const int poll_result = ppoll(&pfd, 1U, &ts, nullptr);
 
-            Check_Sys_Result(poll_result != -1, false);
+            Check_Sys_Result(poll_result, false);
 
             if(poll_result == 0) return false;
 
@@ -313,7 +313,7 @@ bool waitable_object::wait(long long timeout_ns)
                 pfd.revents = 0;
                 continue;
             }
-            Check_Sys_Result(res != -1, false);
+            Check_Sys_Result(res, false);
 
             return handle_poll_data(value);
         }
@@ -356,7 +356,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
             DIAG_VAR(int, poll_result)
             poll(pfds, nfds_t(count), -1);
 
-            Check_Sys_Result(poll_result != -1, false);
+            Check_Sys_Result(poll_result, false);
 
             for(std::size_t index = 0; index < count; ++index)
             {
@@ -370,7 +370,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
                 if((res == -1) && (errno == EAGAIN)) continue;
 
-                Check_Sys_Result(res != -1, false);
+                Check_Sys_Result(res, false);
 
                 if(objects[index]->handle_poll_data(value))
                 {
@@ -390,7 +390,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
         {
             const int poll_result = poll(pfds, nfds_t(count), 0);
 
-            Check_Sys_Result(poll_result != -1, false);
+            Check_Sys_Result(poll_result, false);
 
             if(poll_result == 0) return WAIT_RESULT_TIMEOUT;
 
@@ -406,7 +406,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
                 if((res == -1) && (errno == EAGAIN)) continue;
 
-                Check_Sys_Result(res != -1, false);
+                Check_Sys_Result(res, false);
 
                 if(objects[index]->handle_poll_data(value))
                 {
@@ -427,7 +427,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
             const int poll_result = ppoll(pfds, nfds_t(count), &ts, nullptr);
 
-            Check_Sys_Result(poll_result != -1, false);
+            Check_Sys_Result(poll_result, false);
 
             if(poll_result == 0) return WAIT_RESULT_TIMEOUT;
 
@@ -443,7 +443,7 @@ wait_result_t waitable_object::wait_many(long long timeout_ns, waitable_object**
 
                 if((res == -1) && (errno == EAGAIN)) continue;
 
-                Check_Sys_Result(res != -1, false);
+                Check_Sys_Result(res, false);
 
                 if(objects[index]->handle_poll_data(value))
                 {

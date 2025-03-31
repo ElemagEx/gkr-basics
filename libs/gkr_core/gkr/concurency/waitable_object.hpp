@@ -32,7 +32,7 @@ class waitable_object
 protected:
 #ifdef _WIN32
     using object_handle_t = void*;
-    inline static object_handle_t INVALID_OBJECT_HANDLE_VALUE = object_handle_t(std::size_t(-1));
+    static constexpr object_handle_t INVALID_OBJECT_HANDLE_VALUE = nullptr;
 #else
     using object_handle_t = int;
     static constexpr object_handle_t INVALID_OBJECT_HANDLE_VALUE = object_handle_t(-1);

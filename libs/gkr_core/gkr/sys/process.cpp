@@ -28,7 +28,7 @@ std::string get_current_process_name()
 
     unsigned len = GetModuleBaseNameA(GetCurrentProcess(), nullptr, name, MAX_PATH);
 
-    Check_Sys_Result((len > 0) && (len < MAX_PATH), {});
+    Check_Sys_Inspect((len > 0) && (len < MAX_PATH), {});
 
     char* ext = std::strrchr(name, '.');
 
@@ -47,7 +47,7 @@ std::string get_current_process_path()
     { 
         const unsigned len = GetModuleFileNameA(nullptr, buff.data(), DWORD(buff.size()));
 
-        Check_Sys_Result((len > 0) && (len <= buff.size()), {});
+        Check_Sys_Inspect((len > 0) && (len <= buff.size()), {});
 
         if(len == buff.size()) continue;
 
@@ -186,7 +186,7 @@ std::string get_current_process_path()
     { 
         const ssize_t len = readlink("/proc/self/exe", buff.data(), buff.size());
 
-        Check_Sys_Result((len > 0) && (len <= ssize_t(buff.size())), {});
+        Check_Sys_Inspect((len > 0) && (len <= ssize_t(buff.size())), {});
 
         if(len == ssize_t(buff.size())) continue;
 

@@ -37,15 +37,16 @@
 //
 // Diagnostics IDs for SYS_xxx macros
 //
-#define DIAG_ID_SYS_RETURN      14
+#define DIAG_ID_SYS_ERROR       14
 #define DIAG_ID_SYS_RESULT      15
+#define DIAG_ID_SYS_INSPECT     16
 //
 // Diagnostics IDs for std_xxx macros
 //
-#define DIAG_ID_STD_FAIL        16
+#define DIAG_ID_STD_FAIL        17
 
 //
-#define DIAG_ID_COUNT           17
+#define DIAG_ID_COUNT           18
 
 //
 // Diagnostic source location information type
@@ -340,8 +341,9 @@ inline int diag_cpp_warn(int, const char*, Args&&...) noexcept
 
 #define Check_Arg_Array(ndx, cnt, check, ...) DIAG_NOOP
 
-#define Check_Sys_Return(ret,    ...)   DIAG_NOOP
-#define Check_Sys_Result(check,  ...)   DIAG_NOOP
+#define Check_Sys_Error(err,     ...)   DIAG_NOOP
+#define Check_Sys_Result(res,    ...)   DIAG_NOOP
+#define Check_Sys_Inspect(check, ...)   DIAG_NOOP
 #define Check_std_Fail(          ...)   return __VA_ARGS__
 
 #elif (DIAG_MODE == DIAG_MODE_SILENT)
@@ -367,11 +369,13 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)    && DIAG_ARG_COND) 
 #endif
 
 #ifdef _WIN32
-#define Check_Sys_Return(ret,    ...)   if(((int)(ret) <  0)  && DIAG_SYS_COND) return __VA_ARGS__
+#define Check_Sys_Error(err,     ...)   if(((int)(err) <   0) && DIAG_SYS_COND) return __VA_ARGS__
+#define Check_Sys_Result(res,    ...)   if(((int)(res) ==  0) && DIAG_SYS_COND) return __VA_ARGS__
 #else
-#define Check_Sys_Return(ret,    ...)   if(((int)(ret) != 0)  && DIAG_SYS_COND) return __VA_ARGS__
+#define Check_Sys_Error(err,     ...)   if(((int)(err) !=  0) && DIAG_SYS_COND) return __VA_ARGS__
+#define Check_Sys_Result(res,    ...)   if(((int)(res) == -1) && DIAG_SYS_COND) return __VA_ARGS__
 #endif
-#define Check_Sys_Result(check,  ...)   if((!(check))         && DIAG_SYS_COND) return __VA_ARGS__
+#define Check_Sys_Inspect(check, ...)   if((!(check))         && DIAG_SYS_COND) return __VA_ARGS__
 #define Check_std_Fail(          ...)                            DIAG_STD_STMT; return __VA_ARGS__
 
 #elif (DIAG_MODE == DIAG_MODE_STEADY) || (DIAG_MODE == DIAG_MODE_NOISY)
@@ -397,11 +401,13 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check)    && DIAG_ARG_WARN(D
 #endif
 
 #ifdef _WIN32
-#define Check_Sys_Return(ret,    ...)   if(((int)(ret) <  0)  && DIAG_SYS_WARN(DIAG_ID_SYS_RETURN     , DIAG_I2S(ret) DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Error(err,     ...)   if(((int)(err) <   0) && DIAG_SYS_WARN(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Result(res,    ...)   if(((int)(res) ==  0) && DIAG_SYS_WARN(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)) return __VA_ARGS__
 #else
-#define Check_Sys_Return(ret,    ...)   if(((int)(ret) != 0)  && DIAG_SYS_WARN(DIAG_ID_SYS_RETURN     , DIAG_I2S(ret) DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Error(err,     ...)   if(((int)(err) !=  0) && DIAG_SYS_WARN(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Result(res,    ...)   if(((int)(res) == -1) && DIAG_SYS_WARN(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)) return __VA_ARGS__
 #endif
-#define Check_Sys_Result(check,  ...)   if(!(check)           && DIAG_SYS_WARN(DIAG_ID_SYS_RESULT     , #check        DIAG_SRC_LOCATION)) return __VA_ARGS__
+#define Check_Sys_Inspect(check, ...)   if(!(check)           && DIAG_SYS_WARN(DIAG_ID_SYS_INSPECT    , #check        DIAG_SRC_LOCATION)) return __VA_ARGS__
 #define Check_std_Fail(          ...)                            DIAG_STD_WARN(DIAG_ID_STD_FAIL       , DIAG_NULL     DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #elif (DIAG_MODE == DIAG_MODE_INTRUSIVE)
@@ -427,12 +433,14 @@ for(int ndx = 0; ndx < (int)(cnt); ++ndx)      if(!(check))  DIAG_HALT(DIAG_ID_A
 #endif
 
 #ifdef _WIN32
-#define Check_Sys_Return(ret,    ...)   if((int)(ret) <  0)  DIAG_HALT(DIAG_ID_SYS_RETURN     , DIAG_I2S(ret) DIAG_SRC_LOCATION)
+#define Check_Sys_Error(err,     ...)   if((int)(err) <   0) DIAG_HALT(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)
+#define Check_Sys_Result(res,    ...)   if((int)(res) ==  0) DIAG_HALT(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)
 #else
-#define Check_Sys_Return(ret,    ...)   if((int)(ret) != 0)  DIAG_HALT(DIAG_ID_SYS_RETURN     , DIAG_I2S(ret) DIAG_SRC_LOCATION)
+#define Check_Sys_Error(err,     ...)   if((int)(err) !=  0) DIAG_HALT(DIAG_ID_SYS_ERROR      , DIAG_I2S(ret) DIAG_SRC_LOCATION)
+#define Check_Sys_Result(res,    ...)   if((int)(res) == -1) DIAG_HALT(DIAG_ID_SYS_RESULT     , DIAG_NULL     DIAG_SRC_LOCATION)
 #endif
-#define Check_Sys_Result(check,   ...)  if(!(check))         DIAG_HALT(DIAG_ID_SYS_RESULT     , #check        DIAG_SRC_LOCATION)
-#define Check_std_Fail(           ...)  if(diag_true())      DIAG_HALT(DIAG_ID_STD_FAIL       , DIAG_NULL     DIAG_SRC_LOCATION); return __VA_ARGS__
+#define Check_Sys_Inspect(check, ...)   if(!(check))         DIAG_HALT(DIAG_ID_SYS_INSPECT    , #check        DIAG_SRC_LOCATION)
+#define Check_std_Fail(          ...)   if(diag_true())      DIAG_HALT(DIAG_ID_STD_FAIL       , DIAG_NULL     DIAG_SRC_LOCATION); return __VA_ARGS__
 
 #else
 #error Unknown diagnostics mode

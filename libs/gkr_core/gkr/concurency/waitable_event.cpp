@@ -23,7 +23,7 @@ void* waitable_event::create(bool manual_reset, bool create_fired)
 {
     HANDLE hEvent = CreateEventA(nullptr, gkr_b2i(manual_reset), gkr_b2i(create_fired), nullptr);
 
-    Check_Sys_Result(hEvent != nullptr, nullptr);
+    Check_Sys_Inspect(hEvent != nullptr, nullptr);
 
     return hEvent;
 }
@@ -78,7 +78,7 @@ bool waitable_event::handle_poll_data(unsigned long long value)
         value = 1;
         DIAG_VAR(ssize_t, res)
         write(handle(), &value, sizeof(value));
-        Check_Sys_Result((res != -1) || (errno == EAGAIN), false);
+        Check_Sys_Inspect((res != -1) || (errno == EAGAIN), false);
     }
     return true;
 }
@@ -89,7 +89,7 @@ int waitable_event::create(bool manual_reset, bool create_fired)
 
     int fd = eventfd(initial_value, EFD_NONBLOCK);
 
-    Check_Sys_Result(fd != -1, -1);
+    Check_Sys_Result(fd, -1);
 
     return fd;
 }
@@ -103,7 +103,7 @@ void waitable_event::fire()
     DIAG_VAR(ssize_t, res)
     write(handle(), &value, sizeof(value));
 
-    Check_Sys_Result((res != -1) || (errno == EAGAIN), );
+    Check_Sys_Inspect((res != -1) || (errno == EAGAIN), );
 }
 
 void waitable_event::reset()
@@ -115,7 +115,7 @@ void waitable_event::reset()
     DIAG_VAR(ssize_t, res)
     read(handle(), &value, sizeof(value));
 
-    Check_Sys_Result((res != -1) || (errno == EAGAIN), );
+    Check_Sys_Inspect((res != -1) || (errno == EAGAIN), );
 }
 
 void waitable_event::set_manual_reset(bool manual_reset)

@@ -49,7 +49,10 @@ inline constexpr bool gkr_i2b(int value)
 #elif defined(__GNUC__)
 #define GKR_WARNING_DISABLE(MSC_NUM, GCC_DIAG, CLANG_DIAG)  _Pragma("GCC diagnostic push") _Pragma(GCC_DIAG)
 #define GKR_WARNING_DEFAULT(MSC_NUM)                        _Pragma("GCC diagnostic pop")
-#else defined(_MSC_VER)
+#elif defined(_MSC_VER)
 #define GKR_WARNING_DISABLE(MSC_NUM, GCC_DIAG, CLANG_DIAG)  __pragma(warning(disable:MSC_NUM))
 #define GKR_WARNING_DEFAULT(MSC_NUM)                        __pragma(warning(default:MSC_NUM))
+#else
+#define GKR_WARNING_DISABLE(MSC_NUM, GCC_DIAG, CLANG_DIAG)
+#define GKR_WARNING_DEFAULT(MSC_NUM)
 #endif

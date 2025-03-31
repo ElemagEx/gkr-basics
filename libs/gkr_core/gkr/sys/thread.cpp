@@ -20,13 +20,13 @@ bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 
     DIAG_VAR(int, cch)
     MultiByteToWideChar(CP_UTF8, 0, name, -1, buff, MAX_THREAD_NAME_CCH);
-    Check_Sys_Result(cch > 0, false);
+    Check_Sys_Inspect(cch > 0, false);
 
     buff[MAX_THREAD_NAME_CCH - 1] = 0;
 
     DIAG_VAR(HRESULT, hr)
     SetThreadDescription(GetCurrentThread(), buff);
-    Check_Sys_Return(hr, false);
+    Check_Sys_Error(hr, false);
 
     return true;
 }
@@ -38,11 +38,11 @@ bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 
     DIAG_VAR(HRESULT, hr)
     GetThreadDescription(GetCurrentThread(), &buff);
-    Check_Sys_Return(hr, false);
+    Check_Sys_Error(hr, false);
 
     DIAG_VAR(int, cch)
     WideCharToMultiByte(CP_UTF8, 0, buff, -1, name, MAX_THREAD_NAME_CCH, nullptr, nullptr);
-    Check_Sys_Result(cch > 0, false);
+    Check_Sys_Inspect(cch > 0, false);
 
     name[MAX_THREAD_NAME_CCH - 1] = 0;
 
@@ -67,7 +67,7 @@ bool set_current_thread_name(const char name[MAX_THREAD_NAME_CCH])
 
     DIAG_VAR(int, res)
     prctl(PR_SET_NAME, long(name), 0, 0, 0);
-    Check_Sys_Result(res >= 0, false);
+    Check_Sys_Inspect(res >= 0, false);
 
     return true;
 }
@@ -77,7 +77,7 @@ bool get_current_thread_name(char name[MAX_THREAD_NAME_CCH])
 
     DIAG_VAR(int, res)
     prctl(PR_GET_NAME, long(name), 0, 0, 0);
-    Check_Sys_Result(res >= 0, false);
+    Check_Sys_Inspect(res >= 0, false);
 
     return true;
 }

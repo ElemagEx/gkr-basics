@@ -27,7 +27,7 @@ void* waitable_semaphore::create(unsigned max_count, unsigned init_count)
 
     HANDLE hSemaphore = CreateSemaphoreA(nullptr, LONG(init_count), LONG(max_count), nullptr);
 
-    Check_Sys_Result(hSemaphore != nullptr, nullptr);
+    Check_Sys_Inspect(hSemaphore != nullptr, nullptr);
 
     return hSemaphore;
 }
@@ -40,7 +40,7 @@ bool waitable_semaphore::release(unsigned count)
 
     BOOL res = ReleaseSemaphore(handle(), LONG(count), nullptr);
 
-    Check_Sys_Result(res || (GetLastError() == ERROR_TOO_MANY_POSTS), false);
+    Check_Sys_Inspect(res || (GetLastError() == ERROR_TOO_MANY_POSTS), false);
 
     return !!res;
 }
@@ -85,7 +85,7 @@ int waitable_semaphore::create(unsigned max_count, unsigned init_count)
 
     int fd = eventfd(init_count, EFD_NONBLOCK);
 
-    Check_Sys_Result(fd != -1, -1);
+    Check_Sys_Result(fd, -1);
 
     return fd;
 }
@@ -101,7 +101,7 @@ bool waitable_semaphore::release(unsigned count)
     eventfd_t value;
     const ssize_t len = read(handle(), &value, sizeof(value));
 
-    Check_Sys_Result((len != -1) || (errno == EAGAIN), false);
+    Check_Sys_Inspect((len != -1) || (errno == EAGAIN), false);
 
     bool released;
 
@@ -121,7 +121,7 @@ bool waitable_semaphore::release(unsigned count)
 
     DIAG_VAR(ssize_t, res)
     write(handle(), &value, sizeof(value));
-    Check_Sys_Result((res != -1) || (errno == EAGAIN), false);
+    Check_Sys_Inspect((res != -1) || (errno == EAGAIN), false);
  
     return released;
 }

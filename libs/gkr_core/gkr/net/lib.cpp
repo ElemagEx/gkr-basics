@@ -40,12 +40,18 @@ int gkr_net_lib_shutdown()
     return 0;
 }
 
-int gkr_net_lib_get_hostname(char* buf, unsigned cb)
+int gkr_net_lib_get_hostname(char* buf, unsigned cch)
 {
-    Check_Arg_NotNull(buf   , -1);
-    Check_Arg_IsValid(cb > 0, -1);
+    Check_Arg_NotNull(buf    , -1);
+    Check_Arg_IsValid(cch > 0, -1);
 
-    return gethostname(buf, int(cb));
+#ifdef _WIN32
+    const int    size = int(cch);
+#else
+    const size_t size = cch;
+#endif
+
+    return gethostname(buf, size);
 }
 
 }

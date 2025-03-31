@@ -22,7 +22,7 @@ extern "C" {
 
 struct gkr_params;
 
-GKR_CORE_API struct gkr_params* gkr_params_create();
+GKR_CORE_API struct gkr_params* gkr_params_create(int multithreaded, void* (*alloc_proc)(size_t), void (*free_proc)(void*));
 
 GKR_CORE_API int gkr_params_destroy(struct gkr_params* params);
 
@@ -30,16 +30,14 @@ GKR_CORE_API int gkr_params_copy(struct gkr_params* params, struct gkr_params* o
 GKR_CORE_API int gkr_params_clear(struct gkr_params* params);
 GKR_CORE_API int gkr_params_reserve(struct gkr_params* params, size_t size, size_t pitch);
 
-GKR_CORE_API int gkr_params_reset_root(struct gkr_params* params, size_t index);
+GKR_CORE_API size_t gkr_params_add_object(struct gkr_params* params, const char* key, size_t root);
+GKR_CORE_API size_t gkr_params_add_array (struct gkr_params* params, const char* key, size_t root);
+GKR_CORE_API size_t gkr_params_add_null  (struct gkr_params* params, const char* key, size_t root);
 
-GKR_CORE_API size_t gkr_params_insert_object(struct gkr_params* params, const char* key);
-GKR_CORE_API size_t gkr_params_insert_array (struct gkr_params* params, const char* key);
-GKR_CORE_API size_t gkr_params_insert_null  (struct gkr_params* params, const char* key);
-
-GKR_CORE_API size_t gkr_params_insert_string_value (struct gkr_params* params, const char* key, const char* value);
-GKR_CORE_API size_t gkr_params_insert_double_value (struct gkr_params* params, const char* key, double value);
-GKR_CORE_API size_t gkr_params_insert_integer_value(struct gkr_params* params, const char* key, long long value);
-GKR_CORE_API size_t gkr_params_insert_boolean_value(struct gkr_params* params, const char* key, int value);
+GKR_CORE_API size_t gkr_params_set_string_value (struct gkr_params* params, const char* key, const char* value, size_t root, int overwrite);
+GKR_CORE_API size_t gkr_params_set_double_value (struct gkr_params* params, const char* key, double value     , size_t root, int overwrite);
+GKR_CORE_API size_t gkr_params_set_integer_value(struct gkr_params* params, const char* key, long long value  , size_t root, int overwrite);
+GKR_CORE_API size_t gkr_params_set_boolean_value(struct gkr_params* params, const char* key, int value        , size_t root, int overwrite);
 
 GKR_CORE_API size_t gkr_params_find_value(struct gkr_params* params, const char* key);
 

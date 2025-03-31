@@ -2,13 +2,28 @@
 
 #include <gkr/capi/params.h>
 
+#include <gkr/sys/rw_lock.hpp>
+#include <gkr/misc/fake_shared_mutex.hpp>
 #include <gkr/container/raw_buffer.hpp>
+
+#include <shared_mutex>
 
 namespace gkr
 {
 
+struct node_t;
+struct text_t;
+
 class params
 {
+    params(      params&&) noexcept = delete;
+    params(const params& ) noexcept = delete;
+
+    params& operator=(      params&&) noexcept = delete;
+    params& operator=(const params& ) noexcept = delete;
+
+    friend static void lifecycle(params*, void*);
+
 public:
     using param_type_t = enum : unsigned short
     {
@@ -26,109 +41,82 @@ public:
     static constexpr std::size_t DEFAULT_PITCH = 1024;
 
 private:
-    using buffer_t = raw_buffer;
+    node_t*     m_nodes  = nullptr;
+    char*       m_texts  = nullptr;
+    void*       m_param  = nullptr;
 
-    buffer_t    m_buff;
     std::size_t m_pitch  = DEFAULT_PITCH;
+    std::size_t m_count  = 0;
     std::size_t m_offset = 0;
-    std::size_t m_nodes  = 0;
-    std::size_t m_root   = 0;
 
-    template<typename Functor> bool traverse(bool skip_siblings, std::size_t index, Functor&& functor) const;
+protected:
+    GKR_CORE_API params(std::size_t pitch = DEFAULT_PITCH) noexcept;
 
 public:
-    GKR_CORE_API  params() noexcept(std::is_nothrow_default_constructible<buffer_t>::value);
-    GKR_CORE_API ~params() noexcept(std::is_nothrow_destructible         <buffer_t>::value);
+    GKR_CORE_API virtual ~params();
 
-    params(std::size_t size, std::size_t pitch = DEFAULT_PITCH)
+public:
+    std::size_t get_nodes_count() const noexcept
     {
-        reserve(size, pitch);
-    }
-    params(params&& other) noexcept(
-        std::is_nothrow_move_constructible<buffer_t>::value
-        )
-        : m_buff  (std::move    (other.m_buff))
-        , m_pitch (std::exchange(other.m_pitch , DEFAULT_PITCH))
-        , m_offset(std::exchange(other.m_offset, 0U))
-        , m_nodes (std::exchange(other.m_nodes , 0U))
-        , m_root  (std::exchange(other.m_root  , 0U))
-    {
-    }
-    params& operator=(params&& other) noexcept(
-        std::is_nothrow_move_assignable<buffer_t>::value
-        )
-    {
-        if(this != &other)
-        {
-            m_buff   = std::move    (other.m_buff);
-            m_pitch  = std::exchange(other.m_pitch , DEFAULT_PITCH);
-            m_offset = std::exchange(other.m_offset, 0U);
-            m_nodes  = std::exchange(other.m_nodes , 0U);
-            m_root   = std::exchange(other.m_root  , 0U);
-        }
-        return *this;
-    }
-
-    params(const params& other)
-        : m_buff  (buffer_t::allocator_traits::select_on_container_copy_construction(other.m_buff.get_allocator()))
-        , m_pitch (other.m_pitch)
-        , m_offset(0U)
-        , m_nodes (0U)
-        , m_root  (0U)
-    {
-        copy_params(other);
-    }
-    params& operator=(const params& other)
-    {
-        if(this != &other)
-        {
-            m_buff.on_copy_assignment(other.m_buff);
-            m_pitch = other.m_pitch;
-            copy_params(other);
-        }
-        return *this;
+        return m_count;
     }
 
 public:
-    GKR_CORE_API void copy_params(const params& other, std::size_t pitch = 0);
+    GKR_CORE_API bool get_info(std::size_t root, std::size_t& count, std::size_t& size, std::size_t& depth) const;
 
 public:
-    GKR_CORE_API void clear() noexcept;
+    GKR_CORE_API bool copy_params(const params& other, std::size_t root = 0, std::size_t pitch = 0);
+
     GKR_CORE_API void reserve(std::size_t size, std::size_t pitch = 0);
+    GKR_CORE_API void compact();
 
 public:
-    GKR_CORE_API params& reset_root(std::size_t index = 0);
+    GKR_CORE_API virtual void clear();
 
 public:
-    GKR_CORE_API std::size_t insert_object(const char* key);
-    GKR_CORE_API std::size_t insert_array (const char* key);
-    GKR_CORE_API std::size_t insert_null  (const char* key);
+    virtual std::size_t get_memory_footprint() const = 0;
+
+    virtual char* realloc(std::size_t new_memory_footprint) = 0;
 
 public:
-    GKR_CORE_API std::size_t insert_value(const char* key, bool value);
-    GKR_CORE_API std::size_t insert_value(const char* key, double value);
-    GKR_CORE_API std::size_t insert_value(const char* key, long long value);
-    GKR_CORE_API std::size_t insert_value(const char* key, const char* value);
+    virtual void lock() = 0;
+    virtual void unlock() = 0;
+    virtual bool try_lock() = 0;
+
+    virtual void lock_shared() const = 0;
+    virtual void unlock_shared() const = 0;
+    virtual bool try_lock_shared() const = 0;
 
 public:
-    std::size_t insert_value(const char* key, float value)
+    GKR_CORE_API std::size_t add_object(const char* key, std::size_t root = 0);
+    GKR_CORE_API std::size_t add_array (const char* key, std::size_t root = 0);
+    GKR_CORE_API std::size_t add_null  (const char* key, std::size_t root = 0);
+
+public:
+    GKR_CORE_API std::size_t set_value(const char* key, bool        value, std::size_t root = 0, bool overwrite = false);
+    GKR_CORE_API std::size_t set_value(const char* key, double      value, std::size_t root = 0, bool overwrite = false);
+    GKR_CORE_API std::size_t set_value(const char* key, long long   value, std::size_t root = 0, bool overwrite = false);
+    GKR_CORE_API std::size_t set_value(const char* key, const char* value, std::size_t root = 0, bool overwrite = false);
+
+public:
+    std::size_t set_value(const char* key, float value, std::size_t root = 0, bool overwrite = false)
     {
-        return insert_value(key, double(value));
+        return set_value(key, double(value), root, overwrite);
     }
-    std::size_t insert_value(const char* key, long double value)
+    std::size_t set_value(const char* key, long double value, std::size_t root = 0, bool overwrite = false)
     {
-        return insert_value(key, double(value));
+        return set_value(key, double(value), root, overwrite);
     }
     template<typename T>
-    std::size_t insert_value(const char* key, T value)
+    std::size_t set_value(const char* key, T value, std::size_t root = 0, bool overwrite = false)
     {
         static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
-        using longlong = long long;
-        return insert_value(key, longlong(value));
+
+        return set_value(key, static_cast<long long>(value), root, overwrite);
     }
 
 public:
-    GKR_CORE_API std::size_t find_value(const char* key) const;
+    GKR_CORE_API std::size_t find_value(const char* key, std::size_t root = 0) const;
 
     GKR_CORE_API param_type_t get_type(std::size_t index) const;
 
@@ -138,40 +126,39 @@ public:
     GKR_CORE_API const char* get_value(std::size_t index, const char* def_val = nullptr) const;
 
 public:
-    bool contains_value(const char* key) const
+    bool contains_value(const char* key, std::size_t root = 0) const
     {
-        return (get_type(find_value(key)) != param_type_none);
+        return (get_type(find_value(key, root)) != param_type_none);
     }
-    param_type_t get_type(const char* key) const
+    param_type_t get_type(const char* key, std::size_t root = 0) const
     {
-        return get_type(find_value(key));
+        return get_type(find_value(key, root));
     }
 
 public:
     template<typename T>
-    T get_value(const char* key, T def_val) const;
-
-public:
-    void get_info(std::size_t& count, std::size_t& size, std::size_t& depth) const;
+    T get_value(const char* key, std::size_t root = 0, T def_val = T(0)) const;
 
 private:
     const
-    struct node_t& get_node(std::size_t index) const;
-    struct node_t& get_node(std::size_t index);
+    node_t& get_node(std::size_t index) const;
+    node_t& get_node(std::size_t index);
 
-    const char* get_text(std::size_t key) const;
+    const
+    text_t& get_text(std::size_t offset) const;
+    text_t& get_text(std::size_t offset);
 
 private:
     bool keys_are_equal(const char* key, std::size_t len, std::size_t  ofs) const;
     bool peek_array_pos(const char* key, std::size_t len, std::size_t& pos) const noexcept;
 
 private:
-    std::size_t insert_text(std::size_t index, const char* text, std::size_t len);
+    std::size_t insert_text(std::size_t index, const char* ptr, std::size_t len);
     std::size_t insert_node();
 
     std::size_t create_node(const char* key, std::size_t len, std::size_t prev, std::size_t parent, const char* sep);
 
-    std::size_t append_node(const char* key);
+    std::size_t append_node(const char* key, std::size_t root);
     std::size_t lookup_node(const char* key, std::size_t parent);
 
     std::size_t mirror_node(bool has_name, const params& other, std::size_t other_parent, std::size_t self_parent);
@@ -183,40 +170,128 @@ private:
     void collect_info(bool has_name, std::size_t index, std::size_t level, std::size_t& count, std::size_t& size, std::size_t& depth) const;
 };
 
+template<class RecursiveSharedMutex, class Allocator=std::allocator<std::max_align_t>>
+class basic_params final : public params
+{
+    basic_params(const basic_params& ) noexcept = delete;
+    basic_params(      basic_params&&) noexcept = delete;
+
+    basic_params& operator=(const basic_params& ) noexcept = delete;
+    basic_params& operator=(      basic_params&&) noexcept = delete;
+
+    using selt_t   = basic_params<RecursiveSharedMutex, Allocator>;
+    using mutex_t  = RecursiveSharedMutex;
+    using buffer_t = basic_raw_buffer<Allocator>;
+
+private:
+    mutable
+    mutex_t   m_mutex;
+    buffer_t  m_buffer;
+
+public:
+    basic_params(const Allocator& allocator = Allocator()) noexcept(
+        std::is_nothrow_constructible<buffer_t, Allocator>::value
+        )
+        : params()
+        , m_buffer(allocator)
+    {
+    }
+    basic_params(std::size_t pitch, const Allocator& allocator = Allocator()) noexcept(
+        std::is_nothrow_constructible<buffer_t, Allocator>::value
+        )
+        : params(pitch)
+        , m_buffer(allocator)
+    {
+    }
+    virtual ~basic_params() noexcept override
+    {
+    }
+
+public:
+    virtual void clear() 
+    {
+        std::unique_lock<selt_t> lock(*this);
+        params ::clear();
+        m_buffer.clear();
+    }
+
+public:
+    virtual std::size_t get_memory_footprint() const noexcept
+    {
+        return m_buffer.size();
+    }
+    virtual char* realloc(std::size_t new_memory_footprint)
+    {
+        m_buffer.resize(new_memory_footprint);
+        return m_buffer.data<char>();
+    }
+
+public:
+    virtual void lock() override
+    {
+        m_mutex.lock();
+    }
+    virtual void unlock() override
+    {
+        m_mutex.unlock();
+    }
+    virtual bool try_lock() override
+    {
+        return m_mutex.try_lock();
+    }
+    virtual void lock_shared() const override
+    {
+        m_mutex.lock_shared();
+    }
+    virtual void unlock_shared() const override
+    {
+        m_mutex.unlock_shared();
+    }
+    virtual bool try_lock_shared() const override
+    {
+        return m_mutex.try_lock_shared();
+    }
+};
+
+template<typename Allocator=std::allocator<std::max_align_t>> using basic_singlethreaded_params = basic_params<misc::fake_shared_mutex, Allocator>;
+template<typename Allocator=std::allocator<std::max_align_t>> using  basic_multithreaded_params = basic_params< sys::rw_lock          , Allocator>;
+
+using singlethreaded_params = basic_params<misc::fake_shared_mutex, std::allocator<std::max_align_t>>;
+using  multithreaded_params = basic_params< sys::rw_lock          , std::allocator<std::max_align_t>>;
+
 template<typename T>
-inline T params::get_value(const char* key, T def_val) const
+inline T params::get_value(const char* key, std::size_t root, T def_val) const
 {
     static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
-    using longlong = long long;
-    return T(get_value(find_value(key), longlong(def_val)));
+
+    return static_cast<T>(get_value(find_value(key, root), static_cast<long long>(def_val)));
 }
 
 template<>
-const char* params::get_value<const char*>(const char* key, const char* def_val) const
+inline const char* params::get_value<const char*>(const char* key, std::size_t root, const char* def_val) const
 {
-    return get_value(find_value(key), def_val);
+    return get_value(find_value(key, root), def_val);
 }
 template<>
-bool params::get_value<bool>(const char* key, bool def_val) const
+inline bool params::get_value<bool>(const char* key, std::size_t root, bool def_val) const
 {
-    return get_value(find_value(key), def_val);
+    return get_value(find_value(key, root), def_val);
 }
 
 template<>
-float params::get_value<float>(const char* key, float def_val) const
+inline float params::get_value<float>(const char* key, std::size_t root, float def_val) const
 {
-    return float(get_value(find_value(key), double(def_val)));
+    return float(get_value(find_value(key, root), double(def_val)));
 }
 template<>
-double params::get_value<double>(const char* key, double def_val) const
+inline double params::get_value<double>(const char* key, std::size_t root, double def_val) const
 {
-    return double(get_value(find_value(key), double(def_val)));
+    return double(get_value(find_value(key, root), double(def_val)));
 }
 template<>
-long double params::get_value<long double>(const char* key, long double def_val) const
+inline long double params::get_value<long double>(const char* key, std::size_t root, long double def_val) const
 {
-    using long_double = long double;
-    return long_double(get_value(find_value(key), double(def_val)));
+    return static_cast<long double>(get_value(find_value(key, root), double(def_val)));
 }
 
 }

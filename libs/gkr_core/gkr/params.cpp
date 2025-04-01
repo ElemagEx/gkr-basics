@@ -130,10 +130,10 @@ size_t gkr_params_set_boolean_value(struct gkr_params* params, const char* key, 
     Check_Arg_NotNull(params, 0);
     return reinterpret_cast<gkr::params*>(params)->set_value(key, gkr_i2b(value), root, gkr_i2b(overwrite));
 }
-size_t gkr_params_find_value(struct gkr_params* params, const char* key)
+size_t gkr_params_find_node(struct gkr_params* params, const char* key)
 {
     Check_Arg_NotNull(params, 0);
-    return reinterpret_cast<gkr::params*>(params)->find_value(key);
+    return reinterpret_cast<gkr::params*>(params)->find_node(key);
 }
 enum gkr_param_type gkr_params_get_type(struct gkr_params* params, const char* key)
 {
@@ -491,7 +491,7 @@ std::size_t params::set_value(const char* key, const char* value, std::size_t ro
     return index;
 }
 
-std::size_t params::find_value(const char* key, std::size_t root) const
+std::size_t params::find_node(const char* key, std::size_t root) const
 {
     std::shared_lock<const params> lock(*this);
 

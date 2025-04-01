@@ -39,7 +39,7 @@ GKR_CORE_API size_t gkr_params_set_double_value (struct gkr_params* params, cons
 GKR_CORE_API size_t gkr_params_set_integer_value(struct gkr_params* params, const char* key, long long value  , size_t root, int overwrite);
 GKR_CORE_API size_t gkr_params_set_boolean_value(struct gkr_params* params, const char* key, int value        , size_t root, int overwrite);
 
-GKR_CORE_API size_t gkr_params_find_value(struct gkr_params* params, const char* key);
+GKR_CORE_API size_t gkr_params_find_node(struct gkr_params* params, const char* key);
 
 GKR_CORE_API enum gkr_param_type gkr_params_get_type(struct gkr_params* params, const char* key);
 

@@ -9,9 +9,7 @@ extern "C" {
 
 struct gkr_log_dummy_consumer_callbacks
 {
-    struct gkr_log_consumer_opt_callbacks opt_callbacks;
-
-    const char* (*compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
+    struct gkr_log_consumer_aid_callbacks aid_callbacks;
 };
 
 GKR_LOG_API int gkr_log_add_dummy_consumer(

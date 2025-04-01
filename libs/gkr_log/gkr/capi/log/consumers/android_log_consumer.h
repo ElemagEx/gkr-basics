@@ -9,11 +9,10 @@ extern "C" {
 
 struct gkr_log_android_log_consumer_callbacks
 {
-    struct gkr_log_consumer_opt_callbacks opt_callbacks;
+    struct gkr_log_consumer_aid_callbacks aid_callbacks;
 
-    const char* (*compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
-    const char* (*get_tag       )(void*, const struct gkr_log_message*);
-    int         (*get_priority  )(void*, const struct gkr_log_message*);
+    const char* (*get_tag     )(void*, const struct gkr_log_message*);
+    int         (*get_priority)(void*, const struct gkr_log_message*);
 };
 
 GKR_LOG_API int gkr_log_add_android_log_consumer(

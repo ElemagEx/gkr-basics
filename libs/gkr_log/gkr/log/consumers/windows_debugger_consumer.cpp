@@ -10,42 +10,6 @@
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char*);
 #endif
 
-namespace gkr
-{
-namespace log
-{
-class c_windows_debugger_consumer : public c_consumer<windows_debugger_consumer>
-{
-    using base_t = c_consumer<windows_debugger_consumer>;
-
-    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
-
-public:
-    c_windows_debugger_consumer(void* param, const gkr_log_windows_debugger_consumer_callbacks& callbacks)
-        : base_t   (param, callbacks.opt_callbacks )
-        , m_compose_output(callbacks.compose_output)
-    {
-    }
-    virtual ~c_windows_debugger_consumer() override
-    {
-    }
-
-protected:
-    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
-    {
-        if(m_compose_output != nullptr)
-        {
-            return (*m_compose_output)(m_param, &msg, nullptr, flags);
-        }
-        else
-        {
-            return windows_debugger_consumer::compose_output(msg, len, flags);
-        }
-    }
-};
-}
-}
-
 extern "C"
 {
 
@@ -55,9 +19,9 @@ int gkr_log_add_windows_debugger_consumer(
     const gkr_log_windows_debugger_consumer_callbacks* callbacks
     )
 {
-    Check_Arg_NotNull(callbacks, -1);
+    const struct gkr_log_consumer_aid_callbacks* aid_callbacks = (callbacks == nullptr) ? nullptr : &callbacks->aid_callbacks;
 
-    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_windows_debugger_consumer(param, *callbacks));
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::windows_debugger_consumer>(param, aid_callbacks));
 
     return gkr_log_add_consumer(channel, consumer);
 }

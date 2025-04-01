@@ -38,42 +38,6 @@ inline int calc_flags(int method, int colorless)
 }
 }
 
-namespace gkr
-{
-namespace log
-{
-class c_app_console_consumer : public c_consumer<app_console_consumer>
-{
-    using base_t = c_consumer<app_console_consumer>;
-
-    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
-
-public:
-    c_app_console_consumer(void* param, const gkr_log_app_console_consumer_callbacks& callbacks, int method, int colorless)
-        : base_t   (param, callbacks.opt_callbacks , method, !!colorless)
-        , m_compose_output(callbacks.compose_output)
-    {
-    }
-    virtual ~c_app_console_consumer() override
-    {
-    }
-
-protected:
-    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
-    {
-        if(m_compose_output != nullptr)
-        {
-            return (*m_compose_output)(m_param, &msg, len, flags);
-        }
-        else
-        {
-            return app_console_consumer::compose_output(msg, len, flags);
-        }
-    }
-};
-}
-}
-
 extern "C"
 {
 
@@ -85,9 +49,9 @@ int gkr_log_add_app_console_consumer(
     int colorless
     )
 {
-    Check_Arg_NotNull(callbacks, -1);
+    const struct gkr_log_consumer_aid_callbacks* aid_callbacks = (callbacks == nullptr) ? nullptr : &callbacks->aid_callbacks;
 
-    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_app_console_consumer(param, *callbacks, method, colorless));
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::app_console_consumer>(param, aid_callbacks, method, gkr_i2b(colorless)));
 
     return gkr_log_add_consumer(channel, consumer);
 }

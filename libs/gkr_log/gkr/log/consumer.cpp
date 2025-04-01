@@ -21,10 +21,7 @@ consumer::~consumer()
 extern "C"
 int gkr_log_add_raw_consumer(void* channel, void* param, const struct gkr_log_consumer_raw_callbacks* callbacks)
 {
-    Check_Arg_NotNull(callbacks, -1);
-    Check_Arg_NotNull(callbacks->consume_log_message, -1);
-
-    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::consumer>(param, *callbacks));
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::consumer>(param, callbacks));
 
     return gkr_log_add_consumer(channel, consumer);
 }

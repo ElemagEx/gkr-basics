@@ -116,7 +116,7 @@ public:
     }
 
 public:
-    GKR_CORE_API std::size_t find_value(const char* key, std::size_t root = 0) const;
+    GKR_CORE_API std::size_t find_node(const char* key, std::size_t root = 0) const;
 
     GKR_CORE_API param_type_t get_type(std::size_t index) const;
 
@@ -128,16 +128,48 @@ public:
 public:
     bool contains_value(const char* key, std::size_t root = 0) const
     {
-        return (get_type(find_value(key, root)) != param_type_none);
+        return (get_type(find_node(key, root)) != param_type_none);
     }
     param_type_t get_type(const char* key, std::size_t root = 0) const
     {
-        return get_type(find_value(key, root));
+        return get_type(find_node(key, root));
     }
 
 public:
+    inline bool get_value(const char* key, std::size_t root, bool def_val) const
+    {
+        return get_value(find_node(key, root), def_val);
+    }
+
+    inline const char* get_value(const char* key, std::size_t root, decltype(nullptr)) const
+    {
+        return get_value(find_node(key, root), static_cast<const char*>(nullptr));
+    }
+    inline const char* get_value(const char* key, std::size_t root, const char* def_val) const
+    {
+        return get_value(find_node(key, root), def_val);
+    }
+
+    inline float get_value(const char* key, std::size_t root, float def_val) const
+    {
+        return float(get_value(find_node(key, root), double(def_val)));
+    }
+    inline double get_value(const char* key, std::size_t root, double def_val) const
+    {
+        return double(get_value(find_node(key, root), double(def_val)));
+    }
+    inline long double get_value(const char* key, std::size_t root, long double def_val) const
+    {
+        return static_cast<long double>(get_value(find_node(key, root), double(def_val)));
+    }
+
     template<typename T>
-    T get_value(const char* key, std::size_t root = 0, T def_val = T(0)) const;
+    inline T get_value(const char* key, std::size_t root, T def_val) const
+    {
+        static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
+
+        return static_cast<T>(get_value(find_node(key, root), static_cast<long long>(def_val)));
+    }
 
 private:
     const
@@ -258,40 +290,5 @@ template<typename Allocator=std::allocator<std::max_align_t>> using  basic_multi
 
 using singlethreaded_params = basic_params<misc::fake_shared_mutex, std::allocator<std::max_align_t>>;
 using  multithreaded_params = basic_params< sys::rw_lock          , std::allocator<std::max_align_t>>;
-
-template<typename T>
-inline T params::get_value(const char* key, std::size_t root, T def_val) const
-{
-    static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
-
-    return static_cast<T>(get_value(find_value(key, root), static_cast<long long>(def_val)));
-}
-
-template<>
-inline const char* params::get_value<const char*>(const char* key, std::size_t root, const char* def_val) const
-{
-    return get_value(find_value(key, root), def_val);
-}
-template<>
-inline bool params::get_value<bool>(const char* key, std::size_t root, bool def_val) const
-{
-    return get_value(find_value(key, root), def_val);
-}
-
-template<>
-inline float params::get_value<float>(const char* key, std::size_t root, float def_val) const
-{
-    return float(get_value(find_value(key, root), double(def_val)));
-}
-template<>
-inline double params::get_value<double>(const char* key, std::size_t root, double def_val) const
-{
-    return double(get_value(find_value(key, root), double(def_val)));
-}
-template<>
-inline long double params::get_value<long double>(const char* key, std::size_t root, long double def_val) const
-{
-    return static_cast<long double>(get_value(find_value(key, root), double(def_val)));
-}
 
 }

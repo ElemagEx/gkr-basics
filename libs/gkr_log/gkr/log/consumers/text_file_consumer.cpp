@@ -91,11 +91,10 @@ class c_text_file_consumer : public c_consumer<text_file_consumer>
 {
     using base_t = c_consumer<text_file_consumer>;
 
-    const char* (*m_compose_output     )(void*, const struct gkr_log_message*, unsigned*, int);
-    void        (*m_on_file_opened     )(void*, void*);
-    void        (*m_on_file_closing    )(void*, void*);
-    void        (*m_on_enter_file_write)(void*, void*);
-    void        (*m_on_leave_file_write)(void*, void*);
+    void (*m_on_file_opened     )(void*, void*);
+    void (*m_on_file_closing    )(void*, void*);
+    void (*m_on_enter_file_write)(void*, void*);
+    void (*m_on_leave_file_write)(void*, void*);
 
 public:
     c_text_file_consumer(
@@ -104,8 +103,7 @@ public:
         const char* filepath,
         int eoln
         )
-        : base_t    (param, callbacks.opt_callbacks , filepath, eoln)
-        , m_compose_output (callbacks.compose_output)
+        : base_t    (param,&callbacks.opt_callbacks , filepath, eoln)
         , m_on_file_opened (callbacks.on_file_opened)
         , m_on_file_closing(callbacks.on_file_closing)
         , m_on_enter_file_write(callbacks.on_enter_file_write)
@@ -114,19 +112,6 @@ public:
     }
     virtual ~c_text_file_consumer() override
     {
-    }
-
-protected:
-    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
-    {
-        if(m_compose_output != nullptr)
-        {
-            return (*m_compose_output)(m_param, &msg, len, flags);
-        }
-        else
-        {
-            return text_file_consumer::compose_output(msg, len, flags);
-        }
     }
 
 protected:

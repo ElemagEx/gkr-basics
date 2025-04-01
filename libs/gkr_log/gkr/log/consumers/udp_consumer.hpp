@@ -46,6 +46,9 @@ public:
     GKR_LOG_API virtual bool  filter_log_message(const message& msg) override;
     GKR_LOG_API virtual void consume_log_message(const message& msg) override;
 
+protected:
+    GKR_LOG_API virtual const char* compose_output(const message& msg, unsigned* len, int flags);
+
 private:
     void update_buffer(std::size_t size);
 

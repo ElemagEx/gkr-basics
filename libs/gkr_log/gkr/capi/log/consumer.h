@@ -38,6 +38,12 @@ struct gkr_log_consumer_raw_callbacks
 
     void (*consume_log_message)(void*, const struct gkr_log_message*);
 };
+struct gkr_log_consumer_aid_callbacks
+{
+    struct gkr_log_consumer_opt_callbacks opt_callbacks;
+
+    const char* (*compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
+};
 
 GKR_LOG_API int gkr_log_add_raw_consumer(
     void* channel,

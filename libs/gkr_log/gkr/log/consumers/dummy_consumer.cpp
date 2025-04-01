@@ -5,42 +5,6 @@
 #include <gkr/log/logging.hpp>
 #include <gkr/log/c_consumer.hpp>
 
-namespace gkr
-{
-namespace log
-{
-class c_dummy_consumer : public c_consumer<dummy_consumer>
-{
-    using base_t = c_consumer<dummy_consumer>;
-
-    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
-
-public:
-    c_dummy_consumer(void* param, const gkr_log_dummy_consumer_callbacks& callbacks) noexcept
-        : base_t   (param, callbacks.opt_callbacks )
-        , m_compose_output(callbacks.compose_output)
-    {
-    }
-    virtual ~c_dummy_consumer() override
-    {
-    }
-
-protected:
-    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
-    {
-        if(m_compose_output != nullptr)
-        {
-            return (*m_compose_output)(m_param, &msg, nullptr, flags);
-        }
-        else
-        {
-            return dummy_consumer::compose_output(msg, len, flags);
-        }
-    }
-};
-}
-}
-
 extern "C"
 {
 
@@ -50,9 +14,9 @@ int gkr_log_add_dummy_consumer(
     const gkr_log_dummy_consumer_callbacks* callbacks
     )
 {
-    Check_Arg_NotNull(callbacks, -1);
+    const struct gkr_log_consumer_aid_callbacks* aid_callbacks = (callbacks == nullptr) ? nullptr : &callbacks->aid_callbacks;
 
-    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_dummy_consumer(param, *callbacks));
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::dummy_consumer>(param, aid_callbacks));
 
     return gkr_log_add_consumer(channel, consumer);
 }

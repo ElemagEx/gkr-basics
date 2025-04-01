@@ -18,7 +18,7 @@ class basic_url
     using buff_t = basic_raw_buffer<Allocator>;
 
     buff_t    m_data;
-    url_parts m_parts;
+    url_parts m_parts {};
 
 public:
     basic_url() noexcept(std::is_nothrow_default_constructible<buff_t>::value) = default;
@@ -50,6 +50,10 @@ public:
         return (m_parts.path != nullptr);
     }
     const url_parts& parts() const
+    {
+        return m_parts;
+    }
+    url_parts& modify_parts()
     {
         return m_parts;
     }

@@ -90,7 +90,7 @@ int gkr_url_decompose(char* url, int unescape, gkr_url_parts* parts)
     char* pos = std::strchr(url, ':');
     if((pos == nullptr) || (pos > path)) return 0; // scheme missing
 
-    std::size_t len = std::size_t(path - pos);
+    std::size_t len = std::size_t(pos - url);
     if(!is_valid_scheme_name(url, len)) return 0; // invalid scheme name
 
     url[len] = 0;
@@ -108,10 +108,10 @@ int gkr_url_decompose(char* url, int unescape, gkr_url_parts* parts)
     }
     else
     {
-        path = std::strchr(url, '/');
+        path = std::strchr(++url, '/');
         if(path == nullptr) return 0; // path missing
 
-        pos = std::strchr(++url, '@');
+        pos = std::strchr(url, '@');
         if((pos == nullptr) || (pos > path))
         {
             parts->username = nullptr;

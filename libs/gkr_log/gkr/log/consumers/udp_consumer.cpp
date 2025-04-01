@@ -14,34 +14,6 @@
 
 #include <cstring>
 
-namespace gkr
-{
-namespace log
-{
-
-class c_udp_consumer : public c_consumer<udp_consumer>
-{
-    using base_t = c_consumer<udp_consumer>;
-
-public:
-    c_udp_consumer(
-        void* param,
-        const gkr_log_udp_consumer_callbacks& callbacks,
-        const char*    remoteHost,
-        unsigned short remotePort,
-        unsigned maxPacketSize
-        )
-        : base_t(param, callbacks.opt_callbacks, remoteHost, remotePort, maxPacketSize)
-    {
-    }
-    virtual ~c_udp_consumer() override
-    {
-    }
-};
-
-}
-}
-
 extern "C"
 {
 
@@ -54,9 +26,9 @@ int gkr_log_add_udp_consumer(
     unsigned maxPacketSize
     )
 {
-    Check_Arg_NotNull(callbacks, -1);
+    const struct gkr_log_consumer_opt_callbacks* opt_callbacks = (callbacks == nullptr) ? nullptr : &callbacks->opt_callbacks;
 
-    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_udp_consumer(param, *callbacks, remoteHost, remotePort, maxPacketSize));
+    std::shared_ptr<gkr::log::consumer> consumer(new gkr::log::c_consumer<gkr::log::udp_consumer>(param, opt_callbacks, remoteHost, remotePort, maxPacketSize));
 
     return gkr_log_add_consumer(channel, consumer);
 }
@@ -126,6 +98,11 @@ void udp_consumer::consume_log_message(const message& msg)
             //TODO:LOG
         }
     }
+}
+
+const char* udp_consumer::compose_output(const message& msg, unsigned* len, int flags)
+{
+    return nullptr;
 }
 
 void udp_consumer::update_buffer(std::size_t size)

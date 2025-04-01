@@ -18,16 +18,14 @@ class c_android_log_consumer : public c_consumer<android_log_consumer>
 {
     using base_t = c_consumer<android_log_consumer>;
 
-    const char* (*m_compose_output)(void*, const struct gkr_log_message*, unsigned*, int);
-    const char* (*m_get_tag       )(void*, const struct gkr_log_message*);
-    int         (*m_get_priority  )(void*, const struct gkr_log_message*);
+    const char* (*m_get_tag     )(void*, const struct gkr_log_message*);
+    int         (*m_get_priority)(void*, const struct gkr_log_message*);
 
 public:
     c_android_log_consumer(void* param, const gkr_log_android_log_consumer_callbacks& callbacks)
-        : base_t   (param, callbacks.opt_callbacks )
-        , m_compose_output(callbacks.compose_output)
-        , m_get_tag       (callbacks.get_tag       )
-        , m_get_priority  (callbacks.get_priority  )
+        : base_t (param,&callbacks.aid_callbacks)
+        , m_get_tag     (callbacks.get_tag      )
+        , m_get_priority(callbacks.get_priority )
     {
     }
     virtual ~c_android_log_consumer() override
@@ -35,17 +33,6 @@ public:
     }
 
 protected:
-    virtual const char* compose_output(const message& msg, unsigned* len, int flags) override
-    {
-        if(m_compose_output != nullptr)
-        {
-            return (*m_compose_output)(m_param, &msg, len, flags);
-        }
-        else
-        {
-            return android_log_consumer::compose_output(msg, len, flags);
-        }
-    }
     virtual const char* get_tag(const message& msg) override
     {
         if(m_get_tag != nullptr)

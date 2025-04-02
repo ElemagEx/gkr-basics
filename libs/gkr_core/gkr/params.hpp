@@ -73,10 +73,11 @@ public:
 public:
     GKR_CORE_API virtual void clear();
 
+protected:
+    virtual char* realloc(std::size_t new_memory_footprint) = 0;
+
 public:
     virtual std::size_t get_memory_footprint() const = 0;
-
-    virtual char* realloc(std::size_t new_memory_footprint) = 0;
 
 public:
     virtual void lock() = 0;
@@ -86,6 +87,16 @@ public:
     virtual void lock_shared() const = 0;
     virtual void unlock_shared() const = 0;
     virtual bool try_lock_shared() const = 0;
+
+public:
+    std::unique_lock<params> get_writer_lock()
+    {
+        return std::unique_lock<params>(*this);
+    }
+    std::shared_lock<const params> get_reader_lock() const
+    {
+        return std::shared_lock<const params>(*this);
+    }
 
 public:
     GKR_CORE_API std::size_t add_object(const char* key, std::size_t root = 0);
@@ -247,15 +258,17 @@ public:
         m_buffer.clear();
     }
 
-public:
-    virtual std::size_t get_memory_footprint() const noexcept
-    {
-        return m_buffer.size();
-    }
+protected:
     virtual char* realloc(std::size_t new_memory_footprint)
     {
         m_buffer.resize(new_memory_footprint);
         return m_buffer.data<char>();
+    }
+
+public:
+    virtual std::size_t get_memory_footprint() const noexcept
+    {
+        return m_buffer.size();
     }
 
 public:

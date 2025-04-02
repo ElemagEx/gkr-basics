@@ -1,3 +1,5 @@
+#pragma once
+
 #include <gkr/data/split_packet.hpp>
 
 namespace gkr

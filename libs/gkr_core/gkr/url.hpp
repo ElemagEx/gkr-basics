@@ -53,10 +53,6 @@ public:
     {
         return m_parts;
     }
-    url_parts& modify_parts()
-    {
-        return m_parts;
-    }
 
 public:
     void reset() noexcept

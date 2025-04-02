@@ -208,7 +208,7 @@ bool worker_thread::main_loop()
 
     for(std::size_t index = 0; index < count; ++index)
     {
-        objects[index + SELF_OBJECTS_TO_WAIT] = &get_waitable_object(index + SELF_OBJECTS_TO_WAIT);
+        objects[index + SELF_OBJECTS_TO_WAIT] = &get_waitable_object(index);
     }
 
     while(running())

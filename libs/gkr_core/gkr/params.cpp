@@ -10,7 +10,7 @@
 
 namespace gkr
 {
-static void lifecycle(gkr::params* params, void* param)
+void lifecycle(gkr::params* params, void* param)
 {
     if(param != nullptr)
     {
@@ -23,7 +23,7 @@ static void lifecycle(gkr::params* params, void* param)
     else
     {
         using free_proc_t = void (*)(void*);
-        free_proc_t free_proc = static_cast<free_proc_t>(params->m_param);
+        free_proc_t free_proc = reinterpret_cast<free_proc_t>(params->m_param);
         params->~params();
         free_proc(params);
     }
@@ -66,7 +66,7 @@ struct gkr_params* gkr_params_create(int multithreaded, void* (*alloc_proc)(size
             params = static_cast<params_t*>((*alloc_proc)(sizeof(params_t)));
             new (params) params_t(allocator);
         }
-        gkr::lifecycle(params, free_proc);
+        gkr::lifecycle(params, reinterpret_cast<void*>(free_proc));
     }
     return reinterpret_cast<struct gkr_params*>(params);
 }
@@ -495,7 +495,7 @@ std::size_t params::find_node(const char* key, std::size_t root) const
 {
     std::shared_lock<const params> lock(*this);
 
-    Check_Arg_IsValid(root <= m_count);
+    Check_Arg_IsValid(root <= m_count, 0);
 
     check_root(root, m_count);
 

@@ -34,10 +34,12 @@ public:
 #else
     static constexpr unsigned SIZE_IN_BYTES = 4 * sizeof(void*) + 24;
 #endif
+    using data_t = char[SIZE_IN_BYTES];
+    using  key_t = unsigned;
 
 private:
     alignas(void*)
-    char m_data[SIZE_IN_BYTES] = {0};
+    data_t m_data = {0};
 };
 
 class recursive_rw_lock
@@ -63,8 +65,8 @@ public:
 
 private:
     alignas(void*)
-    char m_data[rw_lock::SIZE_IN_BYTES] = {0};
-    unsigned m_key = 0;
+    rw_lock::data_t m_data = {0};
+    rw_lock::key_t  m_key  = 0;
 };
 
 }

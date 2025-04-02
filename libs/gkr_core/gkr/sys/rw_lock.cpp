@@ -20,7 +20,8 @@ static_assert(sizeof(tls_t) == sizeof(void*), "The tls_t must be with the same s
 
 namespace
 {
-static_assert(sizeof(RTL_SRWLOCK) == sizeof(gkr::sys::rw_lock), "The rw_lock must be with the same size as sizeof(RTL_SRWLOCK)");
+static_assert(sizeof(RTL_SRWLOCK) == sizeof(gkr::sys::rw_lock::data_t), "The sizeof(rw_lock::data_t) must be equal to sizeof(RTL_SRWLOCK)");
+static_assert(sizeof(DWORD      ) == sizeof(gkr::sys::rw_lock:: key_t), "The sizeof(rw_lock:: key_t) must be equal to sizeof(DWORD)");
 
 inline RTL_SRWLOCK* get_srwlock(char* data)
 {
@@ -58,20 +59,19 @@ inline bool try_reader_lock(char* data) noexcept
 {
     return TryAcquireSRWLockShared(get_srwlock(data));
 }
-
-inline unsigned init_thread_value()
+inline DWORD init_thread_value() noexcept
 {
     return TlsAlloc();
 }
-inline void done_thread_value(unsigned key)
+inline void done_thread_value(DWORD key) noexcept
 {
     TlsFree(key);
 }
-inline void* get_thread_value(unsigned key)
+inline void* get_thread_value(DWORD key) noexcept
 {
     return TlsGetValue(key);
 }
-inline void set_thread_value(unsigned key, void* value)
+inline void set_thread_value(DWORD key, void* value) noexcept
 {
     TlsSetValue(key, value);
 }
@@ -81,9 +81,10 @@ inline void set_thread_value(unsigned key, void* value)
 
 #include <pthread.h>
 
-namespace gkr { namespace sys { namespace impl {
-
-static_assert(sizeof(pthread_rwlock_t) == sizeof(rw_lock), "The rw_lock must be with the same size as sizeof(pthread_rwlock_t)");
+namespace
+{
+static_assert(sizeof(pthread_rwlock_t) == sizeof(gkr::sys::rw_lock::data_t), "The sizeof(rw_lock::data_t) must be equal to sizeof(pthread_rwlock_t)");
+static_assert(sizeof(pthread_key_t   ) == sizeof(gkr::sys::rw_lock:: key_t), "The sizeof(rw_lock:: key_t) must be equal to sizeof(pthread_key_t)");
 
 inline pthread_rwlock_t* rw_lock_ptr(char* data)
 {
@@ -93,30 +94,30 @@ inline pthread_rwlock_t* rw_lock_ptr(char* data)
 inline void init_reader_writer_lock(char* data) noexcept
 {
     DIAG_VAR(int, rc)
-    pthread_rwlock_init(rw_lock_ptr(m_data), nullptr);
+    pthread_rwlock_init(rw_lock_ptr(data), nullptr);
     Check_Sys_Error(rc, );
 }
 inline void done_reader_writer_lock(char* data) noexcept
 {
     DIAG_VAR(int, rc)
-    pthread_rwlock_destroy(rw_lock_ptr(m_data));
+    pthread_rwlock_destroy(rw_lock_ptr(data));
     Check_Sys_Error(rc, );
 }
 inline void writer_lock(char* data) noexcept
 {
     DIAG_VAR(int, rc)
-    pthread_rwlock_wrlock(rw_lock_ptr(m_data));
+    pthread_rwlock_wrlock(rw_lock_ptr(data));
     Check_Sys_Error(rc, );
 }
 inline void writer_unlock(char* data) noexcept
 {
     DIAG_VAR(int, rc)
-    pthread_rwlock_unlock(rw_lock_ptr(m_data));
+    pthread_rwlock_unlock(rw_lock_ptr(data));
     Check_Sys_Error(rc, );
 }
 inline bool try_writer_lock(char* data) noexcept
 {
-    int rc = pthread_rwlock_trywrlock(rw_lock_ptr(m_data));
+    int rc = pthread_rwlock_trywrlock(rw_lock_ptr(data));
     if(rc == EBUSY) return false;
     Check_Sys_Error(rc, false);
     return true;
@@ -124,23 +125,47 @@ inline bool try_writer_lock(char* data) noexcept
 inline void reader_lock(char* data) noexcept
 {
     DIAG_VAR(int, rc)
-    pthread_rwlock_rdlock(rw_lock_ptr(m_data));
+    pthread_rwlock_rdlock(rw_lock_ptr(data));
     Check_Sys_Error(rc, );
 }
 inline void reader_unlock(char* data) noexcept
 {
     DIAG_VAR(int, rc)
-    pthread_rwlock_unlock(rw_lock_ptr(m_data));
+    pthread_rwlock_unlock(rw_lock_ptr(data));
     Check_Sys_Error(rc, );
 }
 inline bool try_reader_lock(char* data) noexcept
 {
-    int rc = pthread_rwlock_tryrdlock(rw_lock_ptr(m_data));
+    int rc = pthread_rwlock_tryrdlock(rw_lock_ptr(data));
     if(rc == EBUSY) return false;
     Check_Sys_Error(rc, false);
     return true;
 }
-}}}
+inline pthread_key_t init_thread_value() noexcept
+{
+    pthread_key_t key;
+    DIAG_VAR(int, rc)
+    pthread_key_create(&key, nullptr);
+    Check_Sys_Error(rc, );
+    return key;
+}
+inline void done_thread_value(pthread_key_t key) noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_key_delete(key);
+    Check_Sys_Error(rc, );
+}
+inline void* get_thread_value(pthread_key_t key) noexcept
+{
+    return pthread_getspecific(key);
+}
+inline void set_thread_value(pthread_key_t key, const void* value) noexcept
+{
+    DIAG_VAR(int, rc)
+    pthread_setspecific(key, value);
+    Check_Sys_Error(rc, );
+}
+}
 
 #endif
 
@@ -193,10 +218,12 @@ recursive_rw_lock::recursive_rw_lock() noexcept : m_key(init_thread_value())
 {
     tls_t tls {nullptr};
     set_thread_value(m_key, tls.value);
+    init_reader_writer_lock(m_data);
 }
 
 recursive_rw_lock::~recursive_rw_lock() noexcept
 {
+    done_reader_writer_lock(m_data);
     done_thread_value(m_key);
 }
 
@@ -263,7 +290,7 @@ void recursive_rw_lock::unlock_shared() noexcept
 
     Assert_Check(tls.ref_count.reader >= 1);
 
-    if(tls.ref_count.reader == 1)
+    if((tls.ref_count.reader == 1) && (tls.ref_count.writer == 0))
     {
         reader_unlock(m_data);
     }

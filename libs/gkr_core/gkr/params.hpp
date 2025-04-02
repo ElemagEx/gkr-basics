@@ -6,6 +6,7 @@
 #include <gkr/misc/fake_shared_mutex.hpp>
 #include <gkr/container/raw_buffer.hpp>
 
+#include <mutex>
 #include <shared_mutex>
 
 namespace gkr
@@ -22,7 +23,7 @@ class params
     params& operator=(      params&&) noexcept = delete;
     params& operator=(const params& ) noexcept = delete;
 
-    friend static void lifecycle(params*, void*);
+    friend void lifecycle(params*, void*);
 
 public:
     using param_type_t = enum : unsigned short
@@ -262,7 +263,7 @@ protected:
     virtual char* realloc(std::size_t new_memory_footprint)
     {
         m_buffer.resize(new_memory_footprint);
-        return m_buffer.data<char>();
+        return m_buffer.template data<char>();
     }
 
 public:

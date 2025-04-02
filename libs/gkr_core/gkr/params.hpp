@@ -299,9 +299,9 @@ public:
 };
 
 template<typename Allocator=std::allocator<std::max_align_t>> using basic_singlethreaded_params = basic_params<misc::fake_shared_mutex, Allocator>;
-template<typename Allocator=std::allocator<std::max_align_t>> using  basic_multithreaded_params = basic_params< sys::rw_lock          , Allocator>;
+template<typename Allocator=std::allocator<std::max_align_t>> using  basic_multithreaded_params = basic_params< sys::recursive_rw_lock, Allocator>;
 
 using singlethreaded_params = basic_params<misc::fake_shared_mutex, std::allocator<std::max_align_t>>;
-using  multithreaded_params = basic_params< sys::rw_lock          , std::allocator<std::max_align_t>>;
+using  multithreaded_params = basic_params< sys::recursive_rw_lock, std::allocator<std::max_align_t>>;
 
 }

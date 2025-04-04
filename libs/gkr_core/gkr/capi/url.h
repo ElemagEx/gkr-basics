@@ -19,10 +19,11 @@ struct gkr_url_parts
 extern "C" {
 #endif
 
-GKR_CORE_API int gkr_url_decompose(char* url, int unescape, gkr_url_parts* parts);
+GKR_CORE_API int gkr_url_decompose(char* url, int unescape, struct gkr_url_parts* parts);
 
-//GKR_CORE_API int gkr_url_validate(gkr_url_parts* parts);
+//GKR_CORE_API int gkr_url_validate(struct gkr_url_parts* parts);
 
+GKR_CORE_API int gkr_url_construct(const struct gkr_url_parts* parts, char* buf, int cch);
 
 #ifdef __cplusplus
 }

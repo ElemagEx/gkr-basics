@@ -5,8 +5,6 @@
 #include <gkr/diagnostics.hpp>
 #include <gkr/container/raw_buffer.hpp>
 
-#include <string>
-
 namespace gkr
 {
 
@@ -17,33 +15,29 @@ class basic_url
 {
     using buff_t = basic_raw_buffer<Allocator>;
 
-    buff_t    m_data;
+    buff_t    m_buff;
     url_parts m_parts {};
 
 public:
     basic_url() noexcept(std::is_nothrow_default_constructible<buff_t>::value) = default;
    ~basic_url() noexcept(std::is_nothrow_destructible         <buff_t>::value) = default;
 
-    basic_url           (const basic_url&  other) noexcept(std::is_nothrow_copy_constructible<buff_t>::value) : m_data(  other.m_data), m_parts(  other.m_parts) {}
-    basic_url& operator=(const basic_url&  other) noexcept(std::is_nothrow_copy_assignable   <buff_t>::value) { m_data = other.m_data;  m_parts = other.m_parts; return *this; }
+    basic_url           (const basic_url&  other) noexcept(std::is_nothrow_copy_constructible<buff_t>::value) : m_buff(  other.m_buff), m_parts(  other.m_parts) {}
+    basic_url& operator=(const basic_url&  other) noexcept(std::is_nothrow_copy_assignable   <buff_t>::value) { m_buff = other.m_buff;  m_parts = other.m_parts; return *this; }
 
-    basic_url           (basic_url&& other) noexcept(std::is_nothrow_move_constructible<buff_t>::value) : m_data(  std::move(other.m_data)), m_parts(  std::exchange(other.m_parts, {})) {}
-    basic_url& operator=(basic_url&& other) noexcept(std::is_nothrow_move_assignable   <buff_t>::value) { m_data = std::move(other.m_data);  m_parts = std::exchange(other.m_parts, {}); return *this; }
+    basic_url           (basic_url&& other) noexcept(std::is_nothrow_move_constructible<buff_t>::value) : m_buff(  std::move(other.m_buff)), m_parts(  std::exchange(other.m_parts, {})) {}
+    basic_url& operator=(basic_url&& other) noexcept(std::is_nothrow_move_assignable   <buff_t>::value) { m_buff = std::move(other.m_buff);  m_parts = std::exchange(other.m_parts, {}); return *this; }
 
 public:
     basic_url(const char* str, bool unescape = false)
     {
-        reset(str, unescape);
-    }
-    basic_url(const std::string& str, bool unescape = false)
-    {
-        reset(str, unescape);
+        decompose(str, unescape);
     }
 
 public:
     bool is_empty() const
     {
-        return (m_data.size() == 0);
+        return (m_buff.size() == 0);
     }
     bool is_valid() const
     {
@@ -55,29 +49,36 @@ public:
     }
 
 public:
-    void reset() noexcept
+    void clear() noexcept
     {
-        m_data.change_size(0);
+        m_buff.change_size(0);
         m_parts = url_parts{};
     }
-    void reset(const char* str, bool unescape = false)
+    bool decompose(const char* str, bool unescape = false)
     {
-        Check_Arg_NotNull(str, );
+        Check_Arg_NotNull(str, false);
         const std::size_t size = std::strlen(str) + 1;
 
-        m_data.resize(size);
-        std::memcpy(m_data.data(), str, size);
+        m_buff.resize(size + 2);
+        std::memcpy(m_buff.data(), str, size);
 
-        gkr_url_decompose(m_data.template data<char>(), gkr_b2i(unescape), &m_parts);
+        return (0 != gkr_url_decompose(m_buff.template data<char>(), gkr_b2i(unescape), &m_parts));
     }
-    void reset(const std::string& str, bool unescape = false)
+
+public:
+    bool construct(const url_parts& parts, bool unescape = false)
     {
-        const std::size_t size = str.size() + 1;
+        const int cch = gkr_url_construct(&parts, nullptr, 0);
+        Check_Sys_Result(cch, false);
 
-        m_data.resize(size);
-        std::memcpy(m_data.data(), str.c_str(), size);
+        buff_t buff(cch);
+        const int len = gkr_url_construct(&parts, buff.data<char>(), cch);
+        Check_Sys_Result(len, false);
+        buff.change_size(len + 1);
 
-        gkr_url_decompose(m_data.template data<char>(), gkr_b2i(unescape), &m_parts);
+        m_buff = std::move(buff);
+
+        return (0 <= gkr_url_decompose(m_buff.template data<char>(), gkr_b2i(unescape), &m_parts));
     }
 };
 

@@ -110,22 +110,22 @@ size_t gkr_params_add_null(struct gkr_params* params, const char* key, size_t ro
     Check_Arg_NotNull(params, 0);
     return reinterpret_cast<gkr::params*>(params)->add_null(key, root);
 }
-size_t gkr_params_set_string_value(struct gkr_params* params, const char* key, const char* value, size_t root, int overwrite)
+size_t gkr_params_set_value_string(struct gkr_params* params, const char* key, const char* value, size_t root, int overwrite)
 {
     Check_Arg_NotNull(params, 0);
     return reinterpret_cast<gkr::params*>(params)->set_value(key, value, root, gkr_i2b(overwrite));
 }
-size_t gkr_params_set_double_value(struct gkr_params* params, const char* key, double value, size_t root, int overwrite)
+size_t gkr_params_set_value_double(struct gkr_params* params, const char* key, double value, size_t root, int overwrite)
 {
     Check_Arg_NotNull(params, 0);
     return reinterpret_cast<gkr::params*>(params)->set_value(key, value, root, gkr_i2b(overwrite));
 }
-size_t gkr_params_set_integer_value(struct gkr_params* params, const char* key, long long value, size_t root, int overwrite)
+size_t gkr_params_set_value_integer(struct gkr_params* params, const char* key, long long value, size_t root, int overwrite)
 {
     Check_Arg_NotNull(params, 0);
     return reinterpret_cast<gkr::params*>(params)->set_value(key, value, root, gkr_i2b(overwrite));
 }
-size_t gkr_params_set_boolean_value(struct gkr_params* params, const char* key, int value, size_t root, int overwrite)
+size_t gkr_params_set_value_boolean(struct gkr_params* params, const char* key, int value, size_t root, int overwrite)
 {
     Check_Arg_NotNull(params, 0);
     return reinterpret_cast<gkr::params*>(params)->set_value(key, gkr_i2b(value), root, gkr_i2b(overwrite));
@@ -140,22 +140,22 @@ enum gkr_param_type gkr_params_get_type(struct gkr_params* params, const char* k
     Check_Arg_NotNull(params, gkr_param_type_none);
     return gkr_param_type(reinterpret_cast<gkr::params*>(params)->get_type(key));
 }
-const char* gkr_params_get_string_value(struct gkr_params* params, size_t index, const char* def_val)
+const char* gkr_params_get_value_string(struct gkr_params* params, size_t index, const char* def_val)
 {
     Check_Arg_NotNull(params, def_val);
     return reinterpret_cast<gkr::params*>(params)->get_value(index, def_val);
 }
-double gkr_params_get_double_value(struct gkr_params* params, size_t index, double def_val)
+double gkr_params_get_value_double(struct gkr_params* params, size_t index, double def_val)
 {
     Check_Arg_NotNull(params, def_val);
     return reinterpret_cast<gkr::params*>(params)->get_value(index, def_val);
 }
-long long gkr_params_get_integer_value(struct gkr_params* params, size_t index, long long def_val)
+long long gkr_params_get_value_integer(struct gkr_params* params, size_t index, long long def_val)
 {
     Check_Arg_NotNull(params, def_val);
     return reinterpret_cast<gkr::params*>(params)->get_value(index, def_val);
 }
-int gkr_params_get_boolean_value(struct gkr_params* params, size_t index, int def_val)
+int gkr_params_get_value_boolean(struct gkr_params* params, size_t index, int def_val)
 {
     Check_Arg_NotNull(params, def_val);
     return gkr_b2i(reinterpret_cast<gkr::params*>(params)->get_value(index, gkr_i2b(def_val)));

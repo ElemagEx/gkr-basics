@@ -10,7 +10,7 @@
 
 extern GKR_DIAG_REPORT_FUNC prev_func;
 
-static void ReportFunc(int id, const char* text, const char* func, const char* file, int line)
+static void ReportFunc(int id, const char* text, const char* func, const char* file, unsigned line)
 {
     if(prev_func != nullptr)
     {

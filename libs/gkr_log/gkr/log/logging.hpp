@@ -30,7 +30,7 @@ struct logging final
         const name_id_pair* severities_infos = nullptr,
         const name_id_pair* facilities_infos = nullptr
         )
-        : initialized(0 != gkr_log_init(name, max_queue_entries, max_message_chars, severities_infos, facilities_infos))
+        : initialized(0 != gkr_log_init(name, max_queue_entries, max_message_chars, severities_infos, facilities_infos, 0))
     {
     }
     ~logging()

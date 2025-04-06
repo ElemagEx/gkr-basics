@@ -14,12 +14,15 @@ struct gkr_log_name_id_pair
 };
 struct gkr_log_consumer_callbacks;
 
+#define GKR_LOG_CHANNEL_NAME_DIAGNOSTICS    "GKR-Diagnostics"
+
 GKR_LOG_API int gkr_log_init(
     const char* primary_channel_name,
     unsigned max_queue_entries,
     unsigned max_message_chars,
     const struct gkr_log_name_id_pair* severities_infos,
-    const struct gkr_log_name_id_pair* facilities_infos
+    const struct gkr_log_name_id_pair* facilities_infos,
+    int add_diag_channel
     );
 GKR_LOG_API int gkr_log_done();
 
@@ -31,6 +34,8 @@ GKR_LOG_API void* gkr_log_add_channel(
     const struct gkr_log_name_id_pair* facilities_infos
     );
 GKR_LOG_API int gkr_log_del_channel(void* channel);
+
+GKR_LOG_API void* gkr_log_get_channel(const char* name);
 
 GKR_LOG_API unsigned gkr_log_get_max_queue_entries();
 GKR_LOG_API unsigned gkr_log_get_max_message_chars();

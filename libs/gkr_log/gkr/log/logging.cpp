@@ -18,11 +18,6 @@ gkr::log::logger& get_logger()
     return s_logger;
 }
 
-inline bool I2B(int val)
-{
-    return (val != 0);
-}
-
 struct buffer_t
 {
     char*       ptr = nullptr;
@@ -72,6 +67,46 @@ int check_thread_name(const char* name)
     }
     return thread_data.last_msg_id;
 }
+
+static void* s_diag_channel = nullptr;
+static GKR_DIAG_REPORT_FUNC s_diag_prev_func = nullptr;
+enum
+{
+    LOG_DIAG_SEVERITY_FATAL,
+    LOG_DIAG_SEVERITY_ERROR,
+    LOG_DIAG_SEVERITY_WARNING,
+    LOG_DIAG_FACILITY_UNKNOWN,
+    LOG_DIAG_FACILITY_STATE,
+    LOG_DIAG_FACILITY_ARG,
+    LOG_DIAG_FACILITY_OS,
+};
+void log_report_func(int diag_id, const char* text, const char* func, const char* file, unsigned line)
+{
+    if(s_diag_prev_func) (*s_diag_prev_func)(diag_id, text, func, file, line);
+
+    if(s_diag_channel == nullptr) return;
+
+    thread_local bool reentrancy_guard = false;
+    if(reentrancy_guard) return;
+    reentrancy_guard = true;
+
+    int severity, facility;
+
+    if(diag_id <=  4) { severity = LOG_DIAG_SEVERITY_FATAL; facility = LOG_DIAG_FACILITY_STATE; } else
+    if(diag_id <=  9) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_STATE; } else
+    if(diag_id <= 13) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_ARG  ; } else
+    if(diag_id <= 16) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_OS   ; } else
+    {
+        severity = LOG_DIAG_SEVERITY_ERROR;
+        facility = LOG_DIAG_FACILITY_UNKNOWN;
+    }
+    const int msg_id = gkr_log_simple_message_ex(s_diag_channel, func, file, line, severity, facility, text);
+
+    if(severity == LOG_DIAG_SEVERITY_FATAL) gkr_log_get_current_thread_llm_id(msg_id);
+
+    reentrancy_guard = true;
+}
+
 }
 
 extern "C"
@@ -82,15 +117,42 @@ int gkr_log_init(
     unsigned max_queue_entries, // = 32
     unsigned max_message_chars, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/channel (64bit)
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
-    const struct gkr_log_name_id_pair* facilities_infos  // = nullptr - no facility names
+    const struct gkr_log_name_id_pair* facilities_infos, // = nullptr - no facility names
+    int add_diag_channel
     )
 {
-    return (nullptr != get_logger().add_channel(true, primary_channel_name, max_queue_entries, max_message_chars, severities_infos, facilities_infos));
+    if(nullptr == get_logger().add_channel(true, primary_channel_name, max_queue_entries, max_message_chars, severities_infos, facilities_infos))
+    {
+         return 0;
+    }
+#if 1//(DIAG_MODE < 4)
+    if(add_diag_channel)
+    {
+        gkr_log_name_id_pair severities[] = {
+            {"FATAL"  , LOG_DIAG_SEVERITY_FATAL},
+            {"ERROR"  , LOG_DIAG_SEVERITY_ERROR},
+            {nullptr  , 0}
+        };
+        gkr_log_name_id_pair facilities[] = {
+            {"Unknown", LOG_DIAG_FACILITY_UNKNOWN},
+            {"State"  , LOG_DIAG_FACILITY_STATE  },
+            {"Arg"    , LOG_DIAG_FACILITY_ARG    },
+            {"OS"     , LOG_DIAG_FACILITY_OS     },
+            {nullptr  , 0}
+        };
+        s_diag_channel = get_logger().add_channel(false, GKR_LOG_CHANNEL_NAME_DIAGNOSTICS, 8, 512, severities, facilities);
+        if(s_diag_channel != nullptr)
+        {
+            s_diag_prev_func = gkr_diag_hook_report_func(log_report_func);
+        }
+    }
+#endif
+    return 1;
 }
 
 int gkr_log_done()
 {
-    return get_logger().del_channel(nullptr);
+    return get_logger().join(true);
 }
 
 void* gkr_log_add_channel(
@@ -107,6 +169,11 @@ void* gkr_log_add_channel(
 int gkr_log_del_channel(void* channel)
 {
     return get_logger().del_channel(channel);
+}
+
+void* gkr_log_get_channel(const char* name)
+{
+    return get_logger().get_channel(name);
 }
 
 unsigned gkr_log_get_max_queue_entries()
@@ -131,32 +198,23 @@ int gkr_log_set_max_message_chars(unsigned max_message_chars)
 
 int gkr_log_get_severity_threshold(void* channel)
 {
-    return (channel == nullptr)
-        ? get_logger().get_severity_threshold()
-        : static_cast<gkr::log::channel_info*>(channel)->threshold;
+    return get_logger().get_severity_threshold(channel);
 }
 
 int gkr_log_set_severity_threshold(void* channel, int threshold)
 {
-    if(channel == nullptr)
-    {
-        get_logger().set_severity_threshold(threshold);
-    }
-    else
-    {
-        static_cast<gkr::log::channel_info*>(channel)->threshold = threshold;
-    }
+    get_logger().set_severity_threshold(channel, threshold);
     return true;
 }
 
 int gkr_log_set_severities(void* channel, int clear_existing, const struct gkr_log_name_id_pair* severities_infos)
 {
-    return get_logger().set_severities(channel, I2B(clear_existing), severities_infos);
+    return get_logger().set_severities(channel, gkr_i2b(clear_existing), severities_infos);
 }
 
 int gkr_log_set_facilities(void* channel, int clear_existing, const struct gkr_log_name_id_pair* facilities_infos)
 {
-    return get_logger().set_facilities(channel, I2B(clear_existing), facilities_infos);
+    return get_logger().set_facilities(channel, gkr_i2b(clear_existing), facilities_infos);
 }
 
 int gkr_log_set_severity(void* channel, const struct gkr_log_name_id_pair* severity_info)

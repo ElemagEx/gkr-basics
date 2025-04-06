@@ -20,13 +20,13 @@
 extern "C" {
 #endif
 
-typedef void (*GKR_DIAG_REPORT_FUNC)(int, const char*, const char*, const char*, int);
+typedef void (*GKR_DIAG_REPORT_FUNC)(int, const char*, const char*, const char*, unsigned);
 
 GKR_CORE_API GKR_DIAG_REPORT_FUNC gkr_diag_hook_report_func(GKR_DIAG_REPORT_FUNC fn);
 
 GKR_NO_RETURN_API
-GKR_CORE_API void gkr_diag_halt(int id, const char* text, const char* func, const char* file, int line);
-GKR_CORE_API int  gkr_diag_warn(int id, const char* text, const char* func, const char* file, int line);
+GKR_CORE_API void gkr_diag_halt(int id, const char* text, const char* func, const char* file, unsigned line);
+GKR_CORE_API int  gkr_diag_warn(int id, const char* text, const char* func, const char* file, unsigned line);
 
 #ifdef __cplusplus
 }

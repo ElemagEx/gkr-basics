@@ -23,7 +23,7 @@ namespace log
 
 struct channel_info
 {
-    const char* name {nullptr};
+    const char* name {""};
     int         threshold {100};
 };
 struct source_location
@@ -80,15 +80,9 @@ public:
         );
     bool del_channel(void* channel);
 
+    void* get_channel(const char* name);
+
 public:
-    void set_severity_threshold(int threshold)
-    {
-        m_primary.threshold = threshold;
-    }
-    int get_severity_threshold() const
-    {
-        return m_primary.threshold;
-    }
     unsigned get_max_queue_entries() const
     {
         return unsigned(m_log_queue.capacity());
@@ -111,6 +105,16 @@ public:
 
     bool set_severity(void* channel, const name_id_pair& severity_info);
     bool set_facility(void* channel, const name_id_pair& facility_info);
+
+public:
+    void set_severity_threshold(void* channel, int threshold)
+    {
+        get_data(channel).threshold = threshold;
+    }
+    int get_severity_threshold(void* channel)
+    {
+        return get_data(channel).threshold;
+    }
 
 public:
     int  add_consumer(void* channel, consumer_ptr_t consumer);
@@ -153,7 +157,7 @@ private:
     };
 
 private:
-    void sync_log_message(message_data& msg);
+//  void sync_log_message(message_data& msg);
 
     bool compose_message(message_data& msg, std::size_t cch, void* channel, const source_location* location, int severity, int facility, const char* format, va_list args);
 
@@ -173,7 +177,8 @@ private:
     enum : action_id_t
     {
         ACTION_ADD_CHANNEL      ,
-        ACTION_DEL_CHANNEL     ,
+        ACTION_DEL_CHANNEL      ,
+        ACTION_GET_CHANNEL      ,
         ACTION_CHANGE_LOG_QUEUE ,
         ACTION_SET_SEVERITIES   ,
         ACTION_SET_FACILITIES   ,
@@ -183,7 +188,7 @@ private:
         ACTION_DEL_CONSUMER     ,
         ACTION_DEL_ALL_CONSUMERS,
         ACTION_SET_THREAD_NAME  ,
-        ACTION_SYNC_LOG_MESSAGE ,
+    //  ACTION_SYNC_LOG_MESSAGE ,
     };
 
     using log_queue_t = waitable_lockfree_queue<void, true, true>;

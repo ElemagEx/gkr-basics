@@ -35,7 +35,7 @@ public:
             {severityToString(Severity::verbose), Severity::verbose},
             {nullptr                            , 0                }
         };
-        gkr_log_init(nullptr, 64, 1023, SEVERITIES, nullptr);
+        gkr_log_init(nullptr, 64, 1023, SEVERITIES, nullptr, false);
     }
     virtual ~Logger() override
     {

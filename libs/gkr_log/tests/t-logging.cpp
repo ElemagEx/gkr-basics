@@ -1,3 +1,5 @@
+#include <gkr/defs.hpp>
+
 #include <plog/Log.h>
 #include <plog/Formatters/MessageOnlyFormatter.h>
 #include <plog/Initializers/ConsoleInitializer.h>
@@ -76,11 +78,22 @@ constexpr gkr::log::name_id_pair g_facilities_infos[] = {
 
 #include <thread>
 
+int foo(int arg)
+{
+    Assert_Check(arg < 0);
+    return -arg;
+}
+
 TEST_CASE("logging.logger. console")
 {
-    gkr_log_init(nullptr, 16, 1023/*63*/, g_severities_infos, g_facilities_infos);
+    gkr_log_init(nullptr, 16, 1023/*63*/, g_severities_infos, g_facilities_infos, true);
 
-    gkr_log_add_consumer(nullptr, std::make_shared<gkr::log::app_console_consumer>());
+    auto consumer = std::make_shared<gkr::log::app_console_consumer>();
+
+    gkr_log_add_consumer(nullptr, consumer);
+    gkr_log_add_consumer(gkr_log_get_channel(GKR_LOG_CHANNEL_NAME_DIAGNOSTICS), consumer);
+
+    foo(-1);
 
     gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "First log message");
     gkr_log_simple_message(nullptr, SEVERITY_VERBOSE, FACILITY_SYNCHRO, "Second log message");

@@ -5,7 +5,7 @@
 
 namespace
 {
-void gkr_diag_report(int, const char*, const char*, const char*, int)
+void gkr_diag_report(int, const char*, const char*, const char*, unsigned)
 {
 }
 std::atomic<GKR_DIAG_REPORT_FUNC> s_reportFunction { gkr_diag_report };
@@ -21,13 +21,13 @@ GKR_DIAG_REPORT_FUNC gkr_diag_hook_report_func(GKR_DIAG_REPORT_FUNC fn)
 }
 
 [[noreturn]]
-void gkr_diag_halt(int id, const char* text, const char* func, const char* file, int line)
+void gkr_diag_halt(int id, const char* text, const char* func, const char* file, unsigned line)
 {
     (*s_reportFunction.load())(id, text, func, file, line);
     diag_trap();
 }
 
-int gkr_diag_warn(int id, const char* text, const char* func, const char* file, int line)
+int gkr_diag_warn(int id, const char* text, const char* func, const char* file, unsigned line)
 {
     (*s_reportFunction.load())(id, text, func, file, line);
     return 1;

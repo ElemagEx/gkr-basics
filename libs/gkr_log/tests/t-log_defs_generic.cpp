@@ -1,11 +1,14 @@
+#include <gkr/defs.hpp>
+
 #include <gkr/log/logging.hpp>
 #include <gkr/log/consumers/dummy_consumer.hpp>
 #include <gkr/log/consumers/app_console_consumer.hpp>
 
 #include <gkr/testing/log_defs.hpp>
 
-#define LOG_THRESHOLD_LEVEL LOG_SEVERITY_INFO
-#define GENERIC_LOG_USE_C_DEFS
+#define LOG_THRESHOLD_LEVEL LOG_SEVERITY_VERBOSE
+//#define GENERIC_LOG_USE_C_DEFS
+#define GENERIC_LOG_FACILITY_KEEP
 #include <gkr/log/galery.hpp>
 #include <gkr/log/defs/generic.hpp>
 
@@ -16,7 +19,7 @@
 //#include <Windows.h>
 #include <winerror.h>
 #endif
-#include <gkr/log/formatters/win32_format_message.h>
+#include <gkr/log/formatters/win32_format_message.hpp>
 
 #include <catch2/benchmark/catch_benchmark.hpp>
 
@@ -53,8 +56,10 @@ TEST_CASE("logging.logger.defs.generic. main")
 #endif
 
 #ifndef GENERIC_LOG_USE_C_DEFS
-    LOGV(FACILITY_NETWORK) << "Hello There!";
-    LOGV(FACILITY_NETWORK, "Hello There!");
+    LOGV(FACILITY_NETWORK) << "Hello There from stream!";
+    LOGI(FACILITY_NETWORK) << "Hello There from stream!";
+    LOGV(FACILITY_NETWORK, "Hello There from simple!");
+    LOGI(FACILITY_NETWORK, "Hello There from simple!");
 #ifdef __cpp_lib_format
     LOGV(FACILITY_NETWORK, "Hello {}!", "There");
 #endif

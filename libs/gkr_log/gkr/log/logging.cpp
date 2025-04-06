@@ -318,7 +318,7 @@ int gkr_log_valist_message_ex(void* channel, const char* func, const char* file,
     return get_logger().log_message(channel, &location, severity, facility, format, args);
 }
 
-int gkr_log_custom_message_start(void* channel, int severity, char** buf, unsigned* cch)
+void* gkr_log_custom_message_start(void* channel, int severity, char** buf, unsigned* cch)
 {
     Check_Arg_NotNull(buf, 0);
     Check_Arg_NotNull(cch, 0);
@@ -326,24 +326,24 @@ int gkr_log_custom_message_start(void* channel, int severity, char** buf, unsign
     return get_logger().start_log_message(channel, severity, *buf, *cch);
 }
 
-int gkr_log_custom_message_cancel(void* channel)
+int gkr_log_custom_message_cancel(void* context, void* channel)
 {
-    return get_logger().cancel_log_message(channel);
+    return get_logger().cancel_log_message(context, channel);
 }
 
-int gkr_log_custom_message_finish(void* channel, int severity, int facility)
+int gkr_log_custom_message_finish(void* context, void* channel, int severity, int facility)
 {
     check_thread_name(nullptr);
 
-    return get_logger().finish_log_message(channel, nullptr, severity, facility);
+    return get_logger().finish_log_message(context, channel, nullptr, severity, facility);
 }
 
-int gkr_log_custom_message_finish_ex(void* channel, const char* func, const char* file, unsigned line, int severity, int facility)
+int gkr_log_custom_message_finish_ex(void* context, void* channel, const char* func, const char* file, unsigned line, int severity, int facility)
 {
     check_thread_name(nullptr);
 
     const gkr::log::source_location location{func, file, line};
-    return get_logger().finish_log_message(channel, &location, severity, facility);
+    return get_logger().finish_log_message(context, channel, &location, severity, facility);
 }
 
 const char* gkr_log_format_output(

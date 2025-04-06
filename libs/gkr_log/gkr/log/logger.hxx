@@ -128,9 +128,9 @@ public:
     bool set_thread_name(int* ptr, const char* name, tid_t tid = 0);
 
 public:
-    bool start_log_message(void* channel, int severity, char*& buf, unsigned& cch);
-    int cancel_log_message(void* channel);
-    int finish_log_message(void* channel, const source_location* location, int severity, int facility);
+    void* start_log_message(void* channel, int severity, char*& buf, unsigned& cch);
+    int  cancel_log_message(void* context, void* channel);
+    int  finish_log_message(void* context, void* channel, const source_location* location, int severity, int facility);
 
     int log_message(void* channel, const source_location* location, int severity, int facility, const char* format, va_list args);
 
@@ -157,9 +157,7 @@ private:
     };
 
 private:
-//  void sync_log_message(message_data& msg);
-
-    bool compose_message(message_data& msg, std::size_t cch, void* channel, const source_location* location, int severity, int facility, const char* format, va_list args);
+    void compose_message(message_data& msg, std::size_t cch, void* channel, const source_location* location, int severity, int facility, const char* format, va_list args);
 
     void process_message(message_data& msg);
 
@@ -188,7 +186,6 @@ private:
         ACTION_DEL_CONSUMER     ,
         ACTION_DEL_ALL_CONSUMERS,
         ACTION_SET_THREAD_NAME  ,
-    //  ACTION_SYNC_LOG_MESSAGE ,
     };
 
     using log_queue_t = waitable_lockfree_queue<void, true, true>;

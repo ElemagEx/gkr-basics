@@ -11,6 +11,7 @@ namespace log
 
 class custom_message
 {
+    void*    m_context = nullptr;
     void*    m_channel = nullptr;
     char*    m_buf     = nullptr;
     unsigned m_cch     = 0;
@@ -20,13 +21,15 @@ class custom_message
 
 public:
     custom_message(custom_message&& other) noexcept
-        : m_channel(std::exchange(other.m_channel, nullptr))
+        : m_context(std::exchange(other.m_context, nullptr))
+        , m_channel(std::exchange(other.m_channel, nullptr))
         , m_buf    (std::exchange(other.m_buf    , nullptr))
         , m_cch    (std::exchange(other.m_cch    , 0U))
     {
     }
     custom_message& operator=(custom_message&& other) noexcept
     {
+        m_context = std::exchange(other.m_context, nullptr);
         m_channel = std::exchange(other.m_channel, nullptr);
         m_buf     = std::exchange(other.m_buf    , nullptr);
         m_cch     = std::exchange(other.m_cch    , 0U);
@@ -37,7 +40,7 @@ public:
     }
     custom_message(void* channel, int severity) : m_channel(channel)
     {
-        gkr_log_custom_message_start(channel, severity, &m_buf, &m_cch);
+        m_context = gkr_log_custom_message_start(channel, severity, &m_buf, &m_cch);
     }
     ~custom_message()
     {
@@ -63,18 +66,18 @@ public:
     {
         if(!is_started()) return 0;
         m_buf = nullptr;
-        return gkr_log_custom_message_finish(m_channel, severity, facility);
+        return gkr_log_custom_message_finish(m_context, m_channel, severity, facility);
     }
     int finish(const char* func, const char* file, unsigned line, int severity, int facility) {
         if(!is_started()) return 0;
         m_buf = nullptr;
-        return gkr_log_custom_message_finish_ex(m_channel, func, file, line, severity, facility);
+        return gkr_log_custom_message_finish_ex(m_context, m_channel, func, file, line, severity, facility);
     }
     int cancel()
     {
         if(!is_started()) return -1;
         m_buf = nullptr;
-        return gkr_log_custom_message_cancel(m_channel);
+        return gkr_log_custom_message_cancel(m_context, m_channel);
     }
 };
 }

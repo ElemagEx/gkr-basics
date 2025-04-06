@@ -94,7 +94,6 @@ void logger::on_cross_action(action_id_t action, void* param, void* result)
         case ACTION_DEL_CONSUMER     : call_action_method(&logger::del_consumer     , param, result); break;
         case ACTION_DEL_ALL_CONSUMERS: call_action_method(&logger::del_all_consumers, param, result); break;
         case ACTION_SET_THREAD_NAME  : call_action_method(&logger::set_thread_name  , param, result); break;
-    //  case ACTION_SYNC_LOG_MESSAGE : call_action_method(&logger::sync_log_message , param); break;
     }
 }
 
@@ -438,27 +437,23 @@ bool logger::set_thread_name(int* ptr, const char* name, tid_t tid)
     return true;
 }
 
-static thread_local void* thread_local_element = nullptr;
-
-bool logger::start_log_message(void* channel, int severity, char*& buf, unsigned& cch)
+void* logger::start_log_message(void* channel, int severity, char*& buf, unsigned& cch)
 {
     buf = nullptr;
     cch = 0;
 
-    Check_ValidState(thread_local_element == nullptr, false);
+    Check_ValidState(running(), nullptr);
 
-    Check_ValidState(running(), false);
-
-    Check_ValidState(!in_worker_thread(), false);//TODO:???
+    Check_ValidState(!in_worker_thread(), nullptr);//TODO:???
 
     channel_data& data = get_data(channel);
-    Check_NotNullPtr(data.name, false);
+    Check_NotNullPtr(data.name, nullptr);
 
-    if(severity >= data.threshold) return false;
+    if(severity >= data.threshold) return nullptr;
 
     auto element = m_log_queue.start_push();
 
-    Check_ValidState(element.push_in_progress(), false);
+    Check_ValidState(element.push_in_progress(), nullptr);
 
     Assert_Check(element.size() > sizeof(message_data));
 
@@ -467,37 +462,29 @@ bool logger::start_log_message(void* channel, int severity, char*& buf, unsigned
     buf = msg.buf;
     cch = unsigned(element.size() - sizeof(message_head));
 
-    thread_local_element = element.detach();
-    return true;
+    return element.detach();
 }
 
-int logger::cancel_log_message(void* channel)
+int logger::cancel_log_message(void* context, void* channel)
 {
-    Check_NotNullPtr(thread_local_element, -1);
+    if(context == nullptr) return 0;
 
-    queue_producer_element<log_queue_t> element(m_log_queue, thread_local_element);
-
-    thread_local_element = nullptr;
+    queue_producer_element<log_queue_t> element(m_log_queue, context);
 
     element.cancel_push();
     return 0;
 }
 
-int logger::finish_log_message(void* channel, const source_location* location, int severity, int facility)
+int logger::finish_log_message(void* context, void* channel, const source_location* location, int severity, int facility)
 {
-    Check_NotNullPtr(thread_local_element, 0);
+    if(context == nullptr) return 0;
 
-    queue_producer_element<log_queue_t> element(m_log_queue, thread_local_element);
-
-    thread_local_element = nullptr;
+    queue_producer_element<log_queue_t> element(m_log_queue, context);
 
     message_data& msg = element.as<message_data>();
 
-    if(!compose_message(msg, 0, channel, location, severity, facility, nullptr, nullptr))
-    {
-        element.cancel_push();
-        return 0;
-    }
+    compose_message(msg, 0, channel, location, severity, facility, nullptr, nullptr);
+
     return msg.id;
 }
 
@@ -506,8 +493,6 @@ int logger::log_message(void* channel, const source_location* location, int seve
     Check_Arg_NotNull(format, 0);
 
     Check_ValidState(running(), 0);
-
-    Check_ValidState(thread_local_element == nullptr, 0);
 
     channel_data& data = get_data(channel);
     Check_NotNullPtr(data.name, 0);
@@ -540,11 +525,8 @@ int logger::log_message(void* channel, const source_location* location, int seve
 
         const std::size_t cch = std::size_t(msg.buf - element.data<char>());
 
-        if(!compose_message(msg, cch, channel, location, severity, facility, format, args))
-        {
-            element.cancel_push();
-            return 0;
-        }
+        compose_message(msg, cch, channel, location, severity, facility, format, args);
+
         return msg.id;
     }
 }
@@ -599,16 +581,7 @@ const char* logger::format_output(
     return m_txt.data<char>();
 }
 
-//  void logger::sync_log_message(message_data& msg)
-//  {
-//      if(!in_worker_thread())
-//      {
-//          return execute_action_method<void>(ACTION_SYNC_LOG_MESSAGE, msg);
-//      }
-//      process_message(msg);
-//  }
-
-bool logger::compose_message(message_data& msg, std::size_t cch, void* channel, const source_location* location, int severity, int facility, const char* format, va_list args)
+void logger::compose_message(message_data& msg, std::size_t cch, void* channel, const source_location* location, int severity, int facility, const char* format, va_list args)
 {
     msg.id       = ++m_msg_id;
     msg.channel  = channel;
@@ -650,7 +623,6 @@ bool logger::compose_message(message_data& msg, std::size_t cch, void* channel, 
 
         msg.messageLen = unsigned(len);
     }
-    return true;
 }
 
 void logger::process_message(message_data& msg)

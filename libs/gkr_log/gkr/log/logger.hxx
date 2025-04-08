@@ -117,7 +117,7 @@ public:
     }
 
 public:
-    int  add_consumer(void* channel, consumer_ptr_t consumer);
+    int  add_consumer(void* channel, consumer_ptr_t consumer, int id);
     bool del_consumer(void* channel, consumer_ptr_t consumer, int id);
 
     bool del_all_consumers(void* channel);
@@ -168,6 +168,8 @@ private:
     bool process_next_message();
 
 private:
+    consumer_ptr_t find_consumer(int id);
+
     static bool init_consumer(consumer& consumer);
     static void done_consumer(consumer& consumer);
 

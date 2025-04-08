@@ -118,7 +118,7 @@ int gkr_log_init(
     unsigned max_message_chars, // = 427 [512 bytes - sizeof(gkr_log_message) - 17] //1 for NTS and 16 for msg id/channel (64bit)
     const struct gkr_log_name_id_pair* severities_infos, // = nullptr - no severity names
     const struct gkr_log_name_id_pair* facilities_infos, // = nullptr - no facility names
-    int add_diag_channel
+    int add_log_diag_channel
     )
 {
     if(nullptr == get_logger().add_channel(true, primary_channel_name, max_queue_entries, max_message_chars, severities_infos, facilities_infos))
@@ -126,7 +126,7 @@ int gkr_log_init(
          return 0;
     }
 #if 1//(DIAG_MODE < 4)
-    if(add_diag_channel)
+    if(add_log_diag_channel)
     {
         gkr_log_name_id_pair severities[] = {
             {"FATAL"  , LOG_DIAG_SEVERITY_FATAL},
@@ -140,7 +140,7 @@ int gkr_log_init(
             {"OS"     , LOG_DIAG_FACILITY_OS     },
             {nullptr  , 0}
         };
-        s_diag_channel = get_logger().add_channel(false, GKR_LOG_CHANNEL_NAME_DIAGNOSTICS, 8, 512, severities, facilities);
+        s_diag_channel = get_logger().add_channel(false, GKR_LOG_CHANNEL_NAME_DIAGNOSTICS, 8, 256, severities, facilities);
         if(s_diag_channel != nullptr)
         {
             s_diag_prev_func = gkr_diag_hook_report_func(log_report_func);
@@ -227,6 +227,11 @@ int gkr_log_set_facility(void* channel, const struct gkr_log_name_id_pair* facil
 {
     Check_Arg_NotNull(facility_info, false);
     return get_logger().set_facility(channel, *facility_info);
+}
+
+int gkr_log_add_consumer_by_id(void* channel, int id)
+{
+    return get_logger().add_consumer(channel, nullptr, id);
 }
 
 int gkr_log_del_consumer_by_id(void* channel, int id)
@@ -365,7 +370,7 @@ int gkr_log_add_consumer(void* channel, std::shared_ptr<gkr::log::consumer> cons
 {
     Check_Arg_NotNull(consumer, false);
 
-    return get_logger().add_consumer(channel, consumer);
+    return get_logger().add_consumer(channel, consumer, 0);
 }
 
 int gkr_log_del_consumer(void* channel, std::shared_ptr<gkr::log::consumer> consumer)

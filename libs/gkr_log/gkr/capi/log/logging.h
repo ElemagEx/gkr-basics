@@ -22,7 +22,7 @@ GKR_LOG_API int gkr_log_init(
     unsigned max_message_chars,
     const struct gkr_log_name_id_pair* severities_infos,
     const struct gkr_log_name_id_pair* facilities_infos,
-    int add_diag_channel
+    int add_log_diag_channel
     );
 GKR_LOG_API int gkr_log_done();
 
@@ -52,7 +52,9 @@ GKR_LOG_API int gkr_log_set_facilities(void* channel, int clear_existing, const 
 GKR_LOG_API int gkr_log_set_severity(void* channel, const struct gkr_log_name_id_pair* severity_info);
 GKR_LOG_API int gkr_log_set_facility(void* channel, const struct gkr_log_name_id_pair* facility_info);
 
+GKR_LOG_API int gkr_log_add_consumer_by_id(void* channel, int id);
 GKR_LOG_API int gkr_log_del_consumer_by_id(void* channel, int id);
+
 GKR_LOG_API int gkr_log_del_all_consumers(void* channel);
 
 #ifdef __cplusplus

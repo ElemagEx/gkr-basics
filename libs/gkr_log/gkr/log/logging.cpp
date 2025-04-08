@@ -72,13 +72,14 @@ static void* s_diag_channel = nullptr;
 static GKR_DIAG_REPORT_FUNC s_diag_prev_func = nullptr;
 enum
 {
-    LOG_DIAG_SEVERITY_FATAL,
+    LOG_DIAG_SEVERITY_FATAL = 0,
     LOG_DIAG_SEVERITY_ERROR,
     LOG_DIAG_SEVERITY_WARNING,
-    LOG_DIAG_FACILITY_UNKNOWN,
-    LOG_DIAG_FACILITY_STATE,
+
+    LOG_DIAG_FACILITY_STATE = 0,
     LOG_DIAG_FACILITY_ARG,
-    LOG_DIAG_FACILITY_OS,
+    LOG_DIAG_FACILITY_SYS,
+    LOG_DIAG_FACILITY_OTHER,
 };
 void log_report_func(int diag_id, const char* text, const char* func, const char* file, unsigned line)
 {
@@ -95,10 +96,10 @@ void log_report_func(int diag_id, const char* text, const char* func, const char
     if(diag_id <=  4) { severity = LOG_DIAG_SEVERITY_FATAL; facility = LOG_DIAG_FACILITY_STATE; } else
     if(diag_id <=  9) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_STATE; } else
     if(diag_id <= 13) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_ARG  ; } else
-    if(diag_id <= 16) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_OS   ; } else
+    if(diag_id <= 16) { severity = LOG_DIAG_SEVERITY_ERROR; facility = LOG_DIAG_FACILITY_SYS  ; } else
     {
         severity = LOG_DIAG_SEVERITY_ERROR;
-        facility = LOG_DIAG_FACILITY_UNKNOWN;
+        facility = LOG_DIAG_FACILITY_OTHER;
     }
     const int msg_id = gkr_log_simple_message_ex(s_diag_channel, func, file, line, severity, facility, text);
 
@@ -134,10 +135,10 @@ int gkr_log_init(
             {nullptr  , 0}
         };
         gkr_log_name_id_pair facilities[] = {
-            {"Unknown", LOG_DIAG_FACILITY_UNKNOWN},
-            {"State"  , LOG_DIAG_FACILITY_STATE  },
-            {"Arg"    , LOG_DIAG_FACILITY_ARG    },
-            {"OS"     , LOG_DIAG_FACILITY_OS     },
+            {"diag-state", LOG_DIAG_FACILITY_STATE},
+            {"diag-arg"  , LOG_DIAG_FACILITY_ARG  },
+            {"diag-sys"  , LOG_DIAG_FACILITY_SYS  },
+            {"diag-other", LOG_DIAG_FACILITY_OTHER},
             {nullptr  , 0}
         };
         s_diag_channel = get_logger().add_channel(false, GKR_LOG_CHANNEL_NAME_DIAGNOSTICS, 8, 256, severities, facilities);

@@ -89,7 +89,7 @@ bool app_console_consumer::filter_log_message(const message& msg)
 
 void app_console_consumer::consume_log_message(const message& msg)
 {
-    int flags = m_flags | gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding;
+    int flags = m_flags | gkr_log_fo_flag_use_inserts | gkr_log_fo_flag_use_padding | gkr_log_fo_flag_remove_trail_space;
 
     const char* output = compose_output(msg, nullptr, flags);
 

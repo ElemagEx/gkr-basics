@@ -4,7 +4,7 @@
 // Generic
 //
 #define GENERIC_FMT_ANDROID         "[<SNAM>][<FNAM>][<TNAM>] - <TEXT>"
-#define GENERIC_FMT_MESSAGE         "<C090>%F %T:<R003><MSEC><C000> [<IS00><P 07><SNAM><C000>] (<C033><FNAM><C000>) [<R 06><T_ID>] - <TEXT>"
+#define GENERIC_FMT_MESSAGE         "<C090>%F %T:<R003><MSEC><C000> [<IS00><P 07><SNAM><C000>] (<C033><P 10><FNAM><C000>) [<R 06><T_ID>] - <TEXT>"
 
 #define GENERIC_CONSOLE_ARGS_STRS   {"<C097><C101>", "<C091>",  "<C093>", "<C092>", "<C096>", "<C034>", "<C035>" }
 #define GENERIC_CONSOLE_ARGS_ROWS   1

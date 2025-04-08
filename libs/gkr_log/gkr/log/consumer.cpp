@@ -222,7 +222,7 @@ bool parse_ins_arg(const char* fmt, char*& buf, std::size_t& cap, const struct g
 
     const char* arg = args[index];
 
-    flags &= ~gkr_log_fo_flag_append_eoln_mask;
+    flags &= ~(gkr_log_fo_flag_remove_trail_space & gkr_log_fo_flag_append_eoln_mask);
 
     unsigned cch = gkr_log_apply_text_format(buf, unsigned(cap), arg, msg, flags, args, rows, cols);
 
@@ -351,6 +351,10 @@ unsigned gkr_log_apply_text_format(char* buf, unsigned cch, const char* fmt, con
                 break;
         }
         break;
+    }
+    if(flags & gkr_log_fo_flag_remove_trail_space)
+    {
+        for( ; (buf > start) && std::isspace(*(buf - 1)); --buf, ++cap);
     }
     switch(flags & gkr_log_fo_flag_append_eoln_mask)
     {

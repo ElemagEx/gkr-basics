@@ -526,7 +526,7 @@ int logger::log_message(void* channel, const source_location* location, int seve
 
         message_data& msg = element.as<message_data>();
 
-        const std::size_t cch = std::size_t(msg.buf - element.data<char>());
+        const std::size_t cch = std::size_t(m_log_queue.element_size() - (msg.buf - element.data<char>()));
 
         compose_message(msg, cch, channel, location, severity, facility, format, args);
 
@@ -608,24 +608,17 @@ void logger::compose_message(message_data& msg, std::size_t cch, void* channel, 
     }
     if(format == nullptr)
     {
-        msg.messageLen = unsigned(std::strlen(msg.buf));
     }
     else if(args == nullptr)
     {
         std::strncpy(msg.buf, format, cch);
-
         msg.buf[cch - 1] = 0;
-
-        msg.messageLen = unsigned(std::strlen(msg.buf));
     }
     else
     {
-        const int len = std::vsnprintf(msg.buf, cch, format, args);
-
-        Check_ValidState(len >= 0, false);
-
-        msg.messageLen = unsigned(len);
+        std::vsnprintf(msg.buf, cch, format, args);
     }
+    msg.messageLen = unsigned(std::strlen(msg.buf));
 }
 
 void logger::process_message(message_data& msg)

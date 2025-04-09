@@ -149,6 +149,7 @@ private:
     struct message_head : message
     {
         int   id;
+    //  int   free-4-bytes (in 64bit build)
         void* channel;
     };
     struct message_data : message_head

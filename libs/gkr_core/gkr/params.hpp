@@ -68,8 +68,8 @@ public:
 public:
     GKR_CORE_API bool copy_params(const params& other, std::size_t root = 0, std::size_t pitch = 0);
 
-    GKR_CORE_API void reserve(std::size_t size, std::size_t pitch = 0);
-    GKR_CORE_API void compact();
+    GKR_CORE_API std::size_t reserve(std::size_t size, std::size_t pitch = 0);
+    GKR_CORE_API std::size_t compact();
 
 public:
     GKR_CORE_API virtual void clear();
@@ -105,22 +105,22 @@ public:
     GKR_CORE_API std::size_t add_null  (const char* key, std::size_t root = 0);
 
 public:
-    GKR_CORE_API std::size_t set_value(const char* key, bool        value, std::size_t root = 0, bool overwrite = false);
-    GKR_CORE_API std::size_t set_value(const char* key, double      value, std::size_t root = 0, bool overwrite = false);
-    GKR_CORE_API std::size_t set_value(const char* key, long long   value, std::size_t root = 0, bool overwrite = false);
-    GKR_CORE_API std::size_t set_value(const char* key, const char* value, std::size_t root = 0, bool overwrite = false);
+    GKR_CORE_API std::size_t set_value(const char* key, bool        value, std::size_t root = 0, bool overwrite = true);
+    GKR_CORE_API std::size_t set_value(const char* key, double      value, std::size_t root = 0, bool overwrite = true);
+    GKR_CORE_API std::size_t set_value(const char* key, long long   value, std::size_t root = 0, bool overwrite = true);
+    GKR_CORE_API std::size_t set_value(const char* key, const char* value, std::size_t root = 0, bool overwrite = true);
 
 public:
-    std::size_t set_value(const char* key, float value, std::size_t root = 0, bool overwrite = false)
+    std::size_t set_value(const char* key, float value, std::size_t root = 0, bool overwrite = true)
     {
         return set_value(key, double(value), root, overwrite);
     }
-    std::size_t set_value(const char* key, long double value, std::size_t root = 0, bool overwrite = false)
+    std::size_t set_value(const char* key, long double value, std::size_t root = 0, bool overwrite = true)
     {
         return set_value(key, double(value), root, overwrite);
     }
     template<typename T>
-    std::size_t set_value(const char* key, T value, std::size_t root = 0, bool overwrite = false)
+    std::size_t set_value(const char* key, T value, std::size_t root = 0, bool overwrite = true)
     {
         static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Type is not convertible to param value");
 
@@ -189,8 +189,8 @@ private:
     node_t& get_node(std::size_t index);
 
     const
-    text_t& get_text(std::size_t offset) const;
-    text_t& get_text(std::size_t offset);
+    text_t& get_text(std::size_t ofs) const;
+    text_t& get_text(std::size_t ofs);
 
 private:
     bool keys_are_equal(const char* key, std::size_t len, std::size_t  ofs) const;
@@ -200,7 +200,7 @@ private:
     std::size_t insert_text(std::size_t index, const char* ptr, std::size_t len);
     std::size_t insert_node();
 
-    std::size_t create_node(const char* key, std::size_t len, std::size_t prev, std::size_t parent, const char* sep);
+    std::size_t create_node(const char* key, std::size_t pos_or_len, std::size_t prev, std::size_t parent, const char* sep);
 
     std::size_t append_node(const char* key, std::size_t root);
     std::size_t lookup_node(const char* key, std::size_t parent);
@@ -229,8 +229,8 @@ class basic_params final : public params
 
 private:
     mutable
-    mutex_t   m_mutex;
-    buffer_t  m_buffer;
+    mutex_t  m_mutex;
+    buffer_t m_buffer;
 
 public:
     basic_params(const Allocator& allocator = Allocator()) noexcept(
@@ -252,7 +252,7 @@ public:
     }
 
 public:
-    virtual void clear() 
+    virtual void clear()
     {
         std::unique_lock<selt_t> lock(*this);
         params ::clear();

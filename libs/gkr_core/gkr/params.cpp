@@ -89,11 +89,15 @@ int gkr_params_clear(struct gkr_params* params)
     reinterpret_cast<gkr::params*>(params)->clear();
     return true;
 }
-int gkr_params_reserve(struct gkr_params* params, size_t size, size_t pitch)
+size_t gkr_params_reserve(struct gkr_params* params, size_t size, size_t pitch)
 {
     Check_Arg_NotNull(params, false);
-    reinterpret_cast<gkr::params*>(params)->reserve(size, pitch);
-    return true;
+    return reinterpret_cast<gkr::params*>(params)->reserve(size, pitch);
+}
+size_t gkr_params_compact(struct gkr_params* params)
+{
+    Check_Arg_NotNull(params, false);
+    return reinterpret_cast<gkr::params*>(params)->compact();
 }
 size_t gkr_params_add_object(struct gkr_params* params, const char* key, size_t root)
 {
@@ -180,7 +184,7 @@ inline std::size_t align(std::size_t size, std::size_t pitch) noexcept
 using type_t  = params::param_type_t;
 using index_t = unsigned short;
 using len_t   = unsigned short;
-using key_t   = unsigned int;
+using ofs_t   = unsigned int;
 using value_t = union
 {
     unsigned
@@ -188,7 +192,7 @@ using value_t = union
     double      real;
     long long   integer;
     bool        boolean;
-    key_t       string;
+    ofs_t       string;
     index_t     child;
 };
 struct node_t
@@ -196,7 +200,7 @@ struct node_t
     value_t     value;
     index_t     next;
     type_t      type;
-    key_t       key;
+    ofs_t       ofs;
 };
 static_assert( sizeof(node_t) == 16, "Keep it 16 bytes");
 static_assert(alignof(node_t) ==  8, "Keep it  8 bytes");
@@ -228,12 +232,24 @@ inline bool is_correct_container_type(type_t type, int key_start_with_digit)
 }
 inline std::size_t calc_size_need_for_text(std::size_t len)
 {
-    return align(sizeof(text_t) + len + 1, sizeof(text_t));
+    return align(sizeof(text_t) + len + 1, alignof(text_t));
 }
 inline void check_root(std::size_t& root, std::size_t nodes)
 {
     Assert_Check(root <= nodes);
     if(root == 0) root = (nodes > 0) ? 1U : 0;
+}
+inline std::size_t pos_to_ofs(std::size_t pos)
+{
+    return ((pos << 1) | 1);
+}
+inline std::size_t ofs_to_pos(std::size_t ofs)
+{
+    return (ofs >> 1);
+}
+inline bool is_key_ofs(std::size_t ofs)
+{
+    return ((ofs & 1) == 0);
 }
 
 params::params(std::size_t pitch) noexcept : m_pitch(pitch)
@@ -290,16 +306,16 @@ bool params::copy_params(const params& other, std::size_t root, std::size_t pitc
     return true;
 }
 
-void params::reserve(std::size_t size, std::size_t pitch)
+std::size_t params::reserve(std::size_t size, std::size_t pitch)
 {
     std::unique_lock<params> lock(*this);
 
-    if(pitch != 0) pitch = m_pitch;
+    if(pitch == 0) pitch = m_pitch;
 
     const std::size_t old_size = get_memory_footprint();
     const std::size_t new_size = align(size, pitch);
 
-    if(new_size <= old_size) return;
+    if(new_size <= old_size) return old_size;
 
     m_texts = realloc(new_size);
     m_nodes = reinterpret_cast<node_t*>(m_texts + new_size);
@@ -310,11 +326,48 @@ void params::reserve(std::size_t size, std::size_t pitch)
         m_texts + new_size - size_to_move,
         m_texts + old_size - size_to_move,
         size_to_move);
+
+    return new_size;
 }
 
-void params::compact()
+std::size_t params::compact()
 {
     std::unique_lock<params> lock(*this);
+
+    std::size_t diff = 0;
+
+    for(std::size_t size = 0, ofs_new = 0, ofs_old = 0; ofs_old < m_offset; ofs_old += size)
+    {
+        text_t& text = get_text(ofs_old);
+
+        size = calc_size_need_for_text(text.len);
+
+        node_t& node = get_node(text.ref);
+
+        if((node.type == param_type_string) && (node.value.string == ofs_old))
+        {
+            if(diff != 0)
+            {
+                node.value.string = ofs_t(ofs_new);
+                std::memmove(m_texts + ofs_new, m_texts + ofs_old, size);
+            }
+            ofs_new += size;
+            continue;
+        }
+        if(is_key_ofs(node.ofs) && (node.ofs == ofs_old))
+        {
+            if(diff != 0)
+            {
+                node.ofs = ofs_t(ofs_new);
+                std::memmove(m_texts + ofs_new, m_texts + ofs_old, size);
+            }
+            ofs_new += size;
+            continue;
+        }
+        diff += size;
+    }
+    m_offset -= diff;
+    return diff;
 }
 
 void params::clear()
@@ -357,6 +410,8 @@ std::size_t params::add_array(const char* key, std::size_t root)
 
     Check_Arg_IsValid(root <= m_count, 0);
 
+    check_root(root, m_count);
+
     const std::size_t index = append_node(key, root);
 
     if(index == 0) return 0;
@@ -378,6 +433,8 @@ std::size_t params::add_null(const char* key, std::size_t root)
 
     Check_Arg_IsValid(root <= m_count, 0);
 
+    check_root(root, m_count);
+
     const std::size_t index = append_node(key, root);
 
     if(index == 0) return 0;
@@ -396,6 +453,10 @@ std::size_t params::add_null(const char* key, std::size_t root)
 std::size_t params::set_value(const char* key, bool value, std::size_t root, bool overwrite)
 {
     std::unique_lock<params> lock(*this);
+
+    Check_Arg_IsValid(root <= m_count, 0);
+
+    check_root(root, m_count);
 
     const std::size_t index = append_node(key, root);
 
@@ -420,6 +481,10 @@ std::size_t params::set_value(const char* key, double value, std::size_t root, b
 {
     std::unique_lock<params> lock(*this);
 
+    Check_Arg_IsValid(root <= m_count, 0);
+
+    check_root(root, m_count);
+
     const std::size_t index = append_node(key, root);
 
     if(index == 0) return 0;
@@ -442,6 +507,10 @@ std::size_t params::set_value(const char* key, double value, std::size_t root, b
 std::size_t params::set_value(const char* key, long long value, std::size_t root, bool overwrite)
 {
     std::unique_lock<params> lock(*this);
+
+    Check_Arg_IsValid(root <= m_count, 0);
+
+    check_root(root, m_count);
 
     const std::size_t index = append_node(key, root);
 
@@ -468,6 +537,10 @@ std::size_t params::set_value(const char* key, const char* value, std::size_t ro
 
     Check_Arg_NotNull(value, 0);
 
+    Check_Arg_IsValid(root <= m_count, 0);
+
+    check_root(root, m_count);
+
     const std::size_t index = append_node(key, root);
 
     if(index == 0) return 0;
@@ -486,7 +559,7 @@ std::size_t params::set_value(const char* key, const char* value, std::size_t ro
         node_t& node = get_node(index);
 
         node.type         = param_type_string;
-        node.value.string = key_t(ofs);
+        node.value.string = ofs_t(ofs);
     }
     return index;
 }
@@ -589,18 +662,18 @@ node_t& params::get_node(std::size_t index)
     return *(m_nodes - index);
 }
 
-const text_t& params::get_text(std::size_t offset) const
+const text_t& params::get_text(std::size_t ofs) const
 {
-    Assert_Check((offset % alignof(text_t)) == 0);
+    Assert_Check((ofs % alignof(text_t)) == 0);
 
-    return *reinterpret_cast<const text_t*>(m_texts + offset);
+    return *reinterpret_cast<const text_t*>(m_texts + ofs);
 }
 
-text_t& params::get_text(std::size_t offset)
+text_t& params::get_text(std::size_t ofs)
 {
-    Assert_Check((offset % alignof(text_t)) == 0);
+    Assert_Check((ofs % alignof(text_t)) == 0);
 
-    return *reinterpret_cast<text_t*>(m_texts + offset);
+    return *reinterpret_cast<text_t*>(m_texts + ofs);
 }
 
 bool params::keys_are_equal(const char* key, std::size_t len, std::size_t ofs) const
@@ -633,11 +706,11 @@ std::size_t params::insert_text(std::size_t index, const char* ptr, std::size_t 
     {
         reserve(buff_size + need_size - free_size);
     }
-    const std::size_t offset = m_offset;
+    const std::size_t ofs = m_offset;
 
     m_offset += need_size;
 
-    text_t& text = get_text(offset);
+    text_t& text = get_text(ofs);
 
     text.ref      = index_t(index);
     text.len      = len_t(len);
@@ -645,7 +718,7 @@ std::size_t params::insert_text(std::size_t index, const char* ptr, std::size_t 
 
     std::memcpy(text.ptr, ptr, len);
 
-    return offset;
+    return ofs;
 }
 
 std::size_t params::insert_node()
@@ -665,7 +738,7 @@ std::size_t params::insert_node()
     return ++m_count;
 }
 
-std::size_t params::create_node(const char* key, std::size_t len, std::size_t prev, std::size_t parent, const char* sep)
+std::size_t params::create_node(const char* key, std::size_t pos_or_len, std::size_t prev, std::size_t parent, const char* sep)
 {
     const std::size_t index = insert_node();
     if(index == 0) return 0;
@@ -673,13 +746,15 @@ std::size_t params::create_node(const char* key, std::size_t len, std::size_t pr
     if(prev   != 0) get_node(prev  ).next        = index_t(index);
     if(parent != 0) get_node(parent).value.child = index_t(index);
 
+    const std::size_t ofs = (key == nullptr)
+        ? pos_to_ofs(pos_or_len)
+        : insert_text(index, key, pos_or_len)
+        ;
     node_t& node = get_node(index);
     node.value.all = 0;
     node.next = 0;
     node.type = determine_node_type(sep);
-    node.key  = (key == nullptr)
-        ? key_t(len)
-        : key_t(insert_text(index, key, len));
+    node.ofs  = ofs_t(ofs);
     return index;
 }
 
@@ -740,7 +815,7 @@ std::size_t params::lookup_node(const char* key, std::size_t parent)
             }
             node_t& node = get_node(index);
 
-            if(node.key == pos) break;
+            if(ofs_to_pos(node.ofs) == pos) break;
 
             prev  = index;
             index = node.next;
@@ -757,7 +832,7 @@ std::size_t params::lookup_node(const char* key, std::size_t parent)
             }
             node_t& node = get_node(index);
 
-            if(keys_are_equal(key, len, node.key)) break;
+            if(keys_are_equal(key, len, node.ofs)) break;
 
             prev  = index;
             index = get_node(index).next;
@@ -773,7 +848,7 @@ std::size_t params::mirror_node(bool has_name, const params& other, std::size_t 
     if(other_parent == 0) return 0;
 
     const char* key;
-    std::size_t len;
+    std::size_t pos_or_len;
 
     for(std::size_t self_prev = 0, other_index = other_parent; other_index != 0; self_parent = 0)
     {
@@ -781,16 +856,16 @@ std::size_t params::mirror_node(bool has_name, const params& other, std::size_t 
 
         if(has_name)
         {
-            const text_t& other_text = other.get_text(other_node.key);
-            key = other_text.ptr;
-            len = other_text.len;
+            const text_t& other_text = other.get_text(other_node.ofs);
+            key        = other_text.ptr;
+            pos_or_len = other_text.len;
         }
         else
         {
-            key = nullptr;
-            len = other_node.key;
+            key        = nullptr;
+            pos_or_len = ofs_to_pos(other_node.ofs);
         }
-        const std::size_t self_index = create_node(key, len, self_prev, self_parent, nullptr);
+        const std::size_t self_index = create_node(key, pos_or_len, self_prev, self_parent, nullptr);
 
         node_t& self_node = get_node(self_index);
 
@@ -805,7 +880,9 @@ std::size_t params::mirror_node(bool has_name, const params& other, std::size_t 
                 {
                     const text_t& other_text = other.get_text(other_node.value.string);
 
-                    self_node.value.string = key_t(insert_text(self_index, other_text.ptr, other_text.len));
+                    const std::size_t ofs = insert_text(self_index, other_text.ptr, other_text.len);
+
+                    get_node(self_index).value.string = ofs_t(ofs);
                 }
                 break;
         }
@@ -851,7 +928,7 @@ std::size_t params::search_node(const char* key, std::size_t parent) const
 
             const node_t& node = get_node(index);
 
-            if(node.key == pos) break;
+            if(ofs_to_pos(node.ofs) == pos) break;
 
             index = node.next;
         }
@@ -864,7 +941,7 @@ std::size_t params::search_node(const char* key, std::size_t parent) const
 
             const node_t& node = get_node(index);
 
-            if(keys_are_equal(key, len, node.key)) break;
+            if(keys_are_equal(key, len, node.ofs)) break;
 
             index = node.next;
         }
@@ -886,7 +963,7 @@ void params::collect_info(bool has_name, std::size_t index, std::size_t level, s
 
         if(has_name)
         {
-            const text_t& head = *reinterpret_cast<text_t*>(m_texts + node.key);
+            const text_t& head = *reinterpret_cast<text_t*>(m_texts + node.ofs);
             size += calc_size_need_for_text(head.len);
         }
         switch(int(node.type))

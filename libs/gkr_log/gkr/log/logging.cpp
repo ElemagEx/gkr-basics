@@ -23,7 +23,7 @@ struct buffer_t
     char*       ptr = nullptr;
     std::size_t cch = 0;
 };
-thread_local buffer_t thread_local_buffer;
+thread_local buffer_t thread_local_buffer;//TODO:REMOVE
 
 struct logger_thread_data
 {

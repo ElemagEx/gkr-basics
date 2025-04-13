@@ -1,3 +1,5 @@
+#include <gkr/defs.hpp>
+
 #include <gkr/net/socket.hpp>
 #include <gkr/net/lib.hpp>
 

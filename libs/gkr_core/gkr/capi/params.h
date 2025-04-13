@@ -28,7 +28,9 @@ GKR_CORE_API int gkr_params_destroy(struct gkr_params* params);
 
 GKR_CORE_API int gkr_params_copy(struct gkr_params* params, struct gkr_params* other_params, size_t pitch);
 GKR_CORE_API int gkr_params_clear(struct gkr_params* params);
-GKR_CORE_API int gkr_params_reserve(struct gkr_params* params, size_t size, size_t pitch);
+
+GKR_CORE_API size_t gkr_params_reserve(struct gkr_params* params, size_t size, size_t pitch);
+GKR_CORE_API size_t gkr_params_compact(struct gkr_params* params);
 
 GKR_CORE_API size_t gkr_params_add_object(struct gkr_params* params, const char* key, size_t root);
 GKR_CORE_API size_t gkr_params_add_array (struct gkr_params* params, const char* key, size_t root);

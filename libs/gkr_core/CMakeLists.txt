@@ -28,7 +28,7 @@ target_sources(gkr_core
 target_sources(gkr_core
     ${GKR_CPP_INTERFACE}
     "gkr/stack_alloc.hpp"
-    "gkr/misc/ptr_sentry.hpp"
+    "gkr/misc/sentry.hpp"
     "gkr/misc/union_cast.hpp"
     "gkr/misc/c_allocator.hpp"
     "gkr/misc/stack_args_order.hpp"

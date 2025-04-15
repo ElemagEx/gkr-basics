@@ -72,7 +72,7 @@ public:
         Check_Sys_Result(cch, false);
 
         buff_t buff(cch);
-        const int len = gkr_url_construct(&parts, buff.data<char>(), cch);
+        const int len = gkr_url_construct(&parts, buff.template data<char>(), cch);
         Check_Sys_Result(len, false);
         buff.change_size(len + 1);
 

@@ -1,4 +1,6 @@
-#include <gkr/container/lockfree_grow_only_bag.hpp>
+#include <gkr/defs.hpp>
+
+#include <gkr/container/lockfree_bag.hpp>
 
 #include <catch2/catch_template_test_macros.hpp>
 
@@ -73,7 +75,7 @@ DEFINE_TEST_ALLOCATOR(allocator4, (flag::SingleThreaded | flag::EqualsNever   | 
 DEFINE_TEST_ALLOCATOR(allocatorM, (flag::MultiThreaded  | flag::EqualsAlways  | flag::PropagatesNever ));
 
 template<typename T, typename Allocator>
-int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
+int sum(const gkr::lockfree_bag<T, Allocator>& bag)
 {
     T total {0};
 
@@ -88,12 +90,12 @@ int sum(const gkr::lockfree_grow_only_bag<T, Allocator>& bag)
 #pragma warning(disable:4868)
 #endif
 
-TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_grow_only_bag. lifecycle", "", (allocator1, allocator2, allocator3, allocator4), (int, Data))
+TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_bag. lifecycle", "", (allocator1, allocator2, allocator3, allocator4), (int, Data))
 {
     using allocator_t = TestType;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -236,12 +238,12 @@ TEMPLATE_PRODUCT_TEST_CASE("container.lockfree_grow_only_bag. lifecycle", "", (a
     CHECK(objects_ref_counting::check());
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. getters")
+TEST_CASE("container.lockfree_bag. getters")
 {
     using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -285,12 +287,12 @@ TEST_CASE("container.lockfree_grow_only_bag. getters")
     CHECK(objects_ref_counting::check());
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. clear", "", int, Data, std::string)
+TEMPLATE_TEST_CASE("container.lockfree_bag. clear", "", int, Data, std::string)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -315,12 +317,12 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. clear", "", int, Data, std
     CHECK(objects_ref_counting::check());
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. iterators")
+TEST_CASE("container.lockfree_bag. iterators")
 {
     using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -355,12 +357,12 @@ TEST_CASE("container.lockfree_grow_only_bag. iterators")
     CHECK(objects_ref_counting::check());
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. comparison", "", int, Data)
+TEMPLATE_TEST_CASE("container.lockfree_bag. comparison", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -439,12 +441,12 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. comparison", "", int, Data
     CHECK(objects_ref_counting::check());
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. insert")
+TEST_CASE("container.lockfree_bag. insert")
 {
     using allocator_t = allocator1<Data>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -487,12 +489,12 @@ TEST_CASE("container.lockfree_grow_only_bag. insert")
     CHECK(objects_ref_counting::check());
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. erase", "", int, Data)
+TEMPLATE_TEST_CASE("container.lockfree_bag. erase", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -574,12 +576,12 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. erase", "", int, Data)
     CHECK(objects_ref_counting::check());
 }
 
-TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. lookup", "", int, Data)
+TEMPLATE_TEST_CASE("container.lockfree_bag. lookup", "", int, Data)
 {
     using allocator_t = allocator1<TestType>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     CHECK(objects_ref_counting::check());
@@ -639,12 +641,12 @@ TEMPLATE_TEST_CASE("container.lockfree_grow_only_bag. lookup", "", int, Data)
     CHECK(objects_ref_counting::check());
 }
 
-TEST_CASE("container.lockfree_grow_only_bag. multithreading")
+TEST_CASE("container.lockfree_bag. multithreading")
 {
     using allocator_t = allocatorM<Data>;
     using value_t     = typename allocator_t::value_type;
 
-    using bag_t  = gkr::lockfree_grow_only_bag<value_t, allocator_t>;
+    using bag_t  = gkr::lockfree_bag<value_t, allocator_t>;
 //  using slot_t = typename bag_t::allocator_value_type;
 
     constexpr std::size_t threads_count = 20;

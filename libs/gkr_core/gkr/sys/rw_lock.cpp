@@ -3,14 +3,17 @@
 
 #include <gkr/diagnostics.hpp>
 
+template<unsigned> struct half_int_t;
+
+template<> struct half_int_t<8> { using type = unsigned int  ; };
+template<> struct half_int_t<4> { using type = unsigned short; };
+
+using half_int = half_int_t<sizeof(void*)>::type;
+
 union tls_t
 {
     void* value;
-#if _WIN64
-    struct { unsigned int   writer, reader; } ref_count;
-#else
-    struct { unsigned short writer, reader; } ref_count;
-#endif
+    struct { half_int writer, reader; } ref_count;
 };
 static_assert(sizeof(tls_t) == sizeof(void*), "The tls_t must be with the same size as sizeof(void*)");
 

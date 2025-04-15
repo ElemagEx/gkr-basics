@@ -152,7 +152,7 @@ int get_current_process_command_line(struct command_line& cmd_line)
 
 #else
 
-#include <gkr/misc/ptr_sentry.hpp>
+#include <gkr/misc/sentry.hpp>
 
 #include <unistd.h>
 #include <linux/limits.h>
@@ -233,38 +233,38 @@ std::string expand_current_process_env_vars(const char* str)
 
 int get_current_process_command_line(struct command_line& cmd_line)
 {
-    misc::ptr_sentry<FILE> file(
-        std::fopen("/proc/self/cmdline", "r"),
-        [](FILE* f) noexcept { std::fclose(f); }
-        );
-    if(file.get() == nullptr)
     {
-        Check_std_Fail(0);
-    }
-    cmd_line.buff.resize(256);
-
-    for(std::size_t read = 0; ; )
-    {
-        const std::size_t cb = (cmd_line.buff.size() - read);
-
-        if(cb == 0)
+        FILE* file = std::fopen("/proc/self/cmdline", "r");
+        if(file == nullptr)
         {
-            cmd_line.buff.resize(cmd_line.buff.size() * 2);
-            continue;
+            Check_std_Fail(0);
         }
-        const std::size_t len = std::fread(cmd_line.buff.data() + read, 1, cb, file.get());
+        misc::sentry sentry([file]() noexcept { std::fclose(file); });
 
-        if(len == 0)
+        cmd_line.buff.resize(256);
+
+        for(std::size_t read = 0; ; )
         {
-            if(read == 0)
+            const std::size_t cb = (cmd_line.buff.size() - read);
+
+            if(cb == 0)
             {
-                Check_std_Fail(0);
+                cmd_line.buff.resize(cmd_line.buff.size() * 2);
+                continue;
             }
-            break;
+            const std::size_t len = std::fread(cmd_line.buff.data() + read, 1, cb, file);
+
+            if(len == 0)
+            {
+                if(read == 0)
+                {
+                    Check_std_Fail(0);
+                }
+                break;
+            }
+            read += len;
         }
-        read += len;
     }
-    file.reset();
 
     char* arg = cmd_line.buff.data();
     char* end = arg + cmd_line.buff.size() - 1;

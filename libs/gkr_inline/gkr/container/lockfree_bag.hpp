@@ -5,7 +5,7 @@
 #include <utility>
 #include <type_traits>
 
-#ifndef GKR_LOCKFREE_GROW_ONLY_BAG_SINGLE_HEADER
+#ifndef GKR_LOCKFREE_BAG_SINGLE_HEADER
 
 #include <gkr/diagnostics.hpp>
 
@@ -83,7 +83,7 @@ namespace gkr
 //  https://en.cppreference.com/w/cpp/named_req/AllocatorAwareContainer
 //
 template<typename T, typename Allocator=std::allocator<T>>
-class lockfree_grow_only_bag
+class lockfree_bag
 {
 public:
     using value_type      = T;
@@ -175,13 +175,13 @@ private:
     }
 
 public:
-    lockfree_grow_only_bag(const Allocator& allocator = Allocator()) noexcept(
+    lockfree_bag(const Allocator& allocator = Allocator()) noexcept(
         std::is_nothrow_constructible<allocator_type, const Allocator&>::value
         )
         : m_allocator(allocator)
     {
     }
-    ~lockfree_grow_only_bag() noexcept(
+    ~lockfree_bag() noexcept(
         std::is_nothrow_destructible<allocator_type>::value &&
         std::is_nothrow_destructible<     node_data>::value
         )
@@ -189,17 +189,17 @@ public:
         clear();
     }
 
-    lockfree_grow_only_bag(const lockfree_grow_only_bag& other) noexcept(false)
+    lockfree_bag(const lockfree_bag& other) noexcept(false)
         : m_allocator(allocator_traits::select_on_container_copy_construction(other.m_allocator))
     {
         m_first = copy_elements(other.m_first);
     }
-    lockfree_grow_only_bag(const lockfree_grow_only_bag& other, const Allocator& allocator) noexcept(false)
+    lockfree_bag(const lockfree_bag& other, const Allocator& allocator) noexcept(false)
         : m_allocator(allocator)
     {
         m_first = copy_elements(other.m_first);
     }
-    lockfree_grow_only_bag& operator=(const lockfree_grow_only_bag& other) noexcept(false)
+    lockfree_bag& operator=(const lockfree_bag& other) noexcept(false)
     {
         if(this != &other)
         {
@@ -215,14 +215,14 @@ public:
         return *this;
     }
 
-    lockfree_grow_only_bag(lockfree_grow_only_bag&& other) noexcept(
+    lockfree_bag(lockfree_bag&& other) noexcept(
         std::is_nothrow_move_constructible<allocator_type>::value
         )
         : m_first    (other.m_first.exchange(nullptr))
         , m_allocator(std::move(other.m_allocator))
     {
     }
-    lockfree_grow_only_bag(lockfree_grow_only_bag&& other, const Allocator& allocator) noexcept(
+    lockfree_bag(lockfree_bag&& other, const Allocator& allocator) noexcept(
         std::is_nothrow_constructible<allocator_type, const Allocator&>::value &&
         allocator_traits::is_always_equal::value
         )
@@ -243,7 +243,7 @@ public:
             other.clear();
         }
     }
-    lockfree_grow_only_bag& operator=(lockfree_grow_only_bag&& other) noexcept(move_is_noexcept)
+    lockfree_bag& operator=(lockfree_bag&& other) noexcept(move_is_noexcept)
     {
         if(this != &other)
         {
@@ -274,7 +274,7 @@ public:
     }
 
 public:
-    void swap(lockfree_grow_only_bag& other) noexcept(swap_is_noexcept)
+    void swap(lockfree_bag& other) noexcept(swap_is_noexcept)
     {
         if(this != &other)
         {
@@ -359,7 +359,7 @@ public:
     {
         Node* node {nullptr};
 
-        friend class lockfree_grow_only_bag;
+        friend class lockfree_bag;
         iterator_t(Node* n) noexcept : node(n) {}
 
     public:
@@ -419,7 +419,7 @@ public:
     }
 
 public:
-    bool operator==(const lockfree_grow_only_bag& other) const noexcept
+    bool operator==(const lockfree_bag& other) const noexcept
     {
         if(this == &other) return true;
 
@@ -471,7 +471,7 @@ public:
         }
         return true;
     }
-    bool operator!=(const lockfree_grow_only_bag& other) const noexcept
+    bool operator!=(const lockfree_bag& other) const noexcept
     {
         return !operator==(other);
     }
@@ -713,10 +713,10 @@ namespace std
 {
 template<typename T, typename Allocator>
 void swap(
-    gkr::lockfree_grow_only_bag<T, Allocator>& lhs,
-    gkr::lockfree_grow_only_bag<T, Allocator>& rhs
+    gkr::lockfree_bag<T, Allocator>& lhs,
+    gkr::lockfree_bag<T, Allocator>& rhs
     )
-    noexcept(gkr::lockfree_grow_only_bag<T, Allocator>::swap_is_noexcept)
+    noexcept(gkr::lockfree_bag<T, Allocator>::swap_is_noexcept)
 {
     lhs.swap(rhs);
 }

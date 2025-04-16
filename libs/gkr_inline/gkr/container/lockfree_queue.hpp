@@ -421,9 +421,6 @@ inline queue_tid_t get_other_tid(const std::thread& thread)
 
 class queue_threading
 {
-    queue_threading           (const queue_threading&) noexcept = delete;
-    queue_threading& operator=(const queue_threading&) noexcept = delete;
-
 private:
     queue_tid_t m_producer_tid = 0;
     queue_tid_t m_consumer_tid = 0;
@@ -432,10 +429,21 @@ public:
     queue_threading() noexcept = default;
    ~queue_threading() noexcept = default;
 
+    queue_threading(const queue_threading& other) noexcept
+        : m_producer_tid(other.m_producer_tid)
+        , m_consumer_tid(other.m_consumer_tid)
+    {
+    }
     queue_threading(queue_threading&& other) noexcept
         : m_producer_tid(std::exchange(other.m_producer_tid, 0))
         , m_consumer_tid(std::exchange(other.m_consumer_tid, 0))
     {
+    }
+    queue_threading& operator=(const queue_threading& other) noexcept
+    {
+        m_producer_tid = other.m_producer_tid;
+        m_consumer_tid = other.m_consumer_tid;
+        return *this;
     }
     queue_threading& operator=(queue_threading&& other) noexcept
     {
@@ -447,6 +455,13 @@ public:
     {
         std::swap(m_producer_tid, other.m_producer_tid);
         std::swap(m_consumer_tid, other.m_consumer_tid);
+    }
+    queue_threading switched() const
+    {
+        queue_threading threading;
+        threading.m_producer_tid = m_consumer_tid;
+        threading.m_consumer_tid = m_producer_tid;
+        return threading;
     }
 
 public:
@@ -1825,6 +1840,20 @@ public:
     }
 
 public:
+    void clean() noexcept(!MultipleConsumersMultipleProducersSupport && std::is_nothrow_destructible<element_t>::value)
+    {
+        static_assert(Pausable, "Cannot clean in not pausable queue");
+
+        typename base_t::pause_resume_sentry sentry(*this);
+
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
+
+        while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
+
+        free_elements();
+        base_t::reset(0);
+        m_elements = nullptr;
+    }
     bool reserve(std::size_t capacity) noexcept(false)
     {
         static_assert(Pausable, "Cannot reserve in not pausable queue");
@@ -2703,6 +2732,20 @@ public:
     }
 
 public:
+    void clean() noexcept(!MultipleConsumersMultipleProducersSupport)
+    {
+        static_assert(Pausable, "Cannot clean in not pausable queue");
+
+        typename base_t::pause_resume_sentry sentry(*this);
+
+        Check_ValidState(base_t::this_thread_owns_elements(0), false);
+
+        while(base_t::other_thread_owns_elements()) base_t::wait_a_while();
+
+        free_elements();
+        base_t::reset(0);
+        m_elements = nullptr;
+    }
     bool reserve(std::size_t capacity) noexcept(false)
     {
         static_assert(Pausable, "Cannot reserve in not pausable queue");

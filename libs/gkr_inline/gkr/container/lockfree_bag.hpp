@@ -686,6 +686,31 @@ public:
         return end();
     }
 
+    template<class Key>
+    iterator find(const Key& key) noexcept
+    {
+        for(iterator it = begin(); it != end(); ++it)
+        {
+            if(*it == key)
+            {
+                return it;
+            }
+        }
+        return end();
+    }
+    template<class Key>
+    const_iterator find(const Key& key) const noexcept
+    {
+        for(iterator it = begin(); it != end(); ++it)
+        {
+            if(*it == key)
+            {
+                return it;
+            }
+        }
+        return end();
+    }
+
 public:
     bool contains(const value_type& value) const noexcept
     {

@@ -8,7 +8,7 @@ namespace
 {
 bool is_valid_scheme(const char* str, std::size_t len)
 {
-    if(!std::isalpha(*str++)) return false;
+    if((len == 0) || !std::isalpha(*str++)) return false;
 
     for( ; --len > 0; ++str)
     {
@@ -84,51 +84,67 @@ bool is_valid_fragment(const char* str, std::size_t& len)
 void unescape_url(char* str)
 {
 }
+
+const char* find_char(const char* str, std::size_t cch, int ch)
+{
+    for( ; cch > 0; --cch, ++str) if(*str == ch) return str;
+    return nullptr;
+}
 }
 
 extern "C"
 {
 
-int gkr_url_decompose(char* url, int unescape, gkr_url_parts* parts)
+int gkr_url_decompose(struct gkr_url_parts* parts, int unescape, const char* url, size_t len)
 {
-    Check_Arg_NotNull(url  , 0);
-    Check_Arg_NotNull(parts, 0);
+    Check_Arg_NotNull(url  , gkr_false);
+    Check_Arg_NotNull(parts, gkr_false);
 
-    std::size_t len = 0;
-    parts->path = nullptr;
+    *parts = gkr_url_parts {};
 
-    for( ; std::isspace(*url); ++url);
+    size_t cch = (len != size_t(-1))
+        ? len
+        : std::strlen(url);
 
-    char* path = std::strchr(url, '/');
-    if(path == nullptr) return 0; // path missing
+    for( ; (cch > 0) && std::isspace(*url); ++url, --cch);
 
-    char* pos = std::strchr(url, ':');
+    const char* path = find_char(url, cch, '/');
+    if(path == nullptr) path += cch;
 
-    if((pos == nullptr) || (pos > path)) // scheme missing
+    const char* pos = find_char(url, cch, ':');
+
+    if((pos != nullptr) && (pos < path))
     {
-        parts->scheme = nullptr;
-    }
-    else
-    {
-        len = std::size_t(pos - url);
-        if(!is_valid_scheme(url, len)) return 0; // invalid scheme name
-        url[len] = 0;
-        parts->scheme = url;
+        len = size_t(pos - url);
+
+        if(!is_valid_scheme(url, cch)) return gkr_false;
+
+        parts->str[gkr_url_part_scheme] = url;
+        parts->len[gkr_url_part_scheme] = len;
+
         url += len + 1;
+        cch -= len + 1;
     }
-    if(url++ != path) return 0; // scheme colon followed by invalid character
+    if((cch >= 2) && (url[0] == '/') && (url[1] == '/'))
+    {
+        url += 2;
+        cch -= 2;
 
-    if(*url != '/')
-    {
-        parts->username = nullptr;
-        parts->password = nullptr;
-        parts->host     = nullptr;
-        parts->port     = 0;
+        path = find_char(url, cch, '/');
+        if(path == nullptr) path += cch;
+
+        pos = find_char(url, cch, '@');
+        if((pos != nullptr) && (pos < path))
+        {
+            const char* sep = find_char(url, cch, ':');
+
+            if((sep != nullptr) && (sep < pos))
+            {
+            }
+        }
+
     }
-    else
-    {
-        path = std::strchr(++url, '/');
-        if(path == nullptr) return 0; // path missing
+
 
         pos = std::strchr(url, '@');
         if((pos == nullptr) || (pos > path))

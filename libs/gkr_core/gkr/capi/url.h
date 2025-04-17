@@ -2,15 +2,26 @@
 
 #include <gkr/capi/api.h>
 
+#include <stddef.h>
+
+enum
+{
+    gkr_url_part_scheme,
+    gkr_url_part_username,
+    gkr_url_part_password,
+    gkr_url_part_host,
+    gkr_url_part_port,
+    gkr_url_part_path,
+    gkr_url_part_query,
+    gkr_url_part_fragment,
+    gkr_url_parts_count,
+};
+
 struct gkr_url_parts
 {
-    const char* scheme;
-    const char* username;
-    const char* password;
-    const char* host;
-    const char* path;
-    const char* query;
-    const char* fragment;
+    const char* str[gkr_url_parts_count];
+    unsigned    len[gkr_url_parts_count];
+
     int         port;
     int         args;
 };
@@ -19,7 +30,7 @@ struct gkr_url_parts
 extern "C" {
 #endif
 
-GKR_CORE_API int gkr_url_decompose(char* url, int unescape, struct gkr_url_parts* parts);
+GKR_CORE_API gkr_bool gkr_url_decompose(struct gkr_url_parts* parts, int unescape, const char* url, size_t len);
 
 //GKR_CORE_API int gkr_url_validate(struct gkr_url_parts* parts);
 

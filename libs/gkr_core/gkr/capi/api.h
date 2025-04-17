@@ -35,3 +35,7 @@
 #endif
 
 #define GKR_INNER_API   GKR_CORE_API
+
+#define gkr_bool  int
+#define gkr_false 0
+#define gkr_true  1

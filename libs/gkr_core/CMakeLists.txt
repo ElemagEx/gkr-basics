@@ -79,6 +79,11 @@ target_link_libraries(gkr_core PUBLIC gkr_inline gkr_data)
 set_target_properties(gkr_core PROPERTIES DEFINE_SYMBOL BUILDING_GKR_CORE)
 
 if(GKR_BASICS_TESTS)
+add_executable        (t-url "tests/t-url.cpp")
+target_link_libraries (t-url PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
+target_compile_options(t-url PRIVATE ${GKR_BASICS_TESTING_WARNINGS})
+catch_discover_tests  (t-url)
+
 add_executable        (t-params "tests/t-params.cpp")
 target_link_libraries (t-params PRIVATE Catch2::Catch2WithMain gkr_testing gkr_core)
 target_compile_options(t-params PRIVATE ${GKR_BASICS_TESTING_WARNINGS})

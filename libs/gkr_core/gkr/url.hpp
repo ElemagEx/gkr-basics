@@ -22,13 +22,33 @@ public:
     basic_url() noexcept(std::is_nothrow_default_constructible<buff_t>::value) = default;
    ~basic_url() noexcept(std::is_nothrow_destructible         <buff_t>::value) = default;
 
-    basic_url           (const basic_url&  other) noexcept(std::is_nothrow_copy_constructible<buff_t>::value) : m_buff(  other.m_buff), m_parts(  other.m_parts) {}
-    basic_url& operator=(const basic_url&  other) noexcept(std::is_nothrow_copy_assignable   <buff_t>::value) { m_buff = other.m_buff;  m_parts = other.m_parts; return *this; }
-
-    basic_url           (basic_url&& other) noexcept(std::is_nothrow_move_constructible<buff_t>::value) : m_buff(  std::move(other.m_buff)), m_parts(  std::exchange(other.m_parts, {})) {}
-    basic_url& operator=(basic_url&& other) noexcept(std::is_nothrow_move_assignable   <buff_t>::value) { m_buff = std::move(other.m_buff);  m_parts = std::exchange(other.m_parts, {}); return *this; }
+    basic_url(basic_url&& other) noexcept(std::is_nothrow_move_constructible<buff_t>::value)
+        : m_buff (std::move    (other.m_buff))
+        , m_parts(std::exchange(other.m_parts, {}))
+    {
+    }
+    basic_url(const basic_url& other) noexcept(std::is_nothrow_copy_constructible<buff_t>::value)
+        : m_buff (other.m_buff)
+        , m_parts(other.m_parts)
+    {
+    }
+    basic_url& operator=(basic_url&& other) noexcept(std::is_nothrow_move_assignable<buff_t>::value)
+    {
+        m_buff  = std::move    (other.m_buff);
+        m_parts = std::exchange(other.m_parts, {});
+        return *this;
+    }
+    basic_url& operator=(const basic_url& other) noexcept(std::is_nothrow_copy_assignable<buff_t>::value)
+    {
+        m_buff  = other.m_buff;
+        m_parts = other.m_parts;
+        return *this;
+    }
 
 public:
+    basic_url(std::size_t capacity) : m_buff(capacity)
+    {
+    }
     basic_url(const char* str, bool unescape = false)
     {
         decompose(str, unescape);
@@ -54,32 +74,38 @@ public:
         m_buff.change_size(0);
         m_parts = url_parts{};
     }
-    bool decompose(const char* str, bool unescape = false)
+    bool decompose(const char* str, std::size_t len = std::size_t(-1), bool unescape = false)
     {
         Check_Arg_NotNull(str, false);
-        const std::size_t size = std::strlen(str) + 1;
 
-        m_buff.resize(size + 2);
-        std::memcpy(m_buff.data(), str, size);
+        if(len == std::size_t(-1)) len = std::strlen(str);
 
-        return (0 != gkr_url_decompose(m_buff.template data<char>(), gkr_b2i(unescape), &m_parts));
+        m_buff.resize(len + 1);
+
+        std::memcpy(m_buff.data(), str, len);
+
+        m_buff.at<char>(len) = 0;
+
+        if(!gkr_url_decompose(&m_parts, m_buff.data<char>(), unsigned(len)))
+        {
+            m_parts = url_parts {};
+            return false;
+        }
+        return true;
     }
 
 public:
-    bool construct(const url_parts& parts, bool unescape = false)
+    bool change_scheme(const char* scheme, std::size_t len = std::size_t(-1))
     {
-        const int cch = gkr_url_construct(&parts, nullptr, 0);
-        Check_Sys_Result(cch, false);
+        if(scheme == nullptr) len = 0; else if(len == std::size_t(-1)) len = std::strlen(scheme);
 
-        buff_t buff(cch);
-        const int len = gkr_url_construct(&parts, buff.template data<char>(), cch);
-        Check_Sys_Result(len, false);
-        buff.change_size(len + 1);
+        const std::size_t cch = m_buff.size() + len - m_parts.len[gkr_url_part_scheme];
 
-        m_buff = std::move(buff);
+        m_buff.resize(cch);
 
-        return (0 <= gkr_url_decompose(m_buff.template data<char>(), gkr_b2i(unescape), &m_parts));
+        return gkr_i2b(gkr_url_change_part(gkr_url_part_scheme, &m_parts, m_buff.data<char>(), unsigned(cch), scheme, unsigned(len)));
     }
+
 };
 
 using url = basic_url<std::allocator<char>>;

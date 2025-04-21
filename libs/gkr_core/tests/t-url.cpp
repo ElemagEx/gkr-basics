@@ -4,16 +4,15 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("core.url. compact")
+TEST_CASE("core.url. decompose")
 {
-    gkr::singlethreaded_params parameters;
+    gkr::url url(128);
 
-    parameters.set_value("key1", "value1");
-    parameters.set_value("key2", "value2");
-    parameters.set_value("key3", "value3");
-    parameters.set_value("key2", "value4");
+    CHECK(url.decompose("https://drago:pass1234@127.0.0.1:3000/binary/v0?key1=val1#bottom"));
 
-    std::size_t size = parameters.compact();
+    CHECK(url.change_scheme(nullptr));
+    CHECK(url.change_scheme("wss"));
 
-    CHECK(size > 0);
+
+//CHECK(size > 0);
 }

@@ -2,10 +2,9 @@
 
 #include <gkr/capi/api.h>
 
-#include <stddef.h>
-
 enum
 {
+    gkr_url_part_whole,
     gkr_url_part_scheme,
     gkr_url_part_username,
     gkr_url_part_password,
@@ -30,11 +29,10 @@ struct gkr_url_parts
 extern "C" {
 #endif
 
-GKR_CORE_API gkr_bool gkr_url_decompose(struct gkr_url_parts* parts, int unescape, const char* url, size_t len);
+GKR_CORE_API gkr_bool gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len);
 
-//GKR_CORE_API int gkr_url_validate(struct gkr_url_parts* parts);
+GKR_CORE_API gkr_bool gkr_url_change_part(int part, struct gkr_url_parts* parts, char* url, unsigned cch, const char* str, unsigned len);
 
-GKR_CORE_API int gkr_url_construct(const struct gkr_url_parts* parts, char* buf, int cch);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 @echo off
-if "%1" == "" (set catch2_tag=v3.8.0) else (set catch2_tag=%1)
+if "%1" == "" (set catch2_tag=v3.8.1) else (set catch2_tag=%1)
 echo Installing Catch2 %catch2_tag% ...
 if exist tmp rd /S /Q tmp
 md tmp

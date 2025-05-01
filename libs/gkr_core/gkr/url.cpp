@@ -8,77 +8,107 @@ namespace
 {
 bool is_valid_scheme(const char* str, std::size_t len)
 {
-    if((len == 0) || !std::isalpha(*str++)) return false;
-
-    for( ; --len > 0; ++str)
+    if(str != nullptr)
     {
-        switch(*str)
+        if((len == 0) || !std::isalpha(*str++)) return false;
+
+        for( ; --len > 0; ++str)
         {
-            case '+':
-            case '.':
-            case '-': break;
-            default : if(!std::isalnum(*str)) return false; break;
+            switch(*str)
+            {
+                case '+':
+                case '.':
+                case '-': break;
+                default : if(!std::isalnum(*str)) return false; break;
+            }
         }
     }
     return true;
 }
 bool is_valid_username(const char* str, std::size_t len)
 {
+    if(str != nullptr)
+    {
+    }
     return true;
 }
 bool is_valid_password(const char* str, std::size_t len)
 {
+    if(str != nullptr)
+    {
+    }
     return true;
 }
 bool is_valid_ipv6_addr(const char* str, std::size_t len)
 {
-    // Veeeeery loose
-    for( ; len-- > 0; ++str)
+    if(str != nullptr)
     {
-        if((*str != ':') && (*str != '%') && !std::isxdigit(*str)) return false;
+        for( ; len-- > 0; ++str)
+        {
+            if((*str != ':') && (*str != '%') && !std::isxdigit(*str)) return false;
+        }
     }
     return true;
 }
 bool is_valid_ipv4_addr(const char* str, std::size_t len)
 {
-    // Veeeeeeeeery loose
-    for( ; len-- > 0; ++str)
+    if(str != nullptr)
     {
-        if((*str != '.') && !std::isdigit(*str)) return false;
+        for( ; len-- > 0; ++str)
+        {
+            if((*str != '.') && !std::isdigit(*str)) return false;
+        }
     }
     return true;
 }
 bool is_valid_domain(const char* str, std::size_t len)
 {
-    // Veeeeeeeeeeeery loose
-    return (len > 0);
-}
-//bool is_valid_host(const char* str, std::size_t len)
-//{
-//    return is_valid_ipv6_addr(str, len) || is_valid_ipv4_addr(str, len) || is_valid_domain(str, len);
-//}
-bool is_valid_port(const char* str, std::size_t len, int& port)
-{
-    if((len < 1) || (len > 5)) return false;
-
-    while(std::isdigit(*str))
+    if(str != nullptr)
     {
-        port = (port * 10) + (*str++ - '0');
     }
-    return ((port > 0) && (port < 65536));
+    return true;
+}
+bool is_valid_host(const char* str, std::size_t len)
+{
+    return is_valid_ipv6_addr(str, len) || is_valid_ipv4_addr(str, len) || is_valid_domain(str, len);
+}
+bool is_valid_port(const char* str, std::size_t len, unsigned& port)
+{
+    port = 0;
+    if(str != nullptr)
+    {
+        if((len < 1) || (len > 5)) return false;
+
+        while(std::isdigit(*str))
+        {
+            port = (port * 10) + (*str++ - '0');
+        }
+
+        if((port < 1) || (port > 65535)) return false;
+    }
+    return true;
 }
 bool is_valid_path(const char* str, std::size_t len)
 {
-    if(*str != '/') return false;
+    if((str != nullptr) && (len > 0))
+    {
+        if(*str != '/') return false;
+    }
     return true;
 }
-bool is_valid_query(const char* url, std::size_t len, int& args)
+bool is_valid_query(const char* str, std::size_t len, unsigned& args)
 {
     args = 0;
+    if(str != nullptr)
+    {
+    }
     return true;
 }
-bool is_valid_fragment(const char* url, std::size_t len)
+bool is_valid_fragment(const char* str, std::size_t len)
 {
+    if(str != nullptr)
+    {
+    }
     return true;
 }
 //void unescape_url(char* str)
@@ -95,24 +125,22 @@ const char* find_char(const char* str, std::size_t cch, int ch)
 extern "C"
 {
 
-int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len)
+int gkr_url_decompose(struct gkr_url_data* data, const char* url, unsigned len)
 {
-    Check_Arg_NotNull(url  , gkr_false);
-    Check_Arg_NotNull(parts, gkr_false);
+    Check_Arg_NotNull(url , gkr_false);
+    Check_Arg_NotNull(data, gkr_false);
 
-    *parts = gkr_url_parts {};
+    *data = gkr_url_data {};
 
     if(len == unsigned(-1)) len = unsigned(std::strlen(url));
 
-    parts->str[gkr_url_part_whole] = url;
-    parts->len[gkr_url_part_whole] = len;
+    data->str[gkr_url_part_whole] = url;
+    data->len[gkr_url_part_whole] = len;
 
     std::size_t cch = len;
 
-    for( ; (cch > 0) && std::isspace(*url); ++url, --cch);
-
     const char* end = find_char(url, cch, '/');
-    if(end == nullptr) end = url + cch;
+    if(end == nullptr) return gkr_false; // must have at least one of host or path
 
     const char* pos = find_char(url, cch, ':');
 
@@ -122,8 +150,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
         if(!is_valid_scheme(url, len)) return gkr_false;
 
-        parts->str[gkr_url_part_scheme] = url;
-        parts->len[gkr_url_part_scheme] = len;
+        data->str[gkr_url_part_scheme] = url;
+        data->len[gkr_url_part_scheme] = len;
 
         url += len + 1;
         cch -= len + 1;
@@ -147,8 +175,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_username(url, len)) return gkr_false;
 
-                parts->str[gkr_url_part_username] = url;
-                parts->len[gkr_url_part_username] = len;
+                data->str[gkr_url_part_username] = url;
+                data->len[gkr_url_part_username] = len;
 
                 url += len + 1;
                 cch -= len + 1;
@@ -157,8 +185,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_password(url, len)) return gkr_false;
 
-                parts->str[gkr_url_part_password] = url;
-                parts->len[gkr_url_part_password] = len;
+                data->str[gkr_url_part_password] = url;
+                data->len[gkr_url_part_password] = len;
 
                 url += len + 1;
                 cch -= len + 1;
@@ -169,8 +197,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_username(url, len)) return gkr_false;
 
-                parts->str[gkr_url_part_username] = url;
-                parts->len[gkr_url_part_username] = len;
+                data->str[gkr_url_part_username] = url;
+                data->len[gkr_url_part_username] = len;
 
                 url += len + 1;
                 cch -= len + 1;
@@ -191,8 +219,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
             if(!is_valid_ipv6_addr(url, len)) return gkr_false; // invalid IPv6 address
 
-            parts->str[gkr_url_part_host] = url;
-            parts->len[gkr_url_part_host] = len;
+            data->str[gkr_url_part_host] = url;
+            data->len[gkr_url_part_host] = len;
 
             url += len + 1;
             cch -= len + 1;
@@ -215,8 +243,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
             if(!is_valid_ipv4_addr(url, len)) return gkr_false; // invalid IPv4 address
 
-            parts->str[gkr_url_part_host] = url;
-            parts->len[gkr_url_part_host] = len;
+            data->str[gkr_url_part_host] = url;
+            data->len[gkr_url_part_host] = len;
 
             url += len;
             cch -= len;
@@ -237,8 +265,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
             if(!is_valid_domain(url, len)) return gkr_false; // invalid domain
 
-            parts->str[gkr_url_part_host] = url;
-            parts->len[gkr_url_part_host] = len;
+            data->str[gkr_url_part_host] = url;
+            data->len[gkr_url_part_host] = len;
 
             url += len;
             cch -= len;
@@ -250,10 +278,10 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
             len = unsigned(end - url);
 
-            if(!is_valid_port(url, len, parts->port)) return gkr_false; // invalid port
+            if(!is_valid_port(url, len, data->port)) return gkr_false; // invalid port
 
-            parts->str[gkr_url_part_port] = url;
-            parts->len[gkr_url_part_port] = len;
+            data->str[gkr_url_part_port] = url;
+            data->len[gkr_url_part_port] = len;
 
             url += len;
             cch -= len;
@@ -271,8 +299,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
             if(!is_valid_path(url, len)) return gkr_false; //invalid path
 
-            parts->str[gkr_url_part_path] = url;
-            parts->len[gkr_url_part_path] = len;
+            data->str[gkr_url_part_path] = url;
+            data->len[gkr_url_part_path] = len;
 
             url += len + 1;
             cch -= len + 1;
@@ -284,10 +312,10 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
                 // path+query+fragment
                 len = unsigned(pos - url);
 
-                if(!is_valid_query(url, len, parts->args)) return gkr_false; //invalid query
+                if(!is_valid_query(url, len, data->args)) return gkr_false; //invalid query
 
-                parts->str[gkr_url_part_query] = url;
-                parts->len[gkr_url_part_query] = len;
+                data->str[gkr_url_part_query] = url;
+                data->len[gkr_url_part_query] = len;
 
                 url += len + 1;
                 cch -= len + 1;
@@ -296,8 +324,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_fragment(url, len)) return gkr_false; // invalid fragment
 
-                parts->str[gkr_url_part_fragment] = url;
-                parts->len[gkr_url_part_fragment] = len;
+                data->str[gkr_url_part_fragment] = url;
+                data->len[gkr_url_part_fragment] = len;
 
                 url += len;
                 cch -= len;
@@ -307,10 +335,10 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
                 // path+query-fragment
                 len = unsigned(cch);
 
-                if(!is_valid_query(url, len, parts->args)) return gkr_false; //invalid query
+                if(!is_valid_query(url, len, data->args)) return gkr_false; //invalid query
 
-                parts->str[gkr_url_part_query] = url;
-                parts->len[gkr_url_part_query] = len;
+                data->str[gkr_url_part_query] = url;
+                data->len[gkr_url_part_query] = len;
 
                 url += len;
                 cch -= len;
@@ -328,8 +356,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_path(url, len)) return gkr_false; //invalid path
 
-                parts->str[gkr_url_part_path] = url;
-                parts->len[gkr_url_part_path] = len;
+                data->str[gkr_url_part_path] = url;
+                data->len[gkr_url_part_path] = len;
 
                 url += len + 1;
                 cch -= len + 1;
@@ -338,8 +366,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_fragment(url, len)) return gkr_false; // invalid fragment
 
-                parts->str[gkr_url_part_fragment] = url;
-                parts->len[gkr_url_part_fragment] = len;
+                data->str[gkr_url_part_fragment] = url;
+                data->len[gkr_url_part_fragment] = len;
 
                 url += len;
                 cch -= len;
@@ -351,8 +379,8 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
                 if(!is_valid_path(url, len)) return gkr_false; //invalid path
 
-                parts->str[gkr_url_part_path] = url;
-                parts->len[gkr_url_part_path] = len;
+                data->str[gkr_url_part_path] = url;
+                data->len[gkr_url_part_path] = len;
 
                 url += len;
                 cch -= len;
@@ -366,23 +394,20 @@ int gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len
 
         len = 0;
 
-        parts->str[gkr_url_part_path] = url;
-        parts->len[gkr_url_part_path] = len;
+        data->str[gkr_url_part_path] = url;
+        data->len[gkr_url_part_path] = len;
     }
-
-    for( ; (cch > 0) && std::isspace(*url); ++url, --cch);
-
     return (cch == 0);
 }
 
-GKR_CORE_API gkr_bool gkr_url_change_part(int part, struct gkr_url_parts* parts, char* url, unsigned cch, const char* str, unsigned len)
+GKR_CORE_API gkr_bool gkr_url_change_part(int part, struct gkr_url_data* data, char* url, unsigned cch, const char* str, unsigned len)
 {
     Check_Arg_IsValid(part < gkr_url_parts_count, gkr_false);
 
-    Check_Arg_NotNull(parts, gkr_false);
-    Check_Arg_NotNull(url  , gkr_false);
+    Check_Arg_NotNull(data, gkr_false);
+    Check_Arg_NotNull(url , gkr_false);
 
-    if(len == unsigned(-1)) len = unsigned(std::strlen(url));
+    if(str == nullptr) len = 0; else if(len == unsigned(-1)) len = unsigned(std::strlen(url));
 
     if(part == gkr_url_part_whole)
     {
@@ -393,81 +418,152 @@ GKR_CORE_API gkr_bool gkr_url_change_part(int part, struct gkr_url_parts* parts,
         std::memcpy(url, str, len);
         url[len] = 0;
 
-        return gkr_url_decompose(parts, url, len);
+        return gkr_url_decompose(data, url, len);
     }
 
-    if((str == nullptr) && (parts->str[part] == nullptr)) return gkr_true;
+    if((str == nullptr) && (data->str[part] == nullptr)) return gkr_true;
+
+    if((data->len[gkr_url_part_whole] + len - data->len[part] + 1) > cch) return gkr_false;
 
     const char* prefix = "";
     const char* suffix = "";
 
-    std::size_t offset = 0;
+    std::ptrdiff_t offset = 0;
 
     switch(part)
     {
         case gkr_url_part_scheme:
-            if((str != nullptr) && !is_valid_scheme(str, len)) return gkr_false;
+            if(!is_valid_scheme(str, len)) return gkr_false;
             suffix = ":";
-            if     (parts->str[gkr_url_part_scheme  ] != nullptr) offset = 0;
-            else if(parts->str[gkr_url_part_username] != nullptr) offset = std::size_t(parts->str[gkr_url_part_username] - 2 - parts->str[gkr_url_part_whole]);
-            else if(parts->str[gkr_url_part_host    ] != nullptr) offset = std::size_t(parts->str[gkr_url_part_host    ] - 2 - parts->str[gkr_url_part_whole]);
-            else if(parts->str[gkr_url_part_path    ] != nullptr) offset = std::size_t(parts->str[gkr_url_part_path    ] - 1 - parts->str[gkr_url_part_whole]);
+            if     (data->str[gkr_url_part_scheme  ] != nullptr) offset = data->str[gkr_url_part_scheme  ] - 0 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_username] != nullptr) offset = data->str[gkr_url_part_username] - 2 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_host    ] != nullptr) offset = data->str[gkr_url_part_host    ] - 2 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_path    ] != nullptr) offset = data->str[gkr_url_part_path    ] - 1 - data->str[gkr_url_part_whole];
+            else return gkr_false;
+            break;
+
+        case gkr_url_part_username:
+            if((str == nullptr) && (data->str[gkr_url_part_password] != nullptr)) return false;
+
+            if(!is_valid_username(str, len)) return gkr_false;
+            suffix = (data->str[gkr_url_part_password] != nullptr) ? ":" : "@";
+            if     (data->str[gkr_url_part_username] != nullptr) offset = data->str[gkr_url_part_username] - 0 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_host    ] != nullptr) offset = data->str[gkr_url_part_host    ] - 0 - data->str[gkr_url_part_whole];
+            else return gkr_false;
+            break;
+
+        case gkr_url_part_password:
+            if(!is_valid_password(str, len)) return gkr_false;
+            prefix = ":";
+            if     (data->str[gkr_url_part_username] == nullptr) return gkr_false;
+            if     (data->str[gkr_url_part_password] != nullptr) offset = data->str[gkr_url_part_password] - 1 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_host    ] != nullptr) offset = data->str[gkr_url_part_host    ] - 1 - data->str[gkr_url_part_whole];
+            else return gkr_false;
+            break;
+
+        case gkr_url_part_host:
+            if((str == nullptr) && (data->len[gkr_url_part_path] == 0)) return false;
+
+            if(!is_valid_host(str, len)) return gkr_false;
+
+            if(data->str[gkr_url_part_host] == nullptr)
+            {
+                prefix = "//";
+                offset = data->str[gkr_url_part_path] - data->str[gkr_url_part_whole];
+            }
+            else if(str == nullptr)
+            {
+                if(data->str[gkr_url_part_username] != nullptr) return gkr_false;
+                if(data->str[gkr_url_part_password] != nullptr) return gkr_false;
+                if(data->str[gkr_url_part_port    ] != nullptr) return gkr_false;
+                prefix = "//";
+                offset = data->str[gkr_url_part_host] - 2 - data->str[gkr_url_part_whole];
+            }
+            else
+            {
+                offset = data->str[gkr_url_part_host] - 0 - data->str[gkr_url_part_whole];
+            }
+            break;
+
+        case gkr_url_part_port:
+            if(!is_valid_port(str, len, data->port)) return gkr_false;
+            prefix = ":";
+            if     (data->str[gkr_url_part_host    ] == nullptr) return gkr_false;
+            if     (data->str[gkr_url_part_port    ] != nullptr) offset = data->str[gkr_url_part_port    ] - 1 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_path    ] != nullptr) offset = data->str[gkr_url_part_path    ] - 0 - data->str[gkr_url_part_whole];
+            else return gkr_false;
+            break;
+
+        case gkr_url_part_path:
+            if((str == nullptr) && (data->str[gkr_url_part_host] == nullptr)) return false;
+
+            if(!is_valid_path(str, len)) return gkr_false;
+            prefix = "";
+            if     (data->str[gkr_url_part_path    ] != nullptr) offset = data->str[gkr_url_part_path    ] - 0 - data->str[gkr_url_part_whole];
+            else return gkr_false;
+            break;
+
+        case gkr_url_part_query:
+            if(!is_valid_query(str, len, data->args)) return gkr_false;
+            prefix = "?";
+            if     (data->str[gkr_url_part_query   ] != nullptr) offset = data->str[gkr_url_part_query   ] - 1 - data->str[gkr_url_part_whole];
+            else if(data->str[gkr_url_part_fragment] != nullptr) offset = data->str[gkr_url_part_fragment] - 1 - data->str[gkr_url_part_whole];
+            else if(data->len[gkr_url_part_path    ] != 0      ) offset = data->len[gkr_url_part_whole];
+            else return gkr_false;
+            break;
+
+        case gkr_url_part_fragment:
+            if(!is_valid_fragment(str, len)) return gkr_false;
+            prefix = "#";
+            if     (data->str[gkr_url_part_fragment] != nullptr) offset = data->str[gkr_url_part_fragment] - 1 - data->str[gkr_url_part_whole];
+            else if(data->len[gkr_url_part_path    ] != 0      ) offset = data->len[gkr_url_part_whole];
             else return gkr_false;
             break;
     }
 
-    std::size_t old_len = parts->len[part];
-    std::size_t new_len = (str == nullptr) ? 0 : len;
+    char* dest = url + offset;
 
-    if(str == nullptr)
+    if(data->str[part] != nullptr)
     {
-        old_len += std::strlen(prefix) + std::strlen(suffix);
+        const std::size_t old_len = std::strlen(prefix) + data->len[part] + std::strlen(suffix);
 
-        char* dest = url + (parts->str[part] - parts->str[gkr_url_part_whole]) - std::strlen(prefix);
+        std::size_t size = data->len[gkr_url_part_whole] - offset - old_len;
 
-        std::size_t size = parts->len[gkr_url_part_whole] - old_len - (dest - url);
+        std::memmove(dest, dest + old_len, size);
 
-        std::memmove(dest + new_len, dest + old_len, size);
+        data->str[part] = (part == gkr_url_part_path) ? dest : nullptr;
+        data->len[part] = 0;
 
-        parts->str[part] = nullptr;
-        parts->len[part] = 0;
+        data->len[gkr_url_part_whole] -= unsigned(old_len);
 
-        len = unsigned(parts->len[gkr_url_part_whole] - old_len);
-
-        url[len] = 0;
-
-        parts->len[gkr_url_part_whole] = len;
+        url[data->len[gkr_url_part_whole]] = 0;
 
         for(int index = part + 1; index < gkr_url_parts_count; ++index)
         {
-            if(parts->str[index] != nullptr) parts->str[index] -= old_len;
+            if(data->str[index] != nullptr) data->str[index] -= old_len;
         }
     }
-    else if(parts->str[part] == nullptr)
+    if(str != nullptr)
     {
-        new_len += std::strlen(prefix) + std::strlen(suffix);
+        const std::size_t new_len = std::strlen(prefix) + len + std::strlen(suffix);
 
-        char* dest = url + offset;
-
-        std::size_t size = std::size_t(parts->len[gkr_url_part_whole] - (dest - url));
+        std::size_t size = data->len[gkr_url_part_whole] - std::size_t(offset);
 
         std::memmove(dest + new_len, dest, size);
 
         size = std::strlen(prefix); if(size > 0) { std::memcpy(dest, prefix, size); dest += size; }
-        parts->str[part] = dest;
-        parts->len[part] = len;
+        data->str[part] = dest;
+        data->len[part] = len;
         size = len;                 if(size > 0) { std::memcpy(dest, str   , size); dest += size; }
         size = std::strlen(suffix); if(size > 0) { std::memcpy(dest, suffix, size); dest += size; }
 
-        len = unsigned(parts->len[gkr_url_part_whole] + new_len);
+        data->len[gkr_url_part_whole] += unsigned(new_len);
 
-        url[len] = 0;
-
-        parts->len[gkr_url_part_whole] = len;
+        url[data->len[gkr_url_part_whole]] = 0;
 
         for(int index = part + 1; index < gkr_url_parts_count; ++index)
         {
-            if(parts->str[index] != nullptr) parts->str[index] += new_len;
+            if(data->str[index] != nullptr) data->str[index] += new_len;
         }
     }
     return gkr_true;

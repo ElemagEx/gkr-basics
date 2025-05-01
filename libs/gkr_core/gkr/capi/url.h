@@ -2,7 +2,7 @@
 
 #include <gkr/capi/api.h>
 
-enum
+enum gkr_url_part
 {
     gkr_url_part_whole,
     gkr_url_part_scheme,
@@ -16,23 +16,22 @@ enum
     gkr_url_parts_count,
 };
 
-struct gkr_url_parts
+struct gkr_url_data
 {
     const char* str[gkr_url_parts_count];
     unsigned    len[gkr_url_parts_count];
 
-    int         port;
-    int         args;
+    unsigned    port;
+    unsigned    args;
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-GKR_CORE_API gkr_bool gkr_url_decompose(struct gkr_url_parts* parts, const char* url, unsigned len);
+GKR_CORE_API gkr_bool gkr_url_decompose(struct gkr_url_data* data, const char* url, unsigned len);
 
-GKR_CORE_API gkr_bool gkr_url_change_part(int part, struct gkr_url_parts* parts, char* url, unsigned cch, const char* str, unsigned len);
-
+GKR_CORE_API gkr_bool gkr_url_change_part(int part, struct gkr_url_data* data, char* url, unsigned cch, const char* str, unsigned len);
 
 #ifdef __cplusplus
 }
